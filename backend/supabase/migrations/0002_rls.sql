@@ -13,17 +13,17 @@
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_tenant_id()
 RETURNS uuid LANGUAGE sql STABLE AS $$
-  SELECT nullif(auth.jwt() ->> 'tenant_id', '')::uuid;
+  SELECT nullif(auth.jwt() -> 'app_metadata' ->> 'tenant_id', '')::uuid;
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_role()
 RETURNS text LANGUAGE sql STABLE AS $$
-  SELECT auth.jwt() ->> 'role';
+  SELECT auth.jwt() -> 'app_metadata' ->> 'role';
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_branch_id()
 RETURNS uuid LANGUAGE sql STABLE AS $$
-  SELECT nullif(auth.jwt() ->> 'branch_id', '')::uuid;
+  SELECT nullif(auth.jwt() -> 'app_metadata' ->> 'branch_id', '')::uuid;
 $$;
 
 CREATE OR REPLACE FUNCTION public.is_super_admin()

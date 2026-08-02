@@ -25,7 +25,10 @@ export default function SignupPage() {  return (
               `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/tenant-onboarding`,
               {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                },
                 body: JSON.stringify({
                   name: form.get("hospitalName"),
                   slug: form.get("slug"),

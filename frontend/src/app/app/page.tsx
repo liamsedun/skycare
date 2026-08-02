@@ -71,7 +71,15 @@ export default async function OverviewPage() {
         .select("month, revenue")
         .order("month", { ascending: true })
         .limit(6)
-        .then((r) => (r.data ?? []) as RevenuePoint[])
+        .then((r) => {
+          const rows = (r.data ?? []) as RevenuePoint[];
+          const byMonth = new Map<string, number>();
+          for (const row of rows) {
+            const key = String(row.month).slice(0, 7);
+            byMonth.set(key, (byMonth.get(key) ?? 0) + Number(row.revenue));
+          }
+          return Array.from(byMonth.entries()).map(([month, revenue]) => ({ month, revenue }));
+        })
     ),
   ]);
 

@@ -1,14 +1,15 @@
-project_id = "skycare-saas"
+﻿project_id = "skycare-saas"
 
 [db]
 port = 54322
 shadow_port = 54320
-major_version = 15
+major_version = 17
 
 [api]
 enabled = true
 port = 54321
-schemas = ["public"]
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
 
 [auth]
 enabled = true
@@ -16,10 +17,14 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/**", "https://*.skycare.app/**"]
 jwt_expiry = 3600
 enable_signup = false            # platform-controlled onboarding via edge functions
-enable_confirmation = true
 
-[functions]
-enabled = true
+[auth.email]
+enable_confirmations = true
+
+[functions.tenant-onboarding]
+verify_jwt = true
+
+[functions.booking-public]
 verify_jwt = true
 
 [storage]
