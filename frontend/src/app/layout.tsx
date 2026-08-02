@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Figtree, Noto_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const figtree = Figtree({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-heading",
+});
+
+const notoSans = Noto_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -34,8 +41,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} antialiased`} suppressHydrationWarning>
-      <body className="min-h-screen font-[family-name:var(--font-inter)]" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${figtree.variable} ${notoSans.variable} antialiased`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-screen font-[family-name:var(--font-sans)]"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>
