@@ -38,5 +38,5 @@ __pycache__/
 netlify/functions/.netlify/
 
 # supabase locally generated files
-supabase/.branches
-supabase/.temp
+**/supabase/.branches
+**/supabase/.temp
