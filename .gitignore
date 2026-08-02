@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+build/
+
+# misc
+.DS_Store
+*.pem
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# env
+.env
+.env.local
+.env*.local
+.env.production
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# supabase
+.supabase/
+
+# vercel / netlify
+.vercel
+.netlify/
+netlify/functions/.netlify/
+
+# supabase locally generated files
+supabase/.branches
+supabase/.temp

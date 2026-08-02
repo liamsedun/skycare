@@ -1,0 +1,16 @@
+[build]
+  base = "frontend"
+  command = "npm ci && npm run build"
+  publish = ".next"
+
+[[redirects]]
+  # PWA service worker must not be cached by the CDN
+  from = "/sw.js"
+  to = "/sw.js"
+  status = 200
+  headers = { Cache-Control = "public, max-age=0, must-revalidate", Service-Worker-Allowed = "/" }
+
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
