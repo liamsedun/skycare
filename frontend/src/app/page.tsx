@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Activity,
   ArrowRight,
@@ -12,8 +13,10 @@ import {
   Globe,
   HeartPulse,
   LineChart,
+  MapPin,
   MessageSquareText,
   MonitorSmartphone,
+  Phone,
   Pill,
   Rocket,
   ShieldCheck,
@@ -23,7 +26,15 @@ import {
 } from "lucide-react";
 import { MobileNav } from "@/components/landing/mobile-nav";
 import { Gallery } from "@/components/landing/gallery";
+import { TeamShowcase } from "@/components/landing/team-showcase";
+import { LiveChat } from "@/components/landing/live-chat";
 import { SkyCareLogo, SkyCareMark } from "@/components/landing/skycare-logo";
+import {
+  FacebookIcon,
+  InstagramIcon,
+  XIcon,
+  YouTubeIcon,
+} from "@/components/landing/social-icons";
 
 const features = [
   {
@@ -210,7 +221,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/signup"
-              className="rounded-lg sky-gradient px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:opacity-90"
+              className="btn-shine rounded-full bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-sky-500/30 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-sky-500/40"
             >
               Start Free Trial
             </Link>
@@ -222,31 +233,34 @@ export default function HomePage() {
       </header>
 
       {/* HERO */}
-      <section className="relative overflow-hidden sky-gradient text-white">
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-sky-300/20 blur-3xl" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 text-white">
+        <div className="landing-grid-bg absolute inset-0" />
+        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 animate-pulse-glow rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 animate-float-y-slow rounded-full bg-sky-300/20 blur-3xl" />
+        <div className="pointer-events-none absolute right-1/4 top-1/3 h-40 w-40 animate-float-y rounded-full bg-blue-300/20 blur-2xl" />
         <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 text-center md:pt-24">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium ring-1 ring-white/25">
+          <span className="animate-fade-up inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium ring-1 ring-white/25 backdrop-blur">
             <SkyCareMark size={18} rounded="rounded-md" /> Built by Skyhouse Technologies · Nigeria
           </span>
-          <h1 className="font-heading mx-auto mt-6 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight md:text-6xl">
+          <h1 className="font-heading animate-fade-up mx-auto mt-6 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight md:text-6xl" style={{ animationDelay: "80ms" }}>
             Run Your Hospital Smarter — <span className="text-sky-200">From Anywhere</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-sky-50/90">
+          <p className="mx-auto mt-5 max-w-2xl animate-fade-up text-lg text-sky-50/90" style={{ animationDelay: "160ms" }}>
             SkyCare is the all-in-one hospital management OS for Nigeria and Africa —
             EHR, billing, pharmacy, lab, wards, HR and analytics. Every hospital also
             gets a free website and a patient app.
           </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-8 flex animate-fade-up flex-col items-center justify-center gap-3 sm:flex-row" style={{ animationDelay: "240ms" }}>
             <Link
               href="/signup"
-              className="group flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-sky-700 shadow-lg transition-all hover:-translate-y-px hover:bg-sky-50"
+              className="btn-shine group flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-7 py-3.5 text-base font-bold text-white shadow-xl shadow-emerald-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/40"
             >
-              Start Free Trial <ArrowRight size={18} className="transition-transform group-hover:translate-x-0.5" />
+              Start Free Trial{" "}
+              <ArrowRight size={18} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <Link
               href="#pricing"
-              className="rounded-xl border border-white/40 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
+              className="rounded-full border border-white/60 bg-white/15 px-7 py-3.5 text-base font-semibold text-white backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:bg-white/25"
             >
               See Pricing
             </Link>
@@ -342,6 +356,35 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* SCREENSHOT MARQUEE */}
+      <div className="marquee-mask overflow-hidden border-b border-slate-100 bg-white py-10">
+        <div className="animate-marquee flex w-max gap-6">
+          {[1, 2].map((half) => (
+            <div key={half} className="flex gap-6" aria-hidden={half === 2}>
+              {[
+                ...Array.from({ length: 6 }, (_, i) => `/images/hospital-website/hosp-website-${String(i + 1).padStart(2, "0")}.png`),
+                ...Array.from({ length: 6 }, (_, i) => `/images/staff-web-images/staff-web-${String(i + 1).padStart(2, "0")}.png`),
+              ].map((src, i) => (
+                <div
+                  key={`${half}-${i}`}
+                  className="relative w-56 shrink-0 overflow-hidden rounded-xl border border-slate-200 shadow-md"
+                >
+                  <div className="relative aspect-video bg-slate-100">
+                    <Image
+                      src={src}
+                      alt="SkyCare app screenshot"
+                      fill
+                      sizes="224px"
+                      className="object-cover object-top"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* FEATURES */}
       <section id="features" className="scroll-mt-20 py-20">
         <div className="mx-auto max-w-6xl px-4">
@@ -400,6 +443,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* TEAM SHOWCASE */}
+      <TeamShowcase />
 
       {/* HOW IT WORKS */}
       <section id="how-it-works" className="scroll-mt-20 py-20">
@@ -638,9 +684,10 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section id="cta" className="relative overflow-hidden sky-gradient py-20 text-white">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-sky-300/20 blur-3xl" />
+      <section id="cta" className="relative overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 py-20 text-white">
+        <div className="landing-grid-bg absolute inset-0" />
+        <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 animate-pulse-glow rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 animate-float-y-slow rounded-full bg-sky-300/20 blur-3xl" />
         <div className="relative mx-auto max-w-3xl px-4 text-center">
           <h2 className="font-heading text-3xl font-extrabold tracking-tight md:text-5xl">
             Your hospital deserves better software.
@@ -652,13 +699,14 @@ export default function HomePage() {
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/signup"
-              className="rounded-xl bg-white px-8 py-3.5 text-lg font-bold text-sky-700 shadow-lg transition-all hover:-translate-y-px hover:bg-sky-50"
+              className="btn-shine group flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-9 py-4 text-lg font-bold text-white shadow-xl shadow-emerald-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/40"
             >
-              Start Free Trial
+              Start Free Trial{" "}
+              <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <Link
               href="#pricing"
-              className="rounded-xl border border-white/40 px-8 py-3.5 font-semibold transition-colors hover:bg-white/10"
+              className="rounded-full border border-white/60 bg-white/15 px-9 py-4 text-lg font-semibold text-white backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:bg-white/25"
             >
               Compare Plans
             </Link>
@@ -678,21 +726,68 @@ export default function HomePage() {
             <div className="mt-5 flex items-center gap-2 text-xs text-slate-400">
               <ShieldCheck size={15} className="text-emerald-600" /> Bank-grade security · Data stays in Nigeria
             </div>
+            <div className="mt-5 flex items-center gap-3">
+              <a
+                href="https://web.facebook.com/skyhouseaccountants"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Skyhouse Technologies on Facebook"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-all hover:-translate-y-0.5 hover:border-sky-400 hover:text-sky-600"
+              >
+                <FacebookIcon className="h-4 w-4" />
+              </a>
+              <a
+                href="https://web.facebook.com/skyhouseaccountants"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Skyhouse Technologies on Instagram"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-all hover:-translate-y-0.5 hover:border-pink-400 hover:text-pink-600"
+              >
+                <InstagramIcon className="h-4 w-4" />
+              </a>
+              <a
+                href="https://x.com/SkyhouseAccount"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Skyhouse Technologies on X"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-all hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900"
+              >
+                <XIcon className="h-4 w-4" />
+              </a>
+              <a
+                href="https://www.youtube.com/@SkyhouseAccountants"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Skyhouse Technologies on YouTube"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition-all hover:-translate-y-0.5 hover:border-red-400 hover:text-red-600"
+              >
+                <YouTubeIcon className="h-4 w-4" />
+              </a>
+            </div>
           </div>
           <div>
-            <h3 className="font-heading text-sm font-bold uppercase tracking-wide text-slate-700">Product</h3>
-            <ul className="mt-4 space-y-2.5 text-sm text-slate-500">
-              {[
-                { label: "Features", href: "#features" },
-                { label: "Modules", href: "#modules" },
-                { label: "Pricing", href: "#pricing" },
-                { label: "Hospital Website", href: "#hospital-website" },
-                { label: "Patient App", href: "#hospital-website" },
-              ].map((l) => (
-                <li key={l.label}>
-                  <a href={l.href} className="transition-colors hover:text-sky-600">{l.label}</a>
-                </li>
-              ))}
+            <h3 className="font-heading text-sm font-bold uppercase tracking-wide text-slate-700">Contact</h3>
+            <ul className="mt-4 space-y-3 text-sm text-slate-500">
+              <li className="flex items-start gap-2.5">
+                <MapPin size={16} className="mt-0.5 shrink-0 text-sky-600" />
+                <span>
+                  2/4 Moses Adeyemi Street,
+                  <br />
+                  Ojodu-Ikeja, Lagos, Nigeria
+                </span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Phone size={16} className="shrink-0 text-sky-600" />
+                <a href="tel:+2348157377000" className="transition-colors hover:text-sky-600">
+                  +234 815 737 7000
+                </a>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Phone size={16} className="shrink-0 text-sky-600" />
+                <a href="tel:+2347058119864" className="transition-colors hover:text-sky-600">
+                  +234 705 811 9864
+                </a>
+              </li>
             </ul>
           </div>
           <div>
@@ -707,10 +802,13 @@ export default function HomePage() {
         <div className="border-t border-slate-100 py-6">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 text-xs text-slate-400 md:flex-row">
             <p>© {new Date().getFullYear()} Skyhouse Technologies. All rights reserved.</p>
-            <p>Made in Nigeria · Serving hospitals across Africa</p>
+            <p>2/4 Moses Adeyemi Street, Ojodu-Ikeja, Lagos · Made in Nigeria</p>
           </div>
         </div>
       </footer>
+
+      {/* LIVE CHAT */}
+      <LiveChat />
     </main>
   );
 }

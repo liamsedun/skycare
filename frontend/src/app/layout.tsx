@@ -18,6 +18,17 @@ export const metadata: Metadata = {
   title: "SkyCare — The Smart Hospital OS for Africa",
   description:
     "SkyCare is the multi-tenant hospital management SaaS by Skyhouse Technologies. EHR, billing, pharmacy, lab, ward & bed management, HR, analytics — plus a free hospital website and patient app.",
+  keywords: [
+    "hospital management system",
+    "HMS",
+    "SkyCare",
+    "Skyhouse Technologies",
+    "hospital software Nigeria",
+    "EHR",
+    "patient management",
+    "pharmacy software",
+    "clinic management",
+  ],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -27,6 +38,19 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
+  },
+  openGraph: {
+    title: "SkyCare — The Smart Hospital OS for Africa",
+    description:
+      "EHR, billing, pharmacy, lab, wards, HR and analytics for African hospitals. Every hospital gets a free website and patient app.",
+    type: "website",
+    locale: "en_NG",
+  },
+  twitter: {
+    card: "summary",
+    title: "SkyCare — The Smart Hospital OS for Africa",
+    description:
+      "EHR, billing, pharmacy, lab, wards, HR and analytics for African hospitals. Every hospital gets a free website and patient app.",
   },
 };
 
