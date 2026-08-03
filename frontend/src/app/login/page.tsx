@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { HeartPulse, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
+import { SkyCareLogo } from "@/components/landing/skycare-logo";
 
 export const dynamic = "force-dynamic";
 
@@ -92,13 +93,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--color-background)] px-4">
       <div className="w-full max-w-sm rounded-2xl border border-[var(--color-border)] bg-white p-8 shadow-[var(--shadow-lg)]">
-        <div className="flex items-center justify-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl sky-gradient text-white">
-            <HeartPulse size={22} aria-hidden="true" />
-          </span>
-          <span className="font-[family-name:var(--font-heading)] text-2xl font-bold">
-            SkyCare
-          </span>
+        <div className="flex items-center justify-center">
+          <SkyCareLogo size={40} />
         </div>
         <h1 className="mt-6 text-center text-lg font-semibold">
           Sign in to your hospital
