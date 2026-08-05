@@ -1,0 +1,318 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CalendarPlus } from "lucide-react";
+
+interface Appointment {
+  id: string;
+  scheduled_date: string;
+  start_time: string;
+  end_time: string | null;
+  type: string;
+  status: string;
+  reason: string | null;
+  notes: string | null;
+  patients: { first_name: string; last_name: string } | null;
+  users: { full_name: string } | null;
+}
+
+interface FamilyMember {
+  id: string;
+  patient_number: string;
+  first_name: string;
+  last_name: string;
+  dependant_relationship: string | null;
+  is_primary_account: boolean;
+}
+
+const inputCls =
+  "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
+const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
+
+function statusClass(status: string): string {
+  switch (status) {
+    case "confirmed": return "bg-sky-100 text-sky-700";
+    case "completed": return "bg-emerald-100 text-emerald-700";
+    case "in_progress": return "bg-amber-100 text-amber-700";
+    case "cancelled": case "no_show": return "bg-slate-100 text-slate-500";
+    default: return "bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]";
+  }
+}
+
+export default function PatientAppointments() {
+  const router = useRouter();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showBook, setShowBook] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [family, setFamily] = useState<FamilyMember[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/appointments?pageSize=100", { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to load appointments");
+      setAppointments(body.data ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load appointments");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+    (async () => {
+      try {
+        const res = await fetch("/api/patients/me", { cache: "no-store" });
+        if (res.ok) {
+          const body = await res.json();
+          setFamily(body.family ?? []);
+        }
+      } catch {
+        // picker falls back to "Myself" disabled state below
+      }
+    })();
+  }, [load]);
+
+  async function cancelAppointment(id: string) {
+    if (!confirm("Cancel this appointment?")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "cancelled" }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to cancel appointment");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to cancel appointment");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function bookAppointment(form: FormData) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: form.get("patientId"),
+          scheduledDate: form.get("scheduledDate"),
+          startTime: form.get("startTime"),
+          type: form.get("type"),
+          reason: (form.get("reason") as string) || undefined,
+          notes: (form.get("notes") as string) || undefined,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to book appointment");
+      setShowBook(false);
+      await load();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to book appointment");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const cancellable = (a: Appointment) => ["scheduled", "confirmed"].includes(a.status);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+            Appointments
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+            Your appointments and those of your family members.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowBook(true)}
+          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+        >
+          <CalendarPlus size={16} aria-hidden="true" /> Book appointment
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          {error}
+        </p>
+      )}
+
+      {loading ? (
+        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading appointments…</p>
+      ) : appointments.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
+          <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No appointments yet.</p>
+          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Book your first appointment with the button above.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {appointments.map((a) => (
+            <div key={a.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-[var(--color-foreground)]">
+                    {new Date(`${a.scheduled_date}T${a.start_time || "00:00"}`).toLocaleDateString("en-NG", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}{" "}
+                    · <span className="font-semibold">{a.start_time}</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                    {a.patients ? `${a.patients.first_name} ${a.patients.last_name}` : ""} ·{" "}
+                    {a.type.replace(/_/g, " ")}
+                    {a.users?.full_name ? ` · Dr. ${a.users.full_name}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass(a.status)}`}>
+                    {a.status.replace(/_/g, " ")}
+                  </span>
+                  {cancellable(a) && (
+                    <button
+                      type="button"
+                      onClick={() => cancelAppointment(a.id)}
+                      disabled={busy}
+                      className="focus-ring rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+              {a.reason && <p className="mt-2 text-sm text-[var(--color-muted-fg)]">Reason: {a.reason}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showBook && (
+        <BookModal
+          family={family}
+          onClose={() => setShowBook(false)}
+          onBooked={async (form) => {
+            await bookAppointment(form);
+          }}
+          busy={busy}
+          error={error}
+        />
+      )}
+    </div>
+  );
+}
+
+function BookModal({
+  family,
+  onClose,
+  onBooked,
+  busy,
+  error,
+}: {
+  family: FamilyMember[];
+  onClose: () => void;
+  onBooked: (form: FormData) => void;
+  busy: boolean;
+  error: string | null;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Book appointment"
+    >
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Book appointment</h2>
+          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <form
+          className="mt-5 space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onBooked(new FormData(e.currentTarget));
+          }}
+        >
+          <div>
+            <label className={labelCls} htmlFor="pbm-patient">Who is the appointment for?</label>
+            <select id="pbm-patient" name="patientId" required className={inputCls} disabled={family.length === 0}>
+              {family.length === 0 ? (
+                <option value="">Loading…</option>
+              ) : (
+                <>
+                  <option value="">Select…</option>
+                  {family.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.first_name} {m.last_name}
+                      {m.is_primary_account ? "" : ` (${(m.dependant_relationship ?? "family member").replace(/_/g, " ")})`}
+                    </option>
+                  ))}
+                </>
+              )}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls} htmlFor="pbm-date">Date</label>
+              <input id="pbm-date" name="scheduledDate" type="date" required min={new Date().toISOString().slice(0, 10)} className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="pbm-time">Time</label>
+              <input id="pbm-time" name="startTime" type="time" required className={inputCls} />
+            </div>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="pbm-type">Visit type</label>
+            <select id="pbm-type" name="type" className={inputCls} defaultValue="in_person">
+              <option value="in_person">In-person visit</option>
+              <option value="telemedicine">Telemedicine</option>
+              <option value="home_visit">Home visit</option>
+              <option value="follow_up">Follow-up</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="pbm-reason">Reason</label>
+            <input id="pbm-reason" name="reason" className={inputCls} placeholder="Why are you visiting?" />
+          </div>
+          <p className="text-xs text-[var(--color-muted-fg)]">
+            Your request will be submitted to the hospital — the reception team will confirm it.
+          </p>
+          {error && (
+            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">
+              Cancel
+            </button>
+            <button type="submit" disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+              {busy ? "Booking…" : "Book appointment"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -221,7 +221,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/signup"
-              className="btn-shine rounded-full bg-gradient-to-r from-sky-500 via-sky-600 to-blue-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-sky-500/30 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-sky-500/40"
+              className="btn-shine rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-emerald-500/40"
             >
               Start Free Trial
             </Link>

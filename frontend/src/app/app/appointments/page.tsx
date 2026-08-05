@@ -3,6 +3,10 @@ import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatTime } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
+import {
+  AppointmentActions,
+  NewAppointmentButton,
+} from "@/components/dashboard/appointment-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +74,10 @@ export default async function AppointmentsPage({
         </p>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <NewAppointmentButton />
+      </div>
+
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">
         <Link
           href="/app/appointments"
@@ -113,9 +121,62 @@ export default async function AppointmentsPage({
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+        <>
+          <div className="space-y-3 md:hidden">
+            {appointments.map((appt) => (
+              <div
+                key={appt.id}
+                className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-[var(--color-foreground)]">
+                      {appt.patients
+                        ? `${appt.patients.first_name} ${appt.patients.last_name}`
+                        : "Unknown patient"}
+                    </p>
+                    <p className="mt-0.5 font-mono text-xs text-[var(--color-muted-fg)]">
+                      {appt.patients?.patient_number ?? ""}
+                    </p>
+                  </div>
+                  <StatusBadge status={appt.status} />
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                  <div>
+                    <dt className="text-[var(--color-muted-fg)]">Date</dt>
+                    <dd className="font-medium text-[var(--color-foreground)]">
+                      {formatDate(appt.scheduled_date)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-muted-fg)]">Time</dt>
+                    <dd className="font-medium text-[var(--color-foreground)]">
+                      {formatTime(appt.start_time)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-muted-fg)]">Type</dt>
+                    <dd className="font-medium capitalize text-[var(--color-foreground)]">
+                      {appt.type.replace(/_/g, " ")}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[var(--color-muted-fg)]">Reason</dt>
+                    <dd className="truncate font-medium text-[var(--color-foreground)]">
+                      {appt.reason ?? "—"}
+                    </dd>
+                  </div>
+                </dl>
+                <div className="mt-3">
+                  <AppointmentActions appointment={appt} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)] md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                   <th scope="col" className="px-4 py-3 font-semibold">Date</th>
@@ -124,6 +185,7 @@ export default async function AppointmentsPage({
                   <th scope="col" className="px-4 py-3 font-semibold">Type</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Reason</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Status</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -154,12 +216,16 @@ export default async function AppointmentsPage({
                     <td className="px-4 py-3">
                       <StatusBadge status={appt.status} />
                     </td>
+                    <td className="px-4 py-3">
+                      <AppointmentActions appointment={appt} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

@@ -26,7 +26,7 @@ export function MobileNav() {
         {open ? <X size={20} /> : <Menu size={20} />}
       </button>
       {open && (
-        <nav className="absolute left-1/2 top-full z-50 w-72 -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
+        <nav className="absolute right-0 top-full z-50 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
           {links.map((l) => (
             <a
               key={l.href}
@@ -48,7 +48,7 @@ export function MobileNav() {
             <Link
               href="/signup"
               onClick={() => setOpen(false)}
-              className="mt-1 block rounded-xl sky-gradient px-4 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              className="btn-shine mt-1 block rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2.5 text-center text-sm font-bold text-white shadow-md shadow-emerald-500/30 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/40"
             >
               Start Free Trial
             </Link>

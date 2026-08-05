@@ -9,6 +9,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import { getHost, loadTenant } from "@/lib/tenant";
+import TenantMobileNav from "@/components/tenant/tenant-mobile-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -31,29 +32,32 @@ export default async function TenantWebsitePage({
     <main className="min-h-screen bg-white">
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2">
             {tenant.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={tenant.logo_url} alt="" className="h-9 w-9 rounded-lg object-contain" />
+              <img src={tenant.logo_url} alt="" className="h-9 w-9 shrink-0 rounded-lg object-contain" />
             ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white">
                 <HeartPulse size={18} />
               </span>
             )}
-            <span className="text-lg font-bold">{tenant.name}</span>
+            <span className="truncate text-lg font-bold">{tenant.name}</span>
           </div>
           <nav className="hidden items-center gap-5 text-sm text-slate-600 md:flex">
             <a href="#about" className="hover:text-sky-600">About</a>
             <a href="#services" className="hover:text-sky-600">Services</a>
             <a href="#contact" className="hover:text-sky-600">Contact</a>
           </nav>
-          <Link
-            href={`/appointment?hospital=${tenant.slug}`}
-            className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
-          >
-            Book Appointment
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/appointment?hospital=${tenant.slug}`}
+              className="hidden rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 sm:block"
+            >
+              Book Appointment
+            </Link>
+            <TenantMobileNav bookHref={`/appointment?hospital=${tenant.slug}`} />
+          </div>
         </div>
       </header>
 

@@ -127,7 +127,7 @@ export function Gallery() {
             {Array.from({ length: group.count }, (_, i) => i + 1).map((n) => (
               <figure
                 key={n}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
+                className="mx-auto w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl sm:max-w-none"
               >
                 <div className="relative mx-auto aspect-[9/19] w-full bg-slate-900">
                   <div className="absolute left-1/2 top-1.5 z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-slate-700" />

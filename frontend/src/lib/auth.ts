@@ -39,7 +39,7 @@ export function isStaffRole(role: unknown): role is StaffRole {
   );
 }
 
-function isAppRole(role: unknown): role is AppRole {
+export function isAppRole(role: unknown): role is AppRole {
   return (
     isStaffRole(role) ||
     (typeof role === "string" && role === "patient_api")

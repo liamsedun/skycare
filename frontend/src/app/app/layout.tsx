@@ -21,11 +21,18 @@ export default async function AppLayout({
   const role = claims.role;
 
   const [profileRes, tenantRes] = await Promise.all([
-    supabase.from("users").select("full_name").eq("id", user.id).maybeSingle(),
+    supabase.from("users").select("full_name, is_active").eq("id", user.id).maybeSingle(),
     claims.tenantId
       ? supabase.from("tenants").select("name").eq("id", claims.tenantId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  // Deactivated accounts are bounced even with a valid auth session.
+  if (profileRes.data && profileRes.data.is_active === false) {
+    const supabaseBrowser = (await import("@/lib/supabase/client")).getSupabase();
+    await supabaseBrowser.auth.signOut();
+    redirect("/login?disabled=1");
+  }
 
   const userName = profileRes.data?.full_name ?? user.email ?? "Staff";
   const tenantName = tenantRes.data?.name ?? null;

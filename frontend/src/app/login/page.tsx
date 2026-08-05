@@ -22,7 +22,7 @@ function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+    const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
 
     if (error) {
       setError("Invalid email or password. Check your details and try again.");
@@ -30,8 +30,36 @@ function LoginForm() {
       return;
     }
 
+    const role = data.user?.app_metadata?.role as string | undefined;
+
+    // Record the login audit + last_login_at (best effort)
+    try {
+      await fetch("/api/auth/log-login", { method: "POST" });
+    } catch {
+      /* ignore */
+    }
+
+    // Deactivated accounts must be blocked even with a valid auth session
+    try {
+      const me = await fetch("/api/auth/me", { method: "GET" });
+      const meData = await me.json();
+      if (meData.data?.user && meData.data.user.is_active === false) {
+        await getSupabase().auth.signOut();
+        setError("Your account has been deactivated. Contact your hospital admin.");
+        setLoading(false);
+        return;
+      }
+    } catch {
+      /* ignore */
+    }
+
     const redirectTo = searchParams.get("redirect");
-    router.push(redirectTo && redirectTo.startsWith("/") ? redirectTo : "/app");
+    const fallback = role === "patient_api" ? "/patient" : "/app";
+    router.push(
+      redirectTo && redirectTo.startsWith("/")
+        ? redirectTo
+        : fallback
+    );
     router.refresh();
   }
 

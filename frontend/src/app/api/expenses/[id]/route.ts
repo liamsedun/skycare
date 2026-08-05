@@ -1,0 +1,82 @@
+import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
+import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
+import type { NextRequest } from "next/server";
+
+export const dynamic = "force-dynamic";
+
+async function getExpense(ctx: any, id: string, tenantId: string) {
+  const { data } = await ctx.svc
+    .from("expenses")
+    .select("*")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  return data;
+}
+
+// GET /api/expenses/[id]
+export const GET = withStaff(async (req, ctx) => {
+  const tenantId = requireTenant(ctx);
+  const id = req.nextUrl.pathname.split("/").pop()!;
+  const expense = await getExpense(ctx, id, tenantId);
+  if (!expense) throw new NotFoundError("Expense not found");
+  return ok(expense);
+});
+
+// PUT /api/expenses/[id]
+export const PUT = withStaff(async (req, ctx) => {
+  const tenantId = requireTenant(ctx);
+  const id = req.nextUrl.pathname.split("/").pop()!;
+  const existing = await getExpense(ctx, id, tenantId);
+  if (!existing) throw new NotFoundError("Expense not found");
+
+  const body = (await req.json()) as Record<string, unknown>;
+  if (body.category && !EXPENSE_CATEGORIES.includes(body.category as (typeof EXPENSE_CATEGORIES)[number])) {
+    throw new ValidationError("Invalid expense category");
+  }
+
+  const allowed = ["description", "category", "amount", "expense_date", "payment_method", "vendor", "notes"];
+  const patch: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (key in body) patch[key] = body[key] ?? null;
+  }
+
+  const { data: updated, error } = await ctx.svc
+    .from("expenses")
+    .update(patch)
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .select()
+    .single();
+  if (error) throw new ValidationError(error.message);
+
+  await logAudit(req, ctx, {
+    action: "update",
+    entityType: "expenses",
+    entityId: id,
+    description: `Updated expense "${existing.description}"`,
+  });
+
+  return ok(updated);
+});
+
+// DELETE /api/expenses/[id]
+export const DELETE = withStaff(async (req, ctx) => {
+  const tenantId = requireTenant(ctx);
+  const id = req.nextUrl.pathname.split("/").pop()!;
+  const existing = await getExpense(ctx, id, tenantId);
+  if (!existing) throw new NotFoundError("Expense not found");
+
+  await ctx.svc.from("expenses").delete().eq("id", id).eq("tenant_id", tenantId);
+
+  await logAudit(req, ctx, {
+    action: "delete",
+    entityType: "expenses",
+    entityId: id,
+    description: `Deleted expense "${existing.description}"`,
+  });
+  return ok({ ok: true });
+});
+
+export const runtime = "nodejs";

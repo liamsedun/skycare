@@ -6,6 +6,7 @@ import {
   Pill,
   ReceiptText,
   Settings,
+  ShieldCheck,
   Users,
   UserCog,
 } from "lucide-react";
@@ -36,25 +37,18 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/app/pharmacy",
     label: "Pharmacy",
     icon: Pill,
-    roles: ["hospital_admin", "pharmacist", "super_admin"],
-    soon: true,
+    roles: ["hospital_admin", "pharmacist", "doctor", "nurse", "super_admin"],
   },
   {
     href: "/app/lab",
     label: "Lab",
     icon: FlaskConical,
-    roles: ["hospital_admin", "lab_tech", "super_admin"],
-    soon: true,
+    roles: ["hospital_admin", "lab_tech", "doctor", "nurse", "super_admin"],
   },
-  {
-    href: "/app/billing",
-    label: "Billing",
-    icon: ReceiptText,
-    roles: [...ADMIN, "cashier"],
-    soon: true,
-  },
-  { href: "/app/staff", label: "Staff", icon: UserCog, roles: ADMIN, soon: true },
-  { href: "/app/settings", label: "Settings", icon: Settings, roles: ADMIN, soon: true },
+  { href: "/app/billing", label: "Billing", icon: ReceiptText, roles: [...ADMIN, "cashier"] },
+  { href: "/app/staff", label: "Staff", icon: UserCog, roles: ADMIN },
+  { href: "/app/audit-logs", label: "Audit Logs", icon: ShieldCheck, roles: ADMIN },
+  { href: "/app/settings", label: "Settings", icon: Settings, roles: ADMIN },
 ];
 
 export function navForRole(role: StaffRole | undefined): NavItem[] {
