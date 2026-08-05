@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { LogOut, Menu } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
@@ -46,12 +47,13 @@ export default function Topbar({
         <span className="hidden rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)] sm:inline-block">
           {ROLE_LABELS[role] ?? role}
         </span>
-        <span
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white"
-          aria-hidden="true"
+        <Link
+          href="/app/profile"
+          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-90"
+          aria-label="My profile"
         >
           {initials(userName)}
-        </span>
+        </Link>
         <button
           type="button"
           onClick={handleSignOut}

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { HeartPulse, X } from "lucide-react";
 import { navForRole } from "@/lib/nav";
 import type { StaffRole } from "@/lib/auth";
+import UnreadMailBadge from "@/components/dashboard/unread-mail-badge";
 
 export default function Sidebar({
   role,
@@ -82,7 +83,8 @@ export default function Sidebar({
               }`}
             >
               <Icon size={18} aria-hidden="true" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.href === "/app/mail" && <UnreadMailBadge />}
             </Link>
           );
         })}

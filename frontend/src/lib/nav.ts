@@ -2,13 +2,19 @@ import type { LucideIcon } from "lucide-react";
 import {
   CalendarClock,
   FlaskConical,
+  FileText,
   LayoutDashboard,
+  Mail,
+  MessageSquare,
   Pill,
   ReceiptText,
   Settings,
   ShieldCheck,
+  TrendingUp,
+  UserCircle,
   Users,
   UserCog,
+  Wallet,
 } from "lucide-react";
 import type { StaffRole } from "@/lib/auth";
 
@@ -23,6 +29,7 @@ export interface NavItem {
 }
 
 const ADMIN = ["hospital_admin", "super_admin"] as StaffRole[];
+const CLINICAL = ["hospital_admin", "doctor", "nurse"] as StaffRole[];
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Overview", icon: LayoutDashboard },
@@ -46,8 +53,14 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ["hospital_admin", "lab_tech", "doctor", "nurse", "super_admin"],
   },
   { href: "/app/billing", label: "Billing", icon: ReceiptText, roles: [...ADMIN, "cashier"] },
+  { href: "/app/expenses", label: "Expenses", icon: Wallet, roles: ADMIN },
+  { href: "/app/other-income", label: "Other income", icon: TrendingUp, roles: ADMIN },
   { href: "/app/staff", label: "Staff", icon: UserCog, roles: ADMIN },
+  { href: "/app/mail", label: "Mail", icon: Mail, roles: ADMIN },
+  { href: "/app/chats", label: "Chats", icon: MessageSquare, roles: ADMIN },
+  { href: "/app/reports", label: "Reports", icon: FileText, roles: [...CLINICAL, "super_admin"] },
   { href: "/app/audit-logs", label: "Audit Logs", icon: ShieldCheck, roles: ADMIN },
+  { href: "/app/profile", label: "Profile", icon: UserCircle },
   { href: "/app/settings", label: "Settings", icon: Settings, roles: ADMIN },
 ];
 

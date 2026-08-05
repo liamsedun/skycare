@@ -1,5 +1,5 @@
-import { withAuth } from "@/lib/api-utils";
-import { ok } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,45 @@ export const GET = withAuth(async (req, ctx) => {
       branchId: ctx.branchId,
     },
   });
+});
+
+interface UpdateProfileBody {
+  fullName?: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
+}
+
+// PUT /api/auth/me — update own profile (name, phone, avatar)
+export const PUT = withAuth(async (req, ctx) => {
+  const body = (await req.json()) as UpdateProfileBody;
+
+  const patch: Record<string, unknown> = {};
+  if (body.fullName !== undefined) {
+    const name = body.fullName.trim();
+    if (name.length < 2) throw new ValidationError("Full name must be at least 2 characters");
+    patch.full_name = name;
+  }
+  if (body.phone !== undefined) patch.phone = body.phone?.trim() || null;
+  if (body.avatarUrl !== undefined) patch.avatar_url = body.avatarUrl || null;
+
+  if (Object.keys(patch).length === 0) throw new ValidationError("Nothing to update");
+
+  const { data: updated, error } = await ctx.svc
+    .from("users")
+    .update(patch)
+    .eq("id", ctx.user.id)
+    .select("id, full_name, email, phone, avatar_url, role")
+    .single();
+  if (error) throw new ValidationError(error.message);
+
+  await logAudit(req, ctx, {
+    action: "update",
+    entityType: "users",
+    entityId: ctx.user.id,
+    description: "Updated own profile",
+  });
+
+  return ok(updated);
 });
 
 export const runtime = "nodejs";
