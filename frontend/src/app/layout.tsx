@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Noto_Sans } from "next/font/google";
+import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -74,7 +75,7 @@ export default function RootLayout({
         className="min-h-screen font-[family-name:var(--font-sans)]"
         suppressHydrationWarning
       >
-        {children}
+        <PwaWrapper>{children}</PwaWrapper>
       </body>
     </html>
   );

@@ -140,7 +140,7 @@ export default function PatientShell({
               <img
                 src={tenantLogoUrl}
                 alt=""
-                className="h-7 w-7 shrink-0 rounded object-contain"
+                className="max-h-[68px] max-w-[68px] shrink-0 rounded-xl object-contain"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
             )}

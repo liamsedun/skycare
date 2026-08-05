@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { LogOut, Menu } from "lucide-react";
-import { getSupabase } from "@/lib/supabase/client";
-import { ROLE_LABELS, initials } from "@/lib/auth";
+import { Menu } from "lucide-react";
+import { ROLE_LABELS } from "@/lib/auth";
 import type { StaffRole } from "@/lib/auth";
 import NotificationsBell from "@/components/notifications-bell";
+import UserMenu from "@/components/dashboard/user-menu";
 
 export default function Topbar({
   userName,
@@ -24,16 +22,6 @@ export default function Topbar({
   avatarUrl: string | null;
   onOpenSidebar: () => void;
 }) {
-  const router = useRouter();
-  const [signingOut, setSigningOut] = useState(false);
-
-  async function handleSignOut() {
-    setSigningOut(true);
-    await getSupabase().auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
-
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-white/95 px-4 backdrop-blur sm:px-6">
       <div className="flex min-w-0 items-center gap-2">
@@ -49,13 +37,13 @@ export default function Topbar({
           <img
             src={tenantLogoUrl}
             alt=""
-            className="h-7 w-7 shrink-0 rounded object-contain"
+            className="max-h-[68px] max-w-[68px] shrink-0 rounded-xl object-contain"
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         )}
-        <span className="truncate font-[family-name:var(--font-heading)] text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
+        <Link href="/app" className="truncate font-[family-name:var(--font-heading)] text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
           {tenantName ?? "SkyCare"}
-        </span>
+        </Link>
       </div>
 
       <div className="flex items-center gap-3">
@@ -63,26 +51,7 @@ export default function Topbar({
           {ROLE_LABELS[role] ?? role}
         </span>
         <NotificationsBell basePath="/app" />
-        <Link
-          href="/app/profile"
-          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-90"
-          aria-label="My profile"
-        >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="" className="h-full w-full rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          ) : (
-            initials(userName)
-          )}
-        </Link>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          disabled={signingOut}
-          className="focus-ring flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-red-50 hover:text-[var(--color-destructive)] disabled:opacity-50"
-        >
-          <LogOut size={16} aria-hidden="true" />
-          <span className="hidden sm:inline">{signingOut ? "Signing out…" : "Sign out"}</span>
-        </button>
+        <UserMenu userName={userName} role={role} avatarUrl={avatarUrl} />
       </div>
     </header>
   );

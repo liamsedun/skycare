@@ -1,0 +1,134 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ChevronDown,
+  CreditCard,
+  Download,
+  LogOut,
+  Settings as SettingsIcon,
+  SlidersHorizontal,
+  UserRound,
+} from "lucide-react";
+import { getSupabase } from "@/lib/supabase/client";
+import { ROLE_LABELS, initials } from "@/lib/auth";
+import type { StaffRole } from "@/lib/auth";
+
+const navigateCls =
+  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50";
+
+export default function UserMenu({
+  userName,
+  role,
+  avatarUrl,
+}: {
+  userName: string;
+  role: StaffRole;
+  avatarUrl: string | null;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const isAdmin = role === "super_admin" || role === "hospital_admin";
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onClickOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    setSigningOut(true);
+    try {
+      await getSupabase().auth.signOut();
+      router.push("/login");
+      router.refresh();
+    } finally {
+      setSigningOut(false);
+    }
+  }, [router]);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="focus-ring flex items-center gap-1.5 rounded-full p-0.5 transition-opacity duration-200 hover:opacity-90"
+        aria-label="Open account menu"
+        aria-expanded={open}
+      >
+        <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="h-full w-full rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          ) : (
+            initials(userName)
+          )}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`hidden text-[var(--color-muted-fg)] transition-transform duration-200 sm:block ${open ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-xl)]">
+          <div className="border-b border-[var(--color-border)] px-4 py-3">
+            <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{userName}</p>
+            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+              {ROLE_LABELS[role] ?? role}
+            </p>
+          </div>
+
+          <div className="space-y-0.5 p-2">
+            <Link href="/app/profile" onClick={() => setOpen(false)} className={navigateCls}>
+              <UserRound size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              Profile
+            </Link>
+            {/* Settings is a tenant-level page for admins; patients use their own portal. */}
+            {isAdmin && (
+              <Link href="/app/settings" onClick={() => setOpen(false)} className={navigateCls}>
+                <SettingsIcon size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+                Settings
+              </Link>
+            )}
+            <Link href="/app/account" onClick={() => setOpen(false)} className={navigateCls}>
+              <SlidersHorizontal size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              Account
+            </Link>
+            {isAdmin && (
+              <Link href="/app/subscription" onClick={() => setOpen(false)} className={navigateCls}>
+                <CreditCard size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+                Subscription &amp; billing
+              </Link>
+            )}
+            <Link href="/app/download" onClick={() => setOpen(false)} className={navigateCls}>
+              <Download size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              Download SkyCare app
+            </Link>
+          </div>
+
+          <div className="border-t border-[var(--color-border)] p-2">
+            <button type="button" onClick={signOut} disabled={signingOut} className={`${navigateCls} text-[var(--color-destructive)]`}>
+              <LogOut size={16} aria-hidden="true" />
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
