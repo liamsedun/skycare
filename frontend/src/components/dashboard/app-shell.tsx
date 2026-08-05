@@ -19,7 +19,7 @@ export default function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <>
+    <div className="flex min-h-screen w-full">
       {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
@@ -46,6 +46,6 @@ export default function AppShell({
           {children}
         </main>
       </div>
-    </>
+    </div>
   );
 }

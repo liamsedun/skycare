@@ -69,7 +69,7 @@ export default function PatientShell({
   );
 
   return (
-    <>
+    <div className="flex min-h-screen w-full">
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <button
@@ -160,6 +160,6 @@ export default function PatientShell({
         </header>
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
-    </>
+    </div>
   );
 }
