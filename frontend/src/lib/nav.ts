@@ -1,6 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import {
   CalendarClock,
+  CalendarDays,
+  CalendarRange,
   FlaskConical,
   FileText,
   LayoutDashboard,
@@ -56,6 +58,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/app/expenses", label: "Expenses", icon: Wallet, roles: ADMIN },
   { href: "/app/other-income", label: "Other income", icon: TrendingUp, roles: ADMIN },
   { href: "/app/staff", label: "Staff", icon: UserCog, roles: ADMIN },
+  { href: "/app/leave", label: "Leave", icon: CalendarDays },
+  { href: "/app/roster", label: "Roster", icon: CalendarRange },
   { href: "/app/mail", label: "Mail", icon: Mail, roles: ADMIN },
   { href: "/app/chats", label: "Chats", icon: MessageSquare, roles: ADMIN },
   { href: "/app/reports", label: "Reports", icon: FileText, roles: [...CLINICAL, "super_admin"] },

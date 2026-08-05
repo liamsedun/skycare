@@ -283,9 +283,19 @@ function DeclareModal({
     String(Math.round((Number(invoice.total_amount) - Number(invoice.paid_amount)) * 100) / 100)
   );
   const [method, setMethod] = useState("bank_transfer");
+  const [accounts, setAccounts] = useState<{ id: string; bank_name: string; account_name: string; account_number: string }[]>([]);
 
   const due = Number(invoice.total_amount) - Number(invoice.paid_amount);
   const parsed = Number(amount);
+
+  useEffect(() => {
+    fetch("/api/settings/bank-accounts", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b) => {
+        if (b.data) setAccounts(b.data);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div
@@ -339,6 +349,19 @@ function DeclareModal({
               <option value="pos">POS / card at the hospital</option>
             </select>
           </div>
+          {method === "bank_transfer" && accounts.length > 0 && (
+            <div className="rounded-lg border border-[var(--color-border)] bg-slate-50 p-3">
+              <p className="text-xs font-semibold text-[var(--color-foreground)]">Pay into any of these accounts</p>
+              <ul className="mt-2 space-y-2">
+                {accounts.map((a) => (
+                  <li key={a.id} className="text-xs text-[var(--color-muted-fg)]">
+                    <span className="font-semibold text-[var(--color-foreground)]">{a.bank_name}</span> — {a.account_name} ·{" "}
+                    <span className="font-mono font-semibold text-[var(--color-foreground)]">{a.account_number}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <p className="text-xs text-[var(--color-muted-fg)]">
             Your payment will show as <strong>pending</strong> until billing staff confirm it. If the POS payment was
             processed by the hospital directly, you don&apos;t need to declare it.

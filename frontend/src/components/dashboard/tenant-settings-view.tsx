@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Building2, Hash, Palette, Save } from "lucide-react";
 import { DEFAULT_TENANT_SETTINGS, PREFIX_PATTERN } from "@/lib/tenant-settings";
+import BankAccountsSection from "@/components/dashboard/bank-accounts-section";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -273,6 +274,8 @@ export default function TenantSettingsView() {
           </label>
         </div>
       </section>
+
+      <BankAccountsSection />
 
       <div className="flex justify-end">
         <button

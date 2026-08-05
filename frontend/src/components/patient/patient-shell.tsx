@@ -7,6 +7,7 @@ import { HeartPulse, LogOut, Menu, X } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { initials } from "@/lib/auth";
 import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
+import NotificationsBell from "@/components/notifications-bell";
 
 export default function PatientShell({
   tenantName,
@@ -139,6 +140,7 @@ export default function PatientShell({
             <span className="hidden rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)] sm:inline-block">
               Patient
             </span>
+            <NotificationsBell basePath="/patient" />
             <span
               className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white"
               aria-hidden="true"
