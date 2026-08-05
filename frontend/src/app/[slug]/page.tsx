@@ -7,8 +7,10 @@ import {
   MapPin,
   Phone,
   Stethoscope,
+  UserRound,
 } from "lucide-react";
 import { getHost, loadTenant } from "@/lib/tenant";
+import { createServiceClient } from "@/lib/supabase/server";
 import TenantMobileNav from "@/components/tenant/tenant-mobile-nav";
 
 export const dynamic = "force-dynamic";
@@ -27,6 +29,14 @@ export default async function TenantWebsitePage({
   const website = tenant.website as Record<string, string> | null;
   const tagline = website?.tagline ?? `${tenant.name} — care you can trust`;
   const about = website?.about ?? "Quality healthcare for your community.";
+
+  const svc = createServiceClient();
+  const { data: doctors } = await svc
+    .from("landing_doctors")
+    .select("*")
+    .eq("tenant_id", tenant.id)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
 
   return (
     <main className="min-h-screen bg-white">
@@ -106,6 +116,58 @@ export default async function TenantWebsitePage({
           </div>
         </div>
       </section>
+
+      {/* DOCTORS */}
+      {doctors && doctors.length > 0 && (
+        <section id="doctors" className="bg-slate-50 py-16">
+          <div className="mx-auto max-w-6xl px-4">
+            <h2 className="text-2xl font-bold">Meet Our Doctors</h2>
+            <p className="mt-2 text-slate-600">
+              Our team of qualified and compassionate medical professionals is ready to care for you.
+            </p>
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {doctors.map((doctor) => (
+                <div
+                  key={doctor.id}
+                  className="rounded-xl border border-slate-100 bg-white p-6 text-center shadow-sm"
+                >
+                  <div className="mx-auto flex h-[110px] w-[110px] items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-sky-600 to-blue-800 text-white shadow-md">
+                    {doctor.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={doctor.image_url} alt={doctor.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <UserRound size={44} aria-hidden="true" />
+                    )}
+                  </div>
+                  <h3 className="mt-4 font-semibold">{doctor.name}</h3>
+                  <p className="text-sm text-slate-600">{doctor.specialty}</p>
+                  <span
+                    className={`mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                      doctor.available ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-1.5 w-1.5 rounded-full ${
+                        doctor.available ? "bg-emerald-500" : "bg-amber-500"
+                      }`}
+                    />
+                    {doctor.available ? "Available" : "Limited Availability"}
+                  </span>
+                  {doctor.availability && (
+                    <p className="mt-2 text-xs text-slate-500">{doctor.availability}</p>
+                  )}
+                  <Link
+                    href={`/appointment?hospital=${tenant.slug}`}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-sky-100 px-4 py-2.5 text-xs font-semibold text-sky-700 transition-all hover:bg-sky-600 hover:text-white"
+                  >
+                    <CalendarCheck size={14} /> Book Appointment
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CONTACT */}
       <section id="contact" className="bg-slate-50 py-16">
