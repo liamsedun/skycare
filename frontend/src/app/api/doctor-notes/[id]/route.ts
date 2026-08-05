@@ -64,26 +64,38 @@ export const GET = withAuth(async (req, ctx) => {
   return ok(note);
 });
 
-// PUT /api/doctor-notes/[id] — clinical staff update
+// PUT /api/doctor-notes/[id] — clinical staff update; patient_api may update their own family's non-confidential note content
 export const PUT = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (!CLINICAL_ROLES.includes(ctx.role)) {
-    throw new ForbiddenError("Only clinical staff can edit doctor notes");
-  }
   const id = idFrom(req);
   const body = await req.json();
 
   const { data: existing, error: getErr } = await ctx.svc
     .from("doctor_notes")
-    .select("id, patient_id")
+    .select("id, patient_id, is_confidential")
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .maybeSingle();
   if (getErr || !existing) throw new NotFoundError("Doctor note not found");
 
+  const isPatient = ctx.role === "patient_api";
+  if (isPatient) {
+    if (existing.is_confidential) throw new NotFoundError("Doctor note not found");
+    const ids = await familyPatientIds(ctx);
+    if (!ids.includes(existing.patient_id)) throw new NotFoundError("Doctor note not found");
+  } else if (!CLINICAL_ROLES.includes(ctx.role)) {
+    throw new ForbiddenError("Only clinical staff can edit doctor notes");
+  }
+
   const patch: Record<string, any> = {};
-  if (body.appointmentId !== undefined) patch.appointment_id = body.appointmentId || null;
-  if (body.visitDate !== undefined) patch.visit_date = body.visitDate || new Date().toISOString().slice(0, 10);
+  if (body.appointmentId !== undefined) {
+    if (isPatient) throw new ValidationError("Patients can only update note content");
+    patch.appointment_id = body.appointmentId || null;
+  }
+  if (body.visitDate !== undefined) {
+    if (isPatient) throw new ValidationError("Patients can only update note content");
+    patch.visit_date = body.visitDate || new Date().toISOString().slice(0, 10);
+  }
   if (body.vitals !== undefined) patch.vitals = body.vitals ?? {};
   if (body.testsProcedures !== undefined) patch.tests_procedures = body.testsProcedures ?? {};
   if (body.clinicalFindings !== undefined) patch.clinical_findings = body.clinicalFindings?.trim() || null;
@@ -92,7 +104,10 @@ export const PUT = withAuth(async (req, ctx) => {
   if (body.treatmentRecommendations !== undefined) patch.treatment_recommendations = body.treatmentRecommendations?.trim() || null;
   if (body.nextVisitDate !== undefined) patch.next_visit_date = body.nextVisitDate || null;
   if (body.nextVisitReason !== undefined) patch.next_visit_reason = body.nextVisitReason?.trim() || null;
-  if (body.isConfidential !== undefined) patch.is_confidential = !!body.isConfidential;
+  if (body.isConfidential !== undefined) {
+    if (isPatient) throw new ValidationError("Patients cannot change confidentiality");
+    patch.is_confidential = !!body.isConfidential;
+  }
 
   if (Object.keys(patch).length === 0) throw new ValidationError("No fields to update");
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronDown, ClipboardList, FileText, Stethoscope } from "lucide-react";
+import { ChevronDown, ClipboardList, FileText, Loader2, PenLine, Stethoscope } from "lucide-react";
 
 interface MedicalRecord {
   id: string;
@@ -24,6 +24,7 @@ interface DoctorNote {
   diagnosis: Record<string, unknown>;
   medications: Array<Record<string, string | number>>;
   vitals: Record<string, string | number>;
+  tests_procedures: Record<string, string | number>;
   next_visit_date: string | null;
   next_visit_reason: string | null;
   created_at: string;
@@ -53,9 +54,286 @@ const recordTypeLabels: Record<string, string> = {
   discharge_summary: "Discharge summary",
 };
 
+const VITAL_FIELDS: Array<{ key: string; label: string; placeholder?: string }> = [
+  { key: "bp", label: "Blood pressure", placeholder: "e.g. 120/80" },
+  { key: "weight", label: "Weight", placeholder: "e.g. 70 kg" },
+  { key: "height", label: "Height", placeholder: "e.g. 172 cm" },
+  { key: "temperature", label: "Temperature", placeholder: "e.g. 36.8°C" },
+  { key: "heart_rate", label: "Heart rate", placeholder: "e.g. 78 bpm" },
+  { key: "respiratory_rate", label: "Respiratory rate", placeholder: "e.g. 16/min" },
+  { key: "allergies", label: "Allergies", placeholder: "e.g. Penicillin" },
+];
+
+const TEST_FIELDS: Array<{ key: string; label: string }> = [
+  { key: "ecg", label: "ECG" },
+  { key: "xray", label: "X-Ray" },
+  { key: "blood_test", label: "Blood test" },
+  { key: "urine_test", label: "Urine test" },
+  { key: "saliva_test", label: "Saliva test" },
+  { key: "other_tests", label: "Other tests" },
+];
+
+interface NoteForm {
+  vitals: Record<string, string>;
+  testsProcedures: Record<string, string>;
+  clinicalFindings: string;
+  diagnosis: { primary: string; secondary: string; suspected: string };
+  medications: Array<{ drug_name: string; dosage: string; frequency: string; duration: string }>;
+  treatmentRecommendations: string;
+  nextVisitDate: string;
+  nextVisitReason: string;
+}
+
+function formFromNote(n: DoctorNote): NoteForm {
+  const v = (n.vitals ?? {}) as Record<string, unknown>;
+  const t = (n.tests_procedures ?? {}) as Record<string, unknown>;
+  const d = (n.diagnosis ?? {}) as Record<string, unknown>;
+  return {
+    vitals: Object.fromEntries(Object.entries(v).map(([k, val]) => [k, String(val ?? "")])),
+    testsProcedures: Object.fromEntries(Object.entries(t).map(([k, val]) => [k, String(val ?? "")])),
+    clinicalFindings: n.clinical_findings ?? "",
+    diagnosis: {
+      primary: String(d.primary ?? ""),
+      secondary: Array.isArray(d.secondary) ? d.secondary.join(", ") : "",
+      suspected: Array.isArray(d.suspected) ? d.suspected.join(", ") : "",
+    },
+    medications: (n.medications ?? []).map((m) => ({
+      drug_name: String(m.drug_name ?? m.name ?? m.medication ?? ""),
+      dosage: String(m.dosage ?? ""),
+      frequency: String(m.frequency ?? ""),
+      duration: String(m.duration ?? ""),
+    })),
+    treatmentRecommendations: n.treatment_recommendations ?? "",
+    nextVisitDate: n.next_visit_date?.slice(0, 10) ?? "",
+    nextVisitReason: n.next_visit_reason ?? "",
+  };
+}
+
+function buildPayload(form: NoteForm): Record<string, unknown> {
+  const meds = form.medications.filter((m) => m.drug_name.trim());
+  return {
+    vitals: Object.fromEntries(Object.entries(form.vitals).filter(([, val]) => val)),
+    testsProcedures: Object.fromEntries(Object.entries(form.testsProcedures).filter(([, val]) => val)),
+    clinicalFindings: form.clinicalFindings.trim() || undefined,
+    diagnosis: {
+      ...(form.diagnosis.primary.trim() ? { primary: form.diagnosis.primary.trim() } : {}),
+      ...(form.diagnosis.secondary.trim() ? { secondary: form.diagnosis.secondary.split(",").map((s) => s.trim()).filter(Boolean) } : {}),
+      ...(form.diagnosis.suspected.trim() ? { suspected: form.diagnosis.suspected.split(",").map((s) => s.trim()).filter(Boolean) } : {}),
+    },
+    medications: meds,
+    treatmentRecommendations: form.treatmentRecommendations.trim() || undefined,
+    nextVisitDate: form.nextVisitDate || undefined,
+    nextVisitReason: form.nextVisitReason.trim() || undefined,
+  };
+}
+
+const inputCls =
+  "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
+const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
+
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function NoteEditModal({
+  note,
+  onClose,
+  onSaved,
+}: {
+  note: DoctorNote;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState<NoteForm>(() => formFromNote(note));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function updateVital(key: string, value: string) {
+    setForm((f) => ({ ...f, vitals: { ...f.vitals, [key]: value } }));
+  }
+
+  function updateTest(key: string, value: string) {
+    setForm((f) => ({ ...f, testsProcedures: { ...f.testsProcedures, [key]: value } }));
+  }
+
+  function updateDiagnosis(key: "primary" | "secondary" | "suspected", value: string) {
+    setForm((f) => ({ ...f, diagnosis: { ...f.diagnosis, [key]: value } }));
+  }
+
+  function updateMedication(i: number, patch: Partial<{ drug_name: string; dosage: string; frequency: string; duration: string }>) {
+    setForm((f) => {
+      const meds = [...f.medications];
+      meds[i] = { ...meds[i], ...patch };
+      return { ...f, medications: meds };
+    });
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/doctor-notes/${note.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload(form)),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to save note");
+      onSaved();
+    } catch (e2) {
+      setError(e2 instanceof Error ? e2.message : "Failed to save note");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Edit doctor note"
+    >
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Edit doctor note</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={save} className="mt-5 space-y-5">
+          {error && (
+            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Edits are recorded with your patient account and visible to your hospital&apos;s staff.
+          </p>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">1. Vital signs & measurements</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {VITAL_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label className={labelCls} htmlFor={`pr-v-${f.key}`}>{f.label}</label>
+                  <input id={`pr-v-${f.key}`} className={inputCls} placeholder={f.placeholder} value={form.vitals[f.key] ?? ""} onChange={(e) => updateVital(f.key, e.target.value)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">2. Tests / procedures conducted</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {TEST_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label className={labelCls} htmlFor={`pr-t-${f.key}`}>{f.label}</label>
+                  <input id={`pr-t-${f.key}`} className={inputCls} placeholder="Result / notes" value={form.testsProcedures[f.key] ?? ""} onChange={(e) => updateTest(f.key, e.target.value)} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls} htmlFor="pr-findings">3. Clinical findings / observations</label>
+            <textarea id="pr-findings" rows={3} className={inputCls} placeholder="Patient complaints, examination findings, notable abnormalities…" value={form.clinicalFindings} onChange={(e) => setForm((f) => ({ ...f, clinicalFindings: e.target.value }))} />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">4. Diagnosis / assessment</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label className={labelCls} htmlFor="pr-d-primary">Primary</label>
+                <input id="pr-d-primary" className={inputCls} placeholder="e.g. Type 2 diabetes" value={form.diagnosis.primary} onChange={(e) => updateDiagnosis("primary", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="pr-d-secondary">Secondary (comma-separated)</label>
+                <input id="pr-d-secondary" className={inputCls} placeholder="e.g. Hypertension" value={form.diagnosis.secondary} onChange={(e) => updateDiagnosis("secondary", e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="pr-d-suspected">Suspected (comma-separated)</label>
+                <input id="pr-d-suspected" className={inputCls} placeholder="e.g. Sleep apnea" value={form.diagnosis.suspected} onChange={(e) => updateDiagnosis("suspected", e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">5. Medications prescribed</p>
+            <div className="space-y-2">
+              {form.medications.map((m, i) => (
+                <div key={i} className="grid grid-cols-2 gap-2 rounded-lg border border-[var(--color-border)] bg-slate-50/60 p-3 sm:grid-cols-5">
+                  <input className={inputCls} placeholder="Drug name" value={m.drug_name} onChange={(e) => updateMedication(i, { drug_name: e.target.value })} />
+                  <input className={inputCls} placeholder="Dosage" value={m.dosage} onChange={(e) => updateMedication(i, { dosage: e.target.value })} />
+                  <input className={inputCls} placeholder="Frequency" value={m.frequency} onChange={(e) => updateMedication(i, { frequency: e.target.value })} />
+                  <input className={inputCls} placeholder="Duration" value={m.duration} onChange={(e) => updateMedication(i, { duration: e.target.value })} />
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, medications: f.medications.filter((_, idx) => idx !== i) }))}
+                    className="focus-ring rounded-lg border border-[var(--color-border)] px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, medications: [...f.medications, { drug_name: "", dosage: "", frequency: "", duration: "" }] }))}
+                className="focus-ring rounded-lg border border-dashed border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
+              >
+                + Add medication
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelCls} htmlFor="pr-treat">6. Treatment / recommendations</label>
+            <textarea id="pr-treat" rows={3} className={inputCls} placeholder="Lifestyle advice, referrals, follow-up tests…" value={form.treatmentRecommendations} onChange={(e) => setForm((f) => ({ ...f, treatmentRecommendations: e.target.value }))} />
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">7. Next visit</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelCls} htmlFor="pr-next-date">Next appointment date</label>
+                <input id="pr-next-date" type="date" className={inputCls} value={form.nextVisitDate} onChange={(e) => setForm((f) => ({ ...f, nextVisitDate: e.target.value }))} />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="pr-next-reason">Reason for follow-up</label>
+                <input id="pr-next-reason" className={inputCls} placeholder="e.g. Review test results" value={form.nextVisitReason} onChange={(e) => setForm((f) => ({ ...f, nextVisitReason: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={busy}
+              className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+            >
+              {busy && <Loader2 size={15} aria-hidden="true" className="animate-spin" />}
+              {busy ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 export default function PatientRecords() {
@@ -65,6 +343,7 @@ export default function PatientRecords() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [editingNote, setEditingNote] = useState<DoctorNote | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -164,25 +443,36 @@ export default function PatientRecords() {
                 const vitals = note.vitals ?? {};
                 return (
                   <div key={note.id} className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-                    <button
-                      type="button"
-                      onClick={() => toggle(`n-${note.id}`)}
-                      className="focus-ring flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Stethoscope size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--color-foreground)]">
-                            Visit · {fmtDate(note.visit_date)}
-                          </p>
-                          <p className="text-xs text-[var(--color-muted-fg)]">
-                            {note.users?.full_name ?? "Doctor"}
-                            {note.next_visit_date ? ` · Next visit: ${fmtDate(note.next_visit_date)}` : ""}
-                          </p>
+                    <div className="flex items-center gap-2 px-4 py-3.5">
+                      <button
+                        type="button"
+                        onClick={() => toggle(`n-${note.id}`)}
+                        className="focus-ring flex w-full min-w-0 items-center justify-between gap-3 text-left"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Stethoscope size={16} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                              Visit · {fmtDate(note.visit_date)}
+                            </p>
+                            <p className="text-xs text-[var(--color-muted-fg)]">
+                              {note.users?.full_name ?? "Doctor"}
+                              {note.next_visit_date ? ` · Next visit: ${fmtDate(note.next_visit_date)}` : ""}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <ChevronDown size={16} aria-hidden="true" className={`text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-                    </button>
+                        <ChevronDown size={16} aria-hidden="true" className={`shrink-0 text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingNote(note)}
+                        className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100 hover:text-[var(--color-primary)]"
+                        aria-label="Edit note"
+                        title="Edit note"
+                      >
+                        <PenLine size={15} />
+                      </button>
+                    </div>
                     {open && (
                       <div className="space-y-3 border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4 text-sm">
                         {Object.keys(vitals).length > 0 && (
@@ -275,6 +565,17 @@ export default function PatientRecords() {
             </section>
           )}
         </>
+      )}
+
+      {editingNote && (
+        <NoteEditModal
+          note={editingNote}
+          onClose={() => setEditingNote(null)}
+          onSaved={() => {
+            setEditingNote(null);
+            load();
+          }}
+        />
       )}
     </div>
   );
