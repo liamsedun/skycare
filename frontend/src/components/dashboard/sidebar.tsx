@@ -11,12 +11,10 @@ import { SkyCareMark } from "@/components/landing/skycare-logo";
 export default function Sidebar({
   role,
   tenantName,
-  tenantLogoUrl,
   onClose,
 }: {
   role: StaffRole;
   tenantName: string | null;
-  tenantLogoUrl: string | null;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
@@ -47,19 +45,9 @@ export default function Sidebar({
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
           Hospital
         </p>
-        <div className="mt-0.5 flex min-w-0 items-center gap-2">
-          {tenantLogoUrl && (
-            <img
-              src={tenantLogoUrl}
-              alt=""
-              className="h-6 w-6 shrink-0 rounded object-contain"
-              onError={(e) => { e.currentTarget.style.display = "none"; }}
-            />
-          )}
-          <p className="truncate text-sm font-medium" title={tenantName ?? undefined}>
-            {tenantName ?? "Platform"}
-          </p>
-        </div>
+        <p className="mt-0.5 truncate text-sm font-medium" title={tenantName ?? undefined}>
+          {tenantName ?? "Platform"}
+        </p>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Main navigation">

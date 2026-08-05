@@ -100,19 +100,9 @@ export default function PatientShell({
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
                   Hospital
                 </p>
-                <div className="mt-0.5 flex min-w-0 items-center gap-2">
-                  {tenantLogoUrl && (
-                    <img
-                      src={tenantLogoUrl}
-                      alt=""
-                      className="h-6 w-6 shrink-0 rounded object-contain"
-                      onError={(e) => { e.currentTarget.style.display = "none"; }}
-                    />
-                  )}
-                  <p className="truncate text-sm font-medium" title={tenantName ?? undefined}>
-                    {tenantName ?? "SkyCare"}
-                  </p>
-                </div>
+                <p className="mt-0.5 truncate text-sm font-medium" title={tenantName ?? undefined}>
+                  {tenantName ?? "SkyCare"}
+                </p>
               </div>
               {nav}
             </aside>
@@ -127,19 +117,9 @@ export default function PatientShell({
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
               Hospital
             </p>
-            <div className="mt-0.5 flex min-w-0 items-center gap-2">
-              {tenantLogoUrl && (
-                <img
-                  src={tenantLogoUrl}
-                  alt=""
-                  className="h-6 w-6 shrink-0 rounded object-contain"
-                  onError={(e) => { e.currentTarget.style.display = "none"; }}
-                />
-              )}
-              <p className="truncate text-sm font-medium" title={tenantName ?? undefined}>
-                {tenantName ?? "SkyCare"}
-              </p>
-            </div>
+            <p className="mt-0.5 truncate text-sm font-medium" title={tenantName ?? undefined}>
+              {tenantName ?? "SkyCare"}
+            </p>
           </div>
           {nav}
         </div>
@@ -147,7 +127,7 @@ export default function PatientShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-[var(--color-border)] bg-white/95 px-4 backdrop-blur sm:px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -156,8 +136,16 @@ export default function PatientShell({
             >
               <Menu size={20} aria-hidden="true" />
             </button>
-            <span className="font-[family-name:var(--font-heading)] text-base font-semibold sm:text-lg">
-              {userName.split(/\s+/)[0] ?? "Patient"}
+            {tenantLogoUrl && (
+              <img
+                src={tenantLogoUrl}
+                alt=""
+                className="h-7 w-7 shrink-0 rounded object-contain"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            )}
+            <span className="truncate font-[family-name:var(--font-heading)] text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
+              {tenantName ?? "SkyCare"}
             </span>
           </div>
 
