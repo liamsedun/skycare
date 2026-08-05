@@ -21,9 +21,9 @@ export default async function AppLayout({
   const role = claims.role;
 
   const [profileRes, tenantRes] = await Promise.all([
-    supabase.from("users").select("full_name, is_active").eq("id", user.id).maybeSingle(),
+    supabase.from("users").select("full_name, is_active, avatar_url").eq("id", user.id).maybeSingle(),
     claims.tenantId
-      ? supabase.from("tenants").select("name").eq("id", claims.tenantId).maybeSingle()
+      ? supabase.from("tenants").select("name, logo_url").eq("id", claims.tenantId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -36,9 +36,11 @@ export default async function AppLayout({
 
   const userName = profileRes.data?.full_name ?? user.email ?? "Staff";
   const tenantName = tenantRes.data?.name ?? null;
+  const tenantLogoUrl = tenantRes.data?.logo_url ?? null;
+  const avatarUrl = profileRes.data?.avatar_url ?? null;
 
   return (
-    <AppShell role={role} tenantName={tenantName} userName={userName}>
+    <AppShell role={role} tenantName={tenantName} userName={userName} tenantLogoUrl={tenantLogoUrl} avatarUrl={avatarUrl}>
       {children}
     </AppShell>
   );

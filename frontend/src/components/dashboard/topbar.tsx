@@ -12,10 +12,12 @@ import NotificationsBell from "@/components/notifications-bell";
 export default function Topbar({
   userName,
   role,
+  avatarUrl,
   onOpenSidebar,
 }: {
   userName: string;
   role: StaffRole;
+  avatarUrl: string | null;
   onOpenSidebar: () => void;
 }) {
   const router = useRouter();
@@ -54,7 +56,11 @@ export default function Topbar({
           className="focus-ring flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-90"
           aria-label="My profile"
         >
-          {initials(userName)}
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="" className="h-full w-full rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+          ) : (
+            initials(userName)
+          )}
         </Link>
         <button
           type="button"

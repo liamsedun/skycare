@@ -3,19 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { HeartPulse, LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { initials } from "@/lib/auth";
 import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
 import NotificationsBell from "@/components/notifications-bell";
+import { SkyCareMark } from "@/components/landing/skycare-logo";
 
 export default function PatientShell({
   tenantName,
   userName,
+  tenantLogoUrl,
+  avatarUrl,
   children,
 }: Readonly<{
   tenantName: string | null;
   userName: string;
+  tenantLogoUrl: string | null;
+  avatarUrl: string | null;
   children: React.ReactNode;
 }>) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -61,10 +66,10 @@ export default function PatientShell({
 
   const brand = (
     <Link href="/patient" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl sky-gradient text-white">
-        <HeartPulse size={18} aria-hidden="true" />
+      <SkyCareMark size={36} rounded="rounded-xl" />
+      <span className="font-[family-name:var(--font-heading)] text-lg font-bold">
+        <span className="text-slate-900">Sky</span><span className="text-sky-600">Care</span>
       </span>
-      <span className="font-[family-name:var(--font-heading)] text-lg font-bold">SkyCare</span>
     </Link>
   );
 
@@ -95,9 +100,19 @@ export default function PatientShell({
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
                   Hospital
                 </p>
-                <p className="mt-0.5 truncate text-sm font-medium" title={tenantName ?? undefined}>
-                  {tenantName ?? "SkyCare"}
-                </p>
+                <div className="mt-0.5 flex min-w-0 items-center gap-2">
+                  {tenantLogoUrl && (
+                    <img
+                      src={tenantLogoUrl}
+                      alt=""
+                      className="h-6 w-6 shrink-0 rounded object-contain"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  )}
+                  <p className="truncate text-sm font-medium" title={tenantName ?? undefined}>
+                    {tenantName ?? "SkyCare"}
+                  </p>
+                </div>
               </div>
               {nav}
             </aside>
@@ -112,9 +127,19 @@ export default function PatientShell({
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
               Hospital
             </p>
-            <p className="mt-0.5 truncate text-sm font-medium" title={tenantName ?? undefined}>
-              {tenantName ?? "SkyCare"}
-            </p>
+            <div className="mt-0.5 flex min-w-0 items-center gap-2">
+              {tenantLogoUrl && (
+                <img
+                  src={tenantLogoUrl}
+                  alt=""
+                  className="h-6 w-6 shrink-0 rounded object-contain"
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+              )}
+              <p className="truncate text-sm font-medium" title={tenantName ?? undefined}>
+                {tenantName ?? "SkyCare"}
+              </p>
+            </div>
           </div>
           {nav}
         </div>
@@ -142,10 +167,14 @@ export default function PatientShell({
             </span>
             <NotificationsBell basePath="/patient" />
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white"
               aria-hidden="true"
             >
-              {initials(userName)}
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-full w-full rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              ) : (
+                initials(userName)
+              )}
             </span>
             <button
               type="button"

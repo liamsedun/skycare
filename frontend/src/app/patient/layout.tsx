@@ -20,9 +20,9 @@ export default async function PatientLayout({
   }
 
   const [profileRes, tenantRes] = await Promise.all([
-    supabase.from("users").select("full_name, is_active").eq("id", user.id).maybeSingle(),
+    supabase.from("users").select("full_name, is_active, avatar_url").eq("id", user.id).maybeSingle(),
     claims.tenantId
-      ? supabase.from("tenants").select("name").eq("id", claims.tenantId).maybeSingle()
+      ? supabase.from("tenants").select("name, logo_url").eq("id", claims.tenantId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -35,9 +35,11 @@ export default async function PatientLayout({
 
   const userName = profileRes.data?.full_name ?? user.email ?? "Patient";
   const tenantName = tenantRes.data?.name ?? null;
+  const tenantLogoUrl = tenantRes.data?.logo_url ?? null;
+  const avatarUrl = profileRes.data?.avatar_url ?? null;
 
   return (
-    <PatientShell tenantName={tenantName} userName={userName}>
+    <PatientShell tenantName={tenantName} userName={userName} tenantLogoUrl={tenantLogoUrl} avatarUrl={avatarUrl}>
       {children}
     </PatientShell>
   );
