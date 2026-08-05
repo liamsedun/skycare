@@ -1,5 +1,5 @@
 import {
-  withStaff,
+  withAuth,
   ok,
   okPaginated,
   ValidationError,
@@ -12,8 +12,8 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/mail/inbox?page=&pageSize= — messages sent to me
-export const GET = withStaff(async (req, ctx) => {
+// GET /api/mail/inbox?page=&pageSize= — messages sent to me (staff or patient portal user)
+export const GET = withAuth(async (req, ctx) => {
   requireTenant(ctx);
   const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
 
@@ -59,12 +59,14 @@ interface SendMailBody {
 }
 
 // POST /api/mail/inbox — send a message to one or more staff (or broadcast)
-export const POST = withStaff(async (req, ctx) => {
+export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const body = (await req.json()) as SendMailBody;
+  const isPatient = ctx.role === "patient_api";
 
   if (!body.subject?.trim()) throw new ValidationError("Subject is required");
   if (!body.body?.trim()) throw new ValidationError("Message body is required");
+  if (isPatient && body.broadcast) throw new ValidationError("Broadcast is not available to patient accounts");
 
   let recipientIds: string[] = [];
   if (body.broadcast) {
@@ -75,11 +77,13 @@ export const POST = withStaff(async (req, ctx) => {
     if (users) recipientIds = users.map((u: any) => u.id).filter((id: string) => id !== ctx.user.id);
   } else if (body.recipientIds?.length) {
     const unique = [...new Set(body.recipientIds)];
-    const { data: users } = await ctx.svc
+    let q = ctx.svc
       .from("users")
       .select("id")
       .eq("tenant_id", tenantId)
       .in("id", unique);
+    if (isPatient) q = q.neq("role", "patient_api");
+    const { data: users } = await q;
     const valid = new Set((users ?? []).map((u: any) => u.id));
     recipientIds = unique.filter((id) => valid.has(id) && id !== ctx.user.id);
   }

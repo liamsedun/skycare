@@ -1,10 +1,10 @@
-import { withStaff, okPaginated, ValidationError, requireTenant, getPagination } from "@/lib/api-utils";
+import { withAuth, okPaginated, ValidationError, requireTenant, getPagination } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/mail/sent?page=&pageSize= — messages I sent
-export const GET = withStaff(async (req, ctx) => {
+export const GET = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
 

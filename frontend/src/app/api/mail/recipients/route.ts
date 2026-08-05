@@ -1,10 +1,11 @@
-import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError, requireTenant } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/mail/recipients — staff users in this tenant (for compose), grouped staff/patients
-export const GET = withStaff(async (req, ctx) => {
+// GET /api/mail/recipients — staff users in this tenant (for compose), grouped staff/patients.
+// Patient portal callers only see staff (they cannot message other patients).
+export const GET = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
 
   const { data, error } = await ctx.svc
@@ -16,7 +17,7 @@ export const GET = withStaff(async (req, ctx) => {
 
   const users = (data ?? []).filter((u: any) => u.id !== ctx.user.id);
   const staff = users.filter((u: any) => u.role !== "patient_api");
-  const patients = users.filter((u: any) => u.role === "patient_api");
+  const patients = ctx.role === "patient_api" ? [] : users.filter((u: any) => u.role === "patient_api");
 
   return ok({ staff, patients });
 });

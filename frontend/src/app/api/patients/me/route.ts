@@ -1,7 +1,26 @@
-import { withAuth, ok, ForbiddenError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, ok, ForbiddenError, NotFoundError, ValidationError, requireTenant } from "@/lib/api-utils";
+import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
+
+const PATIENT_EDIT_FIELDS = [
+  "date_of_birth",
+  "marital_status",
+  "blood_group",
+  "genotype",
+  "medical_plan",
+  "address",
+  "city",
+  "state",
+  "allergies",
+  "chronic_conditions",
+] as const;
+
+const MARITAL_STATUSES = ["single", "married", "divorced", "widowed"];
+const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const GENOTYPES = ["AA", "AS", "SS", "AC", "SC", "CC"];
+const MEDICAL_PLANS = ["individual", "family", "organisation", "hmo"];
 
 // GET /api/patients/me — patient portal helper: returns the caller's own patient
 // record plus the family root and dependant list. Patient_api only.
@@ -23,13 +42,67 @@ export const GET = withAuth(async (req, ctx) => {
 
   const { data: family } = await ctx.svc
     .from("patients")
-    .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, dependant_relationship, is_primary_account, status, user_id")
+    .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, dependant_relationship, is_primary_account, status, user_id, marital_status, blood_group, genotype, medical_plan, address, city, state")
     .eq("tenant_id", tenantId)
     .or(`id.eq.${rootId},primary_account_id.eq.${rootId}`)
     .order("is_primary_account", { ascending: false })
     .order("created_at", { ascending: true });
 
   return ok({ selfId: self.id, rootId, family: family ?? [] });
+});
+
+// PUT /api/patients/me — the caller updates their own patient record fields
+export const PUT = withAuth(async (req, ctx) => {
+  const tenantId = requireTenant(ctx);
+  if (ctx.role !== "patient_api") {
+    throw new ForbiddenError("This endpoint is for patient portal accounts only");
+  }
+
+  const { data: self } = await ctx.svc
+    .from("patients")
+    .select("id, patient_number")
+    .eq("tenant_id", tenantId)
+    .eq("user_id", ctx.user.id)
+    .maybeSingle();
+  if (!self) throw new NotFoundError("Patient profile not found");
+
+  const body = (await req.json()) as Record<string, unknown>;
+  const patch: Record<string, unknown> = {};
+  for (const key of PATIENT_EDIT_FIELDS) {
+    if (key in body) patch[key] = body[key];
+  }
+
+  if (patch.marital_status !== undefined && !MARITAL_STATUSES.includes(patch.marital_status as string)) {
+    throw new ValidationError("Invalid marital status");
+  }
+  if (patch.blood_group !== undefined && patch.blood_group !== null && !BLOOD_GROUPS.includes(patch.blood_group as string)) {
+    throw new ValidationError("Invalid blood group");
+  }
+  if (patch.genotype !== undefined && patch.genotype !== null && !GENOTYPES.includes(patch.genotype as string)) {
+    throw new ValidationError("Invalid genotype");
+  }
+  if (patch.medical_plan !== undefined && !MEDICAL_PLANS.includes(patch.medical_plan as string)) {
+    throw new ValidationError("Invalid medical plan");
+  }
+  if (Object.keys(patch).length === 0) return ok({ ok: true });
+
+  const { data, error } = await ctx.svc
+    .from("patients")
+    .update(patch)
+    .eq("id", self.id)
+    .eq("tenant_id", tenantId)
+    .select()
+    .single();
+  if (error) throw new ValidationError(error.message);
+
+  await logAudit(req, ctx, {
+    action: "update",
+    entityType: "patients",
+    entityId: self.id,
+    description: `Updated own profile (${self.patient_number})`,
+  });
+
+  return ok(data);
 });
 
 export const runtime = "nodejs";

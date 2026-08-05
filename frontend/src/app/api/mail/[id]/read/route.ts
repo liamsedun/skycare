@@ -1,11 +1,11 @@
-import { withStaff, ok, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, ok, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 // PUT /api/mail/[recipientRowId]/read — mark one of my received messages as read
-export const PUT = withStaff(async (req, ctx) => {
+export const PUT = withAuth(async (req, ctx) => {
   requireTenant(ctx);
   const segs = req.nextUrl.pathname.split("/").filter(Boolean);
   const id = segs[segs.length - 2]!;

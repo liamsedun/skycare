@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { ChevronDown, Landmark, ReceiptText } from "lucide-react";
 
 interface InvoiceItem {
@@ -239,6 +240,14 @@ export default function PatientBilling() {
                         </button>
                       </div>
                     )}
+                    <div className="mt-3 flex justify-end border-t border-[var(--color-border)] pt-3">
+                      <Link
+                        href={`/patient/receipt/${inv.id}`}
+                        className="focus-ring inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
+                      >
+                        <ReceiptText size={15} aria-hidden="true" /> View receipt
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
