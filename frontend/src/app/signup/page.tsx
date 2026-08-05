@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, Check, Globe, Lock, Mail, Phone, User } from "lucide-react";
+import { useState } from "react";
+import { Building2, Check, Eye, EyeOff, Globe, Mail, Phone, User } from "lucide-react";
 import { SkyCareLogo } from "@/components/landing/skycare-logo";
 
 function NurseIllustration() {
@@ -40,6 +41,7 @@ function NurseIllustration() {
 }
 
 export default function SignupPage() {
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4 py-10">
       {/* decorative floating blobs */}
@@ -153,14 +155,22 @@ export default function SignupPage() {
             </div>
             <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 required
                 minLength={8}
                 placeholder="Create password (8+ chars)"
-                className="w-full rounded-xl border-[1.5px] border-slate-200 bg-slate-50/60 py-3 pl-4 pr-11 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
+                className="w-full rounded-xl border-[1.5px] border-slate-200 bg-slate-50/60 py-3 pl-4 pr-12 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
               />
-              <Lock size={18} aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 transition-colors duration-200 hover:text-slate-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+              >
+                {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+              </button>
             </div>
             <button
               type="submit"
