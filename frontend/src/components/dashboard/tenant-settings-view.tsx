@@ -1,13 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, Hash, Palette, Save } from "lucide-react";
+import { Building2, CreditCard, Hash, Palette, Save } from "lucide-react";
 import { DEFAULT_TENANT_SETTINGS, PREFIX_PATTERN } from "@/lib/tenant-settings";
 import BankAccountsSection from "@/components/dashboard/bank-accounts-section";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
+
+interface PaystackSettings {
+  publicKey?: string | null;
+  secretKeyConfigured?: boolean;
+  webhookSecretConfigured?: boolean;
+  configured?: boolean;
+}
 
 interface SettingsPayload {
   name: string;
@@ -27,6 +34,7 @@ interface SettingsPayload {
     invoicePrefix?: string;
     smsProvider?: string | null;
     labAutoFill?: boolean;
+    paystack?: PaystackSettings;
   };
 }
 
@@ -36,6 +44,18 @@ export default function TenantSettingsView() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Paystack key inputs — held separately so untouched fields are NOT sent
+  // back (only edited keys are patched; empty edited field = clear the key).
+  const [psKeys, setPsKeys] = useState<{ publicKey: string; secretKey: string; webhookSecret: string }>({
+    publicKey: "",
+    secretKey: "",
+    webhookSecret: "",
+  });
+  const [psEdited, setPsEdited] = useState<{ publicKey: boolean; secretKey: boolean; webhookSecret: boolean }>({
+    publicKey: false,
+    secretKey: false,
+    webhookSecret: false,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,6 +109,14 @@ export default function TenantSettingsView() {
           throw new Error(`${key} must be letters, numbers, - or _ (max 12 chars)`);
         }
       }
+      const settings: Record<string, unknown> = { ...form.settings };
+      // Only include paystack keys that were edited — "" (blank) clears, non-blank sets.
+      const paystackPatch: Record<string, string> = {};
+      (["publicKey", "secretKey", "webhookSecret"] as const).forEach((k) => {
+        if (psEdited[k]) paystackPatch[k] = psKeys[k].trim();
+      });
+      if (Object.keys(paystackPatch).length > 0) settings.paystack = paystackPatch;
+
       const res = await fetch("/api/tenant-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -105,12 +133,14 @@ export default function TenantSettingsView() {
             currency: form.currency,
             timezone: form.timezone,
           },
-          settings: form.settings,
+          settings,
         }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to save settings");
       setSuccess("Settings saved.");
+      setPsEdited({ publicKey: false, secretKey: false, webhookSecret: false });
+      setPsKeys({ publicKey: "", secretKey: "", webhookSecret: "" });
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save settings");
@@ -272,6 +302,86 @@ export default function TenantSettingsView() {
               <span className="block text-xs text-[var(--color-muted-fg)]">Pre-fill test result values from the previous result.</span>
             </span>
           </label>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
+        <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-3">
+          <CreditCard size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
+          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Online payments (Paystack)</h2>
+          {form.settings.paystack?.configured ? (
+            <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              Active
+            </span>
+          ) : (
+            <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+              Not configured
+            </span>
+          )}
+        </header>
+        <div className="space-y-4 p-4">
+          <p className="text-xs text-[var(--color-muted-fg)]">
+            Enter your Paystack API keys so patients can pay invoices online with a card. When keys are active, patients
+            see a <strong>Pay online</strong> option on their billing page. Leave a field blank to keep the current
+            value; save a blank field to remove that key. Keys are stored per hospital and never shown again after
+            saving.
+          </p>
+          <div>
+            <label className={labelCls} htmlFor="s-ps-public">Public key</label>
+            <input
+              id="s-ps-public"
+              type="text"
+              placeholder={
+                form.settings.paystack?.publicKey
+                  ? `Current: ${form.settings.paystack.publicKey} (leave blank to keep)`
+                  : "pk_live_… or pk_test_…"
+              }
+              value={psKeys.publicKey}
+              onChange={(e) => {
+                setPsKeys((k) => ({ ...k, publicKey: e.target.value }));
+                setPsEdited((k) => ({ ...k, publicKey: true }));
+              }}
+              className={inputCls}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="s-ps-secret">Secret key</label>
+            <input
+              id="s-ps-secret"
+              type="password"
+              placeholder={form.settings.paystack?.secretKeyConfigured ? "Current key is set — leave blank to keep" : "sk_live_… or sk_test_…"}
+              value={psKeys.secretKey}
+              onChange={(e) => {
+                setPsKeys((k) => ({ ...k, secretKey: e.target.value }));
+                setPsEdited((k) => ({ ...k, secretKey: true }));
+              }}
+              className={inputCls}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="s-ps-webhook">Webhook secret</label>
+            <input
+              id="s-ps-webhook"
+              type="password"
+              placeholder={form.settings.paystack?.webhookSecretConfigured ? "Current secret is set — leave blank to keep" : "SHA-512 secret from your Paystack dashboard"}
+              value={psKeys.webhookSecret}
+              onChange={(e) => {
+                setPsKeys((k) => ({ ...k, webhookSecret: e.target.value }));
+                setPsEdited((k) => ({ ...k, webhookSecret: true }));
+              }}
+              className={inputCls}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+          <p className="text-xs text-[var(--color-muted-fg)]">
+            In Paystack, set the webhook URL to <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">https://your-hospital-domain/api/payments/webhook</code>{" "}
+            and paste the webhook signature secret above so payments are confirmed automatically.
+          </p>
         </div>
       </section>
 

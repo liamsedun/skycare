@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, Landmark, ReceiptText } from "lucide-react";
 
 interface InvoiceItem {
@@ -65,6 +66,9 @@ export default function PatientBilling() {
   const [declareInvoice, setDeclareInvoice] = useState<Invoice | null>(null);
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [onlineEnabled, setOnlineEnabled] = useState(false);
+  const searchParams = useSearchParams();
+  const paystackStatus = searchParams.get("paystack");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,6 +88,27 @@ export default function PatientBilling() {
     load();
   }, [load]);
 
+  useEffect(() => {
+    fetch("/api/payments/gateway-status", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b) => {
+        if (b.data?.enabled) setOnlineEnabled(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  // On return from the Paystack checkout, refresh invoice state and drop the
+  // ?paystack= param so the banner doesn't linger on future visits.
+  useEffect(() => {
+    if (paystackStatus) {
+      load();
+      const url = new URL(window.location.href);
+      url.searchParams.delete("paystack");
+      url.searchParams.delete("reference");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [paystackStatus, load]);
+
   const outstanding = invoices
     .filter((inv) => ["pending", "partially_paid"].includes(inv.status))
     .reduce((sum, inv) => sum + (Number(inv.total_amount) - Number(inv.paid_amount)), 0);
@@ -93,6 +118,22 @@ export default function PatientBilling() {
     setError(null);
     setSuccess(null);
     try {
+      if (method === "online") {
+        const res = await fetch("/api/payments/initialize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId, amount }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to start online payment");
+        if (!body.data.enabled) {
+          throw new Error("Online payments are not configured for this hospital yet.");
+        }
+        // Redirect to the Paystack checkout. On return, the callback route
+        // points us back here with ?paystack=success|failed|processing.
+        window.location.href = body.data.authorization_url;
+        return;
+      }
       const res = await fetch("/api/payments/declare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -127,6 +168,24 @@ export default function PatientBilling() {
       {success && (
         <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
           {success}
+        </p>
+      )}
+      {paystackStatus && (
+        <p
+          role="status"
+          className={`rounded-lg px-3 py-2 text-sm font-medium ${
+            paystackStatus === "success"
+              ? "bg-emerald-50 text-emerald-700"
+              : paystackStatus === "processing"
+              ? "bg-sky-50 text-sky-700"
+              : "bg-amber-50 text-amber-700"
+          }`}
+        >
+          {paystackStatus === "success"
+            ? "Payment received — thank you! Refreshing your bills…"
+            : paystackStatus === "processing"
+              ? "Payment is being confirmed… this may take a few seconds."
+              : "Online payment did not complete. You can try again below."}
         </p>
       )}
 
@@ -260,6 +319,7 @@ export default function PatientBilling() {
         <DeclareModal
           invoice={declareInvoice}
           busy={busy}
+          onlineEnabled={onlineEnabled}
           onClose={() => setDeclareInvoice(null)}
           onDeclare={declarePayment}
         />
@@ -271,18 +331,20 @@ export default function PatientBilling() {
 function DeclareModal({
   invoice,
   busy,
+  onlineEnabled,
   onClose,
   onDeclare,
 }: {
   invoice: Invoice;
   busy: boolean;
+  onlineEnabled: boolean;
   onClose: () => void;
   onDeclare: (invoiceId: string, amount: number, method: string) => void;
 }) {
   const [amount, setAmount] = useState<string>(
     String(Math.round((Number(invoice.total_amount) - Number(invoice.paid_amount)) * 100) / 100)
   );
-  const [method, setMethod] = useState("bank_transfer");
+  const [method, setMethod] = useState(onlineEnabled ? "online" : "bank_transfer");
   const [accounts, setAccounts] = useState<{ id: string; bank_name: string; account_name: string; account_number: string }[]>([]);
 
   const due = Number(invoice.total_amount) - Number(invoice.paid_amount);
@@ -345,6 +407,7 @@ function DeclareModal({
           <div>
             <label className={labelCls} htmlFor="dec-method">How did you pay?</label>
             <select id="dec-method" value={method} onChange={(e) => setMethod(e.target.value)} className={inputCls}>
+              {onlineEnabled && <option value="online">Pay online (card)</option>}
               <option value="bank_transfer">Bank transfer</option>
               <option value="pos">POS / card at the hospital</option>
             </select>
@@ -362,10 +425,18 @@ function DeclareModal({
               </ul>
             </div>
           )}
-          <p className="text-xs text-[var(--color-muted-fg)]">
-            Your payment will show as <strong>pending</strong> until billing staff confirm it. If the POS payment was
-            processed by the hospital directly, you don&apos;t need to declare it.
-          </p>
+          {method !== "online" && (
+            <p className="text-xs text-[var(--color-muted-fg)]">
+              Your payment will show as <strong>pending</strong> until billing staff confirm it. If the POS payment was
+              processed by the hospital directly, you don&apos;t need to declare it.
+            </p>
+          )}
+          {method === "online" && (
+            <p className="text-xs text-[var(--color-muted-fg)]">
+              You&apos;ll be taken to a secure Paystack checkout to pay by card. The payment is confirmed automatically
+              when it completes.
+            </p>
+          )}
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">
               Cancel
@@ -375,7 +446,7 @@ function DeclareModal({
               disabled={busy || !(parsed > 0) || parsed > due + 0.01}
               className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
             >
-              {busy ? "Submitting…" : "Declare payment"}
+              {busy ? "Submitting…" : method === "online" ? "Continue to payment" : "Declare payment"}
             </button>
           </div>
         </form>

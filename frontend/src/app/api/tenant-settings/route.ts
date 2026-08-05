@@ -6,6 +6,7 @@ import {
   requireTenant,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { isPlaceholderKey } from "@/lib/paystack";
 import {
   DEFAULT_TENANT_SETTINGS,
   PREFIX_PATTERN,
@@ -40,6 +41,36 @@ const TIMEZONES = [
   "UTC",
 ] as const;
 
+const PAYSTACK_KEYS = ["publicKey", "secretKey", "webhookSecret"] as const;
+
+function sanitizePaystackKeys(raw: Record<string, unknown>): Record<string, string | null> | null {
+  const out: Record<string, string | null> = {};
+  for (const key of PAYSTACK_KEYS) {
+    if (!(key in raw)) continue;
+    const value = raw[key];
+    if (value === null) {
+      out[key] = null; // explicit clear
+      continue;
+    }
+    if (typeof value !== "string") {
+      throw new ValidationError(`paystack.${key} must be a string`);
+    }
+    const trimmed = value.trim();
+    if (trimmed === "") {
+      out[key] = null; // blank field = clear
+      continue;
+    }
+    if (trimmed.length < 8 || trimmed.includes(" ")) {
+      throw new ValidationError(`paystack.${key} looks invalid (min 8 chars, no spaces)`);
+    }
+    if (key !== "webhookSecret" && !isPlaceholderKey(trimmed) && !/^[a-z]{2}_(live|test)_/.test(trimmed)) {
+      throw new ValidationError(`paystack.${key} should look like a Paystack key (e.g. sk_live_…)`);
+    }
+    out[key] = trimmed;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
 function sanitizeSettings(raw: Record<string, unknown>): Partial<TenantSettings> {
   const out: Partial<TenantSettings> = {};
   for (const key of ["patientPrefix", "dependantPrefix", "staffPrefix", "invoicePrefix"] as const) {
@@ -54,6 +85,19 @@ function sanitizeSettings(raw: Record<string, unknown>): Partial<TenantSettings>
   if (raw.smsProvider === "") out.smsProvider = null;
   if (typeof raw.labAutoFill === "boolean") out.labAutoFill = raw.labAutoFill;
   return out;
+}
+
+/** Strip secrets for the GET response; only a public key + configured flags leave the server. */
+function redactPaystack(paystack: Record<string, unknown> | null | undefined) {
+  if (!paystack || typeof paystack !== "object") return null;
+  const secretKey = typeof paystack.secretKey === "string" ? paystack.secretKey : null;
+  const webhookSecret = typeof paystack.webhookSecret === "string" ? paystack.webhookSecret : null;
+  return {
+    publicKey: typeof paystack.publicKey === "string" ? paystack.publicKey : null,
+    secretKeyConfigured: Boolean(secretKey && !isPlaceholderKey(secretKey)),
+    webhookSecretConfigured: Boolean(webhookSecret && !isPlaceholderKey(webhookSecret)),
+    configured: Boolean(secretKey && !isPlaceholderKey(secretKey)),
+  };
 }
 
 // GET /api/tenant-settings — admin org settings (profile + branding + prefixes)
@@ -71,7 +115,9 @@ export const GET = withStaff(async (req, ctx) => {
   if (!tenant) throw new ValidationError("Tenant not found");
 
   const settings = tenant.settings ?? {};
-  return ok({ ...tenant, settings });
+  const redacted = { ...settings };
+  if (redacted.paystack) redacted.paystack = redactPaystack(redacted.paystack);
+  return ok({ ...tenant, settings: redacted });
 });
 
 export interface UpdateTenantSettingsBody {
@@ -114,6 +160,11 @@ export const PUT = withStaff(async (req, ctx) => {
   if (body.settings) {
     const sanitized = sanitizeSettings(body.settings);
     if (Object.keys(sanitized).length > 0) settingsPatch = sanitized;
+    const paystack =
+      body.settings.paystack && typeof body.settings.paystack === "object"
+        ? sanitizePaystackKeys(body.settings.paystack as Record<string, unknown>)
+        : null;
+    if (paystack) settingsPatch = { ...(settingsPatch ?? {}), paystack };
   }
 
   if (Object.keys(patch).length === 0 && !settingsPatch) {
@@ -127,7 +178,14 @@ export const PUT = withStaff(async (req, ctx) => {
       .select("settings")
       .eq("id", tenantId)
       .maybeSingle();
-    const merged = { ...(current?.settings ?? {}), ...settingsPatch };
+    const existing = (current?.settings ?? {}) as Record<string, unknown>;
+    const merged = { ...existing, ...settingsPatch };
+    // Paystack updates are partial — merge into the existing paystack object.
+    if (settingsPatch.paystack) {
+      const existingPaystack =
+        existing.paystack && typeof existing.paystack === "object" ? (existing.paystack as Record<string, unknown>) : {};
+      merged.paystack = { ...existingPaystack, ...(settingsPatch.paystack as Record<string, unknown>) };
+    }
     patch.settings = merged;
   }
 
