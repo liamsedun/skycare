@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HeartPulse, X } from "lucide-react";
+import { X } from "lucide-react";
 import { navForRole } from "@/lib/nav";
 import type { StaffRole } from "@/lib/auth";
 import UnreadMailBadge from "@/components/dashboard/unread-mail-badge";
+import { SkyCareMark } from "@/components/landing/skycare-logo";
 
 export default function Sidebar({
   role,
   tenantName,
+  tenantLogoUrl,
   onClose,
 }: {
   role: StaffRole;
   tenantName: string | null;
+  tenantLogoUrl: string | null;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
@@ -23,11 +26,9 @@ export default function Sidebar({
     <aside className="flex h-full w-64 flex-col border-r border-[var(--color-border)] bg-white">
       <div className="flex h-16 items-center justify-between border-b border-[var(--color-border)] px-4">
         <Link href="/app" className="flex items-center gap-2" onClick={onClose}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl sky-gradient text-white">
-            <HeartPulse size={18} aria-hidden="true" />
-          </span>
+          <SkyCareMark size={36} rounded="rounded-xl" />
           <span className="font-[family-name:var(--font-heading)] text-lg font-bold">
-            SkyCare
+            <span className="text-slate-900">Sky</span><span className="text-sky-600">Care</span>
           </span>
         </Link>
         {onClose && (
@@ -46,9 +47,19 @@ export default function Sidebar({
         <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
           Hospital
         </p>
-        <p className="mt-0.5 truncate text-sm font-medium" title={tenantName ?? undefined}>
-          {tenantName ?? "Platform"}
-        </p>
+        <div className="mt-0.5 flex min-w-0 items-center gap-2">
+          {tenantLogoUrl && (
+            <img
+              src={tenantLogoUrl}
+              alt=""
+              className="h-6 w-6 shrink-0 rounded object-contain"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+          )}
+          <p className="truncate text-sm font-medium" title={tenantName ?? undefined}>
+            {tenantName ?? "Platform"}
+          </p>
+        </div>
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Main navigation">

@@ -28,6 +28,7 @@ const PROFILED_FIELDS = [
   "brand_color",
   "currency",
   "timezone",
+  "logo_url",
 ] as const;
 
 const CURRENCIES = ["NGN", "USD", "GHS", "KES", "ZAR", "GBP", "EUR"] as const;
@@ -109,7 +110,7 @@ export const GET = withStaff(async (req, ctx) => {
 
   const { data: tenant } = await ctx.svc
     .from("tenants")
-    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings")
+    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings, logo_url")
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant) throw new ValidationError("Tenant not found");
@@ -193,7 +194,7 @@ export const PUT = withStaff(async (req, ctx) => {
     .from("tenants")
     .update(patch)
     .eq("id", tenantId)
-    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings")
+    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings, logo_url")
     .single();
   if (error) throw new ValidationError(error.message);
 

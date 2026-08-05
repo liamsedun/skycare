@@ -9,11 +9,15 @@ export default function AppShell({
   role,
   tenantName,
   userName,
+  tenantLogoUrl,
+  avatarUrl,
   children,
 }: Readonly<{
   role: StaffRole;
   tenantName: string | null;
   userName: string;
+  tenantLogoUrl: string | null;
+  avatarUrl: string | null;
   children: React.ReactNode;
 }>) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,18 +34,18 @@ export default function AppShell({
             aria-label="Close navigation"
           />
           <div className="absolute inset-y-0 left-0 shadow-[var(--shadow-xl)]">
-            <Sidebar role={role} tenantName={tenantName} onClose={() => setMobileOpen(false)} />
+            <Sidebar role={role} tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen shrink-0 md:block">
-        <Sidebar role={role} tenantName={tenantName} />
+        <Sidebar role={role} tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar userName={userName} role={role} onOpenSidebar={() => setMobileOpen(true)} />
+        <Topbar userName={userName} role={role} avatarUrl={avatarUrl} onOpenSidebar={() => setMobileOpen(true)} />
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>

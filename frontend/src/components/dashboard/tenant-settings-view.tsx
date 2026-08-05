@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Building2, CreditCard, Hash, Palette, Save } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Building2, CreditCard, Hash, ImagePlus, Loader2, Palette, Save, Trash2 } from "lucide-react";
 import { DEFAULT_TENANT_SETTINGS, PREFIX_PATTERN } from "@/lib/tenant-settings";
 import BankAccountsSection from "@/components/dashboard/bank-accounts-section";
 import WebsiteDoctorsSection from "@/components/dashboard/website-doctors-section";
@@ -29,6 +29,7 @@ interface SettingsPayload {
   brand_color: string;
   currency: string;
   timezone: string;
+  logo_url: string | null;
   settings: {
     patientPrefix?: string;
     dependantPrefix?: string;
@@ -58,6 +59,30 @@ export default function TenantSettingsView() {
     secretKey: false,
     webhookSecret: false,
   });
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const fd = new FormData();
+      fd.append("logo", file);
+      const res = await fetch("/api/uploads/tenant-logo", { method: "POST", body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Upload failed");
+      set("logo_url", body.data.logo_url);
+      setSuccess("Logo uploaded — save changes to keep it.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Logo upload failed");
+    } finally {
+      setUploadingLogo(false);
+      if (logoRef.current) logoRef.current.value = "";
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +104,7 @@ export default function TenantSettingsView() {
         brand_color: d.brand_color ?? "#0ea5e9",
         currency: d.currency ?? "NGN",
         timezone: d.timezone ?? "Africa/Lagos",
+        logo_url: d.logo_url ?? null,
         settings: {
           patientPrefix: s.patientPrefix ?? DEFAULT_TENANT_SETTINGS.patientPrefix,
           dependantPrefix: s.dependantPrefix ?? DEFAULT_TENANT_SETTINGS.dependantPrefix,
@@ -134,6 +160,7 @@ export default function TenantSettingsView() {
             brand_color: form.brand_color,
             currency: form.currency,
             timezone: form.timezone,
+            logo_url: form.logo_url,
           },
           settings,
         }),
@@ -227,6 +254,50 @@ export default function TenantSettingsView() {
           <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Branding & locale</h2>
         </header>
         <div className="grid gap-4 p-4 sm:grid-cols-3">
+          <div className="sm:col-span-3">
+            <label className={labelCls} htmlFor="s-logo">Hospital logo</label>
+            <div className="flex items-center gap-3">
+              {form.logo_url ? (
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
+                  <img src={form.logo_url} alt="Hospital logo preview" className="h-full w-full object-contain" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                </span>
+              ) : (
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[var(--color-muted-fg)]">
+                  <ImagePlus size={20} aria-hidden="true" />
+                </span>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => logoRef.current?.click()}
+                    disabled={uploadingLogo}
+                    className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    {uploadingLogo ? <Loader2 size={14} aria-hidden="true" className="animate-spin" /> : <ImagePlus size={14} aria-hidden="true" />}
+                    {uploadingLogo ? "Uploading…" : form.logo_url ? "Replace" : "Upload"}
+                  </button>
+                  {form.logo_url && (
+                    <button
+                      type="button"
+                      onClick={() => set("logo_url", null)}
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--color-destructive)] transition-colors duration-200 hover:bg-red-50"
+                    >
+                      <Trash2 size={14} aria-hidden="true" /> Remove
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={logoRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={uploadLogo}
+                />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Shown next to your hospital name in the portals. Max 2 MB.</p>
+          </div>
           <div>
             <label className={labelCls} htmlFor="s-color">Brand color</label>
             <div className="flex items-center gap-2">
