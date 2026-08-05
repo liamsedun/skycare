@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { pushNotifyUsers } from "@/lib/push-send";
 
 // ============================================================================
 // NOTIFICATIONS — inserts in-app notification rows (tenant-scoped).
@@ -47,4 +48,13 @@ export async function notifyUsers(
     sent_at: new Date().toISOString(),
   }));
   await svc.from("notifications").insert(rows);
+
+  await pushNotifyUsers(svc, {
+    userIds: input.userIds,
+    type: input.type,
+    title: input.title,
+    body: input.message ?? undefined,
+    referenceType: input.referenceType,
+    referenceId: input.referenceId,
+  });
 }
