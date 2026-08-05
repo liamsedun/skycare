@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardList, Eye, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
+import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 
 const RECORD_TYPES = [
   "diagnosis",
@@ -671,6 +672,8 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                   </ul>
                 )}
               </section>
+
+              <DoctorNotesSection patientId={patient.id} />
             </div>
           ) : (
             <ErrorNote error={error ?? "Patient not found"} />

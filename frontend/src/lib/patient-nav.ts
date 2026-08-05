@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Bell,
   CalendarClock,
   FileText,
   FlaskConical,
@@ -28,5 +29,6 @@ export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
   { href: "/patient/family", label: "Family", icon: Users },
   { href: "/patient/chats", label: "Chats", icon: MessageSquare },
   { href: "/patient/internal-mail", label: "Messages", icon: Mail },
+  { href: "/patient/notifications", label: "Notifications", icon: Bell },
   { href: "/patient/profile", label: "Profile", icon: User },
 ];

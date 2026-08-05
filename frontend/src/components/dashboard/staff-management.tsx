@@ -19,6 +19,10 @@ interface StaffUser {
     department: string | null;
     specialization: string | null;
     license_number: string | null;
+    qualification: string | null;
+    employment_type: string | null;
+    years_of_exp: number | null;
+    base_salary: number | null;
     is_available: boolean;
   } | null;
 }
@@ -39,6 +43,7 @@ export default function StaffManagement({ meId }: { meId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [editTarget, setEditTarget] = useState<StaffUser | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -158,6 +163,36 @@ export default function StaffManagement({ meId }: { meId: string }) {
     }
   }
 
+  async function saveStaffDetails(form: FormData) {
+    if (!editTarget?.staff) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/staff/${editTarget.staff.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          department: form.get("department") || null,
+          specialization: form.get("specialization") || null,
+          license_number: form.get("license_number") || null,
+          qualification: form.get("qualification") || null,
+          employment_type: form.get("employment_type") || null,
+          years_of_exp: form.get("years_of_exp") ? Number(form.get("years_of_exp")) : null,
+          base_salary: form.get("base_salary") ? Number(form.get("base_salary")) : null,
+          is_available: form.get("is_available") === "on",
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to save staff details");
+      setEditTarget(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save staff details");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const inputCls =
     "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 
@@ -262,6 +297,16 @@ export default function StaffManagement({ meId }: { meId: string }) {
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                {user.staff && (
+                  <button
+                    type="button"
+                    onClick={() => setEditTarget(user)}
+                    disabled={busy}
+                    className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                  >
+                    <Pencil size={13} aria-hidden="true" /> Edit details
+                  </button>
+                )}
                 {user.role !== "super_admin" && user.id !== meId && (
                   <>
                     <button
@@ -424,6 +469,165 @@ export default function StaffManagement({ meId }: { meId: string }) {
                   className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
                 >
                   {busy ? "Creating…" : "Create account"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit staff details modal */}
+      {editTarget?.staff && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Edit staff details"
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+                Edit details — {editTarget.full_name}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEditTarget(null)}
+                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveStaffDetails(new FormData(e.currentTarget));
+              }}
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-dept">
+                    Department
+                  </label>
+                  <input
+                    id="sd-dept"
+                    name="department"
+                    className={inputCls}
+                    defaultValue={editTarget.staff.department ?? ""}
+                    placeholder="e.g. Cardiology"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-spec">
+                    Specialization
+                  </label>
+                  <input
+                    id="sd-spec"
+                    name="specialization"
+                    className={inputCls}
+                    defaultValue={editTarget.staff.specialization ?? ""}
+                    placeholder="e.g. Consultant"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-lic">
+                    License number
+                  </label>
+                  <input
+                    id="sd-lic"
+                    name="license_number"
+                    className={inputCls}
+                    defaultValue={editTarget.staff.license_number ?? ""}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-qual">
+                    Qualification
+                  </label>
+                  <input
+                    id="sd-qual"
+                    name="qualification"
+                    className={inputCls}
+                    defaultValue={editTarget.staff.qualification ?? ""}
+                    placeholder="e.g. MBBS, MD"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-emp">
+                    Employment type
+                  </label>
+                  <select
+                    id="sd-emp"
+                    name="employment_type"
+                    className={inputCls}
+                    defaultValue={editTarget.staff.employment_type ?? "full_time"}
+                  >
+                    <option value="full_time">Full time</option>
+                    <option value="part_time">Part time</option>
+                    <option value="contract">Contract</option>
+                    <option value="locum">Locum</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-years">
+                    Years of experience
+                  </label>
+                  <input
+                    id="sd-years"
+                    name="years_of_exp"
+                    type="number"
+                    min={0}
+                    className={inputCls}
+                    defaultValue={editTarget.staff.years_of_exp ?? ""}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-salary">
+                    Base salary (₦)
+                  </label>
+                  <input
+                    id="sd-salary"
+                    name="base_salary"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    className={inputCls}
+                    defaultValue={editTarget.staff.base_salary ?? ""}
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    name="is_available"
+                    defaultChecked={editTarget.staff.is_available}
+                    className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+                  />
+                  Available for duty / appointments
+                </label>
+              </div>
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                >
+                  {error}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setEditTarget(null)}
+                  className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                >
+                  {busy ? "Saving…" : "Save details"}
                 </button>
               </div>
             </form>

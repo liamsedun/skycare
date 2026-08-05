@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Inbox, Loader2, MailPlus, Send } from "lucide-react";
+import { Inbox, Loader2, MailPlus, Send, Trash2 } from "lucide-react";
 import { initials, ROLE_LABELS } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
 
@@ -98,6 +98,22 @@ export default function MailView() {
   function openMessage(msg: MailMessage) {
     setOpenId(msg.id);
     if (msg.recipientRowId && !msg.isRead) markRead(msg.recipientRowId);
+  }
+
+  async function removeMessage(m: MailMessage) {
+    if (!confirm(`Delete this ${tab === "inbox" ? "message" : "sent message"}?`)) return;
+    setError(null);
+    try {
+      const id = tab === "inbox" ? m.recipientRowId : m.id;
+      if (!id) return;
+      const res = await fetch(`/api/mail/${id}?view=${tab}`, { method: "DELETE" });
+      const b = await res.json();
+      if (!res.ok) throw new Error(b.error ?? "Failed to delete message");
+      if (tab === "inbox") setInbox((rows) => rows.filter((r) => r.recipientRowId !== id));
+      else setSent((rows) => rows.filter((r) => r.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete message");
+    }
   }
 
   async function send(e: React.FormEvent) {
@@ -257,27 +273,37 @@ export default function MailView() {
               const person = tab === "inbox" ? m.sender : null;
               return (
                 <li key={m.id}>
-                  <button
-                    type="button"
-                    onClick={() => openMessage(m)}
-                    className={`focus-ring flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${open ? "bg-[var(--color-muted)]/40" : ""}`}
-                  >
-                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${m.isRead ? "bg-slate-300" : "bg-[var(--color-primary)]"}`}>
-                      {initials(tab === "inbox" ? (person?.full_name ?? "?") : "Me")}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-baseline justify-between gap-2">
-                        <span className={`truncate text-sm ${m.isRead ? "font-medium text-[var(--color-foreground)]" : "font-bold text-[var(--color-foreground)]"}`}>
-                          {m.subject}
+                  <div className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-slate-50 ${open ? "bg-[var(--color-muted)]/40" : ""}`}>
+                    <button
+                      type="button"
+                      onClick={() => openMessage(m)}
+                      className="focus-ring flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${m.isRead ? "bg-slate-300" : "bg-[var(--color-primary)]"}`}>
+                        {initials(tab === "inbox" ? (person?.full_name ?? "?") : "Me")}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline justify-between gap-2">
+                          <span className={`truncate text-sm ${m.isRead ? "font-medium text-[var(--color-foreground)]" : "font-bold text-[var(--color-foreground)]"}`}>
+                            {m.subject}
+                          </span>
+                          <span className="shrink-0 text-xs text-[var(--color-muted-fg)]">{timeAgo(m.created_at)}</span>
                         </span>
-                        <span className="shrink-0 text-xs text-[var(--color-muted-fg)]">{timeAgo(m.created_at)}</span>
+                        <span className="block truncate text-xs text-[var(--color-muted-fg)]">
+                          {tab === "inbox" ? (person?.full_name ?? "Unknown") + (m.is_broadcast ? " · Broadcast" : "") : `${m.recipients?.length ?? 0} recipient(s)`}
+                          {!m.isRead && tab === "inbox" ? " · Unread" : ""}
+                        </span>
                       </span>
-                      <span className="block truncate text-xs text-[var(--color-muted-fg)]">
-                        {tab === "inbox" ? (person?.full_name ?? "Unknown") + (m.is_broadcast ? " · Broadcast" : "") : `${m.recipients?.length ?? 0} recipient(s)`}
-                        {!m.isRead && tab === "inbox" ? " · Unread" : ""}
-                      </span>
-                    </span>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeMessage(m)}
+                      className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-rose-50 hover:text-[var(--color-destructive)]"
+                      aria-label="Delete message"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                   {open && (
                     <div className="border-t border-[var(--color-border)] bg-[var(--color-muted)]/20 px-4 py-4">
                       <div className="whitespace-pre-wrap text-sm text-[var(--color-foreground)]">{m.body}</div>

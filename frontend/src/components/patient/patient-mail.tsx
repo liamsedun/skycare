@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Inbox, Loader2, MailPlus, Send } from "lucide-react";
+import { Inbox, Loader2, MailPlus, Send, Trash2 } from "lucide-react";
 import { initials } from "@/lib/auth";
 
 const inputCls =
@@ -103,6 +103,22 @@ export default function PatientMail() {
     const next = openId === id ? null : id;
     setOpenId(next);
     if (next) markRead(msg);
+  }
+
+  async function removeMessage(m: MailMessage) {
+    if (!confirm(`Delete this ${tab === "inbox" ? "message" : "sent message"}?`)) return;
+    setError(null);
+    try {
+      const id = tab === "inbox" ? m.recipientRowId : m.id;
+      if (!id) return;
+      const res = await fetch(`/api/mail/${id}?view=${tab}`, { method: "DELETE" });
+      const b = await res.json();
+      if (!res.ok) throw new Error(b.error ?? "Failed to delete message");
+      if (tab === "inbox") setInbox((rows) => rows.filter((r) => r.recipientRowId !== id));
+      else setSent((rows) => rows.filter((r) => r.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete message");
+    }
   }
 
   function toggleRecipient(id: string) {
@@ -252,18 +268,28 @@ export default function PatientMail() {
               const open = openId === msg.id;
               return (
                 <div key={msg.id} className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-                  <button type="button" onClick={() => toggleOpen(msg.id, msg)} className="focus-ring flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left">
-                    <div className="flex min-w-0 items-center gap-3">
-                      {!msg.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{msg.subject}</p>
-                        <p className="text-xs text-[var(--color-muted-fg)]">
-                          {msg.sender?.full_name ?? "Hospital"} · {timeAgo(msg.created_at)}
-                          {msg.is_broadcast ? " · Broadcast" : ""}
-                        </p>
+                  <div className="flex items-center gap-2 px-4 py-3.5">
+                    <button type="button" onClick={() => toggleOpen(msg.id, msg)} className="focus-ring flex w-full items-center justify-between gap-3 text-left">
+                      <div className="flex min-w-0 items-center gap-3">
+                        {!msg.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{msg.subject}</p>
+                          <p className="text-xs text-[var(--color-muted-fg)]">
+                            {msg.sender?.full_name ?? "Hospital"} · {timeAgo(msg.created_at)}
+                            {msg.is_broadcast ? " · Broadcast" : ""}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeMessage(msg)}
+                      className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-rose-50 hover:text-[var(--color-destructive)]"
+                      aria-label="Delete message"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                   {open && (
                     <div className="border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4">
                       <p className="whitespace-pre-wrap text-sm text-[var(--color-foreground)]">{msg.body}</p>
@@ -282,14 +308,24 @@ export default function PatientMail() {
             const open = openId === msg.id;
             return (
               <div key={msg.id} className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-                <button type="button" onClick={() => toggleOpen(msg.id, msg)} className="focus-ring flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{msg.subject}</p>
-                    <p className="text-xs text-[var(--color-muted-fg)]">
-                      To: {(msg.recipients ?? []).map((r) => r.full_name).join(", ") || "Hospital staff"} · {timeAgo(msg.created_at)}
-                    </p>
-                  </div>
-                </button>
+                <div className="flex items-center gap-2 px-4 py-3.5">
+                  <button type="button" onClick={() => toggleOpen(msg.id, msg)} className="focus-ring flex w-full items-center justify-between gap-3 text-left">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{msg.subject}</p>
+                      <p className="text-xs text-[var(--color-muted-fg)]">
+                        To: {(msg.recipients ?? []).map((r) => r.full_name).join(", ") || "Hospital staff"} · {timeAgo(msg.created_at)}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeMessage(msg)}
+                    className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-rose-50 hover:text-[var(--color-destructive)]"
+                    aria-label="Delete message"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
                 {open && (
                   <div className="border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4">
                     <p className="whitespace-pre-wrap text-sm text-[var(--color-foreground)]">{msg.body}</p>

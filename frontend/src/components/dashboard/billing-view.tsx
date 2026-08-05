@@ -64,6 +64,7 @@ export default function BillingView() {
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pending, setPending] = useState<PendingPayment[]>([]);
+  const [summary, setSummary] = useState<{ collected: number; outstanding: number; monthCollected: number; monthOtherIncome: number; monthTotal: number; invoiceCount: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
@@ -77,15 +78,20 @@ export default function BillingView() {
     try {
       const params = new URLSearchParams({ pageSize: "100" });
       if (filter !== "all") params.set("status", filter);
-      const [invoiceRes, pendingRes] = await Promise.all([
+      const [invoiceRes, pendingRes, summaryRes] = await Promise.all([
         fetch(`/api/invoices?${params.toString()}`, { cache: "no-store" }),
         fetch("/api/payments?status=pending&pageSize=100", { cache: "no-store" }),
+        fetch("/api/billing/summary", { cache: "no-store" }),
       ]);
       const invoiceBody = await invoiceRes.json();
       const pendingBody = await pendingRes.json();
       if (!invoiceRes.ok) throw new Error(invoiceBody.error ?? "Failed to load invoices");
       setInvoices(invoiceBody.data ?? []);
       setPending(pendingBody.data ?? []);
+      if (summaryRes.ok) {
+        const summaryBody = await summaryRes.json();
+        setSummary(summaryBody.data ?? null);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load invoices");
     } finally {
@@ -99,14 +105,12 @@ export default function BillingView() {
 
   const totals = useMemo(() => {
     let outstanding = 0;
-    let collected = 0;
     for (const inv of invoices) {
       if (["pending", "partially_paid"].includes(inv.status)) {
         outstanding += Number(inv.total_amount) - Number(inv.paid_amount);
       }
-      collected += Number(inv.paid_amount);
     }
-    return { outstanding, collected };
+    return { outstanding };
   }, [invoices]);
 
   const viewed = viewId ? invoices.find((i) => i.id === viewId) ?? null : null;
@@ -138,14 +142,18 @@ export default function BillingView() {
       )}
 
       {/* Summary cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Outstanding</p>
-          <p className="mt-1 text-2xl font-bold text-amber-600">{ngn(totals.outstanding)}</p>
+          <p className="mt-1 text-2xl font-bold text-amber-600">{summary ? ngn(summary.outstanding) : ngn(totals.outstanding)}</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Collected (shown list)</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{ngn(totals.collected)}</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Collected (all time)</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-600">{summary ? ngn(summary.collected) : "—"}</p>
+        </div>
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">This month (incl. other income)</p>
+          <p className="mt-1 text-2xl font-bold text-sky-600">{summary ? ngn(summary.monthTotal) : "—"}</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Awaiting confirmation</p>
