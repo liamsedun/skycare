@@ -442,6 +442,7 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          date_of_birth: form.get("dateOfBirth") || undefined,
           phone: form.get("phone") || undefined,
           email: form.get("email") || undefined,
           address: form.get("address") || undefined,
@@ -671,6 +672,10 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                   }}
                 >
                   {error && <ErrorNote error={error} />}
+                  <div>
+                    <label className={labelCls} htmlFor="e-dob">Date of Birth</label>
+                    <input id="e-dob" name="dateOfBirth" type="date" defaultValue={detail.date_of_birth?.slice(0, 10) ?? ""} className={inputCls} />
+                  </div>
                   <div>
                     <label className={labelCls} htmlFor="e-phone">Phone</label>
                     <input id="e-phone" name="phone" defaultValue={detail.phone ?? ""} className={inputCls} />
