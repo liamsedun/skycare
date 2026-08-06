@@ -1,10 +1,11 @@
-import { withStaff, ok, ValidationError } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export interface AccountPreferences {
+  theme: "light" | "dark";
   language: string;
   timezone: string;
   dateFormat: string;
@@ -16,6 +17,7 @@ export interface AccountPreferences {
 }
 
 export const DEFAULT_PREFERENCES: AccountPreferences = {
+  theme: "light",
   language: "en",
   timezone: "Africa/Lagos",
   dateFormat: "dd/mm/yyyy",
@@ -26,6 +28,7 @@ export const DEFAULT_PREFERENCES: AccountPreferences = {
   pushEnabled: false,
 };
 
+const THEMES = ["light", "dark"] as const;
 const LANGUAGES = ["en", "fr", "sw", "ha", "yo", "ig"] as const;
 const TIMEZONES = [
   "Africa/Lagos",
@@ -40,6 +43,9 @@ const DATE_FORMATS = ["dd/mm/yyyy", "mm/dd/yyyy", "yyyy-mm-dd"] as const;
 
 function sanitize(raw: Record<string, unknown>): Partial<AccountPreferences> {
   const out: Partial<AccountPreferences> = {};
+  if ((THEMES as readonly string[]).includes(raw.theme as string)) {
+    out.theme = raw.theme as "light" | "dark";
+  }
   if (typeof raw.language === "string" && (LANGUAGES as readonly string[]).includes(raw.language)) {
     out.language = raw.language;
   }
@@ -56,7 +62,7 @@ function sanitize(raw: Record<string, unknown>): Partial<AccountPreferences> {
 }
 
 // GET /api/account/preferences — personal preferences for the signed-in user
-export const GET = withStaff(async (req, ctx) => {
+export const GET = withAuth(async (req, ctx) => {
   const { data: user } = await ctx.svc
     .from("users")
     .select("id, preferences")
@@ -67,7 +73,7 @@ export const GET = withStaff(async (req, ctx) => {
 });
 
 // PUT /api/account/preferences — merge validated preferences for the signed-in user
-export const PUT = withStaff(async (req, ctx) => {
+export const PUT = withAuth(async (req, ctx) => {
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const sanitized = sanitize(body);
   if (Object.keys(sanitized).length === 0) {

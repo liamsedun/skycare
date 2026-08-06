@@ -35,6 +35,7 @@ export const GET = withAuth(async (req, ctx) => {
       { count: "exact" }
     )
     .eq("tenant_id", ctx.tenantId)
+    .neq("role", "patient_api")
     .order("created_at", { ascending: false })
     .range(from, to);
 

@@ -8,7 +8,7 @@ async function getPatient(ctx: any, id: string, tenantId: string) {
   const { data } = await ctx.svc
     .from("patients")
     .select(
-      "*, dependants:patients!patients_primary_account_id_fkey(id, patient_number, first_name, last_name, gender, date_of_birth, phone, dependant_relationship, status, user_id)"
+      "*, dependants:patients!primary_account_id(id, patient_number, first_name, last_name, gender, date_of_birth, phone, dependant_relationship, status, user_id)"
     )
     .eq("id", id)
     .eq("tenant_id", tenantId)

@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
@@ -14,7 +14,7 @@ interface SubscribeBody {
 }
 
 // POST /api/notifications/subscribe — store this device's push subscription
-export const POST = withStaff(async (req, ctx) => {
+export const POST = withAuth(async (req, ctx) => {
   const body = (await req.json().catch(() => ({}))) as SubscribeBody;
   if (!body.endpoint || !body.endpoint.startsWith("https://")) {
     throw new ValidationError("Invalid push endpoint");

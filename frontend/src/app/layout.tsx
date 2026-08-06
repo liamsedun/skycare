@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Figtree, Noto_Sans } from "next/font/google";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import "./globals.css";
@@ -71,6 +72,9 @@ export default function RootLayout({
       className={`${figtree.variable} ${notoSans.variable} antialiased`}
       suppressHydrationWarning
     >
+      <Script id="skycare-theme-init" strategy="beforeInteractive">
+        {`(function(){try{document.documentElement.dataset.theme=(localStorage.getItem("skycare-theme")||"light")}catch(e){}})();`}
+      </Script>
       <body
         className="min-h-screen font-[family-name:var(--font-sans)]"
         suppressHydrationWarning

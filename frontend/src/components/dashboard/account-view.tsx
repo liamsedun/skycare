@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Bell, Check, Loader2, Save, UserRound } from "lucide-react";
+import { Bell, Check, Loader2, Moon, Save, Sun, UserRound } from "lucide-react";
 import { ROLE_LABELS, initials } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
+import { applyTheme } from "@/lib/theme";
+import type { ThemeMode } from "@/lib/theme";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)] disabled:bg-slate-50 disabled:text-[var(--color-muted-fg)]";
@@ -21,6 +23,7 @@ interface MeData {
 }
 
 interface Preferences {
+  theme: "light" | "dark";
   language: string;
   timezone: string;
   dateFormat: string;
@@ -32,6 +35,7 @@ interface Preferences {
 }
 
 const DEFAULT_PREFS: Preferences = {
+  theme: "light",
   language: "en",
   timezone: "Africa/Lagos",
   dateFormat: "dd/mm/yyyy",
@@ -94,7 +98,14 @@ export default function AccountView() {
       const meBody = await meRes.json();
       if (meRes.ok) setMe(meBody.data);
       const prefsBody = await prefsRes.json();
-      if (prefsRes.ok) setPrefs({ ...DEFAULT_PREFS, ...(prefsBody.data ?? {}) });
+      if (prefsRes.ok) {
+        const loaded = { ...DEFAULT_PREFS, ...(prefsBody.data ?? {}) };
+        setPrefs(loaded);
+        if (loaded.theme === "dark" || loaded.theme === "light") {
+          document.documentElement.dataset.theme = loaded.theme;
+          applyTheme(loaded.theme);
+        }
+      }
     } catch {
       /* ignore */
     } finally {
@@ -176,11 +187,54 @@ export default function AccountView() {
         <div className="space-y-6 lg:col-span-2">
           <div className={`${cardCls}`}>
             <h2 className="text-base font-semibold text-[var(--color-foreground)]">Display preferences</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div>
-                <label htmlFor="pref-language" className={labelCls}>
-                  Language
-                </label>
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border)] px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-[var(--color-foreground)]">Theme</p>
+                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                    Light mode uses the SkyCare sky palette; Dark mode uses the Dusk &amp; Gold scheme.
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1 rounded-lg bg-slate-100 p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update("theme", "light");
+                      document.documentElement.dataset.theme = "light";
+                      applyTheme("light");
+                    }}
+                    aria-pressed={prefs.theme === "light"}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                      prefs.theme === "light"
+                        ? "bg-white text-[var(--color-primary-dark)] shadow-sm"
+                        : "text-[var(--color-muted-fg)] hover:text-[var(--color-foreground)]"
+                    }`}
+                  >
+                    <Sun size={15} aria-hidden="true" /> Light
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update("theme", "dark");
+                      document.documentElement.dataset.theme = "dark";
+                      applyTheme("dark");
+                    }}
+                    aria-pressed={prefs.theme === "dark"}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                      prefs.theme === "dark"
+                        ? "bg-[var(--color-primary)] text-[#0a0f1a] shadow-sm"
+                        : "text-[var(--color-muted-fg)] hover:text-[var(--color-foreground)]"
+                    }`}
+                  >
+                    <Moon size={15} aria-hidden="true" /> Dark
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label htmlFor="pref-language" className={labelCls}>
+                    Language
+                  </label>
                 <select
                   id="pref-language"
                   value={prefs.language}
@@ -229,6 +283,7 @@ export default function AccountView() {
                   <option value="yyyy-mm-dd">YYYY-MM-DD</option>
                 </select>
               </div>
+            </div>
             </div>
           </div>
 

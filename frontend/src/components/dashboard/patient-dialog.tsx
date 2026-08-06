@@ -51,6 +51,7 @@ interface PatientDetail extends PatientRow {
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
   marital_status: string | null;
+  user_id: string | null;
   dependants: PatientRow[];
 }
 
@@ -310,6 +311,47 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
     }
   }
 
+  async function toggleStatus() {
+    if (!detail) return;
+    const next = detail.status === "active" ? "inactive" : "active";
+    if (!confirm(`${next === "inactive" ? "Deactivate" : "Activate"} ${detail.last_name}, ${detail.first_name}?`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/patients/${patient.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update status");
+      await load();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update status");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removePatient() {
+    if (!detail) return;
+    if (!confirm(`Remove ${detail.last_name}, ${detail.first_name}? This deactivates the patient's record${detail.user_id ? " and disables their portal login" : ""}.`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/patients/${patient.id}`, { method: "DELETE" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to remove patient");
+      setOpen(false);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to remove patient");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function addDependant(form: FormData) {
     setBusy(true);
     setError(null);
@@ -381,13 +423,31 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                   {detail.gender ?? "No gender"}
                 </span>
                 {!editMode && (
-                  <button
-                    type="button"
-                    onClick={() => setEditMode(true)}
-                    className="focus-ring ml-auto rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                  >
-                    Edit details
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setEditMode(true)}
+                      className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    >
+                      Edit details
+                    </button>
+                    <button
+                      type="button"
+                      onClick={toggleStatus}
+                      disabled={busy}
+                      className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    >
+                      {detail.status === "active" ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={removePatient}
+                      disabled={busy}
+                      className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  </>
                 )}
               </div>
 

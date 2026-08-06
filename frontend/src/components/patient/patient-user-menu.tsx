@@ -3,38 +3,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  ChevronDown,
-  CreditCard,
-  Download,
-  LogOut,
-  Settings as SettingsIcon,
-  SlidersHorizontal,
-  UserRound,
-} from "lucide-react";
+import { ChevronDown, Download, LogOut, SlidersHorizontal, UserRound } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
-import { ROLE_LABELS, initials } from "@/lib/auth";
-import type { StaffRole } from "@/lib/auth";
+import { initials } from "@/lib/auth";
 import ThemeToggle from "@/components/theme-toggle";
 
 const navigateCls =
   "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50";
 
-export default function UserMenu({
+export default function PatientUserMenu({
   userName,
-  role,
   avatarUrl,
 }: {
   userName: string;
-  role: StaffRole;
   avatarUrl: string | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-
-  const isAdmin = role === "super_admin" || role === "hospital_admin";
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -54,12 +41,12 @@ export default function UserMenu({
   const signOut = useCallback(async () => {
     setSigningOut(true);
     try {
-      await getSupabase().auth.signOut();
-      router.push("/login");
-      router.refresh();
-    } finally {
-      setSigningOut(false);
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      /* best effort */
     }
+    router.push("/login");
+    router.refresh();
   }, [router]);
 
   return (
@@ -89,34 +76,19 @@ export default function UserMenu({
         <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-xl)]">
           <div className="border-b border-[var(--color-border)] px-4 py-3">
             <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{userName}</p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
-              {ROLE_LABELS[role] ?? role}
-            </p>
+            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Patient</p>
           </div>
 
           <div className="space-y-0.5 p-2">
-            <Link href="/app/profile" onClick={() => setOpen(false)} className={navigateCls}>
+            <Link href="/patient/profile" onClick={() => setOpen(false)} className={navigateCls}>
               <UserRound size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
               Profile
             </Link>
-            {/* Settings is a tenant-level page for admins; patients use their own portal. */}
-            {isAdmin && (
-              <Link href="/app/settings" onClick={() => setOpen(false)} className={navigateCls}>
-                <SettingsIcon size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
-                Settings
-              </Link>
-            )}
-            <Link href="/app/account" onClick={() => setOpen(false)} className={navigateCls}>
+            <Link href="/patient/account" onClick={() => setOpen(false)} className={navigateCls}>
               <SlidersHorizontal size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
               Account
             </Link>
-            {isAdmin && (
-              <Link href="/app/subscription" onClick={() => setOpen(false)} className={navigateCls}>
-                <CreditCard size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
-                Subscription &amp; billing
-              </Link>
-            )}
-            <Link href="/app/download" onClick={() => setOpen(false)} className={navigateCls}>
+            <Link href="/patient/download" onClick={() => setOpen(false)} className={navigateCls}>
               <Download size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
               Download SkyCare app
             </Link>

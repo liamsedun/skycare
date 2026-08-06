@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, X } from "lucide-react";
-import { getSupabase } from "@/lib/supabase/client";
-import { initials } from "@/lib/auth";
+import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
 import NotificationsBell from "@/components/notifications-bell";
+import PatientUserMenu from "@/components/patient/patient-user-menu";
 import { SkyCareMark } from "@/components/landing/skycare-logo";
 
 export default function PatientShell({
@@ -24,20 +23,7 @@ export default function PatientShell({
   children: React.ReactNode;
 }>) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
-
-  async function handleSignOut() {
-    setSigningOut(true);
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {
-      /* best effort */
-    }
-    router.push("/login");
-    router.refresh();
-  }
 
   const nav = (
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Patient navigation">
@@ -140,7 +126,7 @@ export default function PatientShell({
               <img
                 src={tenantLogoUrl}
                 alt=""
-                className="max-h-[68px] max-w-[68px] shrink-0 rounded-xl object-contain"
+                className="max-h-9 max-w-9 shrink-0 rounded-lg object-contain"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
             )}
@@ -154,25 +140,7 @@ export default function PatientShell({
               Patient
             </span>
             <NotificationsBell basePath="/patient" />
-            <span
-              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white"
-              aria-hidden="true"
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-full w-full rounded-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-              ) : (
-                initials(userName)
-              )}
-            </span>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="focus-ring flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-red-50 hover:text-[var(--color-destructive)] disabled:opacity-50"
-            >
-              <LogOut size={16} aria-hidden="true" />
-              <span className="hidden sm:inline">{signingOut ? "Signing out…" : "Sign out"}</span>
-            </button>
+            <PatientUserMenu userName={userName} avatarUrl={avatarUrl} />
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>

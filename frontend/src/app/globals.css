@@ -31,6 +31,132 @@
   --shadow-xl: 0 20px 25px rgb(0 0 0 / 0.12);
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   DARK MODE — "Dusk & Gold"
+   The light palette above is the SaaS default. When the signed-in user enables
+   Dark mode (Account → preferences.theme === "dark") we set data-theme="dark"
+   on <html> and the token overrides below flip every --color-* consumer plus
+   the common Tailwind light-only utility classes (bg-white, bg-slate-*, etc.)
+   to a deep navy + gold scheme (the life-blossom project pattern).
+   ──────────────────────────────────────────────────────────────────────────── */
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e6e9f0;
+  --muted: #8b94a8;
+  --sky: #3b82f6;
+  --sky-dark: #60a5fa;
+
+  --color-primary: #e0a84a;
+  --color-primary-dark: #c9933b;
+  --color-primary-soft: rgba(224, 168, 74, 0.14);
+  --color-secondary: #8db4ff;
+  --color-accent: #3ddc9c;
+  --color-accent-dark: #2bca8a;
+  --color-accent-soft: rgba(61, 220, 156, 0.14);
+  --color-background: #0a0f1a;
+  --color-foreground: #e6e9f0;
+  --color-muted: #121b2d;
+  --color-muted-fg: #8b94a8;
+  --color-border: #20304a;
+  --color-destructive: #f87171;
+  --color-destructive-soft: rgba(248, 113, 113, 0.16);
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgba(251, 191, 36, 0.16);
+  --color-ring: #e0a84a;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-md: 0 4px 6px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 10px 15px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px rgb(0 0 0 / 0.55);
+}
+
+/* body + base text */
+html[data-theme="dark"] body {
+  background: #0a0f1a;
+  color: #e6e9f0;
+}
+
+/* background surfaces that were hard-coded for light mode */
+html[data-theme="dark"] .bg-white { background-color: #0f1730; }
+html[data-theme="dark"] .bg-white\/95 { background-color: rgb(15 23 48 / 0.95); }
+html[data-theme="dark"] .bg-white\/90 { background-color: rgb(15 23 48 / 0.9); }
+html[data-theme="dark"] .bg-white\/80 { background-color: rgb(15 23 48 / 0.8); }
+html[data-theme="dark"] .bg-slate-50 { background-color: #0e162a; }
+html[data-theme="dark"] .bg-slate-100 { background-color: #131c30; }
+html[data-theme="dark"] .bg-slate-200 { background-color: #1a2540; }
+html[data-theme="dark"] .bg-slate-300 { background-color: #243450; }
+html[data-theme="dark"] .bg-slate-400 { background-color: #33485f; }
+html[data-theme="dark"] .bg-slate-50\/40 { background-color: rgb(14 22 42 / 0.4); }
+html[data-theme="dark"] .bg-slate-50\/50 { background-color: rgb(14 22 42 / 0.5); }
+html[data-theme="dark"] .bg-gray-50 { background-color: #0e162a; }
+html[data-theme="dark"] .bg-gray-100 { background-color: #131c30; }
+
+/* semantic soft chips that were light-toned */
+html[data-theme="dark"] .bg-emerald-50 { background-color: rgba(61, 220, 156, 0.12); }
+html[data-theme="dark"] .bg-emerald-100 { background-color: rgba(61, 220, 156, 0.2); }
+html[data-theme="dark"] .bg-amber-50 { background-color: rgba(251, 191, 36, 0.12); }
+html[data-theme="dark"] .bg-amber-100 { background-color: rgba(251, 191, 36, 0.2); }
+html[data-theme="dark"] .bg-rose-50 { background-color: rgba(248, 113, 113, 0.12); }
+html[data-theme="dark"] .bg-rose-100 { background-color: rgba(248, 113, 113, 0.2); }
+html[data-theme="dark"] .bg-red-50 { background-color: rgba(248, 113, 113, 0.12); }
+html[data-theme="dark"] .bg-red-100 { background-color: rgba(248, 113, 113, 0.2); }
+html[data-theme="dark"] .bg-sky-50 { background-color: rgba(87, 147, 247, 0.14); }
+html[data-theme="dark"] .bg-sky-100 { background-color: rgba(87, 147, 247, 0.22); }
+html[data-theme="dark"] .bg-indigo-100 { background-color: rgba(128, 143, 255, 0.18); }
+
+/* text tones that were dark-on-light */
+html[data-theme="dark"] .text-slate-900 { color: #e6e9f0; }
+html[data-theme="dark"] .text-slate-800 { color: #e6e9f0; }
+html[data-theme="dark"] .text-slate-700 { color: #ccd3e0; }
+html[data-theme="dark"] .text-slate-600 { color: #a6aec1; }
+html[data-theme="dark"] .text-slate-500 { color: #8b94a8; }
+html[data-theme="dark"] .text-slate-400 { color: #6f7a90; }
+html[data-theme="dark"] .text-slate-300 { color: #9aa3b6; }
+html[data-theme="dark"] .text-gray-500 { color: #8b94a8; }
+html[data-theme="dark"] .text-gray-600 { color: #a6aec1; }
+html[data-theme="dark"] .text-gray-700 { color: #ccd3e0; }
+html[data-theme="dark"] .text-emerald-600 { color: #47e0a9; }
+html[data-theme="dark"] .text-emerald-700 { color: #5ee5b4; }
+html[data-theme="dark"] .text-emerald-800 { color: #7decc4; }
+html[data-theme="dark"] .text-amber-600 { color: #f3c25b; }
+html[data-theme="dark"] .text-amber-700 { color: #f6cc6e; }
+html[data-theme="dark"] .text-amber-800 { color: #f7d488; }
+html[data-theme="dark"] .text-red-600 { color: #f57f7f; }
+html[data-theme="dark"] .text-red-700 { color: #f7a0a0; }
+html[data-theme="dark"] .text-rose-600 { color: #f57f7f; }
+html[data-theme="dark"] .text-rose-700 { color: #f7a0a0; }
+html[data-theme="dark"] .text-orange-700 { color: #fbbf6e; }
+html[data-theme="dark"] .text-violet-700 { color: #b3a3ff; }
+html[data-theme="dark"] .text-indigo-600 { color: #a5b4fc; }
+html[data-theme="dark"] .text-indigo-700 { color: #bcc9fe; }
+
+/* borders that were light-toned */
+html[data-theme="dark"] .border-slate-100 { border-color: #1b2742; }
+html[data-theme="dark"] .border-slate-200 { border-color: #20304a; }
+html[data-theme="dark"] .border-slate-300 { border-color: #2a3d5e; }
+html[data-theme="dark"] .border-gray-200 { border-color: #20304a; }
+html[data-theme="dark"] .border-emerald-200 { border-color: rgba(61, 220, 156, 0.4); }
+html[data-theme="dark"] .border-amber-200 { border-color: rgba(251, 191, 36, 0.4); }
+html[data-theme="dark"] .border-red-200 { border-color: rgba(248, 113, 113, 0.4); }
+html[data-theme="dark"] .border-rose-200 { border-color: rgba(248, 113, 113, 0.4); }
+html[data-theme="dark"] .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: #20304a; }
+
+/* hover states that assumed light backgrounds */
+html[data-theme="dark"] .hover\:bg-slate-50:hover { background-color: #162033; }
+html[data-theme="dark"] .hover\:bg-slate-100:hover { background-color: #162033; }
+html[data-theme="dark"] .hover\:bg-slate-200:hover { background-color: #1e2c49; }
+html[data-theme="dark"] .hover\:bg-slate-50 { background-color: #162033; }
+html[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: #162033; }
+html[data-theme="dark"] .hover\:text-slate-900:hover { color: #ffffff; }
+html[data-theme="dark"] .hover\:text-sky-700:hover { color: #7fb0ff; }
+html[data-theme="dark"] .hover\:text-slate-600:hover { color: #a6aec1; }
+html[data-theme="dark"] .hover\:text-emerald-700:hover { color: #4df5b4; }
+
+/* gold-stamped primary action chips/buttons keep gold; deep text for contrast */
+html[data-theme="dark"] .bg-\[var\(--color-primary\)\] { background-color: #e0a84a; }
+html[data-theme="dark"] .bg-\[var\(--color-primary-dark\)\] { background-color: #c98b3a; }
+
 * {
   box-sizing: border-box;
 }

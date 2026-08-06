@@ -1,11 +1,11 @@
-import { withStaff, ok, ValidationError } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/notifications/unsubscribe — remove a push subscription by endpoint
-export const POST = withStaff(async (req, ctx) => {
+export const POST = withAuth(async (req, ctx) => {
   const body = (await req.json().catch(() => ({}))) as { endpoint?: string };
   if (!body.endpoint) throw new ValidationError("Missing endpoint");
 

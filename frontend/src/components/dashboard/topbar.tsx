@@ -37,7 +37,7 @@ export default function Topbar({
           <img
             src={tenantLogoUrl}
             alt=""
-            className="max-h-[68px] max-w-[68px] shrink-0 rounded-xl object-contain"
+            className="max-h-9 max-w-9 shrink-0 rounded-lg object-contain"
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         )}
