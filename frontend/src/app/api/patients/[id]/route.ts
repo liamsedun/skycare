@@ -39,7 +39,7 @@ export const PUT = withStaff(async (req, ctx) => {
     "first_name", "last_name", "other_names", "gender", "date_of_birth", "phone", "email",
     "address", "city", "state", "blood_group", "genotype", "allergies", "chronic_conditions",
     "nhia_number", "insurance_provider", "insurance_plan", "is_insured", "next_of_kin", "status",
-    "marital_status",
+    "marital_status", "height_cm", "weight_kg", "emergency_contact_name", "emergency_contact_phone",
   ];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
@@ -50,7 +50,7 @@ export const PUT = withStaff(async (req, ctx) => {
   }
   if (patch.marital_status !== undefined) {
     const ms = String(patch.marital_status ?? "").trim();
-    if (!ms) patch.marital_status = "single";
+    patch.marital_status = ms ? ms.toLowerCase() : "single";
   }
   if (Object.keys(patch).length === 0) return ok(existing);
 

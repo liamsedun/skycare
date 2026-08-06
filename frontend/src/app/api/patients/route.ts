@@ -49,6 +49,10 @@ export interface CreatePatientBody {
   genotype?: string;
   maritalStatus?: string;
   allergies?: string;
+  heightCm?: string | number;
+  weightKg?: string | number;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   chronicConditions?: string;
   nhiaNumber?: string;
   insuranceProvider?: string;
@@ -149,9 +153,13 @@ export const POST = withStaff(async (req, ctx) => {
       blood_group: normalizedBloodGroup,
       genotype: body.genotype || null,
       ...(body.maritalStatus?.trim()
-        ? { marital_status: body.maritalStatus.trim() }
+        ? { marital_status: body.maritalStatus.trim().toLowerCase() }
         : { marital_status: "single" }),
       allergies: body.allergies || null,
+      height_cm: body.heightCm ? Number(body.heightCm) : null,
+      weight_kg: body.weightKg ? Number(body.weightKg) : null,
+      emergency_contact_name: body.emergencyContactName?.trim() || null,
+      emergency_contact_phone: body.emergencyContactPhone?.trim() || null,
       chronic_conditions: body.chronicConditions || null,
       nhia_number: body.nhiaNumber?.trim() || null,
       insurance_provider: body.insuranceProvider?.trim() || null,
