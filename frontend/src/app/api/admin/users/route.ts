@@ -19,7 +19,6 @@ export const GRANTABLE_ROLES: StaffRole[] = [
 
 // GET /api/admin/users?role=&search=&is_active=&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {
-  requireTenant(ctx);
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
     throw new ForbiddenError("Admin access required");
   }
@@ -28,16 +27,18 @@ export const GET = withAuth(async (req, ctx) => {
   const search = resolveParam(req.nextUrl.searchParams.get("search"))?.trim();
   const isActive = resolveParam(req.nextUrl.searchParams.get("is_active"));
 
+  // super_admin is platform-wide (tenant NULL) — list all staff; hospital_admin is tenant-scoped.
   let query = ctx.svc
     .from("users")
     .select(
       "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available)",
       { count: "exact" }
     )
-    .eq("tenant_id", ctx.tenantId)
     .neq("role", "patient_api")
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  if (ctx.tenantId) query = query.eq("tenant_id", ctx.tenantId);
 
   if (role) query = query.eq("role", role);
   if (search) query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
@@ -60,8 +61,9 @@ export interface CreateUserBody {
 }
 
 // POST /api/admin/users — create an admin/staff login with direct credentials.
+// hospital_admin creates tenant-scoped accounts; super_admin may also create
+// platform super_admin accounts (tenant_id NULL).
 export const POST = withAuth(async (req, ctx) => {
-  const tenantId = requireTenant(ctx);
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
     throw new ForbiddenError("Admin access required");
   }
@@ -70,21 +72,26 @@ export const POST = withAuth(async (req, ctx) => {
   if (!body.fullName?.trim() || !body.email?.trim()) {
     throw new ValidationError("Full name and email are required");
   }
-  if (!GRANTABLE_ROLES.includes(body.role)) {
+  const creatingSuperAdmin = body.role === "super_admin";
+  if (creatingSuperAdmin && ctx.role !== "super_admin") {
+    throw new ForbiddenError("Only the Super Admin can create platform admins");
+  }
+  if (!GRANTABLE_ROLES.includes(body.role) && !creatingSuperAdmin) {
     throw new ValidationError("Cannot create accounts with that role");
   }
   if (!body.password || body.password.length < 8) {
     throw new ValidationError("Password must be at least 8 characters");
   }
 
+  const tenantId = creatingSuperAdmin ? null : requireTenant(ctx);
+  const branchId = creatingSuperAdmin ? null : ctx.branchId ?? null;
   const email = body.email.trim().toLowerCase();
   const { data: existing } = await ctx.svc
     .from("users")
     .select("id")
-    .eq("tenant_id", tenantId)
     .eq("email", email)
     .maybeSingle();
-  if (existing) throw new ValidationError("A user with this email already exists in your hospital");
+  if (existing) throw new ValidationError("A user with this email already exists");
 
   const { data: authUser, error: authError } = await ctx.svc.auth.admin.createUser({
     email,
@@ -93,7 +100,7 @@ export const POST = withAuth(async (req, ctx) => {
     app_metadata: {
       role: body.role,
       tenant_id: tenantId,
-      branch_id: ctx.branchId ?? null,
+      branch_id: branchId,
     },
     user_metadata: { full_name: body.fullName.trim() },
   });
@@ -106,7 +113,7 @@ export const POST = withAuth(async (req, ctx) => {
     .insert({
       id: authUser.user.id,
       tenant_id: tenantId,
-      branch_id: ctx.branchId ?? null,
+      branch_id: branchId,
       email,
       full_name: body.fullName.trim(),
       role: body.role,
@@ -127,10 +134,10 @@ export const POST = withAuth(async (req, ctx) => {
     const { data: staffRow } = await ctx.svc
       .from("staff")
       .insert({
-        tenant_id: tenantId,
-        branch_id: ctx.branchId ?? null,
+        tenant_id: tenantId!,
+        branch_id: branchId,
         user_id: authUser.user.id,
-        staff_number: body.staffNumber?.trim() || (await generateStaffNumber(ctx.svc, tenantId)),
+        staff_number: body.staffNumber?.trim() || (await generateStaffNumber(ctx.svc, tenantId!)),
         department: body.department?.trim() || null,
         specialization: body.specialization?.trim() || null,
       })

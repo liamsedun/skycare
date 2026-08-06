@@ -28,8 +28,8 @@ export const GET = withAuth(async (req, ctx) => {
 
 // PATCH /api/admin/users/[id] — update role / is_active (tenant-scoped)
 export const PATCH = withAuth(async (req, ctx) => {
-  requireTenant(ctx);
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
+  if (ctx.role !== "super_admin") requireTenant(ctx);
   const id = req.nextUrl.pathname.split("/").pop()!;
   const body = (await req.json()) as { role?: string; is_active?: boolean };
 
@@ -43,7 +43,10 @@ export const PATCH = withAuth(async (req, ctx) => {
   const patch: Record<string, unknown> = {};
   if (typeof body.is_active === "boolean") patch.is_active = body.is_active;
   if (typeof body.role === "string") {
-    if (!GRANTABLE_ROLES.includes(body.role as never)) {
+    if (
+      !GRANTABLE_ROLES.includes(body.role as never) &&
+      !(ctx.role === "super_admin" && body.role === "super_admin")
+    ) {
       throw new ValidationError("Cannot assign that role");
     }
     patch.role = body.role;
@@ -80,7 +83,6 @@ export const PATCH = withAuth(async (req, ctx) => {
 // Removes the auth account, the users row (staff profile + rosters + leave +
 // notifications + mail + chats cascade), and nulls audit references.
 export const DELETE = withAuth(async (req, ctx) => {
-  requireTenant(ctx);
   if (ctx.role !== "super_admin") throw new ForbiddenError("Only the Super Admin can delete staff accounts");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);

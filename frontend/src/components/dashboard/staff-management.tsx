@@ -37,6 +37,12 @@ const CREATABLE_ROLES: StaffRole[] = [
   "receptionist",
 ];
 
+function rolesFor(myRole?: string): StaffRole[] {
+  return myRole === "super_admin"
+    ? ["super_admin", ...CREATABLE_ROLES]
+    : CREATABLE_ROLES;
+}
+
 export default function StaffManagement({ meId, myRole }: { meId: string; myRole?: string }) {
   const [users, setUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -371,7 +377,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     disabled={busy}
                     className={inputCls}
                   >
-                    {CREATABLE_ROLES.map((r) => (
+                    {rolesFor(myRole).map((r) => (
                       <option key={r} value={r}>
                         {ROLE_LABELS[r]}
                       </option>
@@ -437,7 +443,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     Role
                   </label>
                   <select id="s-role" name="role" className={inputCls} defaultValue="nurse">
-                    {CREATABLE_ROLES.map((r) => (
+                    {rolesFor(myRole).map((r) => (
                       <option key={r} value={r}>
                         {ROLE_LABELS[r]}
                       </option>
