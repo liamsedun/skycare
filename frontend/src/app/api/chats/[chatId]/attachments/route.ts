@@ -4,6 +4,14 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const MAX_BYTES = 3 * 1024 * 1024; // 3 MB
+
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/heic", "image/heif"];
+const AUDIO_TYPES = ["audio/mpeg", "audio/mp4", "audio/mp3", "audio/wav", "audio/webm", "audio/ogg", "audio/x-m4a", "audio/aac", "audio/3gpp"];
+const DOC_TYPES = ["application/pdf", "text/plain", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/rtf", "text/csv"];
+
+const ALLOWED = new Set([...IMAGE_TYPES, ...AUDIO_TYPES, ...DOC_TYPES]);
+
 async function familyIds(ctx: any): Promise<string[]> {
   const { data: me } = await ctx.svc
     .from("patients")
@@ -50,54 +58,57 @@ function chatIdFrom(req: NextRequest): string {
   return segs[segs.length - 2];
 }
 
-// GET /api/chats/[chatId]/messages — thread for one conversation (marks incoming read)
-export const GET = withAuth(async (req, ctx) => {
-  const tenantId = requireTenant(ctx);
-  const chatId = chatIdFrom(req);
-  const chat = await getChat(ctx, tenantId, chatId);
-  if (!chat) throw new NotFoundError("Conversation not found");
-
-  const { data, error } = await ctx.svc
-    .from("chat_messages")
-    .select("id, chat_id, sender_id, message, attachment_url, attachment_name, attachment_type, attachment_size, is_read, created_at, users!chat_messages_sender_id_fkey(id, full_name)")
-    .eq("chat_id", chatId)
-    .order("created_at", { ascending: true });
-  if (error) throw new ValidationError(error.message);
-
-  await ctx.svc
-    .from("chat_messages")
-    .update({ is_read: true })
-    .eq("chat_id", chatId)
-    .neq("sender_id", ctx.user.id)
-    .eq("is_read", false);
-
-  return ok({ chat, messages: data ?? [] });
-});
-
-interface SendMessageBody {
-  message: string;
+function sanitizeName(name: string): string {
+  const cleaned = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+  return cleaned || "attachment";
 }
 
-// POST /api/chats/[chatId]/messages — send a message in a conversation
+// POST /api/chats/[chatId]/attachments — upload a photo/document/voice note (max 3 MB, no video)
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const chatId = chatIdFrom(req);
   const chat = await getChat(ctx, tenantId, chatId);
   if (!chat) throw new NotFoundError("Conversation not found");
 
-  const body = (await req.json()) as SendMessageBody;
-  if (!body.message?.trim()) throw new ValidationError("Message is required");
+  const formData = await req.formData();
+  const file = formData.get("file");
+  if (!(file instanceof File)) throw new ValidationError("No file provided");
+
+  if (file.type.startsWith("video/")) throw new ValidationError("Video uploads are not allowed");
+  if (!ALLOWED.has(file.type)) {
+    throw new ValidationError("Only images, documents or voice notes are allowed");
+  }
+  if (file.size > MAX_BYTES) throw new ValidationError("File must be 3 MB or smaller");
+
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
+  const path = `chats/${tenantId}/${chatId}/${Date.now()}-${sanitizeName(file.name)}.${ext}`;
+
+  const { error: uploadError } = await ctx.svc.storage
+    .from("chat-attachments")
+    .upload(path, file, { upsert: false, contentType: file.type });
+  if (uploadError) throw new ValidationError(uploadError.message);
+
+  const { data: { publicUrl } } = ctx.svc.storage.from("chat-attachments").getPublicUrl(path);
 
   const { data: msg, error } = await ctx.svc
     .from("chat_messages")
-    .insert({ chat_id: chatId, sender_id: ctx.user.id, message: body.message.trim() })
-    .select("id, chat_id, sender_id, message, is_read, created_at")
+    .insert({
+      chat_id: chatId,
+      sender_id: ctx.user.id,
+      message: null,
+      attachment_url: publicUrl,
+      attachment_name: file.name,
+      attachment_type: file.type,
+      attachment_size: file.size,
+    })
+    .select("id, chat_id, sender_id, message, attachment_url, attachment_name, attachment_type, attachment_size, is_read, created_at")
     .single();
   if (error) throw new ValidationError(error.message);
 
+  const label = file.type.startsWith("image/") ? "📷 Photo" : file.type.startsWith("audio/") ? "🎤 Voice note" : "📎 Document";
   await ctx.svc
     .from("chats")
-    .update({ last_message: body.message.trim(), last_sender_id: ctx.user.id, last_message_at: new Date().toISOString() })
+    .update({ last_message: `${label}: ${file.name}`, last_sender_id: ctx.user.id, last_message_at: new Date().toISOString() })
     .eq("id", chatId);
 
   const isPatient = ctx.role === "patient_api";
@@ -113,7 +124,7 @@ export const POST = withAuth(async (req, ctx) => {
         userIds: [staff.id],
         type: "chat_message",
         title: "New message from a patient",
-        message: body.message.trim().slice(0, 150),
+        message: `Sent an attachment: ${file.name}`.slice(0, 150),
         referenceType: "chat",
         referenceId: chatId,
       });
@@ -130,7 +141,7 @@ export const POST = withAuth(async (req, ctx) => {
         userIds: [patient.user_id],
         type: "chat_message",
         title: "New message from the hospital",
-        message: body.message.trim().slice(0, 150),
+        message: `Sent an attachment: ${file.name}`.slice(0, 150),
         referenceType: "chat",
         referenceId: chatId,
       });

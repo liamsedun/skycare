@@ -80,7 +80,7 @@ export const GET = withAuth(async (req, ctx) => {
     if (staffIds.length > 0) {
       const { data: staff } = await svc
         .from("users")
-        .select("id, full_name, avatar_url, role")
+        .select("id, full_name, avatar_url, role, phone")
         .in("id", staffIds);
       for (const s of staff ?? []) knownMap.set(s.id, s);
     }
@@ -89,7 +89,7 @@ export const GET = withAuth(async (req, ctx) => {
     if (patientIds.length > 0) {
       const { data: pats } = await svc
         .from("patients")
-        .select("id, user_id, primary_account_id, first_name, last_name, patient_number, users!patients_user_id_fkey(id, full_name, avatar_url)")
+        .select("id, user_id, primary_account_id, first_name, last_name, patient_number, phone, users!patients_user_id_fkey(id, full_name, avatar_url)")
         .in("id", patientIds);
       for (const p of pats ?? []) knownMap.set(p.id, p);
     }
@@ -108,7 +108,7 @@ export const GET = withAuth(async (req, ctx) => {
       unread_count: unreadMap.get(c.id) ?? 0,
       other_user: isPatient
         ? p
-          ? { id: p.id, full_name: p.full_name ?? "Staff", role: p.role, avatar_url: p.avatar_url ?? null }
+          ? { id: p.id, full_name: p.full_name ?? "Staff", role: p.role, avatar_url: p.avatar_url ?? null, phone: p.phone ?? null }
           : null
         : user
           ? {
@@ -117,6 +117,7 @@ export const GET = withAuth(async (req, ctx) => {
               patient_number: p.patient_number,
               avatar_url: user.avatar_url ?? null,
               is_dependant: Boolean(p.primary_account_id),
+              phone: p.phone ?? null,
             }
           : null,
     };
@@ -128,7 +129,7 @@ export const GET = withAuth(async (req, ctx) => {
   if (isPatient) {
     const { data: staff } = await svc
       .from("users")
-      .select("id, full_name, role, avatar_url")
+      .select("id, full_name, role, phone, avatar_url")
       .eq("tenant_id", tenantId)
       .in("role", STAFF_ROLES)
       .eq("is_active", true)
@@ -137,12 +138,13 @@ export const GET = withAuth(async (req, ctx) => {
       id: s.id,
       full_name: s.full_name ?? "Staff",
       role: s.role,
+      phone: s.phone ?? null,
       avatar_url: s.avatar_url ?? null,
     }));
   } else {
     const { data: patients } = await svc
       .from("patients")
-      .select("id, user_id, first_name, last_name, patient_number, primary_account_id, users!patients_user_id_fkey(id, full_name, avatar_url)")
+      .select("id, user_id, first_name, last_name, patient_number, phone, primary_account_id, users!patients_user_id_fkey(id, full_name, avatar_url)")
       .eq("tenant_id", tenantId)
       .not("user_id", "is", null);
     directory = (patients ?? []).map((p: any) => ({
@@ -150,6 +152,7 @@ export const GET = withAuth(async (req, ctx) => {
       user_id: p.user_id,
       full_name: p.users?.full_name ?? `${p.first_name} ${p.last_name}`.trim(),
       patient_number: p.patient_number,
+      phone: p.phone ?? null,
       avatar_url: p.users?.avatar_url ?? null,
       is_dependant: Boolean(p.primary_account_id),
     }));
@@ -240,12 +243,12 @@ export const POST = withAuth(async (req, ctx) => {
   const otherUserId = isPatient ? staffUserId : ((await svc.from("patients").select("user_id").eq("id", patientId).maybeSingle()).data as any)?.user_id;
   const { data: user } = await svc
     .from("users")
-    .select("id, full_name, avatar_url")
+    .select("id, full_name, phone, avatar_url")
     .eq("id", otherUserId ?? "")
     .maybeSingle();
   const { data: p2 } = await svc
     .from("patients")
-    .select("first_name, last_name, patient_number, primary_account_id")
+    .select("first_name, last_name, patient_number, phone, primary_account_id")
     .eq("id", patientId)
     .maybeSingle();
 
@@ -256,6 +259,7 @@ export const POST = withAuth(async (req, ctx) => {
         patient_number: isPatient ? null : p2?.patient_number ?? null,
         avatar_url: user.avatar_url ?? null,
         is_dependant: isPatient ? false : Boolean((chat as any).patient_id === patientId && p2?.primary_account_id),
+        phone: isPatient ? user.phone ?? null : p2?.phone ?? null,
       }
     : null;
 

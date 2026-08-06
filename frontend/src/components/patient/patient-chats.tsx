@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CheckCheck,
   ChevronLeft,
+  FileText,
   Loader2,
   MessageCircle,
   Paperclip,
@@ -11,7 +12,7 @@ import {
   Plus,
   Search,
   Send,
-  Video,
+  Smile,
 } from "lucide-react";
 import { initials } from "@/lib/auth";
 
@@ -20,6 +21,7 @@ interface OtherUser {
   full_name: string;
   role?: string;
   avatar_url: string | null;
+  phone?: string | null;
 }
 
 interface ChatItem {
@@ -36,13 +38,18 @@ interface DirectoryEntry {
   id: string;
   full_name: string;
   role: string;
+  phone?: string | null;
   avatar_url: string | null;
 }
 
 interface Message {
   id: string;
   sender_id: string;
-  message: string;
+  message: string | null;
+  attachment_url: string | null;
+  attachment_name: string | null;
+  attachment_type: string | null;
+  attachment_size: number | null;
   is_read: boolean;
   created_at: string;
 }
@@ -58,8 +65,19 @@ const TABS: { key: TabKey; label: string }[] = [
 
 const QUICK_REPLIES = ["Thank you", "I need help", "Please call me", "I'll wait"];
 
+const EMOJIS = [
+  "😀", "😂", "😊", "🥰", "😍", "🤩", "😘", "😉",
+  "🤗", "😎", "🤔", "😴", "🥳", "🙂", "😢", "😭",
+  "😡", "😳", "😬", "👍", "👎", "🙏", "👏", "🤝",
+  "💪", "❤️", "✅", "💯", "🔥", "🎉", "👋", "🚑",
+];
+
 const NAVY = "#12293B";
 const TEAL = "#2F6F6A";
+
+const MAX_BYTES = 3 * 1024 * 1024;
+const ACCEPT =
+  "image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif,audio/mpeg,audio/mp4,audio/wav,audio/webm,audio/ogg,audio/x-m4a,audio/aac,audio/3gpp,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.png,.jpg,.jpeg,.webp,.gif,.heic,.heif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.mp3,.m4a,.wav,.webm,.ogg,.aac,.3gp";
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "";
@@ -74,6 +92,13 @@ function timeAgo(iso: string | null): string {
 
 function clock(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatBytes(bytes: number | null): string {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function Avatar({
@@ -116,12 +141,18 @@ export default function PatientChats() {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [attaching, setAttaching] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [creating, setCreating] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [query, setQuery] = useState("");
+  const [newQuery, setNewQuery] = useState("");
+  const [threadQuery, setThreadQuery] = useState("");
+  const [showEmojis, setShowEmojis] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const myUserId = useRef<string>("");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const emojiRef = useRef<HTMLDivElement>(null);
 
   const loadList = useCallback(async () => {
     try {
@@ -182,9 +213,20 @@ export default function PatientChats() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+        setShowEmojis(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
+
   function openChat(chat: ChatItem) {
     setActive(chat);
     setShowNew(false);
+    setThreadQuery("");
   }
 
   async function startChat(entry: DirectoryEntry) {
@@ -210,6 +252,7 @@ export default function PatientChats() {
       await loadList();
       setActive(chat);
       setShowNew(false);
+      setNewQuery("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start chat");
     } finally {
@@ -244,6 +287,63 @@ export default function PatientChats() {
     await sendText(draft);
   }
 
+  function attach(file: File | undefined) {
+    if (!file || !active) return;
+    setError(null);
+    if (file.type.startsWith("video/")) {
+      setError("Videos cannot be uploaded — only photos, documents or voice notes.");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setError("File is larger than 3 MB. Please choose a smaller file.");
+      return;
+    }
+    void uploadFile(file);
+  }
+
+  async function uploadFile(file: File) {
+    setAttaching(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`/api/chats/${active!.id}/attachments`, { method: "POST", body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to upload");
+      await loadMessages(active!.id);
+      await loadList();
+    } catch (e2) {
+      setError(e2 instanceof Error ? e2.message : "Failed to upload");
+    } finally {
+      setAttaching(false);
+    }
+  }
+
+  function PhoneLink({ phone }: { phone?: string | null }) {
+    if (!phone) {
+      return (
+        <button
+          type="button"
+          disabled
+          className="cursor-not-allowed rounded p-2 text-white/40"
+          aria-label="No phone number available"
+          title="No phone number on record"
+        >
+          <Phone size={18} />
+        </button>
+      );
+    }
+    return (
+      <a
+        href={`tel:${phone}`}
+        className="rounded p-2 text-white transition-colors hover:bg-white/10"
+        aria-label={`Call ${phone}`}
+        title={`Call ${phone}`}
+      >
+        <Phone size={18} />
+      </a>
+    );
+  }
+
   const filtered = chats.filter((c) => {
     const name = c.other_user?.full_name ?? "";
     const matchesTab =
@@ -259,6 +359,17 @@ export default function PatientChats() {
   });
 
   const activeOnline = active ? online.has(active.other_user?.id ?? "") : false;
+
+  const visibleMessages =
+    threadQuery.trim() === ""
+      ? messages
+      : messages.filter((m) =>
+          `${m.message ?? ""} ${m.attachment_name ?? ""}`.toLowerCase().includes(threadQuery.trim().toLowerCase())
+        );
+
+  const newDirectory = directory.filter((d) =>
+    d.full_name.toLowerCase().includes(newQuery.trim().toLowerCase())
+  );
 
   return (
     <div className="space-y-4">
@@ -326,92 +437,125 @@ export default function PatientChats() {
             {/* Conversation list */}
             <div
               className={`min-h-0 flex-col border-[#E3E9E7] bg-[#F5F7F6] md:flex md:border-r ${
-                active ? "hidden" : "flex"
+                active && !showNew ? "hidden" : "flex"
               }`}
             >
-              {showNew && (
-                <div className="max-h-48 overflow-y-auto border-b border-[#E3E9E7] bg-white/70 px-2 py-2">
-                  {directory.length === 0 ? (
-                    <p className="px-2 py-3 text-xs text-[#6B7A77]">No staff available yet.</p>
-                  ) : (
-                    directory.map((d) => {
+              {/* New chat panel — WhatsApp-style: header, search, scrollable rows, no overlap */}
+              {showNew ? (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  <div className="flex items-center gap-2 border-b border-[#E3E9E7] bg-white px-3 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowNew(false)}
+                      className="rounded p-1.5 text-[#5A6B68] transition-colors hover:bg-[#EFF3F1]"
+                      aria-label="Back to conversations"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <span className="text-sm font-semibold text-[#16221F]">New chat</span>
+                  </div>
+                  <div className="flex items-center gap-2 border-b border-[#E3E9E7] bg-[#F5F7F6] px-3 py-2">
+                    <Search size={15} className="shrink-0 text-[#9FAEAB]" aria-hidden="true" />
+                    <input
+                      value={newQuery}
+                      onChange={(e) => setNewQuery(e.target.value)}
+                      placeholder="Search staff…"
+                      className="w-full bg-transparent text-sm text-[#16221F] outline-none placeholder:text-[#9FAEAB]"
+                    />
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto">
+                    {newDirectory.length === 0 && (
+                      <div className="px-4 py-12 text-center">
+                        <p className="text-sm text-[#6B7A77]">
+                          {directory.length === 0 ? "No staff available yet." : "No matches found."}
+                        </p>
+                      </div>
+                    )}
+                    {newDirectory.map((d) => {
                       const existing = chats.find((c) => c.other_user?.id === d.id);
                       return (
                         <button
                           key={d.id}
                           type="button"
-                          disabled={creating || !!existing}
+                          disabled={creating || Boolean(existing)}
                           onClick={() => startChat(d)}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm hover:bg-white disabled:opacity-60"
+                          className="flex w-full items-center gap-3 border-b border-[#ECEFEE] bg-transparent px-3.5 py-3 text-left transition-colors hover:bg-white disabled:opacity-50"
                         >
-                          <Avatar name={d.full_name} color={TEAL} size={34} />
+                          <Avatar name={d.full_name} color={TEAL} size={38} />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium text-[#16221F]">{d.full_name}</span>
+                            <span className="block truncate text-[14px] font-medium text-[#16221F]">{d.full_name}</span>
                             <span className="block truncate text-xs text-[#6B7A77]">
                               {d.role?.replace(/_/g, " ") ?? "Hospital staff"}
+                              {d.phone ? ` · ${d.phone}` : ""}
                             </span>
                           </span>
-                          {existing ? <span className="text-xs text-[#6B7A77]">Open</span> : null}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {filtered.length === 0 && (
-                  <div className="px-4 py-12 text-center">
-                    <MessageCircle size={28} className="mx-auto text-[#9FAEAB]" aria-hidden="true" />
-                    <p className="mt-2 text-sm text-[#6B7A77]">
-                      {chats.length === 0
-                        ? "No conversations yet. Start one with your doctor or the front desk."
-                        : "No conversations found."}
-                    </p>
-                  </div>
-                )}
-                {filtered.map((chat) => {
-                  const isOnline = online.has(chat.other_user?.id ?? "");
-                  const isActive = active?.id === chat.id;
-                  const urgent = chat.unread_count > 0;
-                  return (
-                    <button
-                      key={chat.id}
-                      type="button"
-                      onClick={() => openChat(chat)}
-                      className={`flex w-full items-center gap-3 border-b border-[#ECEFEE] px-4 py-3.5 text-left transition-colors ${
-                        isActive ? "bg-white shadow-sm" : "hover:bg-white/70"
-                      }`}
-                    >
-                      <Avatar name={chat.other_user?.full_name ?? "Staff"} color={TEAL} online={isOnline} />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-[15px] font-semibold text-[#16221F]">
-                            {chat.other_user?.full_name ?? "Staff"}
-                          </span>
-                          <span className="shrink-0 text-[11px] text-[#8A9895]">{timeAgo(chat.last_message_at)}</span>
-                        </span>
-                        <span className="flex items-center justify-between gap-2">
-                          <span
-                            className={`truncate text-[13px] ${urgent ? "font-medium text-[#C0503A]" : "text-[#6B7A77]"}`}
-                          >
-                            {urgent ? "⚠ " : ""}
-                            {chat.last_message ?? "No messages yet"}
-                          </span>
-                          {chat.unread_count > 0 && (
-                            <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#2F6F6A] px-1 text-[11px] font-bold text-white">
-                              {chat.unread_count}
+                          {existing ? (
+                            <span className="shrink-0 text-[11px] font-medium text-[#2F6F6A]">Chat exists</span>
+                          ) : (
+                            <span className="shrink-0 rounded-full bg-[#2F6F6A] p-1 text-white" aria-hidden="true">
+                              <MessageCircle size={12} />
                             </span>
                           )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  {filtered.length === 0 && (
+                    <div className="px-4 py-12 text-center">
+                      <MessageCircle size={28} className="mx-auto text-[#9FAEAB]" aria-hidden="true" />
+                      <p className="mt-2 text-sm text-[#6B7A77]">
+                        {chats.length === 0
+                          ? "No conversations yet. Start one with your doctor or the front desk."
+                          : "No conversations found."}
+                      </p>
+                    </div>
+                  )}
+                  {filtered.map((chat) => {
+                    const isOnline = online.has(chat.other_user?.id ?? "");
+                    const isActive = active?.id === chat.id;
+                    const urgent = chat.unread_count > 0;
+                    return (
+                      <button
+                        key={chat.id}
+                        type="button"
+                        onClick={() => openChat(chat)}
+                        className={`flex w-full items-center gap-3 border-b border-[#ECEFEE] px-4 py-3.5 text-left transition-colors ${
+                          isActive ? "bg-white shadow-sm" : "hover:bg-white/70"
+                        }`}
+                      >
+                        <Avatar name={chat.other_user?.full_name ?? "Staff"} color={TEAL} online={isOnline} />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-baseline justify-between gap-2">
+                            <span className="truncate text-[15px] font-semibold text-[#16221F]">
+                              {chat.other_user?.full_name ?? "Staff"}
+                            </span>
+                            <span className="shrink-0 text-[11px] text-[#8A9895]">{timeAgo(chat.last_message_at)}</span>
+                          </span>
+                          <span className="flex items-center justify-between gap-2">
+                            <span
+                              className={`truncate text-[13px] ${urgent ? "font-medium text-[#C0503A]" : "text-[#6B7A77]"}`}
+                            >
+                              {urgent ? "⚠ " : ""}
+                              {chat.last_message ?? "No messages yet"}
+                            </span>
+                            {chat.unread_count > 0 && (
+                              <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#2F6F6A] px-1 text-[11px] font-bold text-white">
+                                {chat.unread_count}
+                              </span>
+                            )}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[11px] text-[#9FAEAB]">
+                            {chat.other_user?.role?.replace(/_/g, " ") ?? "Hospital staff"}
+                          </span>
                         </span>
-                        <span className="mt-0.5 block truncate text-[11px] text-[#9FAEAB]">
-                          {chat.other_user?.role?.replace(/_/g, " ") ?? "Hospital staff"}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Thread pane */}
@@ -438,12 +582,7 @@ export default function PatientChats() {
                     >
                       <ChevronLeft size={22} />
                     </button>
-                    <Avatar
-                      name={active.other_user?.full_name ?? "Staff"}
-                      color={TEAL}
-                      online={activeOnline}
-                      size={38}
-                    />
+                    <Avatar name={active.other_user?.full_name ?? "Staff"} color={TEAL} online={activeOnline} size={38} />
                     <span className="ml-1.5 min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-semibold text-white">
                         {active.other_user?.full_name ?? "Staff"}
@@ -453,21 +592,36 @@ export default function PatientChats() {
                         {active.other_user?.role ? ` · ${active.other_user.role.replace(/_/g, " ")}` : ""}
                       </span>
                     </span>
-                    <button type="button" className="rounded p-2 text-white transition-colors hover:bg-white/10" aria-label="Call">
-                      <Phone size={18} />
-                    </button>
-                    <button type="button" className="rounded p-2 text-white transition-colors hover:bg-white/10" aria-label="Video call">
-                      <Video size={18} />
-                    </button>
+                    {/* In-chat search — before the phone icon */}
+                    <div className="mr-1 flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 transition-colors focus-within:bg-white/15">
+                      <Search size={14} color="#9FBAC2" aria-hidden="true" />
+                      <input
+                        value={threadQuery}
+                        onChange={(e) => setThreadQuery(e.target.value)}
+                        placeholder="Search in chat…"
+                        className="w-28 bg-transparent text-xs text-white outline-none placeholder:text-[#9FBAC2] sm:w-40"
+                        aria-label="Search messages in this chat"
+                      />
+                    </div>
+                    <PhoneLink phone={active.other_user?.phone} />
                   </div>
 
                   {/* Messages */}
                   <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
-                    {messages.length === 0 && (
-                      <p className="pt-10 text-center text-sm text-[#6B7A77]">Say hello to start the conversation.</p>
+                    {visibleMessages.length === 0 && (
+                      <p className="pt-10 text-center text-sm text-[#6B7A77]">
+                        {threadQuery.trim() !== ""
+                          ? "No messages match your search."
+                          : "Say hello to start the conversation."}
+                      </p>
                     )}
-                    {messages.map((m) => {
+                    {visibleMessages.map((m) => {
                       const mine = m.sender_id === myUserId.current;
+                      const isImage =
+                        m.attachment_url &&
+                        (m.attachment_type?.startsWith("image/") ||
+                          /\.(png|jpe?g|webp|gif|heic|heif)$/i.test(m.attachment_name ?? ""));
+                      const isAudio = m.attachment_url && m.attachment_type?.startsWith("audio/");
                       return (
                         <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                           <div
@@ -477,7 +631,47 @@ export default function PatientChats() {
                                 : "rounded-2xl rounded-bl-[4px] bg-white text-[#1F2C29]"
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                            {m.attachment_url && isImage && (
+                              <a href={m.attachment_url} target="_blank" rel="noreferrer" className="mb-1.5 block">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={m.attachment_url}
+                                  alt={m.attachment_name ?? "Shared image"}
+                                  className="max-h-64 w-auto max-w-full rounded-xl object-cover"
+                                />
+                              </a>
+                            )}
+                            {m.attachment_url && isAudio && (
+                              <div className="mb-1.5 max-w-[240px]">
+                                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                                <audio controls preload="metadata" className="w-full" style={{ height: 36 }}>
+                                  <source src={m.attachment_url} type={m.attachment_type ?? "audio/mpeg"} />
+                                </audio>
+                              </div>
+                            )}
+                            {m.attachment_url && !isImage && !isAudio && (
+                              <a
+                                href={m.attachment_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`mb-1.5 block rounded-xl border p-2.5 transition-colors ${
+                                  mine ? "border-white/25 hover:bg-white/10" : "border-[#E3E9E7] hover:bg-[#F5F7F6]"
+                                }`}
+                              >
+                                <span className="flex items-center gap-2">
+                                  <FileText size={16} className={mine ? "text-white/80" : "text-[#6B7A77]"} aria-hidden="true" />
+                                  <span className="min-w-0">
+                                    <span className={`block truncate text-xs font-semibold ${mine ? "text-white" : "text-[#16221F]"}`}>
+                                      {m.attachment_name}
+                                    </span>
+                                    <span className={`block text-[10px] ${mine ? "text-white/70" : "text-[#9FAEAB]"}`}>
+                                      {formatBytes(m.attachment_size)}
+                                    </span>
+                                  </span>
+                                </span>
+                              </a>
+                            )}
+                            {m.message ? <p className="whitespace-pre-wrap break-words">{m.message}</p> : null}
                             <span className="mt-1 flex items-center justify-end gap-1 text-[10px]">
                               <span className={mine ? "text-white/70" : "text-[#9FAEAB]"}>{clock(m.created_at)}</span>
                               {mine && <CheckCheck size={12} color="rgba(255,255,255,0.7)" aria-hidden="true" />}
@@ -506,9 +700,26 @@ export default function PatientChats() {
 
                   {/* Composer */}
                   <form onSubmit={send} className="flex items-center gap-2 border-t border-[#E3E9E7] bg-white px-3.5 py-2.5">
-                    <button type="button" className="rounded p-2 text-[#6B7A77] transition-colors hover:bg-[#EFF3F1]" aria-label="Attach file">
-                      <Paperclip size={19} />
+                    <button
+                      type="button"
+                      onClick={() => fileRef.current?.click()}
+                      disabled={attaching || !active}
+                      className="rounded p-2 text-[#6B7A77] transition-colors hover:bg-[#EFF3F1] disabled:opacity-50"
+                      aria-label="Attach photo, document or voice note"
+                      title="Attach photo, document or voice note (max 3 MB)"
+                    >
+                      {attaching ? <Loader2 size={19} className="animate-spin" /> : <Paperclip size={19} />}
                     </button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      hidden
+                      accept={ACCEPT}
+                      onChange={(e) => {
+                        attach(e.target.files?.[0]);
+                        e.target.value = "";
+                      }}
+                    />
                     <input
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
@@ -516,6 +727,34 @@ export default function PatientChats() {
                       className="flex-1 rounded-full bg-[#F2F5F4] px-4 py-2.5 text-sm text-[#16221F] outline-none transition-colors placeholder:text-[#9FAEAB] focus:ring-2 focus:ring-[#2F6F6A]/30"
                       aria-label="Message"
                     />
+                    <div className="relative" ref={emojiRef}>
+                      <button
+                        type="button"
+                        onClick={() => setShowEmojis((s) => !s)}
+                        className={`rounded p-2 transition-colors hover:bg-[#EFF3F1] ${showEmojis ? "bg-[#EFF3F1] text-[#2F6F6A]" : "text-[#6B7A77]"}`}
+                        aria-label="Pick an emoji"
+                      >
+                        <Smile size={19} />
+                      </button>
+                      {showEmojis && (
+                        <div className="absolute bottom-[46px] right-0 z-30 grid w-64 grid-cols-6 gap-1 rounded-xl border border-[#E3E9E7] bg-white p-2 shadow-xl">
+                          {EMOJIS.map((e) => (
+                            <button
+                              key={e}
+                              type="button"
+                              onClick={() => {
+                                setDraft((d) => d + e);
+                                setShowEmojis(false);
+                              }}
+                              className="rounded-lg p-1.5 text-xl transition-colors hover:bg-[#F1F5F4]"
+                              aria-label={`Add ${e}`}
+                            >
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="submit"
                       disabled={sending || !draft.trim()}
