@@ -19,5 +19,5 @@ export default async function StaffPage() {
     redirect("/app");
   }
 
-  return <StaffManagement meId={user.id} />;
+  return <StaffManagement meId={user.id} myRole={role} />;
 }

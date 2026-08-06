@@ -37,7 +37,7 @@ const CREATABLE_ROLES: StaffRole[] = [
   "receptionist",
 ];
 
-export default function StaffManagement({ meId }: { meId: string }) {
+export default function StaffManagement({ meId, myRole }: { meId: string; myRole?: string }) {
   const [users, setUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +158,23 @@ export default function StaffManagement({ meId }: { meId: string }) {
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update role");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteUser(user: StaffUser) {
+    const name = user.full_name || user.email;
+    if (!confirm(`Permanently delete ${name}?\n\nThis removes their login, staff profile, schedules, leave, notifications, mail and chats. It cannot be undone.`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to delete user");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete user");
     } finally {
       setBusy(false);
     }
@@ -326,6 +343,16 @@ export default function StaffManagement({ meId }: { meId: string }) {
                       <Trash2 size={13} aria-hidden="true" />
                       {user.is_active ? "Deactivate" : "Activate"}
                     </button>
+                    {myRole === "super_admin" && (
+                      <button
+                        type="button"
+                        onClick={() => deleteUser(user)}
+                        disabled={busy}
+                        className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-100"
+                      >
+                        <Trash2 size={13} aria-hidden="true" /> Delete
+                      </button>
+                    )}
                   </>
                 )}
                 {user.id === meId && (

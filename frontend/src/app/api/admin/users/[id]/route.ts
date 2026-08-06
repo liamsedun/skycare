@@ -76,32 +76,40 @@ export const PATCH = withAuth(async (req, ctx) => {
   return ok(data);
 });
 
-// DELETE /api/admin/users/[id] — soft deactivate
+// DELETE /api/admin/users/[id] — permanent removal (super_admin only).
+// Removes the auth account, the users row (staff profile + rosters + leave +
+// notifications + mail + chats cascade), and nulls audit references.
 export const DELETE = withAuth(async (req, ctx) => {
   requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
+  if (ctx.role !== "super_admin") throw new ForbiddenError("Only the Super Admin can delete staff accounts");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);
   if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
     throw new NotFoundError("User not found");
   }
-  if (user.role === "super_admin") throw new ForbiddenError("Platform admins cannot be modified");
-  if (user.id === ctx.user.id) throw new ForbiddenError("You cannot deactivate your own account");
+  if (user.role === "super_admin") throw new ForbiddenError("Platform admins cannot be deleted");
+  if (user.id === ctx.user.id) throw new ForbiddenError("You cannot delete your own account");
 
-  const { data } = await ctx.svc
-    .from("users")
-    .update({ is_active: false })
-    .eq("id", id)
-    .select()
-    .single();
+  // Remove the auth login first so the account can no longer sign in.
+  try {
+    await ctx.svc.auth.admin.deleteUser(id);
+  } catch {
+    /* auth row may already be gone */
+  }
+
+  // Delete the users row — staff, staff_roster, staff_leave, notifications,
+  // internal_messages/recipients, chats/chat_messages, push_subscriptions
+  // cascade; doctor/creator references are SET NULL by migration 0016.
+  const { error } = await ctx.svc.from("users").delete().eq("id", id);
+  if (error) throw new ValidationError(error.message);
 
   await logAudit(req, ctx, {
     action: "delete",
     entityType: "users",
     entityId: id,
-    description: `Deactivated ${user.email}`,
+    description: `Permanently deleted ${user.email} (${user.role})`,
   });
-  return ok(data);
+  return ok({ deleted: true });
 });
 
 export const runtime = "nodejs";
