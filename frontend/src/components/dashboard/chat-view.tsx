@@ -1,7 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, MessageCircle, Plus, Send } from "lucide-react";
+import {
+  CheckCheck,
+  ChevronLeft,
+  Loader2,
+  MessageCircle,
+  Paperclip,
+  Phone,
+  Plus,
+  Search,
+  Send,
+  Video,
+} from "lucide-react";
 import { initials } from "@/lib/auth";
 
 interface OtherUser {
@@ -39,6 +50,22 @@ interface Message {
   created_at: string;
 }
 
+type TabKey = "all" | "patient" | "staff" | "urgent";
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "patient", label: "Patients" },
+  { key: "staff", label: "Staff" },
+  { key: "urgent", label: "Urgent" },
+];
+
+const QUICK_REPLIES = ["On my way", "Vitals stable", "Please send chart", "Escalating now"];
+
+const NAVY = "#12293B";
+const TEAL = "#2F6F6A";
+const AMBER = "#8A6A2F";
+const URGENT_RED = "#C0503A";
+
 function timeAgo(iso: string | null): string {
   if (!iso) return "";
   const diff = Date.now() - new Date(iso).getTime();
@@ -54,6 +81,36 @@ function clock(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
+function Avatar({
+  name,
+  color,
+  online,
+  size = 44,
+}: {
+  name: string;
+  color: string;
+  online?: boolean;
+  size?: number;
+}) {
+  return (
+    <span className="relative inline-block shrink-0" style={{ width: size, height: size }}>
+      <span
+        className="flex items-center justify-center font-semibold text-white"
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: color, fontSize: size * 0.36 }}
+      >
+        {initials(name)}
+      </span>
+      {online && (
+        <span
+          className="absolute bottom-0 right-0 rounded-full border-2 border-[#F5F7F6]"
+          style={{ width: Math.max(10, size * 0.25), height: Math.max(10, size * 0.25), backgroundColor: "#3E8E7E" }}
+          aria-hidden="true"
+        />
+      )}
+    </span>
+  );
+}
+
 export default function ChatView() {
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
@@ -66,6 +123,8 @@ export default function ChatView() {
   const [sending, setSending] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [query, setQuery] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const currentUserId = useRef<string>("");
 
@@ -125,7 +184,7 @@ export default function ChatView() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function openChat(chat: ChatItem) {
+  function openChat(chat: ChatItem) {
     setActive(chat);
     setShowNew(false);
   }
@@ -160,17 +219,15 @@ export default function ChatView() {
     }
   }
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    if (!active || !draft.trim()) return;
-    const text = draft.trim();
+  async function sendText(text: string) {
+    if (!active || !text.trim()) return;
     setSending(true);
     setError(null);
     try {
       const res = await fetch(`/api/chats/${active.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text.trim() }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to send");
@@ -184,13 +241,29 @@ export default function ChatView() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Chats</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Messaging with patients who use the portal.</p>
-      </div>
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    await sendText(draft);
+  }
 
+  const filtered = chats.filter((c) => {
+    const name = c.other_user?.full_name ?? "";
+    const matchesTab =
+      activeTab === "all"
+        ? true
+        : activeTab === "urgent"
+          ? c.unread_count > 0
+          : activeTab === "patient"
+            ? true
+            : false;
+    const matchesQuery = name.toLowerCase().includes(query.toLowerCase());
+    return matchesTab && matchesQuery;
+  });
+
+  const activeOnline = active ? online.has(active.other_user?.id ?? "") : false;
+
+  return (
+    <div className="space-y-4">
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
           {error}
@@ -202,163 +275,262 @@ export default function ChatView() {
           <Loader2 size={22} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" />
         </div>
       ) : (
-        <div className="grid overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)] md:grid-cols-[280px_1fr]">
-          <div className="flex max-h-[65vh] flex-col border-b border-[var(--color-border)] md:border-b-0 md:border-r">
-            <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-2.5">
-              <p className="text-sm font-semibold text-[var(--color-foreground)]">Conversations</p>
+        <div className="flex h-[72vh] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-[#E3E9E7] bg-[#F5F7F6] shadow-lg">
+          {/* Header */}
+          <div style={{ backgroundColor: NAVY }} className="px-5 pb-4 pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold tracking-[1.5px] text-[#7FA9A1]">SECURE MESSAGING</p>
+                <h1 className="mt-0.5 text-2xl font-bold text-white">Messages</h1>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowNew((s) => !s)}
-                className="focus-ring inline-flex items-center gap-1 rounded-lg bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[var(--color-primary-dark)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                aria-label="Start a new conversation"
               >
-                <Plus size={13} aria-hidden="true" /> New
+                <Plus size={20} />
               </button>
             </div>
+            <div className="mt-3.5 flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5">
+              <Search size={16} color="#9FBAC2" aria-hidden="true" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search patients or staff"
+                className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[#9FBAC2]"
+              />
+            </div>
+          </div>
 
-            {showNew && (
-              <div className="max-h-48 overflow-y-auto border-b border-[var(--color-border)] bg-slate-50 p-2">
-                {directory.length === 0 ? (
-                  <p className="px-2 py-3 text-xs text-[var(--color-muted-fg)]">No patients with portal accounts yet.</p>
-                ) : (
-                  directory.map((d) => {
-                    const existing = chats.find((c) => c.patient_id === d.patient_id);
-                    return (
-                      <button
-                        key={d.patient_id}
-                        type="button"
-                        disabled={creating}
-                        onClick={() => startChat(d)}
-                        className="focus-ring flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-white disabled:opacity-60"
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-600">
-                          {initials(d.full_name)}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium text-[var(--color-foreground)]">{d.full_name}</span>
-                          <span className="block truncate text-xs text-[var(--color-muted-fg)]">
-                            {d.patient_number} {d.is_dependant ? "· Dependant" : ""}
+          {/* Tabs */}
+          <div className="flex gap-2 border-b border-[#E3E9E7] bg-[#F5F7F6] px-5 py-3">
+            {TABS.map((t) => {
+              const isActive = activeTab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setActiveTab(t.key)}
+                  className={`rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+                    isActive
+                      ? "border-[#12293B] bg-[#12293B] text-white"
+                      : "border-[#E3E9E7] bg-white text-[#5A6B68] hover:border-[#CBD6D3]"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid min-h-0 flex-1 md:grid-cols-[320px_1fr]">
+            {/* Conversation list */}
+            <div
+              className={`min-h-0 flex-col border-[#E3E9E7] bg-[#F5F7F6] md:flex md:border-r ${
+                active ? "hidden" : "flex"
+              }`}
+            >
+              {showNew && (
+                <div className="max-h-48 overflow-y-auto border-b border-[#E3E9E7] bg-white/70 px-2 py-2">
+                  {directory.length === 0 ? (
+                    <p className="px-2 py-3 text-xs text-[#6B7A77]">No patients with portal accounts yet.</p>
+                  ) : (
+                    directory.map((d) => {
+                      const existing = chats.find((c) => c.patient_id === d.patient_id);
+                      return (
+                        <button
+                          key={d.patient_id}
+                          type="button"
+                          disabled={creating}
+                          onClick={() => startChat(d)}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left text-sm hover:bg-white disabled:opacity-60"
+                        >
+                          <Avatar name={d.full_name} color={AMBER} size={34} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium text-[#16221F]">{d.full_name}</span>
+                            <span className="block truncate text-xs text-[#6B7A77]">
+                              {d.patient_number} {d.is_dependant ? "· Dependant" : ""}
+                            </span>
                           </span>
-                        </span>
-                        {existing && <span className="text-[10px] text-[var(--color-muted-fg)]">open</span>}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            )}
-
-            <ul className="flex-1 overflow-y-auto">
-              {chats.length === 0 && (
-                <li className="px-4 py-10 text-center text-sm text-[var(--color-muted-fg)]">
-                  No conversations yet. Start one with a patient.
-                </li>
+                          {existing && <span className="text-[10px] text-[#6B7A77]">open</span>}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
               )}
-              {chats.map((c) => {
-                const u = c.other_user;
-                const isOnline = u ? online.has(u.id) : false;
-                return (
-                  <li key={c.id}>
+
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {filtered.length === 0 && (
+                  <div className="px-4 py-12 text-center">
+                    <MessageCircle size={28} className="mx-auto text-[#9FAEAB]" aria-hidden="true" />
+                    <p className="mt-2 text-sm text-[#6B7A77]">
+                      {chats.length === 0
+                        ? "No conversations yet. Start one with a patient."
+                        : "No conversations found."}
+                    </p>
+                  </div>
+                )}
+                {filtered.map((c) => {
+                  const u = c.other_user;
+                  const isOnline = u ? online.has(u.id) : false;
+                  const isActive = active?.id === c.id;
+                  const urgent = c.unread_count > 0;
+                  return (
                     <button
+                      key={c.id}
                       type="button"
                       onClick={() => openChat(c)}
-                      className={`focus-ring flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-slate-50 ${
-                        active?.id === c.id ? "bg-[var(--color-primary-soft)]" : ""
+                      className={`flex w-full items-center gap-3 border-b border-[#ECEFEE] px-4 py-3.5 text-left transition-colors ${
+                        isActive ? "bg-white shadow-sm" : "hover:bg-white/70"
                       }`}
                     >
-                      <span className="relative shrink-0">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">
-                          {initials(u?.full_name ?? "?")}
-                        </span>
-                        <span
-                          className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white ${isOnline ? "bg-emerald-500" : "bg-slate-300"}`}
-                          aria-hidden="true"
-                        />
-                      </span>
+                      <Avatar name={u?.full_name ?? "?"} color={AMBER} online={isOnline} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-sm font-medium text-[var(--color-foreground)]">{u?.full_name ?? "Patient"}</span>
-                          <span className="shrink-0 text-[10px] text-[var(--color-muted-fg)]">{timeAgo(c.last_message_at)}</span>
+                          <span className="truncate text-[15px] font-semibold text-[#16221F]">{u?.full_name ?? "Patient"}</span>
+                          <span className="shrink-0 text-[11px] text-[#8A9895]">{timeAgo(c.last_message_at)}</span>
                         </span>
-                        <span className="flex items-baseline justify-between gap-2">
-                          <span className="truncate text-xs text-[var(--color-muted-fg)]">{c.last_message ?? "No messages yet"}</span>
+                        <span className="flex items-center justify-between gap-2">
+                          <span
+                            className={`truncate text-[13px] ${urgent ? "font-medium text-[#C0503A]" : "text-[#6B7A77]"}`}
+                          >
+                            {urgent ? "⚠ " : ""}
+                            {c.last_message ?? "No messages yet"}
+                          </span>
                           {c.unread_count > 0 && (
-                            <span className="shrink-0 rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                            <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#2F6F6A] px-1 text-[11px] font-bold text-white">
                               {c.unread_count}
                             </span>
                           )}
                         </span>
+                        <span className="mt-0.5 block truncate text-[11px] text-[#9FAEAB]">
+                          {u?.patient_number ?? ""}
+                          {u?.is_dependant ? " · Dependant" : ""}
+                        </span>
                       </span>
                     </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-
-          {active ? (
-            <div className="flex max-h-[65vh] flex-col">
-              <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-white">
-                  {initials(active.other_user?.full_name ?? "?")}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{active.other_user?.full_name ?? "Patient"}</p>
-                  <p className="truncate text-xs text-[var(--color-muted-fg)]">{active.other_user?.patient_number ?? ""}</p>
-                </div>
-              </div>
-
-              <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-4">
-                {messages.length === 0 && (
-                  <p className="pt-10 text-center text-sm text-[var(--color-muted-fg)]">Say hello to start the conversation.</p>
-                )}
-                {messages.map((m) => {
-                  const mine = m.sender_id === currentUserId.current;
-                  return (
-                    <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
-                          mine
-                            ? "rounded-br-sm bg-[var(--color-primary)] text-white"
-                            : "rounded-bl-sm bg-white text-[var(--color-foreground)]"
-                        }`}
-                      >
-                        <p className="whitespace-pre-wrap break-words">{m.message}</p>
-                        <p className={`mt-1 text-right text-[10px] ${mine ? "text-white/70" : "text-[var(--color-muted-fg)]"}`}>{clock(m.created_at)}</p>
-                      </div>
-                    </div>
                   );
                 })}
-                <div ref={bottomRef} />
               </div>
+            </div>
 
-              <form onSubmit={send} className="flex items-center gap-2 border-t border-[var(--color-border)] p-3">
-                <input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Type a message…"
-                  className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !draft.trim()}
-                  className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-50"
-                  aria-label="Send message"
-                >
-                  <Send size={16} aria-hidden="true" />
-                </button>
-              </form>
+            {/* Thread pane */}
+            <div className={`min-h-0 flex-col bg-[#EFF3F1] md:flex ${active ? "flex" : "hidden"}`}>
+              {!active ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-[#6B7A77] shadow-sm">
+                    <MessageCircle size={24} aria-hidden="true" />
+                  </span>
+                  <p className="text-sm font-semibold text-[#16221F]">Select a conversation</p>
+                  <p className="max-w-xs text-xs text-[#6B7A77]">
+                    Messages sent here appear in the patient&apos;s portal and can be answered from either side.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Thread header */}
+                  <div className="flex items-center gap-1.5 px-3.5 py-3" style={{ backgroundColor: NAVY }}>
+                    <button
+                      type="button"
+                      onClick={() => setActive(null)}
+                      className="rounded p-1 text-white transition-colors hover:bg-white/10 md:hidden"
+                      aria-label="Back to conversations"
+                    >
+                      <ChevronLeft size={22} />
+                    </button>
+                    <Avatar
+                      name={active.other_user?.full_name ?? "?"}
+                      color={AMBER}
+                      online={activeOnline}
+                      size={38}
+                    />
+                    <span className="ml-1.5 min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold text-white">
+                        {active.other_user?.full_name ?? "Patient"}
+                      </span>
+                      <span className="block truncate text-xs text-[#9FBAC2]">
+                        {activeOnline ? "Active now" : "Offline"}
+                        {active.other_user?.patient_number ? ` · ${active.other_user.patient_number}` : ""}
+                      </span>
+                    </span>
+                    <button type="button" className="rounded p-2 text-white transition-colors hover:bg-white/10" aria-label="Call">
+                      <Phone size={18} />
+                    </button>
+                    <button type="button" className="rounded p-2 text-white transition-colors hover:bg-white/10" aria-label="Video call">
+                      <Video size={18} />
+                    </button>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-4">
+                    {messages.length === 0 && (
+                      <p className="pt-10 text-center text-sm text-[#6B7A77]">Say hello to start the conversation.</p>
+                    )}
+                    {messages.map((m) => {
+                      const mine = m.sender_id === currentUserId.current;
+                      return (
+                        <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                          <div
+                            className={`max-w-[80%] px-3.5 py-2 text-sm shadow-sm ${
+                              mine
+                                ? "rounded-2xl rounded-br-[4px] bg-[#2F6F6A] text-white"
+                                : "rounded-2xl rounded-bl-[4px] bg-white text-[#1F2C29]"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">{m.message}</p>
+                            <span className="mt-1 flex items-center justify-end gap-1 text-[10px]">
+                              <span className={mine ? "text-white/70" : "text-[#9FAEAB]"}>{clock(m.created_at)}</span>
+                              {mine && <CheckCheck size={12} color="rgba(255,255,255,0.7)" aria-hidden="true" />}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={bottomRef} />
+                  </div>
+
+                  {/* Quick replies */}
+                  <div className="flex max-h-11 gap-2 overflow-x-auto px-4 pb-2">
+                    {QUICK_REPLIES.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        disabled={sending || !active}
+                        onClick={() => sendText(q)}
+                        className="shrink-0 rounded-full border border-[#DDE6E3] bg-white px-3 py-1.5 text-xs text-[#3E5A54] transition-colors hover:bg-[#2F6F6A] hover:text-white disabled:opacity-50"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Composer */}
+                  <form onSubmit={send} className="flex items-center gap-2 border-t border-[#E3E9E7] bg-white px-3.5 py-2.5">
+                    <button type="button" className="rounded p-2 text-[#6B7A77] transition-colors hover:bg-[#EFF3F1]" aria-label="Attach file">
+                      <Paperclip size={19} />
+                    </button>
+                    <input
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Write a secure message…"
+                      className="flex-1 rounded-full bg-[#F2F5F4] px-4 py-2.5 text-sm text-[#16221F] outline-none transition-colors placeholder:text-[#9FAEAB] focus:ring-2 focus:ring-[#2F6F6A]/30"
+                      aria-label="Message"
+                    />
+                    <button
+                      type="submit"
+                      disabled={sending || !draft.trim()}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2F6F6A] text-white transition-colors hover:bg-[#275E5A] disabled:opacity-50"
+                      aria-label="Send message"
+                    >
+                      <Send size={16} aria-hidden="true" />
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
-          ) : (
-            <div className="flex max-h-[65vh] flex-col items-center justify-center gap-3 bg-slate-50/60 p-8 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-[var(--color-muted-fg)] shadow-sm">
-                <MessageCircle size={24} aria-hidden="true" />
-              </span>
-              <p className="text-sm font-medium text-[var(--color-foreground)]">Select a conversation</p>
-              <p className="max-w-xs text-xs text-[var(--color-muted-fg)]">
-                Messages sent here appear in the patient&apos;s portal and can be answered from either side.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       )}
     </div>
