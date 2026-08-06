@@ -1,5 +1,6 @@
 import { withStaff, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit, logView } from "@/lib/audit";
+import { normalizeBloodGroup } from "@/app/api/patients/route";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +39,23 @@ export const PUT = withStaff(async (req, ctx) => {
     "first_name", "last_name", "other_names", "gender", "date_of_birth", "phone", "email",
     "address", "city", "state", "blood_group", "genotype", "allergies", "chronic_conditions",
     "nhia_number", "insurance_provider", "insurance_plan", "is_insured", "next_of_kin", "status",
+    "marital_status",
   ];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];
+  }
+  if (patch.blood_group !== undefined) {
+    patch.blood_group = normalizeBloodGroup(patch.blood_group as string | null | undefined);
+    if (body.blood_group && String(body.blood_group).trim() && !patch.blood_group) {
+      throw new ValidationError(
+        `Invalid blood group "${body.blood_group}". Use one of: A+, A-, B+, B-, AB+, AB-, O+, O-.`
+      );
+    }
+  }
+  if (patch.marital_status !== undefined) {
+    const ms = String(patch.marital_status ?? "").trim();
+    if (!ms) patch.marital_status = "single";
   }
   if (Object.keys(patch).length === 0) return ok(existing);
 

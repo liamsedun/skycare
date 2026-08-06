@@ -2,41 +2,62 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Building2, Check, Eye, EyeOff, Globe, Mail, Phone, User } from "lucide-react";
+import { Activity, Building2, Check, Cross, Eye, EyeOff, Globe, HeartPulse, Mail, Phone, Stethoscope, User } from "lucide-react";
 import { SkyCareLogo } from "@/components/landing/skycare-logo";
 
 function NurseIllustration() {
   return (
-    <svg viewBox="0 0 320 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="160" cy="170" r="130" fill="#38bdf8" opacity="0.35" />
-      <circle cx="160" cy="95" r="42" fill="#fde68a" />
-      <path d="M118 90 Q130 55 160 50 Q190 55 202 90 Q195 70 160 68 Q125 70 118 90" fill="#1e293b" />
-      <circle cx="160" cy="55" r="16" fill="#1e293b" />
-      <circle cx="145" cy="92" r="4" fill="#1e293b" />
-      <circle cx="175" cy="92" r="4" fill="#1e293b" />
-      <path d="M148 112 Q160 120 172 112" stroke="#1e293b" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      <path d="M95 160 Q160 145 225 160 L235 290 Q160 310 85 290 Z" fill="#38bdf8" />
-      <path d="M130 165 L160 195 L190 165" fill="#0284c7" />
-      <path d="M125 62 Q160 40 195 62 L190 78 Q160 68 130 78 Z" fill="white" />
-      <rect x="148" y="52" width="24" height="10" rx="2" fill="#ef4444" />
-      <path d="M125 175 Q100 195 110 235" stroke="#0f172a" strokeWidth="3.5" fill="none" />
-      <path d="M195 175 Q220 195 210 235" stroke="#0f172a" strokeWidth="3.5" fill="none" />
-      <circle cx="110" cy="240" r="9" fill="#0f172a" />
-      <circle cx="210" cy="240" r="9" fill="#0f172a" />
-      <path d="M110 240 Q160 270 210 240" stroke="#0f172a" strokeWidth="3" fill="none" />
-      <rect x="148" y="225" width="24" height="20" rx="3" fill="white" />
-      <text x="160" y="239" textAnchor="middle" fontSize="10" fill="#0284c7" fontWeight="bold">RN</text>
-      <path d="M95 175 Q55 210 75 255" stroke="#fde68a" strokeWidth="17" strokeLinecap="round" fill="none" />
-      <path d="M225 175 Q265 210 245 255" stroke="#fde68a" strokeWidth="17" strokeLinecap="round" fill="none" />
-      <g opacity="0.7">
-        <circle cx="55" cy="110" r="13" fill="#7dd3fc" />
-        <path d="M49 110 h12 M55 104 v12" stroke="white" strokeWidth="2.5" />
-        <circle cx="265" cy="130" r="11" fill="#7dd3fc" />
-        <path d="M260 130 h10 M265 125 v10" stroke="white" strokeWidth="2" />
-        <circle cx="75" cy="275" r="10" fill="#7dd3fc" />
-        <path d="M71 275 h8 M75 271 v8" stroke="white" strokeWidth="2" />
-      </g>
-    </svg>
+    <div className="animate-float-y">
+      <svg viewBox="0 0 320 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="160" cy="170" r="130" fill="#38bdf8" opacity="0.35" className="animate-pulse-glow" />
+        <circle cx="160" cy="95" r="42" fill="#fde68a" />
+        <path d="M118 90 Q130 55 160 50 Q190 55 202 90 Q195 70 160 68 Q125 70 118 90" fill="#1e293b" />
+        <circle cx="160" cy="55" r="16" fill="#1e293b" />
+        <circle cx="145" cy="92" r="4" fill="#1e293b" />
+        <circle cx="175" cy="92" r="4" fill="#1e293b" />
+        <path d="M148 112 Q160 120 172 112" stroke="#1e293b" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        <path d="M95 160 Q160 145 225 160 L235 290 Q160 310 85 290 Z" fill="#38bdf8" />
+        <path d="M130 165 L160 195 L190 165" fill="#0284c7" />
+        <path d="M125 62 Q160 40 195 62 L190 78 Q160 68 130 78 Z" fill="white" />
+        <rect x="148" y="52" width="24" height="10" rx="2" fill="#ef4444" />
+        <path d="M125 175 Q100 195 110 235" stroke="#0f172a" strokeWidth="3.5" fill="none" />
+        <path d="M195 175 Q220 195 210 235" stroke="#0f172a" strokeWidth="3.5" fill="none" />
+        <circle cx="110" cy="240" r="9" fill="#0f172a" />
+        <circle cx="210" cy="240" r="9" fill="#0f172a" />
+        <path d="M110 240 Q160 270 210 240" stroke="#0f172a" strokeWidth="3" fill="none" />
+        <rect x="148" y="225" width="24" height="20" rx="3" fill="white" />
+        <text x="160" y="239" textAnchor="middle" fontSize="10" fill="#0284c7" fontWeight="bold">RN</text>
+        <path d="M95 175 Q55 210 75 255" stroke="#fde68a" strokeWidth="17" strokeLinecap="round" fill="none" />
+        <path d="M225 175 Q265 210 245 255" stroke="#fde68a" strokeWidth="17" strokeLinecap="round" fill="none" />
+        <g opacity="0.7">
+          <circle cx="55" cy="110" r="13" fill="#7dd3fc" className="animate-pulse-glow" />
+          <path d="M49 110 h12 M55 104 v12" stroke="white" strokeWidth="2.5" />
+          <circle cx="265" cy="130" r="11" fill="#7dd3fc" className="animate-pulse-glow" />
+          <path d="M260 130 h10 M265 125 v10" stroke="white" strokeWidth="2" />
+          <circle cx="75" cy="275" r="10" fill="#7dd3fc" className="animate-pulse-glow" />
+          <path d="M71 275 h8 M75 271 v8" stroke="white" strokeWidth="2" />
+        </g>
+      </svg>
+    </div>
+  );
+}
+
+function FloatingIcons() {
+  return (
+    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+      <span className="animate-float-y-slow absolute left-4 top-8 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
+        <Stethoscope size={20} />
+      </span>
+      <span className="animate-float-y absolute right-5 top-20 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
+        <HeartPulse size={18} />
+      </span>
+      <span className="animate-float-y-slow absolute bottom-24 left-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
+        <Cross size={18} />
+      </span>
+      <span className="animate-float-y absolute bottom-8 right-8 flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-white backdrop-blur-sm">
+        <Activity size={20} />
+      </span>
+    </div>
   );
 }
 
@@ -45,15 +66,16 @@ export default function SignupPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4 py-10">
       {/* decorative floating blobs */}
-      <div aria-hidden="true" className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-sky-300/40 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-blue-300/40 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute left-2/3 top-1/4 h-44 w-44 rounded-full bg-indigo-200/50 blur-2xl" />
+      <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-sky-300/40 blur-3xl" />
+      <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-blue-300/40 blur-3xl" />
+      <div aria-hidden="true" className="animate-float-y-slow pointer-events-none absolute left-2/3 top-1/4 h-44 w-44 rounded-full bg-indigo-200/50 blur-2xl" />
 
-      <div className="relative flex w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-sky-900/15">
+      <div className="animate-fade-up relative flex w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-sky-900/15">
         {/* illustration panel */}
         <div className="relative hidden w-[340px] shrink-0 flex-col justify-center overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 px-8 py-10 text-white md:flex">
-          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-          <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-300/20 blur-2xl" />
+          <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+          <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-300/20 blur-2xl" />
+          <FloatingIcons />
           <h2 className="font-heading relative text-3xl font-bold">Sign up now.</h2>
           <p className="relative mt-2 text-sm text-sky-100">
             Join the SkyCare family and get your hospital online in 5 minutes.

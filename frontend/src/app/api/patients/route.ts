@@ -47,6 +47,7 @@ export interface CreatePatientBody {
   state?: string;
   bloodGroup?: string;
   genotype?: string;
+  maritalStatus?: string;
   allergies?: string;
   chronicConditions?: string;
   nhiaNumber?: string;
@@ -57,6 +58,15 @@ export interface CreatePatientBody {
   // optional patient portal credentials
   portalEmail?: string;
   portalPassword?: string;
+  mustChangePassword?: boolean;
+}
+
+/** Normalizes a blood group: "0+" → "O+", lowercase → uppercase, trims whitespace. */
+export function normalizeBloodGroup(value: string | null | undefined): string | null {
+  if (!value || !value.trim()) return null;
+  const normalized = value.trim().toUpperCase().replace(/0/g, "O");
+  const VALID = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+  return VALID.includes(normalized) ? normalized : null;
 }
 
 // POST /api/patients — register a patient (staff). Optional portal login.
@@ -66,6 +76,13 @@ export const POST = withStaff(async (req, ctx) => {
 
   if (!body.firstName?.trim() || !body.lastName?.trim()) {
     throw new ValidationError("First and last name are required");
+  }
+
+  const normalizedBloodGroup = normalizeBloodGroup(body.bloodGroup);
+  if (body.bloodGroup && body.bloodGroup.trim() && !normalizedBloodGroup) {
+    throw new ValidationError(
+      `Invalid blood group "${body.bloodGroup}". Use one of: A+, A-, B+, B-, AB+, AB-, O+, O-.`
+    );
   }
 
   const settings = await getTenantSettings(ctx.svc, tenantId);
@@ -89,7 +106,10 @@ export const POST = withStaff(async (req, ctx) => {
       password: body.portalPassword,
       email_confirm: true,
       app_metadata: { role: "patient_api", tenant_id: tenantId, branch_id: ctx.branchId ?? null },
-      user_metadata: { full_name: `${body.firstName} ${body.lastName}` },
+      user_metadata: {
+        full_name: `${body.firstName} ${body.lastName}`,
+        ...(body.mustChangePassword ? { must_change_password: true } : {}),
+      },
     });
     if (authError || !authUser?.user) {
       throw new ValidationError(authError?.message ?? "Failed to create patient portal account");
@@ -129,8 +149,11 @@ export const POST = withStaff(async (req, ctx) => {
       address: body.address?.trim() || null,
       city: body.city?.trim() || null,
       state: body.state?.trim() || null,
-      blood_group: body.bloodGroup || null,
+      blood_group: normalizedBloodGroup,
       genotype: body.genotype || null,
+      ...(body.maritalStatus?.trim()
+        ? { marital_status: body.maritalStatus.trim() }
+        : { marital_status: "single" }),
       allergies: body.allergies || null,
       chronic_conditions: body.chronicConditions || null,
       nhia_number: body.nhiaNumber?.trim() || null,

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims } from "@/lib/auth";
 import PatientShell from "@/components/patient/patient-shell";
+import ForcePasswordChange from "@/components/patient/force-password-change";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,11 @@ export default async function PatientLayout({
   const tenantName = tenantRes.data?.name ?? null;
   const tenantLogoUrl = tenantRes.data?.logo_url ?? null;
   const avatarUrl = profileRes.data?.avatar_url ?? null;
+
+  // First-login gate: staff set a welcome password; patient must set their own.
+  if (user.user_metadata?.must_change_password === true) {
+    return <ForcePasswordChange userName={userName} />;
+  }
 
   return (
     <PatientShell tenantName={tenantName} userName={userName} tenantLogoUrl={tenantLogoUrl} avatarUrl={avatarUrl}>

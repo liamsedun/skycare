@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Eye, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
+import { ClipboardList, Eye, EyeOff, HeartPulse, KeyRound, PhoneCall, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 
 const RECORD_TYPES = [
@@ -59,11 +59,20 @@ const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
+const BLOOD_GROUPS: string[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const GENOTYPES: string[] = ["AA", "AS", "SS", "AC", "SC", "CC"];
+const MARITAL_STATUSES: string[] = ["single", "married", "divorced", "widowed", "separated"];
+
 export function AddPatientButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [portalLogin, setPortalLogin] = useState(false);
+  const [portalEmail, setPortalEmail] = useState("");
+  const [portalPassword, setPortalPassword] = useState("");
+  const [showPortalPassword, setShowPortalPassword] = useState(false);
+  const [email, setEmail] = useState("");
 
   async function handleSubmit(form: FormData) {
     setBusy(true);
@@ -75,10 +84,11 @@ export function AddPatientButton() {
         body: JSON.stringify({
           firstName: form.get("firstName"),
           lastName: form.get("lastName"),
+          otherNames: form.get("otherNames") || undefined,
           gender: form.get("gender") || undefined,
           dateOfBirth: form.get("dateOfBirth") || undefined,
           phone: form.get("phone") || undefined,
-          email: form.get("email") || undefined,
+          email: email || undefined,
           address: form.get("address") || undefined,
           city: form.get("city") || undefined,
           state: form.get("state") || undefined,
@@ -90,7 +100,9 @@ export function AddPatientButton() {
           emergencyContactName: form.get("emergencyName") || undefined,
           emergencyContactPhone: form.get("emergencyPhone") || undefined,
           maritalStatus: form.get("maritalStatus") || undefined,
-          createPortalLogin: form.get("createPortalLogin") === "on",
+          portalEmail: portalLogin ? portalEmail : undefined,
+          portalPassword: portalLogin ? portalPassword : undefined,
+          mustChangePassword: portalLogin ? form.get("mustChangePassword") === "on" : undefined,
         }),
       });
       const body = await res.json();
@@ -122,84 +134,221 @@ export function AddPatientButton() {
           busy={busy}
           submitLabel={busy ? "Registering…" : "Register patient"}
           onSubmit={handleSubmit}
+          wide
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className={labelCls} htmlFor="p-first">First name</label>
-              <input id="p-first" name="firstName" required className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-last">Last name</label>
-              <input id="p-last" name="lastName" required className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-gender">Gender</label>
-              <select id="p-gender" name="gender" className={inputCls}>
-                <option value="">Not specified</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-dob">Date of birth</label>
-              <input id="p-dob" name="dateOfBirth" type="date" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-phone">Phone</label>
-              <input id="p-phone" name="phone" type="tel" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-email">Email</label>
-              <input id="p-email" name="email" type="email" className={inputCls} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className={labelCls} htmlFor="p-address">Address</label>
-              <input id="p-address" name="address" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-city">City</label>
-              <input id="p-city" name="city" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-state">State</label>
-              <input id="p-state" name="state" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-blood">Blood group</label>
-              <input id="p-blood" name="bloodGroup" placeholder="O+" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-genotype">Genotype</label>
-              <input id="p-genotype" name="genotype" placeholder="AA" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-height">Height (cm)</label>
-              <input id="p-height" name="heightCm" type="number" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-weight">Weight (kg)</label>
-              <input id="p-weight" name="weightKg" type="number" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-ec-name">Emergency contact</label>
-              <input id="p-ec-name" name="emergencyName" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls} htmlFor="p-ec-phone">Emergency phone</label>
-              <input id="p-ec-phone" name="emergencyPhone" type="tel" className={inputCls} />
-            </div>
-            <div className="sm:col-span-2">
-              <label className={labelCls} htmlFor="p-allergies">Allergies</label>
-              <input id="p-allergies" name="allergies" className={inputCls} />
-            </div>
-            <label className="flex items-center gap-2 text-sm sm:col-span-2">
-              <input
-                type="checkbox"
-                name="createPortalLogin"
-                className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
-              />
-              Create patient portal login (patient can sign in at /login)
-            </label>
+          <div className="space-y-5">
+            <section>
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <UserRound size={14} aria-hidden="true" /> Personal details
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls} htmlFor="p-first">First name</label>
+                  <input id="p-first" name="firstName" required className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-last">Last name</label>
+                  <input id="p-last" name="lastName" required className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-other">Other names</label>
+                  <input id="p-other" name="otherNames" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-gender">Gender</label>
+                  <select id="p-gender" name="gender" className={inputCls}>
+                    <option value="">Not specified</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-dob">Date of birth</label>
+                  <input id="p-dob" name="dateOfBirth" type="date" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-phone">Phone</label>
+                  <input id="p-phone" name="phone" type="tel" className={inputCls} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelCls} htmlFor="p-email">Email</label>
+                  <input
+                    id="p-email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (!portalEmail) setPortalEmail(e.target.value);
+                    }}
+                    className={inputCls}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelCls} htmlFor="p-address">Address</label>
+                  <input id="p-address" name="address" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-city">City</label>
+                  <input id="p-city" name="city" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-state">State</label>
+                  <input id="p-state" name="state" className={inputCls} />
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <HeartPulse size={14} aria-hidden="true" /> Clinical info
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className={labelCls} htmlFor="p-blood">Blood group</label>
+                  <input
+                    id="p-blood"
+                    name="bloodGroup"
+                    list="blood-group-list"
+                    placeholder="Pick or type (e.g. O+)"
+                    className={inputCls}
+                    onBlur={(e) => {
+                      const v = e.target.value.replace(/0/g, "O").toUpperCase();
+                      if (BLOOD_GROUPS.includes(v)) e.target.value = v;
+                    }}
+                  />
+                  <datalist id="blood-group-list">
+                    {BLOOD_GROUPS.map((b) => (
+                      <option key={b} value={b} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-genotype">Genotype</label>
+                  <input
+                    id="p-genotype"
+                    name="genotype"
+                    list="genotype-list"
+                    placeholder="Pick or type (e.g. AA)"
+                    className={inputCls}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim().toUpperCase();
+                      if (GENOTYPES.includes(v)) e.target.value = v;
+                    }}
+                  />
+                  <datalist id="genotype-list">
+                    {GENOTYPES.map((g) => (
+                      <option key={g} value={g} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-marital">Marital status</label>
+                  <input
+                    id="p-marital"
+                    name="maritalStatus"
+                    list="marital-status-list"
+                    placeholder="Pick or type (e.g. single)"
+                    className={inputCls}
+                  />
+                  <datalist id="marital-status-list">
+                    {MARITAL_STATUSES.map((m) => (
+                      <option key={m} value={m} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-height">Height (cm)</label>
+                  <input id="p-height" name="heightCm" type="number" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-weight">Weight (kg)</label>
+                  <input id="p-weight" name="weightKg" type="number" className={inputCls} />
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <PhoneCall size={14} aria-hidden="true" /> Emergency contact
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelCls} htmlFor="p-ec-name">Emergency contact</label>
+                  <input id="p-ec-name" name="emergencyName" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="p-ec-phone">Emergency phone</label>
+                  <input id="p-ec-phone" name="emergencyPhone" type="tel" className={inputCls} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelCls} htmlFor="p-allergies">Allergies</label>
+                  <input id="p-allergies" name="allergies" placeholder="e.g. Penicillin" className={inputCls} />
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4">
+              <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <KeyRound size={14} aria-hidden="true" /> Patient portal login
+              </h3>
+              <label className="mb-3 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={portalLogin}
+                  onChange={(e) => setPortalLogin(e.target.checked)}
+                  className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+                />
+                Give this patient portal login (sign in at /login)
+              </label>
+              {portalLogin && (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label className={labelCls} htmlFor="p-portal-email">Portal login email</label>
+                    <input
+                      id="p-portal-email"
+                      type="email"
+                      value={portalEmail}
+                      onChange={(e) => setPortalEmail(e.target.value)}
+                      placeholder="Defaults to the patient email above"
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelCls} htmlFor="p-portal-pass">Welcome password</label>
+                    <div className="relative">
+                      <input
+                        id="p-portal-pass"
+                        type={showPortalPassword ? "text" : "password"}
+                        value={portalPassword}
+                        onChange={(e) => setPortalPassword(e.target.value)}
+                        placeholder="8+ characters"
+                        className={inputCls}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPortalPassword((v) => !v)}
+                        className="focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                        aria-label={showPortalPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPortalPassword}
+                      >
+                        {showPortalPassword ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
+                      </button>
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      name="mustChangePassword"
+                      defaultChecked
+                      className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+                    />
+                    <span>Require password change at first login</span>
+                  </label>
+                </div>
+              )}
+            </section>
           </div>
         </Modal>
       )}
@@ -482,11 +631,15 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-blood">Blood group</label>
-                    <input id="e-blood" name="bloodGroup" defaultValue={detail.blood_group ?? ""} className={inputCls} />
+                    <input id="e-blood" name="bloodGroup" list="blood-group-list" defaultValue={detail.blood_group ?? ""} className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-genotype">Genotype</label>
-                    <input id="e-genotype" name="genotype" defaultValue={detail.genotype ?? ""} className={inputCls} />
+                    <input id="e-genotype" name="genotype" list="genotype-list" defaultValue={detail.genotype ?? ""} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls} htmlFor="e-marital">Marital status</label>
+                    <input id="e-marital" name="maritalStatus" list="marital-status-list" defaultValue={detail.marital_status ?? ""} className={inputCls} />
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-height">Height (cm)</label>
