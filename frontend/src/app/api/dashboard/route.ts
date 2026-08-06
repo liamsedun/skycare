@@ -66,6 +66,10 @@ export const GET = withStaff(async (req, ctx) => {
     staffRes,
     deptApptsRes,
     recentRes,
+    monthPatientsRes,
+    monthApptsRes,
+    allApptsRes,
+    invMonthRes,
   ] = await Promise.all([
     ctx.svc.from("patients").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
     ctx.svc
@@ -146,10 +150,33 @@ export const GET = withStaff(async (req, ctx) => {
       .gte("scheduled_date", windowStart),
     ctx.svc
       .from("patients")
-      .select("id, patient_number, first_name, last_name, status, created_at")
+      .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, status, created_at")
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: false })
       .limit(5),
+    ctx.svc
+      .from("patients")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .gte("created_at", `${from}T00:00:00`)
+      .lte("created_at", `${to}T23:59:59.999`),
+    ctx.svc
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .gte("scheduled_date", from)
+      .lte("scheduled_date", to),
+    ctx.svc
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId),
+    ctx.svc
+      .from("invoices")
+      .select("id, total_amount, paid_amount")
+      .eq("tenant_id", tenantId)
+      .in("status", ["pending", "partially_paid"])
+      .gte("issue_date", from)
+      .lte("issue_date", to),
   ]);
 
   if (
@@ -237,7 +264,39 @@ export const GET = withStaff(async (req, ctx) => {
     name: `${p.first_name} ${p.last_name}`,
     status: p.status,
     createdAt: p.created_at,
+    patient: {
+      id: p.id,
+      patient_number: p.patient_number,
+      first_name: p.first_name,
+      last_name: p.last_name,
+      gender: p.gender,
+      date_of_birth: p.date_of_birth,
+      phone: p.phone,
+      email: p.email,
+      city: p.city,
+      state: p.state,
+      status: p.status,
+    },
   }));
+
+  // ---- Life Blossom-style KPI extras ----
+  const monthly = monthlyTrend;
+  const prevMonth = monthly[monthly.length - 2];
+  const curMonth = monthly[monthly.length - 1];
+  const prevRevenue = (prevMonth?.medical ?? 0) + (prevMonth?.other ?? 0);
+  const curRevenue = (curMonth?.medical ?? 0) + (curMonth?.other ?? 0);
+  const revenueTrendPct =
+    prevRevenue > 0 ? round2(((curRevenue - prevRevenue) / prevRevenue) * 100) : 0;
+  const revenueUp = curRevenue >= prevRevenue;
+  const staffCount = staffRes.data?.length ?? 0;
+  const appointmentsInPeriod = monthApptsRes.count ?? 0;
+  const appointmentsOutsidePeriod = Math.max((allApptsRes.count ?? 0) - appointmentsInPeriod, 0);
+  const newPatients = monthPatientsRes.count ?? 0;
+  const unpaidInvoices = invMonthRes.data ?? [];
+  const outstanding = round2(
+    unpaidInvoices.reduce((s, i) => s + (Number(i.total_amount) - Number(i.paid_amount ?? 0)), 0)
+  );
+  const unpaidCount = unpaidInvoices.length;
 
   const todayList = (todayApptsRes.data ?? []).map((a) => ({
     id: a.id,
@@ -255,6 +314,14 @@ export const GET = withStaff(async (req, ctx) => {
       todayAppointments: todayApptsRes.count ?? 0,
       revenueThisMonth,
       pendingLabOrders: labRes.count ?? 0,
+      newPatients,
+      staffCount,
+      appointmentsInPeriod,
+      appointmentsOutsidePeriod,
+      unpaidCount,
+      outstanding,
+      revenueTrendPct,
+      revenueUp,
     },
     profit: {
       month: from.slice(0, 7),

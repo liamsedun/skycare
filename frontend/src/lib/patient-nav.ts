@@ -22,10 +22,10 @@ export interface PatientNavItem {
 export const PATIENT_NAV_ITEMS: PatientNavItem[] = [
   { href: "/patient", label: "Overview", icon: LayoutDashboard },
   { href: "/patient/appointments", label: "Appointments", icon: CalendarClock },
-  { href: "/patient/billing", label: "Bills & payments", icon: ReceiptText },
+  { href: "/patient/billing", label: "Bills & Payments", icon: ReceiptText },
   { href: "/patient/prescriptions", label: "Prescriptions", icon: FileText },
-  { href: "/patient/lab-results", label: "Lab results", icon: FlaskConical },
-  { href: "/patient/records", label: "Medical records", icon: FolderOpen },
+  { href: "/patient/lab-results", label: "Lab Results", icon: FlaskConical },
+  { href: "/patient/records", label: "Medical Records", icon: FolderOpen },
   { href: "/patient/family", label: "Family", icon: Users },
   { href: "/patient/chats", label: "Chats", icon: MessageSquare },
   { href: "/patient/internal-mail", label: "Messages", icon: Mail },

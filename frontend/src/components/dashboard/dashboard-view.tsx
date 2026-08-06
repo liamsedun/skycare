@@ -11,6 +11,7 @@ import {
   FlaskConical,
   Loader,
   ReceiptText,
+  Stethoscope,
   TrendingDown,
   TrendingUp,
   Users,
@@ -32,6 +33,7 @@ import {
 } from "recharts";
 import { ngn, formatTime } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
+import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
 
 interface DashboardData {
   kpis: {
@@ -39,6 +41,14 @@ interface DashboardData {
     todayAppointments: number;
     revenueThisMonth: number;
     pendingLabOrders: number;
+    newPatients: number;
+    staffCount: number;
+    appointmentsInPeriod: number;
+    appointmentsOutsidePeriod: number;
+    unpaidCount: number;
+    outstanding: number;
+    revenueTrendPct: number;
+    revenueUp: boolean;
   };
   profit: {
     month: string;
@@ -59,6 +69,7 @@ interface DashboardData {
     name: string;
     status: string;
     createdAt: string;
+    patient: PatientRow;
   }[];
   todayAppointments: {
     id: string;
@@ -112,9 +123,19 @@ export default function DashboardView() {
     const m = data?.split.medical ?? 0;
     const o = data?.split.other ?? 0;
     return [
-      { name: "Medical services", value: m, color: "#2563eb" },
-      { name: "Other income", value: o, color: "#10b981" },
+      { name: "Medical Services", value: m, color: "#2563eb" },
+      { name: "Other Income", value: o, color: "#10b981" },
     ];
+  }, [data]);
+
+  const trendLabel = useMemo(() => {
+    const k = data?.kpis;
+    if (!k) return { text: "", up: true };
+    const pct = k.revenueTrendPct;
+    return {
+      text: `${k.revenueUp ? "+" : ""}${pct.toFixed(1)}%`,
+      up: k.revenueUp,
+    };
   }, [data]);
 
   return (
@@ -122,7 +143,7 @@ export default function DashboardView() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
-            Hospital dashboard
+            Hospital Dashboard
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
             A live overview of patients, appointments, revenue and operations.
@@ -159,31 +180,31 @@ export default function DashboardView() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              label="Total patients"
-              value={String(data.kpis.totalPatients)}
-              hint="Registered across branches"
-              icon={Users}
+              label="Total Revenue"
+              value={ngn(data.profit.revenue)}
+              trend={trendLabel}
+              icon={Banknote}
               gradient="bg-gradient-to-br from-sky-500 to-blue-600"
             />
             <KpiCard
-              label="Today's appointments"
-              value={String(data.kpis.todayAppointments)}
-              hint="Scheduled for today"
-              icon={CalendarDays}
+              label="New Patients"
+              value={String(data.kpis.newPatients)}
+              caption={`${data.kpis.staffCount} staff on board`}
+              icon={Users}
               gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
             />
             <KpiCard
-              label="Revenue this month"
-              value={ngn(data.kpis.revenueThisMonth)}
-              hint="Completed payments"
-              icon={Banknote}
+              label="Appointments"
+              value={String(data.kpis.appointmentsInPeriod)}
+              caption={`${data.kpis.appointmentsOutsidePeriod} outside period`}
+              icon={CalendarDays}
               gradient="bg-gradient-to-br from-amber-500 to-orange-600"
             />
             <KpiCard
-              label="Pending lab orders"
-              value={String(data.kpis.pendingLabOrders)}
-              hint="Awaiting collection / results"
-              icon={FlaskConical}
+              label="Outstanding Receivables"
+              value={ngn(data.kpis.outstanding)}
+              caption={`${data.kpis.unpaidCount} unpaid in period`}
+              icon={AlertTriangle}
               gradient="bg-gradient-to-br from-rose-500 to-pink-600"
             />
           </div>
@@ -193,7 +214,7 @@ export default function DashboardView() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <section className={`${CARD} lg:col-span-2`}>
               <CardHeader
-                title="Weekly revenue breakdown"
+                title="Weekly Revenue Breakdown"
                 subtitle="Medical services + other income, last 7 days"
               />
               <div className="mt-4 h-72">
@@ -202,7 +223,7 @@ export default function DashboardView() {
             </section>
             <section className={CARD}>
               <CardHeader
-                title="Revenue split"
+                title="Revenue Split"
                 subtitle={`Medical services vs other income · ${monthLabel(data.profit.month)}`}
               />
               <div className="mt-4 h-72">
@@ -214,7 +235,7 @@ export default function DashboardView() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <section className={CARD}>
               <CardHeader
-                title="Monthly revenue trend"
+                title="Monthly Revenue Trend"
                 subtitle="Last 12 months, ending at the selected month"
               />
               <div className="mt-4 h-72">
@@ -223,7 +244,7 @@ export default function DashboardView() {
             </section>
             <section className={CARD}>
               <CardHeader
-                title="Appointments by department"
+                title="Appointments by Department"
                 subtitle="Last 12 months, grouped by department"
               />
               <div className="mt-4 h-72">
@@ -235,12 +256,12 @@ export default function DashboardView() {
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <section className={`${CARD} xl:col-span-2`}>
               <div className="flex items-center justify-between gap-3">
-                <CardHeader title="Recent patients" subtitle="Latest registrations" />
+                <CardHeader title="Recent Patients" subtitle="Latest Registrations" />
                 <Link
                   href="/app/patients"
                   className="focus-ring flex shrink-0 items-center gap-1 text-sm font-medium text-[var(--color-primary)] hover:underline"
                 >
-                  View all <ArrowUpRight size={14} aria-hidden="true" />
+                  View All <ArrowUpRight size={14} aria-hidden="true" />
                 </Link>
               </div>
               <RecentTable rows={data.recentPatients} />
@@ -249,7 +270,7 @@ export default function DashboardView() {
           </div>
 
           <section className={CARD}>
-            <CardHeader title="Today's schedule" subtitle="Appointments happening today" />
+            <CardHeader title="Today's Schedule" subtitle="Appointments happening today" />
             <TodayList rows={data.todayAppointments} />
           </section>
         </>
@@ -286,13 +307,15 @@ function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
 function KpiCard({
   label,
   value,
-  hint,
+  trend,
+  caption,
   icon: Icon,
   gradient,
 }: {
   label: string;
   value: string;
-  hint: string;
+  trend?: { text: string; up: boolean };
+  caption?: string;
   icon: React.ComponentType<{ size?: number }>;
   gradient: string;
 }) {
@@ -308,7 +331,18 @@ function KpiCard({
           </span>
         </div>
         <p className="mt-2 truncate text-2xl font-bold">{value}</p>
-        <p className="mt-1 text-xs text-white/75">{hint}</p>
+        {trend ? (
+          <p
+            className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
+              trend.up ? "text-emerald-200" : "text-rose-200"
+            }`}
+          >
+            {trend.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+            {trend.text}
+          </p>
+        ) : caption ? (
+          <p className="mt-1 text-xs text-white/75">{caption}</p>
+        ) : null}
       </div>
     </div>
   );
@@ -353,10 +387,10 @@ function ProfitLossCard({ profit }: { profit: DashboardData["profit"] }) {
             )}
           </span>
           <div>
-            <p className="text-sm text-white/80">Net profit / loss</p>
+            <p className="text-sm text-white/80">Net Profit / Loss</p>
             <p className="mt-1 text-3xl font-bold">{ngn(profit.net)}</p>
             <p className="mt-1 text-xs text-white/70">
-              {monthLabel(profit.month)} · margin{" "}
+              {monthLabel(profit.month)} · Margin{" "}
               <span className="font-semibold text-white/90">{profit.margin.toFixed(1)}%</span>
             </p>
           </div>
@@ -367,11 +401,11 @@ function ProfitLossCard({ profit }: { profit: DashboardData["profit"] }) {
             <dd className="mt-0.5 font-semibold">{ngn(profit.revenue)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-white/70">Medical services</dt>
+            <dt className="text-xs text-white/70">Medical Services</dt>
             <dd className="mt-0.5 font-semibold">{ngn(profit.medical)}</dd>
           </div>
           <div>
-            <dt className="text-xs text-white/70">Other income</dt>
+            <dt className="text-xs text-white/70">Other Income</dt>
             <dd className="mt-0.5 font-semibold">{ngn(profit.other)}</dd>
           </div>
           <div>
@@ -407,8 +441,8 @@ function WeeklyChart({ rows }: { rows: DashboardData["weekly"] }) {
         <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `₦${(v / 1000).toFixed(0)}k`} width={52} />
         <Tooltip formatter={(value) => ngn(Number(value))} cursor={{ fill: "#eff6ff" }} contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12, color: "#64748b" }} />
-        <Bar dataKey="medical" name="Medical services" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} maxBarSize={40} />
-        <Bar dataKey="other" name="Other income" stackId="a" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+        <Bar dataKey="medical" name="Medical Services" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} maxBarSize={40} />
+        <Bar dataKey="other" name="Other Income" stackId="a" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -458,8 +492,8 @@ function TrendChart({ data }: { data: DashboardData["monthlyTrend"] }) {
         <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `₦${(v / 1000).toFixed(0)}k`} width={52} />
         <Tooltip formatter={(value) => ngn(Number(value))} contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12, color: "#64748b" }} />
-        <Line type="monotone" name="Medical services" dataKey="medical" stroke="#2563eb" strokeWidth={2} dot={{ r: 3, fill: "#2563eb" }} activeDot={{ r: 5 }} />
-        <Line type="monotone" name="Other income" dataKey="other" stroke="#10b981" strokeWidth={2} dot={{ r: 2.5, fill: "#10b981" }} activeDot={{ r: 4 }} />
+        <Line type="monotone" name="Medical Services" dataKey="medical" stroke="#2563eb" strokeWidth={2} dot={{ r: 3, fill: "#2563eb" }} activeDot={{ r: 5 }} />
+        <Line type="monotone" name="Other Income" dataKey="other" stroke="#10b981" strokeWidth={2} dot={{ r: 2.5, fill: "#10b981" }} activeDot={{ r: 4 }} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -532,15 +566,21 @@ function RecentTable({ rows }: { rows: DashboardData["recentPatients"] }) {
             <th className="py-2.5 pr-3 font-medium">Name</th>
             <th className="py-2.5 pr-3 font-medium">Patient ID</th>
             <th className="hidden py-2.5 pr-3 font-medium sm:table-cell">Status</th>
+            <th className="py-2.5 text-right font-medium">View</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((p) => (
             <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0">
               <td className="py-3 pr-3 font-medium text-[var(--color-foreground)]">{p.name}</td>
-              <td className="py-3 pr-3 text-[var(--color-muted-fg)]">{p.patientNumber}</td>
-              <td className="hidden py-3 sm:table-cell">
+              <td className="py-3 pr-3 font-mono text-xs text-[var(--color-primary-dark)]">
+                {p.patientNumber}
+              </td>
+              <td className="hidden py-3 pr-3 sm:table-cell">
                 <StatusBadge status={p.status} />
+              </td>
+              <td className="py-3 text-right">
+                <PatientViewButton patient={p.patient} />
               </td>
             </tr>
           ))}
@@ -553,33 +593,33 @@ function RecentTable({ rows }: { rows: DashboardData["recentPatients"] }) {
 function QuickActions() {
   const actions = [
     {
-      label: "Add patient",
+      label: "Add Patient",
       href: "/app/patients",
       icon: Users,
       chip: "bg-emerald-50 text-emerald-700",
     },
     {
-      label: "Schedule appointment",
+      label: "Schedule Appointment",
       href: "/app/appointments",
       icon: CalendarPlus,
       chip: "bg-sky-50 text-sky-700",
     },
     {
-      label: "Generate report",
-      href: "/app/reports",
+      label: "Generate Reports",
+      href: "/app/financial-reports",
       icon: ReceiptText,
       chip: "bg-amber-50 text-amber-700",
     },
     {
-      label: "View analytics",
-      href: "/app/reports",
-      icon: AlertTriangle,
+      label: "View Analytics",
+      href: "/app/financial-reports",
+      icon: Stethoscope,
       chip: "bg-rose-50 text-rose-700",
     },
   ];
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-      <CardHeader title="Quick actions" />
+      <CardHeader title="Quick Actions" />
       {actions.map((a) => {
         const Icon = a.icon;
         return (
