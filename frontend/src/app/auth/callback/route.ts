@@ -24,6 +24,15 @@ export async function GET(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // A social sign-in (Google / Yahoo / iCloud) that doesn't match an existing
+  // hospital account produces a fresh auth user with no role claim. Block it
+  // instead of dropping the user into an empty portal.
+  if (!user || !user.app_metadata?.role) {
+    await supabase.auth.signOut();
+    return NextResponse.redirect(`${origin}/login?error=oauth_no_account`);
+  }
+
   const claims = getClaims(user);
   const next = url.searchParams.get("next");
   const target =

@@ -317,6 +317,11 @@ a {
   animation: gradient-shift 8s ease infinite;
 }
 
+.animate-gradient-slow {
+  background-size: 200% 200%;
+  animation: gradient-shift 20s ease-in-out infinite;
+}
+
 .animate-marquee {
   animation: marquee-x 40s linear infinite;
 }

@@ -64,7 +64,7 @@ function FloatingIcons() {
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4 py-10">
+    <main className="animate-gradient-slow relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4 py-10">
       {/* decorative floating blobs */}
       <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-sky-300/40 blur-3xl" />
       <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-blue-300/40 blur-3xl" />
@@ -72,7 +72,7 @@ export default function SignupPage() {
 
       <div className="animate-fade-up relative flex w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-sky-900/15">
         {/* illustration panel */}
-        <div className="relative hidden w-[340px] shrink-0 flex-col justify-center overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 px-8 py-10 text-white md:flex">
+        <div className="animate-gradient-slow relative hidden w-[340px] shrink-0 flex-col justify-center overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 px-8 py-10 text-white md:flex">
           <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
           <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-300/20 blur-2xl" />
           <FloatingIcons />

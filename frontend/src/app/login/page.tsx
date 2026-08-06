@@ -6,7 +6,7 @@ import { Suspense, useState } from "react";
 import { Activity, Cross, Eye, EyeOff, HeartPulse, Loader2, Mail, Stethoscope } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { SkyCareLogo } from "@/components/landing/skycare-logo";
-import { AppleLogo, GoogleLogo, ICloudLogo, YahooLogo } from "@/components/brand-logos";
+import { FacebookLogo, GoogleLogo, YahooLogo } from "@/components/brand-logos";
 
 export const dynamic = "force-dynamic";
 
@@ -66,20 +66,20 @@ function FloatingIcons() {
 
 const OAUTH_PROVIDERS = [
   { id: "google", label: "Google", bg: "hover:bg-gray-50" },
-  { id: "yahoo", label: "Yahoo", bg: "hover:bg-purple-50" },
-  { id: "apple", label: "iCloud / Apple", bg: "hover:bg-slate-50" },
+  { id: "custom:yahoo", label: "Yahoo", bg: "hover:bg-purple-50" },
+  { id: "facebook", label: "Facebook", bg: "hover:bg-blue-50" },
 ] as const;
 
 function ProviderLogo({ id, className = "" }: { id: string; className?: string }) {
   switch (id) {
     case "google":
       return <GoogleLogo size={18} />;
-    case "yahoo":
+    case "custom:yahoo":
       return <YahooLogo size={22} />;
-    case "apple":
-      return <AppleLogo size={17} className={className} />;
+    case "facebook":
+      return <FacebookLogo size={17} className={className} />;
     default:
-      return <ICloudLogo size={18} />;
+      return <GoogleLogo size={18} />;
   }
 }
 
@@ -97,6 +97,18 @@ function LoginForm() {
     searchParams.get("redirect") && searchParams.get("redirect")!.startsWith("/")
       ? searchParams.get("redirect")!
       : undefined;
+  const oauthError = searchParams.get("error");
+
+  function oauthErrorText(e: string): string {
+    switch (e) {
+      case "auth_callback":
+        return "Social sign-in could not be completed. Try again or use your email / patient number with a password.";
+      case "oauth_no_account":
+        return "This Google, Yahoo or Facebook account isn't linked to a hospital account. Use your hospital email / patient number with a password, or ask your admin.";
+      default:
+        return "Something went wrong. Try again or use your email / patient number with a password.";
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -158,12 +170,18 @@ function LoginForm() {
     router.refresh();
   }
 
+  const providerLabels: Record<string, string> = {
+    google: "Google",
+    "custom:yahoo": "Yahoo",
+    facebook: "Facebook",
+  };
+
   async function signInWithOAuth(provider: (typeof OAUTH_PROVIDERS)[number]["id"]) {
     setError(null);
     setOauthBusy(provider);
     try {
       const { error } = await getSupabase().auth.signInWithOAuth({
-        provider: provider as "google" | "apple",
+        provider: provider as "google" | "custom:yahoo" | "facebook",
         options: {
           redirectTo: `${window.location.origin}/auth/callback${
             redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ""
@@ -172,7 +190,7 @@ function LoginForm() {
       });
       if (error) {
         setError(
-          `${provider === "apple" ? "iCloud / Apple" : provider} sign-in is not enabled yet. Contact your hospital admin, or use your email / patient number with a password.`
+          `${providerLabels[provider] ?? provider} sign-in is not enabled yet. Contact your hospital admin, or use your email / patient number with a password.`
         );
       }
     } catch {
@@ -239,6 +257,15 @@ function LoginForm() {
         </p>
       )}
 
+      {!error && oauthError && (
+        <p
+          role="alert"
+          className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700"
+        >
+          {oauthErrorText(oauthError)}
+        </p>
+      )}
+
       <button
         type="submit"
         disabled={loading}
@@ -280,7 +307,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4 py-10">
+    <main className="animate-gradient-slow relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 px-4 py-10">
       {/* decorative floating blobs */}
       <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-sky-300/40 blur-3xl" />
       <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-32 -right-20 h-96 w-96 rounded-full bg-blue-300/40 blur-3xl" />
@@ -288,7 +315,7 @@ export default function LoginPage() {
 
       <div className="animate-fade-up relative flex w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-sky-900/15">
         {/* illustration panel */}
-        <div className="relative hidden w-[340px] shrink-0 flex-col justify-center overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 px-8 py-10 text-white md:flex">
+        <div className="animate-gradient-slow relative hidden w-[340px] shrink-0 flex-col justify-center overflow-hidden bg-gradient-to-br from-sky-500 via-sky-600 to-blue-700 px-8 py-10 text-white md:flex">
           <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
           <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-300/20 blur-2xl" />
           <FloatingIcons />
