@@ -58,13 +58,18 @@ interface PatientDetail extends PatientRow {
 }
 
 const inputCls =
-  "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
+  "w-full rounded-xl border border-[var(--color-border)] bg-white px-3.5 py-2.5 text-sm outline-none transition-all duration-200 focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
-const GENDERS: string[] = ["male", "female", "other"];
+const capitalize = (v: string) => {
+  const t = v.trim();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
+};
+
+const GENDERS: string[] = ["Male", "Female", "Other"];
 const BLOOD_GROUPS: string[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const GENOTYPES: string[] = ["AA", "AS", "SS", "AC", "SC", "CC"];
-const MARITAL_STATUSES: string[] = ["single", "married", "divorced", "widowed", "separated"];
+const MARITAL_STATUSES: string[] = ["Single", "Married", "Divorced", "Widowed", "Separated"];
 
 export function AddPatientButton() {
   const router = useRouter();
@@ -149,15 +154,15 @@ export function AddPatientButton() {
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls} htmlFor="p-first">First name</label>
+                  <label className={labelCls} htmlFor="p-first">First Name</label>
                   <input id="p-first" name="firstName" required className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls} htmlFor="p-last">Last name</label>
+                  <label className={labelCls} htmlFor="p-last">Last Name</label>
                   <input id="p-last" name="lastName" required className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls} htmlFor="p-other">Other names</label>
+                  <label className={labelCls} htmlFor="p-other">Other Names</label>
                   <input id="p-other" name="otherNames" className={inputCls} />
                 </div>
                 <div>
@@ -166,13 +171,13 @@ export function AddPatientButton() {
                     id="p-gender"
                     name="gender"
                     options={GENDERS}
-                    normalize={(v) => v.trim().toLowerCase()}
-                    placeholder="Select or type your own"
+                    normalize={capitalize}
+                    placeholder="Pick or Type (e.g. Male)"
                   />
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick or Type an option, or add one not listed.</p>
                 </div>
                 <div>
-                  <label className={labelCls} htmlFor="p-dob">Date of birth</label>
+                  <label className={labelCls} htmlFor="p-dob">Date of Birth</label>
                   <input id="p-dob" name="dateOfBirth" type="date" className={inputCls} />
                 </div>
                 <div>
@@ -213,17 +218,17 @@ export function AddPatientButton() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
                   <HeartPulse size={13} aria-hidden="true" />
                 </span>
-                Clinical info
+                Clinical Info
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
-                  <label className={labelCls} htmlFor="p-blood">Blood group</label>
+                  <label className={labelCls} htmlFor="p-blood">Blood Group</label>
                   <Combobox
                     id="p-blood"
                     name="bloodGroup"
                     options={BLOOD_GROUPS}
                     normalize={(v) => v.trim().toUpperCase().replace(/0/g, "O")}
-                    placeholder="Pick or type (e.g. O+)"
+                    placeholder="Pick or Type (e.g. O+)"
                   />
                   <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
                 </div>
@@ -234,20 +239,22 @@ export function AddPatientButton() {
                     name="genotype"
                     options={GENOTYPES}
                     normalize={(v) => v.trim().toUpperCase()}
-                    placeholder="Pick or type (e.g. AA)"
+                    placeholder="Pick or Type (e.g. AA)"
                   />
                   <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
                 </div>
                 <div>
-                  <label className={labelCls} htmlFor="p-marital">Marital status</label>
+                  <label className={labelCls} htmlFor="p-marital">Marital Status</label>
                   <Combobox
                     id="p-marital"
                     name="maritalStatus"
                     options={MARITAL_STATUSES}
-                    normalize={(v) => v.trim().toLowerCase()}
-                    placeholder="Pick or type (e.g. single)"
+                    normalize={capitalize}
+                    placeholder="Pick or Type (e.g. Single)"
                   />
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                    Pick or Type — e.g. Single, Married, Divorced, Widowed, Separated.
+                  </p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-height">Height (cm)</label>
@@ -265,15 +272,15 @@ export function AddPatientButton() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
                   <PhoneCall size={13} aria-hidden="true" />
                 </span>
-                Emergency contact
+                Emergency Contact
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className={labelCls} htmlFor="p-ec-name">Emergency contact</label>
+                  <label className={labelCls} htmlFor="p-ec-name">Emergency Contact</label>
                   <input id="p-ec-name" name="emergencyName" className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls} htmlFor="p-ec-phone">Emergency phone</label>
+                  <label className={labelCls} htmlFor="p-ec-phone">Emergency Phone</label>
                   <input id="p-ec-phone" name="emergencyPhone" type="tel" className={inputCls} />
                 </div>
                 <div className="sm:col-span-2">
@@ -291,8 +298,8 @@ export function AddPatientButton() {
                 Patient portal login
               </h3>
               <p className="mb-3 text-xs text-[var(--color-muted-fg)]">
-                Give the patient a welcome password they can sign in with. They&apos;ll be asked to set their own
-                password after the first login.
+                Give the patient a temporary welcome password they can use to sign in at /login. They&apos;ll be
+                prompted to set their own password after the first login.
               </p>
               <label className="mb-3 flex items-center gap-2 text-sm">
                 <input
@@ -317,7 +324,7 @@ export function AddPatientButton() {
                     />
                   </div>
                   <div>
-                    <label className={labelCls} htmlFor="p-portal-pass">Welcome password</label>
+                    <label className={labelCls} htmlFor="p-portal-pass">Temporary Password (welcome password)</label>
                     <div className="relative">
                       <input
                         id="p-portal-pass"
@@ -683,14 +690,14 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     <input id="e-state" name="state" defaultValue={detail.state ?? ""} className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls} htmlFor="e-blood">Blood group</label>
+                    <label className={labelCls} htmlFor="e-blood">Blood Group</label>
                     <Combobox
                       id="e-blood"
                       name="bloodGroup"
                       options={BLOOD_GROUPS}
                       normalize={(v) => v.trim().toUpperCase().replace(/0/g, "O")}
                       defaultValue={detail.blood_group ?? ""}
-                      placeholder="Pick or type"
+                      placeholder="Pick or Type"
                     />
                   </div>
                   <div>
@@ -701,18 +708,18 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                       options={GENOTYPES}
                       normalize={(v) => v.trim().toUpperCase()}
                       defaultValue={detail.genotype ?? ""}
-                      placeholder="Pick or type"
+                      placeholder="Pick or Type"
                     />
                   </div>
                   <div>
-                    <label className={labelCls} htmlFor="e-marital">Marital status</label>
+                    <label className={labelCls} htmlFor="e-marital">Marital Status</label>
                     <Combobox
                       id="e-marital"
                       name="maritalStatus"
                       options={MARITAL_STATUSES}
-                      normalize={(v) => v.trim().toLowerCase()}
-                      defaultValue={detail.marital_status ?? ""}
-                      placeholder="Pick or type"
+                      normalize={capitalize}
+                      defaultValue={detail.marital_status ? capitalize(detail.marital_status) : ""}
+                      placeholder="Pick or Type"
                     />
                   </div>
                   <div>
@@ -724,11 +731,11 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     <input id="e-weight" name="weightKg" type="number" defaultValue={detail.weight_kg ?? ""} className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls} htmlFor="e-ec-name">Emergency contact</label>
+                    <label className={labelCls} htmlFor="e-ec-name">Emergency Contact</label>
                     <input id="e-ec-name" name="emergencyName" defaultValue={detail.emergency_contact_name ?? ""} className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls} htmlFor="e-ec-phone">Emergency phone</label>
+                    <label className={labelCls} htmlFor="e-ec-phone">Emergency Phone</label>
                     <input id="e-ec-phone" name="emergencyPhone" defaultValue={detail.emergency_contact_phone ?? ""} className={inputCls} />
                   </div>
                   <div className="sm:col-span-2">
@@ -759,13 +766,13 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     ["Phone", detail.phone],
                     ["Email", detail.email],
                     ["Address", [detail.address, detail.city, detail.state].filter(Boolean).join(", ") || "—"],
-                    ["Blood group", detail.blood_group],
+                    ["Blood Group", detail.blood_group],
                     ["Genotype", detail.genotype],
                     ["Height", detail.height_cm ? `${detail.height_cm} cm` : "—"],
                     ["Weight", detail.weight_kg ? `${detail.weight_kg} kg` : "—"],
-                    ["Marital status", detail.marital_status ? detail.marital_status : "—"],
-                    ["Emergency contact", detail.emergency_contact_name],
-                    ["Emergency phone", detail.emergency_contact_phone],
+                    ["Marital Status", detail.marital_status ? capitalize(detail.marital_status) : "—"],
+                    ["Emergency Contact", detail.emergency_contact_name],
+                    ["Emergency Phone", detail.emergency_contact_phone],
                     ["Allergies", detail.allergies],
                   ].map(([k, v]) => (
                     <div key={k as string}>
@@ -821,11 +828,11 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                       Add dependant (family member on this account)
                     </p>
                     <div>
-                      <label className={labelCls} htmlFor="d-first">First name</label>
+                      <label className={labelCls} htmlFor="d-first">First Name</label>
                       <input id="d-first" name="firstName" required className={inputCls} />
                     </div>
                     <div>
-                      <label className={labelCls} htmlFor="d-last">Last name</label>
+                      <label className={labelCls} htmlFor="d-last">Last Name</label>
                       <input id="d-last" name="lastName" required className={inputCls} />
                     </div>
                     <div>
@@ -834,12 +841,12 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                         id="d-gender"
                         name="gender"
                         options={GENDERS}
-                        normalize={(v) => v.trim().toLowerCase()}
-                        placeholder="Select or type"
+                        normalize={capitalize}
+                        placeholder="Pick or Type (e.g. Male)"
                       />
                     </div>
                     <div>
-                      <label className={labelCls} htmlFor="d-dob">Date of birth</label>
+                      <label className={labelCls} htmlFor="d-dob">Date of Birth</label>
                       <input id="d-dob" name="dateOfBirth" type="date" className={inputCls} />
                     </div>
                     <div>
