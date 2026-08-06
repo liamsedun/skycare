@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Combobox } from "@/components/ui/combobox";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -329,13 +330,13 @@ export default function PatientProfile() {
                     {isEditing ? (
                       <div className="mt-1 flex items-center gap-2">
                         {options ? (
-                          <select className={inputCls} value={editValue} onChange={(e) => setEditValue(e.target.value)}>
-                            {options.map((o) => (
-                              <option key={o} value={o}>
-                                {o.charAt(0).toUpperCase() + o.slice(1)}
-                              </option>
-                            ))}
-                          </select>
+                          <Combobox
+                            options={options}
+                            defaultValue={editValue}
+                            placeholder="Select or type"
+                            onValueChange={setEditValue}
+                            className="min-w-48"
+                          />
                         ) : row.field === "date_of_birth" ? (
                           <input type="date" className={inputCls} value={editValue} onChange={(e) => setEditValue(e.target.value)} />
                         ) : (

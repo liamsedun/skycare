@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { UserPlus, Users } from "lucide-react";
+import { Combobox } from "@/components/ui/combobox";
 
 interface FamilyMember {
   id: string;
@@ -275,11 +276,13 @@ function AddMemberModal({
             </div>
             <div>
               <label className={labelCls} htmlFor="fam-gender">Gender</label>
-              <select id="fam-gender" name="gender" className={inputCls} defaultValue="">
-                <option value="">Prefer not to say</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
+              <Combobox
+                id="fam-gender"
+                name="gender"
+                options={["male", "female", "other"]}
+                normalize={(v) => v.trim().toLowerCase()}
+                placeholder="Select or type"
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Eye, EyeOff, HeartPulse, KeyRound, PhoneCall, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
+import { ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, PhoneCall, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
+import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
+import { Combobox } from "@/components/ui/combobox";
 
 const RECORD_TYPES = [
   "diagnosis",
@@ -59,6 +61,7 @@ const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
+const GENDERS: string[] = ["male", "female", "other"];
 const BLOOD_GROUPS: string[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const GENOTYPES: string[] = ["AA", "AS", "SS", "AC", "SC", "CC"];
 const MARITAL_STATUSES: string[] = ["single", "married", "divorced", "widowed", "separated"];
@@ -137,9 +140,12 @@ export function AddPatientButton() {
           wide
         >
           <div className="space-y-5">
-            <section>
+            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/25 p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <UserRound size={14} aria-hidden="true" /> Personal details
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
+                  <UserRound size={13} aria-hidden="true" />
+                </span>
+                Personal details
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -156,12 +162,14 @@ export function AddPatientButton() {
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-gender">Gender</label>
-                  <select id="p-gender" name="gender" className={inputCls}>
-                    <option value="">Not specified</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <Combobox
+                    id="p-gender"
+                    name="gender"
+                    options={GENDERS}
+                    normalize={(v) => v.trim().toLowerCase()}
+                    placeholder="Select or type your own"
+                  />
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-dob">Date of birth</label>
@@ -200,63 +208,46 @@ export function AddPatientButton() {
               </div>
             </section>
 
-            <section>
+            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/25 p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <HeartPulse size={14} aria-hidden="true" /> Clinical info
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
+                  <HeartPulse size={13} aria-hidden="true" />
+                </span>
+                Clinical info
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <label className={labelCls} htmlFor="p-blood">Blood group</label>
-                  <input
+                  <Combobox
                     id="p-blood"
                     name="bloodGroup"
-                    list="blood-group-list"
+                    options={BLOOD_GROUPS}
+                    normalize={(v) => v.trim().toUpperCase().replace(/0/g, "O")}
                     placeholder="Pick or type (e.g. O+)"
-                    className={inputCls}
-                    onBlur={(e) => {
-                      const v = e.target.value.replace(/0/g, "O").toUpperCase();
-                      if (BLOOD_GROUPS.includes(v)) e.target.value = v;
-                    }}
                   />
-                  <datalist id="blood-group-list">
-                    {BLOOD_GROUPS.map((b) => (
-                      <option key={b} value={b} />
-                    ))}
-                  </datalist>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-genotype">Genotype</label>
-                  <input
+                  <Combobox
                     id="p-genotype"
                     name="genotype"
-                    list="genotype-list"
+                    options={GENOTYPES}
+                    normalize={(v) => v.trim().toUpperCase()}
                     placeholder="Pick or type (e.g. AA)"
-                    className={inputCls}
-                    onBlur={(e) => {
-                      const v = e.target.value.trim().toUpperCase();
-                      if (GENOTYPES.includes(v)) e.target.value = v;
-                    }}
                   />
-                  <datalist id="genotype-list">
-                    {GENOTYPES.map((g) => (
-                      <option key={g} value={g} />
-                    ))}
-                  </datalist>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-marital">Marital status</label>
-                  <input
+                  <Combobox
                     id="p-marital"
                     name="maritalStatus"
-                    list="marital-status-list"
+                    options={MARITAL_STATUSES}
+                    normalize={(v) => v.trim().toLowerCase()}
                     placeholder="Pick or type (e.g. single)"
-                    className={inputCls}
                   />
-                  <datalist id="marital-status-list">
-                    {MARITAL_STATUSES.map((m) => (
-                      <option key={m} value={m} />
-                    ))}
-                  </datalist>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-height">Height (cm)</label>
@@ -269,9 +260,12 @@ export function AddPatientButton() {
               </div>
             </section>
 
-            <section>
+            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/25 p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <PhoneCall size={14} aria-hidden="true" /> Emergency contact
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
+                  <PhoneCall size={13} aria-hidden="true" />
+                </span>
+                Emergency contact
               </h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -289,10 +283,17 @@ export function AddPatientButton() {
               </div>
             </section>
 
-            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4">
+            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/25 p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <KeyRound size={14} aria-hidden="true" /> Patient portal login
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]">
+                  <KeyRound size={13} aria-hidden="true" />
+                </span>
+                Patient portal login
               </h3>
+              <p className="mb-3 text-xs text-[var(--color-muted-fg)]">
+                Give the patient a welcome password they can sign in with. They&apos;ll be asked to set their own
+                password after the first login.
+              </p>
               <label className="mb-3 flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -366,6 +367,7 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [showAddRecord, setShowAddRecord] = useState(false);
+  const [tab, setTab] = useState<"info" | "records" | "notes" | "reports">("info");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -485,17 +487,36 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
 
   async function removePatient() {
     if (!detail) return;
-    if (!confirm(`Remove ${detail.last_name}, ${detail.first_name}? This deactivates the patient's record${detail.user_id ? " and disables their portal login" : ""}.`)) return;
+    const dependantNote = detail.dependants.length ? `\n\nIt also permanently deletes ${detail.dependants.length} dependant record(s) on this account.` : "";
+    if (!confirm(`Permanently delete ${detail.last_name}, ${detail.first_name}? This removes the patient and ALL of their records (billing, appointments, clinical notes, medical reports, chats) from the system. This cannot be undone.${dependantNote}${detail.user_id ? "\n\nAny portal login will also be deleted." : ""}`)) return;
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/patients/${patient.id}`, { method: "DELETE" });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to remove patient");
+      if (!res.ok) throw new Error(body.error ?? "Failed to delete patient");
       setOpen(false);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to remove patient");
+      setError(e instanceof Error ? e.message : "Failed to delete patient");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function transferPatient() {
+    if (!detail) return;
+    if (!confirm(`Transfer ${detail.last_name}, ${detail.first_name} to another hospital? Their record is kept and marked as "transferred", and their portal login is disabled.`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/patients/${patient.id}`, { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to transfer patient");
+      await load();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to transfer patient");
     } finally {
       setBusy(false);
     }
@@ -590,6 +611,14 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     </button>
                     <button
                       type="button"
+                      onClick={transferPatient}
+                      disabled={busy || detail.status === "transferred"}
+                      className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)]"
+                    >
+                      {detail.status === "transferred" ? "Transferred" : "Transfer"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={removePatient}
                       disabled={busy}
                       className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
@@ -598,6 +627,30 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     </button>
                   </>
                 )}
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 border-b border-[var(--color-border)] pb-3">
+                {(
+                  [
+                    ["info", "Patient info", UserRound],
+                    ["records", "Medical records", ClipboardList],
+                    ["notes", "Clinical notes", FileText],
+                    ["reports", "Medical reports", FileText],
+                  ] as const
+                ).map(([key, label, Icon]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTab(key)}
+                    className={`focus-ring inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                      tab === key
+                        ? "bg-[var(--color-primary)] text-white"
+                        : "text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]/60 hover:text-[var(--color-foreground)]"
+                    }`}
+                  >
+                    <Icon size={13} aria-hidden="true" /> {label}
+                  </button>
+                ))}
               </div>
 
               {editMode ? (
@@ -631,15 +684,36 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-blood">Blood group</label>
-                    <input id="e-blood" name="bloodGroup" list="blood-group-list" defaultValue={detail.blood_group ?? ""} className={inputCls} />
+                    <Combobox
+                      id="e-blood"
+                      name="bloodGroup"
+                      options={BLOOD_GROUPS}
+                      normalize={(v) => v.trim().toUpperCase().replace(/0/g, "O")}
+                      defaultValue={detail.blood_group ?? ""}
+                      placeholder="Pick or type"
+                    />
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-genotype">Genotype</label>
-                    <input id="e-genotype" name="genotype" list="genotype-list" defaultValue={detail.genotype ?? ""} className={inputCls} />
+                    <Combobox
+                      id="e-genotype"
+                      name="genotype"
+                      options={GENOTYPES}
+                      normalize={(v) => v.trim().toUpperCase()}
+                      defaultValue={detail.genotype ?? ""}
+                      placeholder="Pick or type"
+                    />
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-marital">Marital status</label>
-                    <input id="e-marital" name="maritalStatus" list="marital-status-list" defaultValue={detail.marital_status ?? ""} className={inputCls} />
+                    <Combobox
+                      id="e-marital"
+                      name="maritalStatus"
+                      options={MARITAL_STATUSES}
+                      normalize={(v) => v.trim().toLowerCase()}
+                      defaultValue={detail.marital_status ?? ""}
+                      placeholder="Pick or type"
+                    />
                   </div>
                   <div>
                     <label className={labelCls} htmlFor="e-height">Height (cm)</label>
@@ -756,11 +830,13 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="d-gender">Gender</label>
-                      <select id="d-gender" name="gender" className={inputCls}>
-                        <option value="">Not specified</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                      </select>
+                      <Combobox
+                        id="d-gender"
+                        name="gender"
+                        options={GENDERS}
+                        normalize={(v) => v.trim().toLowerCase()}
+                        placeholder="Select or type"
+                      />
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="d-dob">Date of birth</label>

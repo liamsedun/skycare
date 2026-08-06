@@ -61,12 +61,14 @@ export interface CreatePatientBody {
   mustChangePassword?: boolean;
 }
 
-/** Normalizes a blood group: "0+" → "O+", lowercase → uppercase, trims whitespace. */
+/**
+ * Normalizes a blood group: "0+" → "O+", lowercase → uppercase, trims whitespace.
+ * Unlike a strict validator, unknown custom values are kept (the form supports
+ * "add others" entries that are not in the canonical ABO list).
+ */
 export function normalizeBloodGroup(value: string | null | undefined): string | null {
   if (!value || !value.trim()) return null;
-  const normalized = value.trim().toUpperCase().replace(/0/g, "O");
-  const VALID = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-  return VALID.includes(normalized) ? normalized : null;
+  return value.trim().toUpperCase().replace(/0/g, "O");
 }
 
 // POST /api/patients — register a patient (staff). Optional portal login.
@@ -79,11 +81,6 @@ export const POST = withStaff(async (req, ctx) => {
   }
 
   const normalizedBloodGroup = normalizeBloodGroup(body.bloodGroup);
-  if (body.bloodGroup && body.bloodGroup.trim() && !normalizedBloodGroup) {
-    throw new ValidationError(
-      `Invalid blood group "${body.bloodGroup}". Use one of: A+, A-, B+, B-, AB+, AB-, O+, O-.`
-    );
-  }
 
   const settings = await getTenantSettings(ctx.svc, tenantId);
   const patientNumber = await generatePatientNumber(ctx.svc, tenantId, settings.patientPrefix);

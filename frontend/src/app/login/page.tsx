@@ -6,6 +6,7 @@ import { Suspense, useState } from "react";
 import { Activity, Cross, Eye, EyeOff, HeartPulse, Loader2, Mail, Stethoscope } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { SkyCareLogo } from "@/components/landing/skycare-logo";
+import { AppleLogo, GoogleLogo, ICloudLogo, YahooLogo } from "@/components/brand-logos";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,19 @@ const OAUTH_PROVIDERS = [
   { id: "yahoo", label: "Yahoo", bg: "hover:bg-purple-50" },
   { id: "apple", label: "iCloud / Apple", bg: "hover:bg-slate-50" },
 ] as const;
+
+function ProviderLogo({ id, className = "" }: { id: string; className?: string }) {
+  switch (id) {
+    case "google":
+      return <GoogleLogo size={18} />;
+    case "yahoo":
+      return <YahooLogo size={22} />;
+    case "apple":
+      return <AppleLogo size={17} className={className} />;
+    default:
+      return <ICloudLogo size={18} />;
+  }
+}
 
 function LoginForm() {
   const router = useRouter();
@@ -249,11 +263,13 @@ function LoginForm() {
             disabled={oauthBusy !== null}
             className={`focus-ring flex items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-slate-200 bg-white px-2 py-2.5 text-xs font-semibold text-slate-700 transition-all duration-200 hover:shadow-sm disabled:opacity-60 ${p.bg}`}
           >
-            {oauthBusy === p.id ? (
-              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-            ) : (
-              <span aria-hidden="true">{p.id === "google" ? "G" : p.id === "yahoo" ? "Y" : "iC"}</span>
-            )}
+            <span className="flex h-4 items-center justify-center">
+              {oauthBusy === p.id ? (
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <ProviderLogo id={p.id} className="shrink-0" />
+              )}
+            </span>
             {p.label}
           </button>
         ))}

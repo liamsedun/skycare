@@ -9,6 +9,8 @@ const TONES: Record<string, string> = {
   failed: "bg-[var(--color-destructive-soft)] text-[var(--color-destructive)]",
   active: "bg-[var(--color-accent-soft)] text-[var(--color-accent-dark)]",
   inactive: "bg-slate-100 text-slate-500",
+  transferred: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+  deceased: "bg-slate-100 text-slate-600",
 };
 
 export default function StatusBadge({ status }: { status: string }) {

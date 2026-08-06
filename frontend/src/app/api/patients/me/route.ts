@@ -17,9 +17,6 @@ const PATIENT_EDIT_FIELDS = [
   "chronic_conditions",
 ] as const;
 
-const MARITAL_STATUSES = ["single", "married", "divorced", "widowed"];
-const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
-const GENOTYPES = ["AA", "AS", "SS", "AC", "SC", "CC"];
 const MEDICAL_PLANS = ["individual", "family", "organisation", "hmo"];
 
 // GET /api/patients/me — patient portal helper: returns the caller's own patient
@@ -72,14 +69,21 @@ export const PUT = withAuth(async (req, ctx) => {
     if (key in body) patch[key] = body[key];
   }
 
-  if (patch.marital_status !== undefined && !MARITAL_STATUSES.includes(patch.marital_status as string)) {
-    throw new ValidationError("Invalid marital status");
+  // Staff may record custom values ("add others") for these clinical fields,
+  // so patients editing their own profile can keep them rather than being
+  // forced back to the canonical list.
+  if (patch.marital_status !== undefined && patch.marital_status !== null) {
+    const ms = String(patch.marital_status).trim();
+    if (ms) patch.marital_status = ms;
+    else patch.marital_status = "single";
   }
-  if (patch.blood_group !== undefined && patch.blood_group !== null && !BLOOD_GROUPS.includes(patch.blood_group as string)) {
-    throw new ValidationError("Invalid blood group");
+  if (patch.blood_group !== undefined && patch.blood_group !== null) {
+    const bg = String(patch.blood_group).trim().toUpperCase().replace(/0/g, "O");
+    patch.blood_group = bg || null;
   }
-  if (patch.genotype !== undefined && patch.genotype !== null && !GENOTYPES.includes(patch.genotype as string)) {
-    throw new ValidationError("Invalid genotype");
+  if (patch.genotype !== undefined && patch.genotype !== null) {
+    const gt = String(patch.genotype).trim().toUpperCase();
+    patch.genotype = gt || null;
   }
   if (patch.medical_plan !== undefined && !MEDICAL_PLANS.includes(patch.medical_plan as string)) {
     throw new ValidationError("Invalid medical plan");

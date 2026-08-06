@@ -47,11 +47,6 @@ export const PUT = withStaff(async (req, ctx) => {
   }
   if (patch.blood_group !== undefined) {
     patch.blood_group = normalizeBloodGroup(patch.blood_group as string | null | undefined);
-    if (body.blood_group && String(body.blood_group).trim() && !patch.blood_group) {
-      throw new ValidationError(
-        `Invalid blood group "${body.blood_group}". Use one of: A+, A-, B+, B-, AB+, AB-, O+, O-.`
-      );
-    }
   }
   if (patch.marital_status !== undefined) {
     const ms = String(patch.marital_status ?? "").trim();
@@ -77,36 +72,81 @@ export const PUT = withStaff(async (req, ctx) => {
   return ok(data);
 });
 
-// DELETE /api/patients/[id] — soft delete (status = transferred)
-export const DELETE = withStaff(async (req, ctx) => {
+// POST /api/patients/[id]/transfer — mark patient as transferred to another hospital (soft: keep record, disable portal)
+export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getPatient(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Patient not found");
 
-  const { data } = await ctx.svc
+  const { data, error } = await ctx.svc
     .from("patients")
     .update({ status: "transferred" })
     .eq("id", id)
     .eq("tenant_id", tenantId)
     .select()
     .single();
+  if (error) throw new ValidationError(error.message);
 
-  // If the patient had a portal account, disable it.
+  // Disable the portal login — the patient is leaving this hospital.
   if (existing.user_id) {
-    await ctx.svc
-      .from("users")
-      .update({ is_active: false })
-      .eq("id", existing.user_id);
+    await ctx.svc.from("users").update({ is_active: false }).eq("id", existing.user_id);
+  }
+
+  await logAudit(req, ctx, {
+    action: "update",
+    entityType: "patients",
+    entityId: id,
+    description: `Transferred patient ${existing.patient_number} to another hospital`,
+  });
+  return ok(data);
+});
+
+// DELETE /api/patients/[id] — permanent removal from the system.
+// All child rows (records, notes, reports, invoices, payments, appointments,
+// chats, dependants) are removed via ON DELETE CASCADE on patients(id).
+export const DELETE = withStaff(async (req, ctx) => {
+  const tenantId = requireTenant(ctx);
+  const id = req.nextUrl.pathname.split("/").pop()!;
+  const existing = await getPatient(ctx, id, tenantId);
+  if (!existing) throw new NotFoundError("Patient not found");
+
+  // Collect every linked portal account (primary + dependants) so we can
+  // remove the logins too, not just the patient rows.
+  const linkedUserIds: string[] = [];
+  if (existing.user_id) linkedUserIds.push(existing.user_id);
+  for (const d of existing.dependants ?? []) {
+    if (d.user_id && !linkedUserIds.includes(d.user_id)) linkedUserIds.push(d.user_id);
+  }
+
+  const { error } = await ctx.svc
+    .from("patients")
+    .delete()
+    .eq("id", id)
+    .eq("tenant_id", tenantId);
+  if (error) throw new ValidationError(error.message);
+
+  // Remove portal accounts completely (auth + mirror users row).
+  for (const uid of linkedUserIds) {
+    try {
+      await ctx.svc.auth.admin.deleteUser(uid);
+    } catch {
+      /* auth row may already be gone */
+    }
+    try {
+      await ctx.svc.from("users").delete().eq("id", uid);
+    } catch {
+      await ctx.svc.from("users").update({ is_active: false }).eq("id", uid);
+    }
   }
 
   await logAudit(req, ctx, {
     action: "delete",
     entityType: "patients",
     entityId: id,
-    description: `Removed patient ${existing.patient_number}`,
+    description: `Permanently deleted patient ${existing.patient_number} (${existing.first_name} ${existing.last_name})`,
   });
-  return ok(data);
+  return ok({ deleted: true });
 });
 
 export const runtime = "nodejs";
