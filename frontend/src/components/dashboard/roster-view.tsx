@@ -181,7 +181,7 @@ export default function RosterView() {
               }}
               className="focus-ring ml-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
             >
-              <Plus size={15} /> Assign shift
+              <Plus size={15} /> Assign Shift
             </button>
           )}
         </div>
@@ -265,7 +265,7 @@ export default function RosterView() {
           <form onSubmit={assign} className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-xl)]">
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">
-                <CalendarRange size={18} /> Assign shift
+                <CalendarRange size={18} /> Assign Shift
               </h2>
               <button type="button" onClick={() => setShowAssign(false)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
                 ✕

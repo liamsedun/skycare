@@ -168,7 +168,7 @@ export function NewAppointmentButton() {
         onClick={() => setOpen(true)}
         className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
       >
-        <CalendarPlus size={16} aria-hidden="true" /> New appointment
+        <CalendarPlus size={16} aria-hidden="true" /> New Appointment
       </button>
 
       {open && (
@@ -176,11 +176,11 @@ export function NewAppointmentButton() {
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
           role="dialog"
           aria-modal="true"
-          aria-label="New appointment"
+          aria-label="New Appointment"
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">New appointment</h2>
+              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">New Appointment</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

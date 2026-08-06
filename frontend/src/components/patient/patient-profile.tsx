@@ -390,14 +390,14 @@ export default function PatientProfile() {
             onClick={() => setPwOpen(true)}
             className="focus-ring inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-3.5 py-2 text-sm font-medium text-[var(--color-foreground)] hover:bg-slate-50"
           >
-            <Lock size={15} /> Change password
+            <Lock size={15} /> Change Password
           </button>
           <button
             type="button"
             onClick={handleLogout}
             className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-destructive-soft)] px-3.5 py-2 text-sm font-medium text-[var(--color-destructive)] hover:bg-[var(--color-destructive)] hover:text-white"
           >
-            <LogOut size={15} /> Sign out
+            <LogOut size={15} /> Sign Out
           </button>
         </div>
       </div>

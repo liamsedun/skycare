@@ -304,7 +304,7 @@ export default function StaffManagement({ meId }: { meId: string }) {
                     disabled={busy}
                     className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                   >
-                    <Pencil size={13} aria-hidden="true" /> Edit details
+                    <Pencil size={13} aria-hidden="true" /> Edit Details
                   </button>
                 )}
                 {user.role !== "super_admin" && user.id !== meId && (
@@ -315,7 +315,7 @@ export default function StaffManagement({ meId }: { meId: string }) {
                       disabled={busy}
                       className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                     >
-                      <KeyRound size={13} aria-hidden="true" /> Reset password
+                      <KeyRound size={13} aria-hidden="true" /> Reset Password
                     </button>
                     <button
                       type="button"

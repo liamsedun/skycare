@@ -400,7 +400,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
                 disabled={saving}
                 className="focus-ring rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
               >
-                {saving ? "Saving…" : editing ? "Save changes" : `Add ${isExpense ? "expense" : "income"}`}
+                {saving ? "Saving…" : editing ? "Save Changes" : `Add ${isExpense ? "Expense" : "Income"}`}
               </button>
             </div>
           </form>

@@ -131,7 +131,7 @@ export default function BillingView() {
           onClick={() => setShowCreate(true)}
           className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
         >
-          <Plus size={16} aria-hidden="true" /> Create invoice
+          <Plus size={16} aria-hidden="true" /> Create Invoice
         </button>
       </div>
 
@@ -425,7 +425,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
   }
 
   return (
-    <ModalShell title="Create invoice" onClose={onClose}>
+    <ModalShell title="Create Invoice" onClose={onClose}>
       <form
         className="mt-5 space-y-4"
         onSubmit={(e) => {
@@ -567,7 +567,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
             Cancel
           </button>
           <button type="submit" disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
-            {busy ? "Creating…" : "Create invoice"}
+            {busy ? "Creating…" : "Create Invoice"}
           </button>
         </div>
       </form>

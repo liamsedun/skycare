@@ -187,7 +187,7 @@ export default function MedicalReportsSection({
 
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-semibold text-[var(--color-foreground)]">
-          Medical reports <span className="text-xs font-normal text-[var(--color-muted-fg)]">({reports.length})</span>
+          Medical Reports <span className="text-xs font-normal text-[var(--color-muted-fg)]">({reports.length})</span>
         </p>
         {canWrite && (
           <button
@@ -195,7 +195,7 @@ export default function MedicalReportsSection({
             onClick={() => setShowNew((v) => !v)}
             className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
           >
-            {showNew ? "Close form" : "+ New report"}
+            {showNew ? "Close form" : "+ New Report"}
           </button>
         )}
       </div>

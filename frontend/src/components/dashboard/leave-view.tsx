@@ -142,7 +142,7 @@ export default function LeaveView() {
           onClick={() => setShowNew(true)}
           className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3.5 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
         >
-          <Plus size={15} /> Request leave
+          <Plus size={15} /> Request Leave
         </button>
       </div>
 
@@ -222,7 +222,7 @@ export default function LeaveView() {
                       disabled={busy}
                       className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-muted-fg)] hover:bg-slate-50 disabled:opacity-50"
                     >
-                      <X size={12} /> Cancel request
+                      <X size={12} /> Cancel Request
                     </button>
                   )}
                 </div>

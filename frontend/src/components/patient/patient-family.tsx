@@ -131,7 +131,7 @@ export default function PatientFamily() {
             onClick={() => setShowAdd(true)}
             className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
           >
-            <UserPlus size={16} aria-hidden="true" /> Add family member
+            <UserPlus size={16} aria-hidden="true" /> Add Family Member
           </button>
         )}
       </div>
@@ -235,11 +235,11 @@ function AddMemberModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label="Add family member"
+      aria-label="Add Family Member"
     >
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Add family member</h2>
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Add Family Member</h2>
           <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
             ✕
           </button>

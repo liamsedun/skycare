@@ -135,7 +135,7 @@ export default function ReportsView() {
             onClick={() => setShowNew(true)}
             className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
           >
-            <Plus size={16} aria-hidden="true" /> New report
+            <Plus size={16} aria-hidden="true" /> New Report
           </button>
         )}
       </div>

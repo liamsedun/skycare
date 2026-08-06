@@ -194,11 +194,11 @@ function NoteEditModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label="Edit doctor note"
+      aria-label="Edit Doctor Note"
     >
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Edit doctor note</h2>
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Edit Doctor Note</h2>
           <button
             type="button"
             onClick={onClose}
@@ -327,7 +327,7 @@ function NoteEditModal({
               className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
             >
               {busy && <Loader2 size={15} aria-hidden="true" className="animate-spin" />}
-              {busy ? "Saving…" : "Save changes"}
+              {busy ? "Saving…" : "Save Changes"}
             </button>
           </div>
         </form>
@@ -344,6 +344,7 @@ export default function PatientRecords() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [editingNote, setEditingNote] = useState<DoctorNote | null>(null);
+  const [tab, setTab] = useState<"records" | "notes" | "reports">("records");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -376,7 +377,7 @@ export default function PatientRecords() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Medical records</h1>
+        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Medical Records</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your clinical records, doctor notes and reports.</p>
       </div>
 
@@ -396,9 +397,33 @@ export default function PatientRecords() {
         </div>
       ) : (
         <>
-          {records.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 border-b border-[var(--color-border)] pb-3">
+            {(
+              [
+                ["records", "Medical Records", ClipboardList],
+                ["notes", "Clinical Notes", Stethoscope],
+                ["reports", "Medical Reports", FileText],
+              ] as const
+            ).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`focus-ring inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                  tab === key
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]/60 hover:text-[var(--color-foreground)]"
+                }`}
+              >
+                <Icon size={13} aria-hidden="true" /> {label}
+              </button>
+            ))}
+          </div>
+
+          {tab === "records" && (
+          records.length > 0 ? (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Records</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Medical Records</h2>
               {records.map((rec) => {
                 const open = expanded[`r-${rec.id}`];
                 return (
@@ -431,11 +456,17 @@ export default function PatientRecords() {
                 );
               })}
             </section>
+          ) : (
+            <p className="rounded-xl border border-dashed border-[var(--color-border)] bg-white py-10 text-center text-sm text-[var(--color-muted-fg)]">
+              No medical records yet.
+            </p>
+          )
           )}
 
-          {notes.length > 0 && (
+          {tab === "notes" && (
+          notes.length > 0 ? (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Doctor notes</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Clinical Notes</h2>
               {notes.map((note) => {
                 const open = expanded[`n-${note.id}`];
                 const diag = (note.diagnosis ?? {}) as Record<string, string>;
@@ -528,11 +559,17 @@ export default function PatientRecords() {
                 );
               })}
             </section>
+          ) : (
+            <p className="rounded-xl border border-dashed border-[var(--color-border)] bg-white py-10 text-center text-sm text-[var(--color-muted-fg)]">
+              No clinical notes yet.
+            </p>
+          )
           )}
 
-          {reports.length > 0 && (
+          {tab === "reports" && (
+          reports.length > 0 ? (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Reports</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Medical Reports</h2>
               {reports.map((rep) => {
                 const open = expanded[`p-${rep.id}`];
                 return (
@@ -563,6 +600,11 @@ export default function PatientRecords() {
                 );
               })}
             </section>
+          ) : (
+            <p className="rounded-xl border border-dashed border-[var(--color-border)] bg-white py-10 text-center text-sm text-[var(--color-muted-fg)]">
+              No medical reports yet.
+            </p>
+          )
           )}
         </>
       )}

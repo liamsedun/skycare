@@ -116,7 +116,7 @@ export default function BankAccountsSection() {
             onClick={() => setShowForm(true)}
             className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] hover:bg-slate-50"
           >
-            <Plus size={13} /> Add account
+            <Plus size={13} /> Add Account
           </button>
         )}
       </header>

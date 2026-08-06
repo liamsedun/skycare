@@ -130,7 +130,7 @@ export default function NotificationsView() {
             onClick={markAllRead}
             className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] hover:bg-slate-50"
           >
-            <CheckCheck size={14} /> Mark all read
+            <CheckCheck size={14} /> Mark All Read
           </button>
         </div>
       </div>

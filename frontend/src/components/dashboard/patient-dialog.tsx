@@ -131,16 +131,16 @@ export function AddPatientButton() {
         onClick={() => setOpen(true)}
         className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
       >
-        <Plus size={16} aria-hidden="true" /> Register patient
+        <Plus size={16} aria-hidden="true" /> Register Patient
       </button>
 
       {open && (
         <Modal
-          title="Register patient"
+          title="Register Patient"
           onClose={() => setOpen(false)}
           error={error}
           busy={busy}
-          submitLabel={busy ? "Registering…" : "Register patient"}
+          submitLabel={busy ? "Registering…" : "Register Patient"}
           onSubmit={handleSubmit}
           wide
         >
@@ -639,10 +639,10 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
               <div className="flex flex-wrap gap-1.5 border-b border-[var(--color-border)] pb-3">
                 {(
                   [
-                    ["info", "Patient info", UserRound],
-                    ["records", "Medical records", ClipboardList],
-                    ["notes", "Clinical notes", FileText],
-                    ["reports", "Medical reports", FileText],
+                    ["info", "Patient Info", UserRound],
+                    ["records", "Medical Records", ClipboardList],
+                    ["notes", "Clinical Notes", FileText],
+                    ["reports", "Medical Reports", FileText],
                   ] as const
                 ).map(([key, label, Icon]) => (
                   <button
@@ -660,7 +660,9 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                 ))}
               </div>
 
-              {editMode ? (
+              {tab === "info" && (
+                <>
+                  {editMode ? (
                 <form
                   className="grid grid-cols-1 gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 sm:grid-cols-2"
                   onSubmit={(e) => {
@@ -755,7 +757,7 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                       disabled={busy}
                       className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
                     >
-                      {busy ? "Saving…" : "Save changes"}
+                      {busy ? "Saving…" : "Save Changes"}
                     </button>
                   </div>
                 </form>
@@ -825,7 +827,7 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     }}
                   >
                     <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)] sm:col-span-2">
-                      Add dependant (family member on this account)
+                      Add Dependant (Family Member on This Account)
                     </p>
                     <div>
                       <label className={labelCls} htmlFor="d-first">First Name</label>
@@ -869,16 +871,19 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                       disabled={busy}
                       className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60 sm:col-span-2"
                     >
-                      <Plus size={15} aria-hidden="true" /> {busy ? "Adding…" : "Add dependant"}
+                      <Plus size={15} aria-hidden="true" /> {busy ? "Adding…" : "Add Dependant"}
                     </button>
                   </form>
                 )}
               </section>
+              </>
+              )}
 
+              {tab === "records" && (
               <section>
                 <div className="mb-3 flex items-center justify-between">
                   <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
-                    <ClipboardList size={15} aria-hidden="true" /> Medical records
+                    <ClipboardList size={15} aria-hidden="true" /> Medical Records
                     <span className="text-xs font-normal text-[var(--color-muted-fg)]">({records.length})</span>
                   </h3>
                   <button
@@ -886,7 +891,7 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     onClick={() => setShowAddRecord((v) => !v)}
                     className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
                   >
-                    {showAddRecord ? "Close form" : "+ Add record"}
+                    {showAddRecord ? "Close form" : "+ Add Record"}
                   </button>
                 </div>
 
@@ -929,7 +934,7 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                       disabled={busy}
                       className="focus-ring rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60 sm:col-span-2"
                     >
-                      {busy ? "Saving…" : "Save record"}
+                      {busy ? "Saving…" : "Save Record"}
                     </button>
                   </form>
                 )}
@@ -968,8 +973,18 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                   </ul>
                 )}
               </section>
+              )}
 
-              <DoctorNotesSection patientId={patient.id} />
+              {tab === "notes" && (
+                <DoctorNotesSection patientId={patient.id} />
+              )}
+
+              {tab === "reports" && (
+                <MedicalReportsSection
+                  patientId={patient.id}
+                  patientName={detail ? `${detail.first_name} ${detail.last_name}` : "Patient"}
+                />
+              )}
             </div>
           ) : (
             <ErrorNote error={error ?? "Patient not found"} />

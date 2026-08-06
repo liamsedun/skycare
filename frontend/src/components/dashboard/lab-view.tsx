@@ -97,7 +97,7 @@ export default function LabView({ canManageCatalog, canEnterResults }: { canMana
               onClick={() => setShowCatalog(true)}
               className="focus-ring inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)]"
             >
-              <TestTube size={16} aria-hidden="true" /> Test catalog
+              <TestTube size={16} aria-hidden="true" /> Test Catalog
             </button>
           )}
           <button
@@ -105,7 +105,7 @@ export default function LabView({ canManageCatalog, canEnterResults }: { canMana
             onClick={() => setShowCreate(true)}
             className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
           >
-            <Plus size={16} aria-hidden="true" /> New lab order
+            <Plus size={16} aria-hidden="true" /> New Lab Order
           </button>
         </div>
       </div>
@@ -271,7 +271,7 @@ function CreateOrderModal({ onClose, onCreated }: { onClose: () => void; onCreat
   }
 
   return (
-    <ModalShell title="New lab order" onClose={onClose}>
+    <ModalShell title="New Lab Order" onClose={onClose}>
       <form
         className="mt-5 space-y-4"
         onSubmit={(e) => {
@@ -663,7 +663,7 @@ function CatalogModal({ onClose, onChanged }: { onClose: () => void; onChanged: 
   }
 
   return (
-    <ModalShell title="Test catalog" onClose={onClose} wide>
+    <ModalShell title="Test Catalog" onClose={onClose} wide>
       <div className="mt-5 space-y-5">
         <form onSubmit={addTest} className="grid grid-cols-1 gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4 sm:grid-cols-2">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Test name (e.g. Malaria RDT)" required className={inputCls} />

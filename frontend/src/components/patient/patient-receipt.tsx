@@ -83,7 +83,7 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
       </div>
 
       <Link href="/patient/billing" className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] print:hidden">
-        <ArrowLeft size={15} /> Back to bills
+        <ArrowLeft size={15} /> Back to Bills
       </Link>
 
       {loading ? (

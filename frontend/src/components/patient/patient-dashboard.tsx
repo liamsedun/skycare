@@ -197,7 +197,7 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
         <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
           <div>
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/80">
-              <Sparkles size={14} aria-hidden="true" /> Patient overview
+              <Sparkles size={14} aria-hidden="true" /> Patient Overview
             </p>
             <h1 className="mt-2 font-[family-name:var(--font-heading)] text-2xl font-bold sm:text-3xl">
               {greeting}, {first} 👋
@@ -210,19 +210,19 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
                 href="/patient/appointments"
                 className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[#8a5a1a] shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
               >
-                <CalendarPlus size={16} aria-hidden="true" /> Book appointment
+                <CalendarPlus size={16} aria-hidden="true" /> Book Appointment
               </Link>
               <Link
                 href="/patient/billing"
                 className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-transform duration-200 hover:-translate-y-0.5"
               >
-                <Wallet size={16} aria-hidden="true" /> Pay a bill
+                <Wallet size={16} aria-hidden="true" /> Pay a Bill
               </Link>
               <Link
                 href="/patient/lab-results"
                 className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-transform duration-200 hover:-translate-y-0.5"
               >
-                <FlaskConical size={16} aria-hidden="true" /> View results
+                <FlaskConical size={16} aria-hidden="true" /> View Results
               </Link>
             </div>
           </div>

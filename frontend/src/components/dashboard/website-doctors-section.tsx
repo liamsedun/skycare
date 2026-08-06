@@ -161,7 +161,7 @@ export default function WebsiteDoctorsSection() {
             }}
             className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] hover:bg-slate-50"
           >
-            <Plus size={13} /> Add doctor
+            <Plus size={13} /> Add Doctor
           </button>
         )}
       </header>
@@ -283,7 +283,7 @@ export default function WebsiteDoctorsSection() {
             </label>
             <div className="flex items-end gap-2 sm:col-span-2">
               <button type="submit" disabled={busy} className="focus-ring rounded-lg bg-[var(--color-primary)] px-3 py-2.5 text-sm font-medium text-white disabled:opacity-60">
-                {busy ? "Saving…" : editingId ? "Save changes" : "Add doctor"}
+                {busy ? "Saving…" : editingId ? "Save Changes" : "Add Doctor"}
               </button>
               <button
                 type="button"

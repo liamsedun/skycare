@@ -93,7 +93,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
           onClick={() => setShowCreate(true)}
           className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
         >
-          <Plus size={16} aria-hidden="true" /> New prescription
+          <Plus size={16} aria-hidden="true" /> New Prescription
         </button>
       </div>
 
@@ -258,7 +258,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   }
 
   return (
-    <ModalShell title="New prescription" onClose={onClose}>
+    <ModalShell title="New Prescription" onClose={onClose}>
       <form
         className="mt-5 space-y-4"
         onSubmit={(e) => {

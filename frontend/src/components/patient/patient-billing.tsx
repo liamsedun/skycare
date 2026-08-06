@@ -295,7 +295,7 @@ export default function PatientBilling() {
                           onClick={() => setDeclareInvoice(inv)}
                           className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
                         >
-                          <Landmark size={15} aria-hidden="true" /> Declare payment
+                          <Landmark size={15} aria-hidden="true" /> Declare Payment
                         </button>
                       </div>
                     )}
@@ -304,7 +304,7 @@ export default function PatientBilling() {
                         href={`/patient/receipt/${inv.id}`}
                         className="focus-ring inline-flex items-center gap-1.5 text-sm font-medium text-[var(--color-primary)] hover:underline"
                       >
-                        <ReceiptText size={15} aria-hidden="true" /> View receipt
+                        <ReceiptText size={15} aria-hidden="true" /> View Receipt
                       </Link>
                     </div>
                   </div>
@@ -364,11 +364,11 @@ function DeclareModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
-      aria-label="Declare payment"
+      aria-label="Declare Payment"
     >
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Declare payment</h2>
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Declare Payment</h2>
           <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
             ✕
           </button>
@@ -446,7 +446,7 @@ function DeclareModal({
               disabled={busy || !(parsed > 0) || parsed > due + 0.01}
               className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
             >
-              {busy ? "Submitting…" : method === "online" ? "Continue to payment" : "Declare payment"}
+              {busy ? "Submitting…" : method === "online" ? "Continue to Payment" : "Declare Payment"}
             </button>
           </div>
         </form>

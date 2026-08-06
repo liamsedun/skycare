@@ -523,7 +523,7 @@ export default function TenantSettingsView() {
             disabled={saving}
             className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
           >
-            <Save size={16} aria-hidden="true" /> {saving ? "Saving…" : "Save changes"}
+            <Save size={16} aria-hidden="true" /> {saving ? "Saving…" : "Save Changes"}
           </button>
         </div>
       )}

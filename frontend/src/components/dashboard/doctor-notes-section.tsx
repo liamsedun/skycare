@@ -297,7 +297,7 @@ export default function DoctorNotesSection({ patientId }: { patientId: string })
     <section>
       <div className="mb-3 flex items-center justify-between">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
-          <FileText size={15} aria-hidden="true" /> Doctor notes
+          <FileText size={15} aria-hidden="true" /> Doctor Notes
           <span className="text-xs font-normal text-[var(--color-muted-fg)]">({notes.length})</span>
         </h3>
         {isClinician && (
@@ -306,7 +306,7 @@ export default function DoctorNotesSection({ patientId }: { patientId: string })
             onClick={startNew}
             className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
           >
-            <Plus size={13} aria-hidden="true" /> New note
+            <Plus size={13} aria-hidden="true" /> New Note
           </button>
         )}
       </div>
@@ -435,7 +435,7 @@ export default function DoctorNotesSection({ patientId }: { patientId: string })
       )}
 
       {showForm && (
-        <Modal title={editingId ? "Edit clinical note" : "New clinical note"} onClose={() => setShowForm(false)}>
+        <Modal title={editingId ? "Edit Clinical Note" : "New Clinical Note"} onClose={() => setShowForm(false)}>
           <form onSubmit={save} className="space-y-5">
             {error && <ErrorNote error={error} />}
 
@@ -564,7 +564,7 @@ export default function DoctorNotesSection({ patientId }: { patientId: string })
                 className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
               >
                 {busy && <Loader2 size={15} aria-hidden="true" className="animate-spin" />}
-                {busy ? "Saving…" : editingId ? "Save changes" : "Save note"}
+                {busy ? "Saving…" : editingId ? "Save Changes" : "Save Note"}
               </button>
             </div>
           </form>

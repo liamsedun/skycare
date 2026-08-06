@@ -113,7 +113,7 @@ export default function NotificationsBell({ basePath }: { basePath: string }) {
               disabled={unread === 0}
               className="focus-ring inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] disabled:opacity-50"
             >
-              <CheckCheck size={13} /> Mark all read
+              <CheckCheck size={13} /> Mark All Read
             </button>
           </div>
           <div className="max-h-80 overflow-y-auto">
