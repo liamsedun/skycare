@@ -89,7 +89,7 @@ export function Combobox({
           setOpen(true);
         }}
         onFocus={() => {
-          setFilter(current);
+          setFilter("");
           setOpen(true);
         }}
         className="w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-3 pr-9 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
@@ -100,7 +100,7 @@ export function Combobox({
           if (open) {
             setOpen(false);
           } else {
-            setFilter(current);
+            setFilter("");
             setOpen(true);
             inputRef.current?.focus();
           }
