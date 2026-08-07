@@ -8,7 +8,7 @@ async function getAppointment(ctx: any, id: string, tenantId: string) {
   const { data } = await ctx.svc
     .from("appointments")
     .select(
-      "id, tenant_id, branch_id, patient_id, doctor_id, scheduled_date, start_time, end_time, type, status, reason, notes, created_by, created_at, patients(first_name, last_name, patient_number, phone), users(full_name, role)"
+      "id, tenant_id, branch_id, patient_id, doctor_id, scheduled_date, start_time, end_time, type, status, reason, notes, created_by, created_at, patients(first_name, last_name, patient_number, phone), users!appointments_doctor_id_fkey(full_name, role)"
     )
     .eq("id", id)
     .eq("tenant_id", tenantId)
