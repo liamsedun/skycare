@@ -164,7 +164,7 @@ export default function AppointmentsPage() {
           <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Appointments</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Schedule and manage patient appointments</p>
         </div>
-        <NewAppointmentButton />
+        <NewAppointmentButton onBooked={load} />
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">

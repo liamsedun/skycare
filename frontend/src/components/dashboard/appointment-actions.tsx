@@ -94,7 +94,7 @@ export function AppointmentActions({ appointment }: AppointmentActionProps) {
   );
 }
 
-export function NewAppointmentButton() {
+export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -154,6 +154,7 @@ export function NewAppointmentButton() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to book appointment");
       setOpen(false);
+      onBooked?.();
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to book appointment");
