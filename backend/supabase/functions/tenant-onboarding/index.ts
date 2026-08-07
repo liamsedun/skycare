@@ -53,6 +53,23 @@ Deno.serve(async (req) => {
     });
     if (me) return json({ error: me.message }, 500);
 
+    // 4. Staff record so Schedule Duty / Availability / Leave work for the admin
+    const { data: staffRows } = await svc.from("staff").select("staff_number");
+    let maxSeq = 0;
+    for (const s of staffRows ?? []) {
+      const m = String(s.staff_number).match(/STF-(\d+)/);
+      if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10));
+    }
+    const { error: se } = await svc.from("staff").insert({
+      tenant_id: tenant.id,
+      branch_id: branch.id,
+      user_id: auth.user.id,
+      staff_number: `STF-${String(maxSeq + 1).padStart(4, "0")}`,
+      department: "Administration",
+      is_available: true,
+    });
+    if (se) return json({ error: se.message }, 500);
+
     return json({ ok: true, tenant, branch, subdomain: `https://${slug}.skycare.app` }, 201);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
