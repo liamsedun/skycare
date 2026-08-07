@@ -15,6 +15,23 @@ export const GRANTABLE_ROLES: StaffRole[] = [
   "lab_tech",
   "cashier",
   "receptionist",
+  "medical_officer",
+  "surgeon",
+  "anesthesiologist",
+  "radiologist",
+  "radiographer",
+  "physiotherapist",
+  "dentist",
+  "optometrist",
+  "dietician",
+  "medical_records",
+  "accountant",
+  "hr_officer",
+  "it_support",
+  "security",
+  "ward_orderly",
+  "hmo_officer",
+  "paramedic",
 ];
 
 // GET /api/admin/users?role=&search=&is_active=&page=&pageSize=
@@ -127,8 +144,11 @@ export const POST = withAuth(async (req, ctx) => {
     throw new ValidationError("Failed to save user profile");
   }
 
-  // Clinical roles get a staff row so the roster/leave/availability features work.
-  const clinical = ["doctor", "nurse", "pharmacist", "lab_tech", "cashier", "receptionist"];
+  // Staff rows give clinical/support staff roster, leave, and availability.
+  const clinical = ["doctor", "nurse", "pharmacist", "lab_tech", "cashier", "receptionist",
+    "medical_officer", "surgeon", "anesthesiologist", "radiologist", "radiographer",
+    "physiotherapist", "dentist", "optometrist", "dietician", "medical_records",
+    "accountant", "hr_officer", "it_support", "security", "ward_orderly", "hmo_officer", "paramedic"];
   let staff = null;
   if (clinical.includes(body.role)) {
     const { data: staffRow } = await ctx.svc

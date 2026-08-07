@@ -35,6 +35,23 @@ const CREATABLE_ROLES: StaffRole[] = [
   "lab_tech",
   "cashier",
   "receptionist",
+  "medical_officer",
+  "surgeon",
+  "anesthesiologist",
+  "radiologist",
+  "radiographer",
+  "physiotherapist",
+  "dentist",
+  "optometrist",
+  "dietician",
+  "medical_records",
+  "accountant",
+  "hr_officer",
+  "it_support",
+  "security",
+  "ward_orderly",
+  "hmo_officer",
+  "paramedic",
 ];
 
 function rolesFor(myRole?: string): StaffRole[] {
