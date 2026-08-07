@@ -193,7 +193,7 @@ export default async function PatientsPage({
                   <dd>
                     <a
                       href={`tel:${patient.phone}`}
-                      className="focus-ring font-medium text-[var(--color-primary)] transition-colors duration-200 hover:underline"
+                      className="focus-ring font-medium text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline"
                     >
                       {patient.phone ?? "—"}
                     </a>
@@ -265,7 +265,7 @@ export default async function PatientsPage({
                     <td className="px-4 py-3">
                       <a
                         href={`tel:${patient.phone}`}
-                        className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline"
+                        className="focus-ring text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline"
                       >
                         {patient.phone ?? "—"}
                       </a>
