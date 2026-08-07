@@ -2,7 +2,7 @@ import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, r
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import { notifyUsers } from "@/lib/notify";
+import { pushNotifyUsers } from "@/lib/push-send";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -164,13 +164,24 @@ export const POST = withStaff(async (req, ctx) => {
     .select();
   if (itemsError) throw new ValidationError(itemsError.message);
 
-  if (patient.user_id) {
-    await notifyUsers(ctx.svc, {
-      orgId: tenantId,
-      userIds: [patient.user_id],
+  // Fan out notifications via the DB RPC (in-house: lab staff + patient +
+  // main patient if dependant; external: patient/main patient only, no lab
+  // staff). The RPC returns the notified user ids so web push can follow.
+  const { data: notifiedIds, error: notifyError } = await ctx.svc.rpc(
+    "notify_lab_request",
+    { p_request_id: request.id }
+  );
+  if (notifyError) throw new ValidationError(notifyError.message);
+
+  const notified: string[] = Array.isArray(notifiedIds)
+    ? (notifiedIds as string[])
+    : [];
+  if (notified.length > 0) {
+    await pushNotifyUsers(ctx.svc, {
+      userIds: notified,
       type: "lab_result",
       title: "Lab tests ordered",
-      message: `${items.length} service(s) requested for ${patient.first_name} ${patient.last_name}`,
+      body: `${items.length} service(s) requested for ${patient.first_name} ${patient.last_name}`,
       referenceType: "lab_requests",
       referenceId: request.id,
     });

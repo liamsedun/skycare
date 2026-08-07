@@ -142,7 +142,7 @@ BEGIN
   ) AS v(c)
   ON CONFLICT (tenant_id, name) DO NOTHING;
 
-  FOREACH s IN ARRAY ARRAY[
+  FOREACH s SLICE 1 IN ARRAY ARRAY[
     -- A. Hematology
     ARRAY['Hematology','lab','Complete Blood Count (CBC)'],
     ARRAY['Hematology','lab','ESR (Erythrocyte Sedimentation Rate)'],
@@ -218,9 +218,17 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Trigger wrapper (triggers cannot take NEW.id as an argument)
+CREATE OR REPLACE FUNCTION public.trigger_seed_lab_catalog()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  PERFORM public.seed_lab_catalog(NEW.id);
+  RETURN NEW;
+END $$;
+
 DROP TRIGGER IF EXISTS trg_tenants_lab_catalog ON tenants;
 CREATE TRIGGER trg_tenants_lab_catalog AFTER INSERT ON tenants
-  FOR EACH ROW EXECUTE FUNCTION public.seed_lab_catalog(NEW.id);
+  FOR EACH ROW EXECUTE FUNCTION public.trigger_seed_lab_catalog();
 
 -- ---------------------------------------------------------------------------
 -- RLS (staff manage in-tenant; patients read their own/family requests only)
