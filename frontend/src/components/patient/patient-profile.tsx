@@ -264,7 +264,7 @@ export default function PatientProfile() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">My profile</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">My profile</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Manage your personal information.</p>
       </div>
 
@@ -303,7 +303,7 @@ export default function PatientProfile() {
             <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleAvatarUpload} />
           </div>
           <div className="min-w-0">
-            <p className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
+            <p className="text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
             <p className="text-sm text-[var(--color-muted-fg)]">
               {patient?.patient_number ? `${patient.patient_number} · ` : ""}
               {user?.email}
@@ -405,7 +405,7 @@ export default function PatientProfile() {
       {pwOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Change password">
           <form onSubmit={handleChangePassword} className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-xl)]">
-            <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">Change password</h2>
+            <h2 className="text-lg font-bold text-[var(--color-foreground)]">Change password</h2>
             <div className="mt-4 space-y-3">
               <div>
                 <label className={labelCls} htmlFor="pw-current">Current password</label>

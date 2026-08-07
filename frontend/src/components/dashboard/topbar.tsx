@@ -41,7 +41,7 @@ export default function Topbar({
             onError={(e) => { e.currentTarget.style.display = "none"; }}
           />
         )}
-        <Link href="/app" className="truncate font-[family-name:var(--font-heading)] text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
+        <Link href="/app" className="truncate text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
           {tenantName ?? "SkyCare"}
         </Link>
       </div>

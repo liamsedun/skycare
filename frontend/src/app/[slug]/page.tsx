@@ -39,7 +39,7 @@ export default async function TenantWebsitePage({
     .order("sort_order", { ascending: true });
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white font-[family-name:var(--font-sans)]">
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">

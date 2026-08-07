@@ -82,7 +82,7 @@ export default function CsvImportModal({
     >
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-[family-name:var(--font-heading)] text-lg font-bold">
+          <h2 className="flex items-center gap-2 text-lg font-bold">
             <FileUp size={18} aria-hidden="true" className="text-[var(--color-primary-dark)]" />
             {title}
           </h2>

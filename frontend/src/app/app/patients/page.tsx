@@ -3,7 +3,7 @@ import { Search, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, getClaims } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
-import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
+import { PatientViewButton, patientGradient, patientInitials, type PatientRow } from "@/components/dashboard/patient-dialog";
 import PatientActions from "@/components/dashboard/patient-actions";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,7 @@ interface PatientRowRaw {
   city: string | null;
   state: string | null;
   status: string;
+  created_at: string;
 }
 
 export default async function PatientsPage({
@@ -51,7 +52,7 @@ export default async function PatientsPage({
     let builder = supabase
       .from("patients")
       .select(
-        "id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, status"
+        "id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, status, created_at"
       )
       .order("created_at", { ascending: false })
       .limit(100);
@@ -86,7 +87,7 @@ export default async function PatientsPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
             Patients
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -156,13 +157,20 @@ export default async function PatientsPage({
               className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-[var(--color-foreground)]">
-                    {patient.last_name}, {patient.first_name}
-                  </p>
-                  <p className="mt-0.5 font-mono text-xs text-[var(--color-primary-dark)]">
-                    {patient.patient_number}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${patientGradient(patient.id)} text-xs font-bold text-white shadow-sm ring-2 ring-white`}
+                  >
+                    {patientInitials(patient.first_name, patient.last_name)}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-[var(--color-foreground)]">
+                      {patient.last_name}, {patient.first_name}
+                    </p>
+                    <p className="mt-0.5 font-mono text-xs text-[var(--color-primary-dark)]">
+                      {patient.patient_number}
+                    </p>
+                  </div>
                 </div>
                 <StatusBadge status={patient.status} />
               </div>
@@ -196,6 +204,12 @@ export default async function PatientsPage({
                     {[patient.city, patient.state].filter(Boolean).join(", ") || "—"}
                   </dd>
                 </div>
+                <div>
+                  <dt className="text-[var(--color-muted-fg)]">Registered</dt>
+                  <dd className="font-medium text-[var(--color-foreground)]">
+                    {formatDate(patient.created_at)}
+                  </dd>
+                </div>
               </dl>
               <div className="mt-3">
                 <PatientViewButton patient={patient} myRole={myRole} />
@@ -208,7 +222,7 @@ export default async function PatientsPage({
       {patients.length > 0 && (
         <div className="hidden overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)] md:block">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[860px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                   <th scope="col" className="px-4 py-3 font-semibold">Patient</th>
@@ -216,6 +230,7 @@ export default async function PatientsPage({
                   <th scope="col" className="px-4 py-3 font-semibold">Date of birth</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Contact</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Location</th>
+                  <th scope="col" className="px-4 py-3 font-semibold">Registered</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Status</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
@@ -224,12 +239,21 @@ export default async function PatientsPage({
                 {patients.map((patient) => (
                   <tr key={patient.id} className="transition-colors duration-150 hover:bg-[var(--color-muted)]">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-[var(--color-foreground)]">
-                        {patient.last_name}, {patient.first_name}
-                      </p>
-                      <p className="text-xs capitalize text-[var(--color-muted-fg)]">
-                        {patient.gender ?? "—"}
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${patientGradient(patient.id)} text-xs font-bold text-white shadow-sm ring-2 ring-white`}
+                        >
+                          {patientInitials(patient.first_name, patient.last_name)}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-medium text-[var(--color-foreground)]">
+                            {patient.last_name}, {patient.first_name}
+                          </p>
+                          <p className="text-xs capitalize text-[var(--color-muted-fg)]">
+                            {patient.gender ?? "—"}
+                          </p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-[var(--color-primary-dark)]">
                       {patient.patient_number}
@@ -247,6 +271,9 @@ export default async function PatientsPage({
                     </td>
                     <td className="px-4 py-3 text-[var(--color-muted-fg)]">
                       {[patient.city, patient.state].filter(Boolean).join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-[var(--color-muted-fg)]">
+                      {formatDate(patient.created_at)}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={patient.status} />

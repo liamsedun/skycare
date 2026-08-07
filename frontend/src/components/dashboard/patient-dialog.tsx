@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, ShieldAlert, Trash2, UserRound, Users } from "lucide-react";
+import { CalendarPlus, ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, MoreHorizontal, Pencil, Phone, PhoneCall, Plus, ShieldAlert, Trash2, UserRound, Users } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { Combobox } from "@/components/ui/combobox";
@@ -41,6 +41,27 @@ export interface PatientRow {
   city: string | null;
   state: string | null;
   status: string;
+  created_at: string;
+}
+
+const PATIENT_GRADIENTS = [
+  "from-sky-500 to-blue-600",
+  "from-violet-500 to-indigo-600",
+  "from-emerald-500 to-teal-600",
+  "from-amber-400 to-orange-500",
+  "from-rose-500 to-pink-600",
+  "from-cyan-500 to-blue-600",
+  "from-fuchsia-500 to-purple-600",
+];
+
+export function patientInitials(first: string, last: string): string {
+  return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "PT";
+}
+
+export function patientGradient(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash + id.charCodeAt(i)) % PATIENT_GRADIENTS.length;
+  return PATIENT_GRADIENTS[hash];
 }
 
 interface DependantRow extends PatientRow {
@@ -409,6 +430,16 @@ export function PatientViewButton({
   const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
   const [schedBusy, setSchedBusy] = useState(false);
   const [schedError, setSchedError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-patient-menu]")) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuOpen]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -714,7 +745,7 @@ export function PatientViewButton({
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={() => {
@@ -725,33 +756,55 @@ export function PatientViewButton({
         >
           <Eye size={13} aria-hidden="true" /> View
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setEditMode(true);
-            setOpen(true);
-          }}
-          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-        >
-          <Pencil size={13} aria-hidden="true" /> Edit
-        </button>
-        <button
-          type="button"
-          onClick={openSchedule}
-          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-        >
-          <CalendarPlus size={13} aria-hidden="true" /> Schedule
-        </button>
-        {canDelete && (
+        <div className="relative shrink-0" data-patient-menu>
           <button
             type="button"
-            onClick={removeQuick}
+            onClick={() => setMenuOpen((v) => !v)}
             disabled={busy}
-            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50 disabled:opacity-60"
+            aria-label={`More actions for ${patient.last_name}, ${patient.first_name}`}
+            aria-expanded={menuOpen}
+            className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
           >
-            <Trash2 size={13} aria-hidden="true" /> Delete
+            <MoreHorizontal size={16} aria-hidden="true" />
           </button>
-        )}
+          {menuOpen && (
+            <div className="absolute right-0 z-20 mt-1 w-36 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-[var(--shadow-lg)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setEditMode(true);
+                  setOpen(true);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+              >
+                <Pencil size={13} aria-hidden="true" /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  openSchedule();
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+              >
+                <CalendarPlus size={13} aria-hidden="true" /> Schedule
+              </button>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    removeQuick();
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors duration-150 hover:bg-red-50"
+                >
+                  <Trash2 size={13} aria-hidden="true" /> Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {open && (
@@ -1407,7 +1460,7 @@ export function PatientViewButton({
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+              <h2 className="text-lg font-bold">
                 New Appointment — {patient.last_name}, {patient.first_name}
               </h2>
               <button
@@ -1536,7 +1589,7 @@ function Modal({
         }`}
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">{title}</h2>
+          <h2 className="text-lg font-bold">{title}</h2>
           <button
             type="button"
             onClick={onClose}

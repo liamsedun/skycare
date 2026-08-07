@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Figtree, Noto_Sans } from "next/font/google";
+import { Figtree, Inter, Noto_Sans } from "next/font/google";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import "./globals.css";
 
@@ -8,6 +8,11 @@ const figtree = Figtree({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-heading",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 const notoSans = Noto_Sans({
@@ -69,14 +74,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${figtree.variable} ${notoSans.variable} antialiased`}
+      className={`${figtree.variable} ${inter.variable} ${notoSans.variable} antialiased`}
       suppressHydrationWarning
     >
       <Script id="skycare-theme-init" strategy="beforeInteractive">
         {`(function(){try{document.documentElement.dataset.theme=(localStorage.getItem("skycare-theme")||"light")}catch(e){}})();`}
       </Script>
       <body
-        className="min-h-screen font-[family-name:var(--font-sans)]"
+        className="min-h-screen font-[family-name:var(--font-inter)]"
         suppressHydrationWarning
       >
         <PwaWrapper>{children}</PwaWrapper>

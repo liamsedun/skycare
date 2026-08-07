@@ -53,7 +53,7 @@ export default function PatientShell({
   const brand = (
     <Link href="/patient" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
       <SkyCareMark size={36} rounded="rounded-xl" />
-      <span className="font-[family-name:var(--font-heading)] text-lg font-bold">
+      <span className="text-lg font-bold">
         <span className="text-slate-900">Sky</span><span className="text-sky-600">Care</span>
       </span>
     </Link>
@@ -130,7 +130,7 @@ export default function PatientShell({
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
             )}
-            <span className="truncate font-[family-name:var(--font-heading)] text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
+            <span className="truncate text-base font-semibold sm:text-lg" title={tenantName ?? undefined}>
               {tenantName ?? "SkyCare"}
             </span>
           </div>

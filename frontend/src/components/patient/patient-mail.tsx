@@ -167,7 +167,7 @@ export default function PatientMail() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Messages</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Messages</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Internal mail with hospital staff.</p>
       </div>
 

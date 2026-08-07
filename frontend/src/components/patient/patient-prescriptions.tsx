@@ -66,7 +66,7 @@ export default function PatientPrescriptions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Prescriptions</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Prescriptions</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Medications prescribed for you and your family.</p>
       </div>
 

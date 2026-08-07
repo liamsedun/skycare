@@ -180,7 +180,7 @@ export function NewAppointmentButton() {
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">New Appointment</h2>
+              <h2 className="text-lg font-bold">New Appointment</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}

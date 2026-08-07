@@ -152,7 +152,7 @@ export default function MailView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Internal mail</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Internal mail</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Messaging between hospital staff.</p>
       </div>
 

@@ -425,7 +425,7 @@ export default function RosterView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
             Duty Roster
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -627,7 +627,7 @@ export default function RosterView() {
         >
           <form onSubmit={saveSchedule} className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--color-foreground)]">
                 <CalendarClock size={18} className="text-[var(--color-primary)]" /> Schedule Duty
               </h2>
               <button type="button" onClick={() => setShowSchedule(false)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
@@ -758,7 +758,7 @@ export default function RosterView() {
         >
           <form onSubmit={saveEdit} className="max-h-[92vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">
+              <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--color-foreground)]">
                 <CalendarClock size={18} className="text-[var(--color-primary)]" /> Edit Shift
               </h2>
               <button type="button" onClick={() => setEditShift(null)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">

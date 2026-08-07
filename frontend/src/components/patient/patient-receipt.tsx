@@ -69,7 +69,7 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Receipt</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Receipt</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Payment proof for invoice {invoice?.invoice_number ?? ""}.</p>
         </div>
         <button

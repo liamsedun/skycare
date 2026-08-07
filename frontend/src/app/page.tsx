@@ -219,7 +219,7 @@ const navLinks = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white font-[family-name:var(--font-sans)]">
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">

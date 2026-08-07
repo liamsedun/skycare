@@ -44,7 +44,7 @@ export default function ForcePasswordChange({ userName }: { userName: string }) 
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-100 text-sky-600">
           <KeyRound size={26} aria-hidden="true" />
         </div>
-        <h1 className="mt-5 text-center font-[family-name:var(--font-heading)] text-xl font-bold text-slate-900">
+        <h1 className="mt-5 text-center text-xl font-bold text-slate-900">
           Set your own password
         </h1>
         <p className="mt-2 text-center text-sm text-slate-500">

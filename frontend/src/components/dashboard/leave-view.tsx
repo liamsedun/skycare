@@ -134,7 +134,7 @@ export default function LeaveView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Leave</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Leave</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Request and manage staff leave.</p>
         </div>
         <button
@@ -236,7 +236,7 @@ export default function LeaveView() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Request leave">
           <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-xl)]">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">Request leave</h2>
+              <h2 className="text-lg font-bold text-[var(--color-foreground)]">Request leave</h2>
               <button type="button" onClick={() => setShowNew(false)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
                 ✕
               </button>

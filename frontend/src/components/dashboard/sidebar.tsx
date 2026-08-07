@@ -25,7 +25,7 @@ export default function Sidebar({
       <div className="flex h-16 items-center justify-between border-b border-[var(--color-border)] px-4">
         <Link href="/app" className="flex items-center gap-2" onClick={onClose}>
           <SkyCareMark size={36} rounded="rounded-xl" />
-          <span className="font-[family-name:var(--font-heading)] text-lg font-bold">
+          <span className="text-lg font-bold">
             <span className="text-slate-900">Sky</span><span className="text-sky-600">Care</span>
           </span>
         </Link>

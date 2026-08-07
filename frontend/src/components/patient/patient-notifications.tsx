@@ -69,7 +69,7 @@ export default function PatientNotifications() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Notifications</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Notifications</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Updates from your hospital.</p>
         </div>
         <div className="flex items-center gap-2">

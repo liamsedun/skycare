@@ -319,7 +319,7 @@ export default function LoginPage() {
           <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
           <div aria-hidden="true" className="animate-pulse-glow pointer-events-none absolute -bottom-20 -left-16 h-52 w-52 rounded-full bg-sky-300/20 blur-2xl" />
           <FloatingIcons />
-          <h2 className="font-heading relative text-3xl font-bold">Welcome back.</h2>
+          <h2 className="relative text-3xl font-bold">Welcome back.</h2>
           <p className="relative mt-2 text-sm text-sky-100">Please enter your credentials.</p>
           <div className="relative mt-6">
             <DoctorIllustration />

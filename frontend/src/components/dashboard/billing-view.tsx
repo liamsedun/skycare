@@ -119,7 +119,7 @@ export default function BillingView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
             Billing
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -777,7 +777,7 @@ function ModalShell({ title, onClose, children, wide }: { title: string; onClose
     >
       <div className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-2xl" : "max-w-md"}`}>
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">{title}</h2>
+          <h2 className="text-lg font-bold">{title}</h2>
           <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
             ✕
           </button>

@@ -154,7 +154,7 @@ export default function PatientBilling() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Bills & payments</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Bills & payments</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
           Outstanding balance: <span className="font-semibold text-amber-600">{ngn(outstanding)}</span>
         </p>
@@ -368,7 +368,7 @@ function DeclareModal({
     >
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Declare Payment</h2>
+          <h2 className="text-lg font-bold">Declare Payment</h2>
           <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
             ✕
           </button>

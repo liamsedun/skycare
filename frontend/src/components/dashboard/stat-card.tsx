@@ -30,7 +30,7 @@ export default function StatCard({
           <Icon size={18} aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-2 font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)] sm:text-3xl">
+      <p className="mt-2 text-2xl font-bold text-[var(--color-foreground)] sm:text-3xl">
         {value}
       </p>
       {hint && <p className="mt-1 text-xs text-[var(--color-muted-fg)]">{hint}</p>}

@@ -136,7 +136,7 @@ export default function PatientFamily() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Family</h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Family</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
             {isMainAccount
               ? `Manage your family account${dependants.length > 0 ? ` — ${dependants.length} of 5 members added` : ""}.`
@@ -282,7 +282,7 @@ function AddMemberModal({
     >
       <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Add Family Member</h2>
+          <h2 className="text-lg font-bold">Add Family Member</h2>
           <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
             ✕
           </button>

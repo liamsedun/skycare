@@ -199,7 +199,7 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/80">
               <Sparkles size={14} aria-hidden="true" /> Patient Overview
             </p>
-            <h1 className="mt-2 font-[family-name:var(--font-heading)] text-2xl font-bold sm:text-3xl">
+            <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
               {greeting}, {first} 👋
             </h1>
             <p className="mt-1 max-w-md text-sm text-white/85">

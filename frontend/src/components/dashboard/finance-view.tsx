@@ -190,7 +190,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
             {isExpense ? "Expenses" : "Other income"}
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -337,7 +337,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
           <form onSubmit={save} className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">
+              <h2 className="text-lg font-bold text-[var(--color-foreground)]">
                 {editing ? `Edit ${isExpense ? "expense" : "income"}` : `Add ${isExpense ? "expense" : "income"}`}
               </h2>
               <button
@@ -410,7 +410,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
       {deleting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl">
-            <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-[var(--color-foreground)]">Delete record</h2>
+            <h2 className="text-lg font-bold text-[var(--color-foreground)]">Delete record</h2>
             <p className="mt-2 text-sm text-[var(--color-muted-fg)]">
               Delete <strong className="text-[var(--color-foreground)]">{deleting.description}</strong>? This cannot be undone.
             </p>

@@ -142,7 +142,7 @@ export default function DashboardView({ myRole }: { myRole?: string }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
             Hospital Dashboard
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -296,7 +296,7 @@ function LoadingState() {
 function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <h2 className="font-[family-name:var(--font-heading)] text-base font-semibold text-[var(--color-foreground)]">
+      <h2 className="text-base font-semibold text-[var(--color-foreground)]">
         {title}
       </h2>
       {subtitle && <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{subtitle}</p>}

@@ -198,7 +198,7 @@ function NoteEditModal({
     >
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">Edit Doctor Note</h2>
+          <h2 className="text-lg font-bold">Edit Doctor Note</h2>
           <button
             type="button"
             onClick={onClose}
@@ -377,7 +377,7 @@ export default function PatientRecords() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Medical Records</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Medical Records</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your clinical records, doctor notes and reports.</p>
       </div>
 

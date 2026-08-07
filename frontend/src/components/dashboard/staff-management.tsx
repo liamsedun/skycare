@@ -474,7 +474,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
             Staff & Admins
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -822,7 +822,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+              <h2 className="text-lg font-bold">
                 Add Admin / Staff
               </h2>
               <button
@@ -941,7 +941,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         >
           <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+              <h2 className="text-lg font-bold">
                 Edit details — {editTarget.full_name}
               </h2>
               <button
@@ -1100,7 +1100,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         >
           <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+              <h2 className="text-lg font-bold">
                 Availability — {availTarget.full_name}
               </h2>
               <button
@@ -1190,7 +1190,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         >
           <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+              <h2 className="text-lg font-bold">
                 {dutyStatusOf(leaveTarget) === "on_leave"
                   ? `Return to duty — ${leaveTarget.full_name}`
                   : `Mark on leave — ${leaveTarget.full_name}`}
@@ -1275,7 +1275,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         >
           <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+              <h2 className="text-lg font-bold">
                 Change role — {roleTarget.full_name}
               </h2>
               <button
