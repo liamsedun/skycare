@@ -57,6 +57,8 @@ function targetUrl(referenceType: string | undefined): string {
       return "/app/chats";
     case "internal_message":
       return "/app/mail";
+    case "duty_roster":
+      return "/app/roster";
     case "staff_leave":
       return "/app/leave";
     default:

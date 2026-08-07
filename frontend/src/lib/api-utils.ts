@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { getClaims, isAppRole, isStaffRole, type AppRole, type AuthClaims } from "@/lib/auth";
+import { getClaims, isAppRole, isStaffRole, STAFF_ROLES, type AppRole, type AuthClaims } from "@/lib/auth";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 // ============================================================================
@@ -166,20 +166,9 @@ export function withAuth(
   };
 }
 
-/** Require a signed-in staff member (any staff role). */
+/** Require a signed-in staff member (any staff role, incl. extended roster roles). */
 export function withStaff(handler: ApiHandler) {
-  return withAuth(handler, {
-    roles: [
-      "super_admin",
-      "hospital_admin",
-      "doctor",
-      "nurse",
-      "pharmacist",
-      "lab_tech",
-      "cashier",
-      "receptionist",
-    ],
-  });
+  return withAuth(handler, { roles: [...STAFF_ROLES] });
 }
 
 /** Require a staff member AND explicit tenant scoping is mandatory. */

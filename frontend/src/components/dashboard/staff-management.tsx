@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserRound, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarRange, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserRound, Users } from "lucide-react";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 
 interface StaffUser {
@@ -24,8 +25,11 @@ interface StaffUser {
     years_of_exp: number | null;
     base_salary: number | null;
     is_available: boolean;
+    on_leave_until: string | null;
   } | null;
 }
+
+type DutyStatus = "all" | "on_duty" | "off_duty" | "on_leave";
 
 const CREATABLE_ROLES: StaffRole[] = [
   "hospital_admin",
@@ -69,6 +73,15 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [editTarget, setEditTarget] = useState<StaffUser | null>(null);
   const [busy, setBusy] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<DutyStatus>("all");
+  const [onDutyToday, setOnDutyToday] = useState<Set<string>>(new Set());
+  const router = useRouter();
+
+  const todayISO = () => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  };
 
   useEffect(() => {
     if (!menuOpenId) return;
@@ -90,6 +103,15 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load staff");
       setUsers(body.data ?? []);
+
+      const today = todayISO();
+      const dutyRes = await fetch(`/api/duty-roster?from=${today}&to=${today}`, { cache: "no-store" });
+      if (dutyRes.ok) {
+        const dutyBody = await dutyRes.json();
+        const ids = new Set<string>();
+        for (const r of dutyBody.data ?? []) if (r?.staff_id) ids.add(r.staff_id);
+        setOnDutyToday(ids);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load staff");
     } finally {
@@ -246,6 +268,18 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const inputCls =
     "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 
+  const dutyStatusOf = (user: StaffUser): Exclude<DutyStatus, "all"> => {
+    if (user.staff) {
+      if (user.staff.on_leave_until && todayISO() <= user.staff.on_leave_until) return "on_leave";
+      if (onDutyToday.has(user.staff.id)) return "on_duty";
+    }
+    return "off_duty";
+  };
+
+  const visibleUsers = users.filter(
+    (u) => statusFilter === "all" || dutyStatusOf(u) === statusFilter
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -275,14 +309,27 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         </p>
       )}
 
-      <div className="relative max-w-md">
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name or email…"
-          className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-3 pr-3 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative max-w-md flex-1 basis-56">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email…"
+            className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-3 pr-3 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as DutyStatus)}
+          aria-label="Filter by duty status"
+          className={inputCls + " w-auto"}
+        >
+          <option value="all">All statuses</option>
+          <option value="on_duty">On Duty</option>
+          <option value="off_duty">Off Duty</option>
+          <option value="on_leave">On Leave</option>
+        </select>
       </div>
 
       {loading ? (
@@ -294,9 +341,15 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
             No staff yet. Add your first admin or staff member.
           </p>
         </div>
+      ) : visibleUsers.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
+          <p className="text-sm font-medium text-[var(--color-foreground)]">
+            No staff match the current filters.
+          </p>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {users.map((user) => (
+          {visibleUsers.map((user) => (
             <div
               key={user.id}
               className={`relative rounded-xl border bg-white p-4 shadow-[var(--shadow-sm)] ${
@@ -323,15 +376,28 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                    user.is_active
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-[var(--color-muted)] text-[var(--color-muted-fg)]"
-                  }`}
-                >
-                  {user.is_active ? "Active" : "Disabled"}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {(() => {
+                    const st = dutyStatusOf(user);
+                    const cls =
+                      st === "on_duty"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : st === "on_leave"
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-slate-100 text-slate-500";
+                    const label = st === "on_duty" ? "On Duty" : st === "on_leave" ? "On Leave" : "Off Duty";
+                    return (
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
+                        {label}
+                      </span>
+                    );
+                  })()}
+                  {!user.is_active && (
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">
+                      Disabled
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -366,17 +432,27 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
 
               <div className="mt-4 flex items-center justify-between gap-2">
                 {user.id === meId && (
-                  <span className="text-xs text-[var(--color-muted-fg)]">(you)</span>
+                  <span className="truncate text-xs text-[var(--color-muted-fg)]">(you)</span>
                 )}
-                {(() => {
-                  const canManage = user.role !== "super_admin" && user.id !== meId;
-                  const canDelete =
-                    (myRole === "super_admin" || myRole === "hospital_admin") &&
-                    user.role !== "super_admin" &&
-                    user.id !== meId;
-                  if (!user.staff && !canManage && !canDelete) return null;
-                  return (
-                    <div className="relative ml-auto" data-staff-menu>
+                <div className="flex items-center gap-2">
+                  {user.staff && (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/app/roster?staff=${user.staff!.id}`)}
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                    >
+                      <CalendarRange size={13} aria-hidden="true" /> Schedule
+                    </button>
+                  )}
+                  {(() => {
+                    const canManage = user.role !== "super_admin" && user.id !== meId;
+                    const canDelete =
+                      (myRole === "super_admin" || myRole === "hospital_admin") &&
+                      user.role !== "super_admin" &&
+                      user.id !== meId;
+                    if (!user.staff && !canManage && !canDelete) return null;
+                    return (
+                      <div className="relative" data-staff-menu>
                       <button
                         type="button"
                         onClick={() => setMenuOpenId(menuOpenId === user.id ? null : user.id)}
@@ -447,6 +523,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     </div>
                   );
                 })()}
+                </div>
               </div>
 
               {user.role !== "super_admin" && user.id !== meId && (

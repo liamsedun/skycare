@@ -48,7 +48,7 @@ export const GET = withAuth(async (req, ctx) => {
   let query = ctx.svc
     .from("users")
     .select(
-      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available)",
+      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, on_leave_until)",
       { count: "exact" }
     )
     .neq("role", "patient_api")
