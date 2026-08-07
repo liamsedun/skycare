@@ -5,15 +5,15 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-async function getPatient(ctx: any, id: string, tenantId: string) {
-  const { data } = await ctx.svc
+async function getPatient(ctx: any, id: string, tenantId: string | null) {
+  let query = ctx.svc
     .from("patients")
     .select(
       "*, dependants:patients!primary_account_id(id, patient_number, first_name, last_name, gender, date_of_birth, phone, dependant_relationship, status, user_id)"
     )
-    .eq("id", id)
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
+    .eq("id", id);
+  if (tenantId) query = query.eq("tenant_id", tenantId);
+  const { data } = await query.maybeSingle();
   return data;
 }
 
@@ -103,10 +103,14 @@ export const POST = withStaff(async (req, ctx) => {
 });
 
 // DELETE /api/patients/[id] — permanent removal from the system.
-// All child rows (records, notes, reports, invoices, payments, appointments,
-// chats, dependants) are removed via ON DELETE CASCADE on patients(id).
+// hospital_admin / super_admin only. All child rows (records, notes, reports,
+// invoices, payments, appointments, chats, dependants) are removed via
+// ON DELETE CASCADE on patients(id).
 export const DELETE = withStaff(async (req, ctx) => {
-  const tenantId = requireTenant(ctx);
+  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+    throw new ForbiddenError("Admin access required");
+  }
+  const tenantId = ctx.role === "super_admin" ? null : requireTenant(ctx);
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getPatient(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Patient not found");
@@ -119,11 +123,9 @@ export const DELETE = withStaff(async (req, ctx) => {
     if (d.user_id && !linkedUserIds.includes(d.user_id)) linkedUserIds.push(d.user_id);
   }
 
-  const { error } = await ctx.svc
-    .from("patients")
-    .delete()
-    .eq("id", id)
-    .eq("tenant_id", tenantId);
+  let del = ctx.svc.from("patients").delete().eq("id", id);
+  if (tenantId) del = del.eq("tenant_id", tenantId);
+  const { error } = await del;
   if (error) throw new ValidationError(error.message);
 
   // Remove portal accounts completely (auth + mirror users row).

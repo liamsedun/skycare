@@ -364,7 +364,14 @@ export function AddPatientButton() {
   );
 }
 
-export function PatientViewButton({ patient }: { patient: PatientRow }) {
+export function PatientViewButton({
+  patient,
+  myRole,
+}: {
+  patient: PatientRow;
+  myRole?: string;
+}) {
+  const canDelete = myRole === "hospital_admin" || myRole === "super_admin";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<PatientDetail | null>(null);
@@ -625,14 +632,16 @@ export function PatientViewButton({ patient }: { patient: PatientRow }) {
                     >
                       {detail.status === "transferred" ? "Transferred" : "Transfer"}
                     </button>
-                    <button
-                      type="button"
-                      onClick={removePatient}
-                      disabled={busy}
-                      className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
-                    >
-                      Remove
-                    </button>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={removePatient}
+                        disabled={busy}
+                        className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </>
                 )}
               </div>

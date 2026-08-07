@@ -79,11 +79,16 @@ export const PATCH = withAuth(async (req, ctx) => {
   return ok(data);
 });
 
-// DELETE /api/admin/users/[id] — permanent removal (super_admin only).
+// DELETE /api/admin/users/[id] — permanent removal.
+// hospital_admin: own-tenant staff only (never platform admins, never self).
+// super_admin: platform-wide, still never other platform admins or self.
 // Removes the auth account, the users row (staff profile + rosters + leave +
 // notifications + mail + chats cascade), and nulls audit references.
 export const DELETE = withAuth(async (req, ctx) => {
-  if (ctx.role !== "super_admin") throw new ForbiddenError("Only the Super Admin can delete staff accounts");
+  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+    throw new ForbiddenError("Admin access required");
+  }
+  if (ctx.role !== "super_admin") requireTenant(ctx);
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);
   if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {

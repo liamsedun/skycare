@@ -1,6 +1,6 @@
 import { Search, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/auth";
+import { formatDate, getClaims } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
 import { AddPatientButton, PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
 
@@ -29,6 +29,10 @@ export default async function PatientsPage({
   const query = q?.trim() ?? "";
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const myRole = user ? getClaims(user).role : undefined;
   let patients: PatientRow[] = [];
 
   try {
@@ -151,7 +155,7 @@ export default async function PatientsPage({
                 </div>
               </dl>
               <div className="mt-3">
-                <PatientViewButton patient={patient} />
+                <PatientViewButton patient={patient} myRole={myRole} />
               </div>
             </div>
           ))}
@@ -205,7 +209,7 @@ export default async function PatientsPage({
                       <StatusBadge status={patient.status} />
                     </td>
                     <td className="px-4 py-3">
-                      <PatientViewButton patient={patient} />
+                      <PatientViewButton patient={patient} myRole={myRole} />
                     </td>
                   </tr>
                 ))}

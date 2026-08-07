@@ -349,7 +349,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                       <Trash2 size={13} aria-hidden="true" />
                       {user.is_active ? "Deactivate" : "Activate"}
                     </button>
-                    {myRole === "super_admin" && (
+                    {myRole === "super_admin" || myRole === "hospital_admin" ? (
                       <button
                         type="button"
                         onClick={() => deleteUser(user)}
@@ -358,7 +358,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                       >
                         <Trash2 size={13} aria-hidden="true" /> Delete
                       </button>
-                    )}
+                    ) : null}
                   </>
                 )}
                 {user.id === meId && (

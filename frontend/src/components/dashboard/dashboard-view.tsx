@@ -90,7 +90,7 @@ const tooltipStyle = {
   boxShadow: "0 10px 15px rgb(0 0 0 / 0.08)",
 };
 
-export default function DashboardView() {
+export default function DashboardView({ myRole }: { myRole?: string }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -264,7 +264,7 @@ export default function DashboardView() {
                   View All <ArrowUpRight size={14} aria-hidden="true" />
                 </Link>
               </div>
-              <RecentTable rows={data.recentPatients} />
+              <RecentTable rows={data.recentPatients} myRole={myRole} />
             </section>
             <QuickActions />
           </div>
@@ -552,7 +552,13 @@ function TodayList({ rows }: { rows: DashboardData["todayAppointments"] }) {
   );
 }
 
-function RecentTable({ rows }: { rows: DashboardData["recentPatients"] }) {
+function RecentTable({
+  rows,
+  myRole,
+}: {
+  rows: DashboardData["recentPatients"];
+  myRole?: string;
+}) {
   if (rows.length === 0) {
     return (
       <p className="mt-6 text-center text-sm text-[var(--color-muted-fg)]">No patients yet.</p>
@@ -580,7 +586,7 @@ function RecentTable({ rows }: { rows: DashboardData["recentPatients"] }) {
                 <StatusBadge status={p.status} />
               </td>
               <td className="py-3 text-right">
-                <PatientViewButton patient={p.patient} />
+                <PatientViewButton patient={p.patient} myRole={myRole} />
               </td>
             </tr>
           ))}
