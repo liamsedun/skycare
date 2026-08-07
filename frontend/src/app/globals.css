@@ -130,6 +130,11 @@ html[data-theme="dark"] .text-orange-700 { color: #fbbf6e; }
 html[data-theme="dark"] .text-violet-700 { color: #b3a3ff; }
 html[data-theme="dark"] .text-indigo-600 { color: #a5b4fc; }
 html[data-theme="dark"] .text-indigo-700 { color: #bcc9fe; }
+/* nav-link blues so tel:/mailto: links stay readable + obviously blue in dark mode */
+html[data-theme="dark"] .text-blue-600 { color: #7fb0ff; }
+html[data-theme="dark"] .text-blue-700 { color: #9cc0ff; }
+html[data-theme="dark"] .hover\:text-blue-700:hover { color: #b8d2ff; }
+html[data-theme="dark"] .hover\:text-blue-600:hover { color: #8db4ff; }
 
 /* borders that were light-toned */
 html[data-theme="dark"] .border-slate-100 { border-color: #1b2742; }

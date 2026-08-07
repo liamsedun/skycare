@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarRange, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserRound, Users } from "lucide-react";
+import { CalendarRange, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, Users } from "lucide-react";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 
 interface StaffUser {
@@ -62,6 +62,32 @@ function rolesFor(myRole?: string): StaffRole[] {
   return myRole === "super_admin"
     ? ["super_admin", ...CREATABLE_ROLES]
     : CREATABLE_ROLES;
+}
+
+const AVATAR_GRADIENTS = [
+  "from-sky-500 to-blue-600",
+  "from-violet-500 to-indigo-600",
+  "from-emerald-500 to-teal-600",
+  "from-amber-400 to-orange-500",
+  "from-rose-500 to-pink-600",
+  "from-cyan-500 to-blue-600",
+  "from-fuchsia-500 to-purple-600",
+];
+
+function gradientFor(role: string): string {
+  if (role === "hospital_admin" || role === "super_admin") return "from-sky-500 to-blue-600";
+  const key = [...role].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return AVATAR_GRADIENTS[key % AVATAR_GRADIENTS.length];
+}
+
+function initialsOf(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase();
 }
 
 export default function StaffManagement({ meId, myRole }: { meId: string; myRole?: string }) {
@@ -352,42 +378,38 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           {visibleUsers.map((user) => (
             <div
               key={user.id}
-              className={`relative rounded-xl border bg-white p-4 shadow-[var(--shadow-sm)] ${
-                user.is_active ? "border-[var(--color-border)]" : "border-dashed opacity-60"
+              className={`group relative overflow-hidden rounded-2xl border bg-white shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] ${
+                user.is_active ? "border-[var(--color-border)]" : "border-dashed opacity-70"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
+              <div className="flex items-start justify-between gap-3 p-4 pb-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                      user.role === "hospital_admin"
-                        ? "sky-gradient text-white"
-                        : "bg-[var(--color-muted)] text-[var(--color-muted-fg)]"
-                    }`}
-                  >
-                    <UserRound size={18} aria-hidden="true" />
+                  <span className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${gradientFor(user.role)} text-sm font-bold text-white shadow-md ring-2 ring-white`}>
+                    {initialsOf(user.full_name) || "ST"}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-[var(--color-foreground)]">
+                    <p className="truncate text-sm font-bold text-[var(--color-foreground)]">
                       {user.full_name}
                     </p>
-                    <p className="truncate text-xs font-medium text-[var(--color-primary-dark)]">
+                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-primary-dark)]">
                       {ROLE_LABELS[user.role] ?? user.role}
-                    </p>
+                    </span>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
                   {(() => {
                     const st = dutyStatusOf(user);
-                    const cls =
+                    const cfg =
                       st === "on_duty"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? { cls: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" }
                         : st === "on_leave"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-slate-100 text-slate-500";
+                          ? { cls: "bg-amber-50 text-amber-700", dot: "bg-amber-500" }
+                          : { cls: "bg-slate-100 text-slate-500", dot: "bg-slate-400" };
                     const label = st === "on_duty" ? "On Duty" : st === "on_leave" ? "On Leave" : "Off Duty";
                     return (
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${cfg.cls}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
                         {label}
                       </span>
                     );
@@ -400,46 +422,51 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                {user.staff?.staff_number && (
-                  <span className="font-mono text-[var(--color-muted-fg)]">
-                    {user.staff.staff_number}
-                  </span>
-                )}
-                {user.staff?.department && (
-                  <span className="text-[var(--color-muted-fg)]">{user.staff.department}</span>
-                )}
-              </div>
-
-              <div className="mt-3 space-y-1.5 text-xs">
+              <div className="mx-4 space-y-1.5 rounded-xl bg-[var(--color-muted)] p-3 text-xs">
                 {user.phone && (
                   <a
-                    className="focus-ring flex items-center gap-1.5 font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:text-[var(--color-primary)]"
+                    className="focus-ring flex min-w-0 items-center gap-2 font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline"
                     href={`tel:${user.phone}`}
                   >
-                    <Phone size={13} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
-                    {user.phone}
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[var(--color-primary-dark)] shadow-sm">
+                      <Phone size={12} aria-hidden="true" />
+                    </span>
+                    <span className="truncate">{user.phone}</span>
                   </a>
                 )}
                 <a
-                  className="focus-ring flex min-w-0 items-center gap-1.5 font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:text-[var(--color-primary)]"
+                  className="focus-ring flex min-w-0 items-center gap-2 font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline"
                   href={`mailto:${user.email}`}
                 >
-                  <Mail size={13} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[var(--color-primary-dark)] shadow-sm">
+                    <Mail size={12} aria-hidden="true" />
+                  </span>
                   <span className="truncate">{user.email}</span>
                 </a>
               </div>
 
-              <div className="mt-4 flex items-center justify-between gap-2">
-                {user.id === meId && (
-                  <span className="truncate text-xs text-[var(--color-muted-fg)]">(you)</span>
-                )}
-                <div className="flex items-center gap-2">
+              <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-border)] bg-[var(--color-muted)]/50 px-4 py-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
+                  {user.staff?.staff_number && (
+                    <span className="rounded-md bg-white px-2 py-1 font-mono text-[var(--color-muted-fg)] shadow-sm">
+                      {user.staff.staff_number}
+                    </span>
+                  )}
+                  {user.staff?.department && (
+                    <span className="truncate rounded-md bg-white px-2 py-1 text-[var(--color-muted-fg)] shadow-sm">
+                      {user.staff.department}
+                    </span>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {user.id === meId && (
+                    <span className="truncate text-xs text-[var(--color-muted-fg)]">(you)</span>
+                  )}
                   {user.staff && (
                     <button
                       type="button"
                       onClick={() => router.push(`/app/roster?staff=${user.staff!.id}`)}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-primary-dark)] transition-colors duration-200 hover:bg-[var(--color-primary)] hover:text-white"
                     >
                       <CalendarRange size={13} aria-hidden="true" /> Schedule
                     </button>
@@ -459,7 +486,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                         disabled={busy}
                         aria-label={`Actions for ${user.full_name}`}
                         aria-expanded={menuOpenId === user.id}
-                        className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                        className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--color-muted-fg)] shadow-sm transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
                       >
                         <MoreHorizontal size={16} aria-hidden="true" />
                       </button>
@@ -527,7 +554,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
               </div>
 
               {user.role !== "super_admin" && user.id !== meId && (
-                <label className="mt-3 block">
+                <label className="block px-4 pb-4 pt-3">
                   <span className="mb-1 flex items-center gap-1 text-xs font-medium text-[var(--color-muted-fg)]">
                     <ShieldCheck size={13} aria-hidden="true" /> Role
                   </span>

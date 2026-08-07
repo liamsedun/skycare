@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, Phone, PhoneCall, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
+import { ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, ShieldAlert, Trash2, UserRound, Users } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { Combobox } from "@/components/ui/combobox";
@@ -67,6 +67,14 @@ interface PatientDetail extends PatientRow {
 
 const inputCls =
   "w-full rounded-xl border border-[var(--color-border)] bg-white px-3.5 py-2.5 text-sm outline-none transition-all duration-200 focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/15";
+const REL_STYLES: Record<string, { grad: string; badge: string; bar: string }> = {
+  spouse: { grad: "from-rose-500 to-pink-600", badge: "bg-rose-50 text-rose-700", bar: "bg-rose-500" },
+  child: { grad: "from-sky-500 to-blue-600", badge: "bg-sky-50 text-sky-700", bar: "bg-sky-500" },
+  parent: { grad: "from-emerald-500 to-teal-600", badge: "bg-emerald-50 text-emerald-700", bar: "bg-emerald-500" },
+  sibling: { grad: "from-violet-500 to-indigo-600", badge: "bg-violet-50 text-violet-700", bar: "bg-violet-500" },
+  other: { grad: "from-amber-400 to-orange-500", badge: "bg-amber-50 text-amber-700", bar: "bg-amber-500" },
+};
+
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
 const capitalize = (v: string) => {
@@ -823,6 +831,7 @@ export function PatientViewButton({
                   </div>
                 </form>
               ) : (
+                <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 shadow-[var(--shadow-sm)]">
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
                   {[
                     ["Date of Birth", detail.date_of_birth ? formatDateOnly(detail.date_of_birth) : "—"],
@@ -852,7 +861,7 @@ export function PatientViewButton({
                     <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-[var(--color-foreground)]">
                       <Phone size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                       {detail.phone ? (
-                        <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${detail.phone}`}>{detail.phone}</a>
+                        <a className="focus-ring font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline" href={`tel:${detail.phone}`}>{detail.phone}</a>
                       ) : "—"}
                     </dd>
                   </div>
@@ -861,7 +870,7 @@ export function PatientViewButton({
                     <dd className="mt-0.5 flex min-w-0 items-center gap-1.5 font-medium text-[var(--color-foreground)]">
                       <Mail size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                       {detail.email ? (
-                        <a className="focus-ring truncate text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`mailto:${detail.email}`}>{detail.email}</a>
+                        <a className="focus-ring truncate font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline" href={`mailto:${detail.email}`}>{detail.email}</a>
                       ) : "—"}
                     </dd>
                   </div>
@@ -870,11 +879,12 @@ export function PatientViewButton({
                     <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-[var(--color-foreground)]">
                       <Phone size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                       {detail.emergency_contact_phone ? (
-                        <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${detail.emergency_contact_phone}`}>{detail.emergency_contact_phone}</a>
+                        <a className="focus-ring font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline" href={`tel:${detail.emergency_contact_phone}`}>{detail.emergency_contact_phone}</a>
                       ) : "—"}
                     </dd>
                   </div>
                 </dl>
+                </div>
               )}
 
               <section>
@@ -990,83 +1000,92 @@ export function PatientViewButton({
                       ) : (
                         <div
                           key={d.id}
-                          className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]"
+                          className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex min-w-0 items-center gap-3">
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-sm font-bold text-[var(--color-primary-dark)]">
-                                {`${d.first_name[0] ?? ""}${d.last_name[0] ?? ""}`.toUpperCase()}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate font-semibold text-[var(--color-foreground)]">
-                                  {d.last_name}, {d.first_name}
-                                </p>
-                                <p className="font-mono text-xs text-[var(--color-muted-fg)]">{d.patient_number}</p>
-                              </div>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-primary-dark)]">
-                                {d.dependant_relationship ?? "Family"}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setEditDependant(d)}
-                                disabled={busy}
-                                className="focus-ring rounded-lg px-2 py-1 text-xs font-medium text-[var(--color-primary)] transition-colors duration-200 hover:bg-[var(--color-primary-soft)]"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeDependant(d.id)}
-                                disabled={busy}
-                                className="focus-ring rounded-lg px-2 py-1 text-xs font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
-                            <div>
-                              <dt className="text-[var(--color-muted-fg)]">Gender</dt>
-                              <dd className="font-medium capitalize text-[var(--color-foreground)]">{d.gender ?? "—"}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-[var(--color-muted-fg)]">Date of Birth</dt>
-                              <dd className="font-medium text-[var(--color-foreground)]">
-                                {d.date_of_birth ? formatDateOnly(d.date_of_birth) : "—"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[var(--color-muted-fg)]">Phone</dt>
-                              <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
-                                <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
-                                {d.phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${d.phone}`}>{d.phone}</a> : "—"}
-                              </dd>
-                            </div>
-                            <div className="col-span-2 sm:col-span-3">
-                              <dt className="text-[var(--color-muted-fg)]">Address</dt>
-                              <dd className="flex items-start gap-1 font-medium text-[var(--color-foreground)]">
-                                <MapPin size={12} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
-                                {[d.address, d.city, d.state].filter(Boolean).join(", ") || "—"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[var(--color-muted-fg)]">Emergency Contact</dt>
-                              <dd className="font-medium text-[var(--color-foreground)]">{d.emergency_contact_name ?? "—"}</dd>
-                            </div>
-                            <div>
-                              <dt className="text-[var(--color-muted-fg)]">Emergency Phone</dt>
-                              <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
-                                <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
-                                {d.emergency_contact_phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${d.emergency_contact_phone}`}>{d.emergency_contact_phone}</a> : "—"}
-                              </dd>
-                            </div>
-                            <div>
-                              <dt className="text-[var(--color-muted-fg)]">Portal Login</dt>
-                              <dd className="font-medium text-[var(--color-foreground)]">{d.user_id ? "Active" : "None"}</dd>
-                            </div>
-                          </dl>
+                          {(() => {
+                            const rel = d.dependant_relationship ?? "other";
+                            const s = REL_STYLES[rel] ?? REL_STYLES.other;
+                            return (
+                              <>
+                                <div className={`absolute inset-y-0 left-0 w-1 ${s.bar}`} />
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${s.grad} text-sm font-bold text-white shadow-md ring-2 ring-white`}>
+                                      {`${d.first_name[0] ?? ""}${d.last_name[0] ?? ""}`.toUpperCase()}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-bold text-[var(--color-foreground)]">
+                                        {d.last_name}, {d.first_name}
+                                      </p>
+                                      <p className="font-mono text-[11px] text-[var(--color-muted-fg)]">{d.patient_number}</p>
+                                    </div>
+                                  </div>
+                                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${s.badge}`}>
+                                    {rel}
+                                  </span>
+                                </div>
+                                <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+                                  <div>
+                                    <dt className="text-[var(--color-muted-fg)]">Gender</dt>
+                                    <dd className="font-medium capitalize text-[var(--color-foreground)]">{d.gender ?? "—"}</dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-[var(--color-muted-fg)]">Date of Birth</dt>
+                                    <dd className="font-medium text-[var(--color-foreground)]">
+                                      {d.date_of_birth ? formatDateOnly(d.date_of_birth) : "—"}
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-[var(--color-muted-fg)]">Phone</dt>
+                                    <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
+                                      <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                                      {d.phone ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${d.phone}`}>{d.phone}</a> : "—"}
+                                    </dd>
+                                  </div>
+                                  <div className="col-span-2 sm:col-span-3">
+                                    <dt className="text-[var(--color-muted-fg)]">Address</dt>
+                                    <dd className="flex items-start gap-1 font-medium text-[var(--color-foreground)]">
+                                      <MapPin size={12} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
+                                      {[d.address, d.city, d.state].filter(Boolean).join(", ") || "—"}
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-[var(--color-muted-fg)]">Emergency Contact</dt>
+                                    <dd className="font-medium text-[var(--color-foreground)]">{d.emergency_contact_name ?? "—"}</dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-[var(--color-muted-fg)]">Emergency Phone</dt>
+                                    <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
+                                      <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                                      {d.emergency_contact_phone ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${d.emergency_contact_phone}`}>{d.emergency_contact_phone}</a> : "—"}
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-[var(--color-muted-fg)]">Portal Login</dt>
+                                    <dd className="font-medium text-[var(--color-foreground)]">{d.user_id ? "Active" : "None"}</dd>
+                                  </div>
+                                </dl>
+                                <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-[var(--color-border)] pt-2.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditDependant(d)}
+                                    disabled={busy}
+                                    className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                                  >
+                                    <Pencil size={12} aria-hidden="true" /> Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeDependant(d.id)}
+                                    disabled={busy}
+                                    className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50"
+                                  >
+                                    <Trash2 size={12} aria-hidden="true" /> Remove
+                                  </button>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       )
                     )}

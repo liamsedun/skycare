@@ -27,6 +27,14 @@ const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
+const REL_STYLES: Record<string, { grad: string; badge: string }> = {
+  spouse: { grad: "from-rose-500 to-pink-600", badge: "bg-rose-50 text-rose-700" },
+  child: { grad: "from-sky-500 to-blue-600", badge: "bg-sky-50 text-sky-700" },
+  parent: { grad: "from-emerald-500 to-teal-600", badge: "bg-emerald-50 text-emerald-700" },
+  sibling: { grad: "from-violet-500 to-indigo-600", badge: "bg-violet-50 text-violet-700" },
+  other: { grad: "from-amber-400 to-orange-500", badge: "bg-amber-50 text-amber-700" },
+};
+
 function age(dob: string | null): string | null {
   if (!dob) return null;
   const birth = new Date(dob);
@@ -166,11 +174,14 @@ export default function PatientFamily() {
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {family.map((m) => (
-            <div key={m.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+          {family.map((m) => {
+            const rel = m.is_primary_account ? null : (m.dependant_relationship ?? "other");
+            const s = REL_STYLES[rel ?? "other"] ?? REL_STYLES.other;
+            return (
+            <div key={m.id} className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-sm font-bold text-[var(--color-primary-dark)]">
+                  <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${s.grad} text-sm font-bold text-white shadow-md ring-2 ring-white`}>
                     {`${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase()}
                   </div>
                   <div className="min-w-0">
@@ -181,7 +192,7 @@ export default function PatientFamily() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase text-[var(--color-primary-dark)]">
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${m.is_primary_account ? "bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]" : s.badge}`}>
                     {m.is_primary_account ? "Main account" : (m.dependant_relationship ?? "Family").replace(/_/g, " ")}
                   </span>
                   {isMainAccount && !m.is_primary_account && !m.user_id && (
@@ -208,13 +219,13 @@ export default function PatientFamily() {
                 <div>
                   <dt className="text-xs text-[var(--color-muted-fg)]">Phone</dt>
                   <dd className="text-[var(--color-foreground)]">
-                    {m.phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${m.phone}`}>{m.phone}</a> : "—"}
+                    {m.phone ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${m.phone}`}>{m.phone}</a> : "—"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-xs text-[var(--color-muted-fg)]">Email</dt>
                   <dd className="truncate text-[var(--color-foreground)]">
-                    {m.email ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`mailto:${m.email}`}>{m.email}</a> : "—"}
+                    {m.email ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`mailto:${m.email}`}>{m.email}</a> : "—"}
                   </dd>
                 </div>
                 <div className="col-span-2">
@@ -230,12 +241,13 @@ export default function PatientFamily() {
                 <div>
                   <dt className="text-xs text-[var(--color-muted-fg)]">Emergency Phone</dt>
                   <dd className="text-[var(--color-foreground)]">
-                    {m.emergency_contact_phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${m.emergency_contact_phone}`}>{m.emergency_contact_phone}</a> : "—"}
+                    {m.emergency_contact_phone ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${m.emergency_contact_phone}`}>{m.emergency_contact_phone}</a> : "—"}
                   </dd>
                 </div>
               </dl>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
