@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
+import { CLINICIAN_ROLES } from "@/lib/auth";
 
 interface PatientOption {
   id: string;
@@ -117,7 +118,7 @@ export function NewAppointmentButton() {
       );
       setDoctors(
         (staffBody.data ?? [])
-          .filter((s: { users?: { role?: string } }) => s.users?.role === "doctor")
+          .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
           .map((s: { id: string; users?: { full_name?: string } }) => ({
             id: s.id,
             label: s.users?.full_name ?? "Doctor",

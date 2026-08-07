@@ -6,6 +6,7 @@ import { CalendarPlus, ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRoun
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { Combobox } from "@/components/ui/combobox";
+import { CLINICIAN_ROLES } from "@/lib/auth";
 
 const RECORD_TYPES = [
   "diagnosis",
@@ -586,7 +587,7 @@ export function PatientViewButton({
       const body = await res.json();
       setDoctors(
         (body.data ?? [])
-          .filter((s: { users?: { role?: string } }) => s.users?.role === "doctor")
+          .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
           .map((s: { id: string; users?: { full_name?: string } }) => ({
             id: s.id,
             label: s.users?.full_name ?? "Doctor",

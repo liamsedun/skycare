@@ -29,6 +29,21 @@ export const STAFF_ROLES = [
 export type StaffRole = (typeof STAFF_ROLES)[number];
 export type AppRole = StaffRole | "patient_api";
 
+/** Roles that can take appointments / see patients as the attending clinician. */
+export const CLINICIAN_ROLES: readonly StaffRole[] = [
+  "doctor",
+  "medical_officer",
+  "surgeon",
+  "anesthesiologist",
+  "radiologist",
+  "radiographer",
+  "physiotherapist",
+  "dentist",
+  "optometrist",
+  "dietician",
+  "paramedic",
+];
+
 export interface AuthClaims {
   tenantId: string | null;
   branchId: string | null;
