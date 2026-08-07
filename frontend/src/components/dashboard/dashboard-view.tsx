@@ -181,31 +181,35 @@ export default function DashboardView({ myRole }: { myRole?: string }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               label="Total Revenue"
-              value={ngn(data.profit.revenue)}
+              raw={data.profit.revenue}
+              formatter={ngn}
               trend={trendLabel}
               icon={Banknote}
-              gradient="bg-gradient-to-br from-sky-500 to-blue-600"
+              gradient="bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700"
             />
             <KpiCard
               label="New Patients"
-              value={String(data.kpis.newPatients)}
+              raw={data.kpis.newPatients}
+              formatter={fmtInt}
               caption={`${data.kpis.staffCount} staff on board`}
               icon={Users}
-              gradient="bg-gradient-to-br from-emerald-500 to-teal-600"
+              gradient="bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700"
             />
             <KpiCard
               label="Appointments"
-              value={String(data.kpis.appointmentsInPeriod)}
+              raw={data.kpis.appointmentsInPeriod}
+              formatter={fmtInt}
               caption={`${data.kpis.appointmentsOutsidePeriod} outside period`}
               icon={CalendarDays}
-              gradient="bg-gradient-to-br from-amber-500 to-orange-600"
+              gradient="bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600"
             />
             <KpiCard
               label="Outstanding Receivables"
-              value={ngn(data.kpis.outstanding)}
+              raw={data.kpis.outstanding}
+              formatter={ngn}
               caption={`${data.kpis.unpaidCount} unpaid in period`}
               icon={AlertTriangle}
-              gradient="bg-gradient-to-br from-rose-500 to-pink-600"
+              gradient="bg-gradient-to-br from-rose-500 via-pink-600 to-fuchsia-700"
             />
           </div>
 
@@ -296,9 +300,13 @@ function LoadingState() {
 function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <h2 className="text-base font-semibold text-[var(--color-foreground)]">
-        {title}
-      </h2>
+      <div className="flex items-center gap-2">
+        <span
+          className="h-4 w-1 shrink-0 rounded-full bg-gradient-to-b from-[var(--color-primary)] to-[var(--color-accent)]"
+          aria-hidden="true"
+        />
+        <h2 className="text-base font-semibold text-[var(--color-foreground)]">{title}</h2>
+      </div>
       {subtitle && <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{subtitle}</p>}
     </div>
   );
@@ -306,47 +314,84 @@ function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
 
 function KpiCard({
   label,
-  value,
+  raw,
+  formatter,
   trend,
   caption,
   icon: Icon,
   gradient,
 }: {
   label: string;
-  value: string;
+  raw: number;
+  formatter: (n: number) => string;
   trend?: { text: string; up: boolean };
   caption?: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
   gradient: string;
 }) {
+  const display = useCountUp(raw);
   return (
-    <div className="relative overflow-hidden rounded-xl p-5 text-white shadow-[var(--shadow-md)] transition-transform duration-200 hover:-translate-y-0.5">
+    <div className="group relative overflow-hidden rounded-2xl p-5 text-white shadow-[var(--shadow-md)] ring-1 ring-white/15 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_45px_-15px_rgba(0,0,0,0.45)]">
       <div className={`absolute inset-0 ${gradient}`} aria-hidden="true" />
-      <div className="absolute -right-8 -top-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(255,255,255,0.25),transparent_55%)]"
+        aria-hidden="true"
+      />
+      <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/25 blur-2xl" aria-hidden="true" />
+      <Icon
+        size={96}
+        aria-hidden="true"
+        className="absolute -bottom-6 -right-5 text-white/10 transition-transform duration-500 group-hover:scale-110"
+      />
       <div className="relative z-10">
-        <div className="flex items-start justify-between gap-3">
-          <p className="truncate text-sm font-medium text-white/85">{label}</p>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
-            <Icon size={18} />
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/85">{label}</p>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 shadow-inner ring-1 ring-white/25 backdrop-blur-sm">
+            <Icon size={18} aria-hidden="true" />
           </span>
         </div>
-        <p className="mt-2 truncate text-2xl font-bold">{value}</p>
+        <p className="mt-3 truncate text-3xl font-extrabold tabular-nums tracking-tight">
+          {formatter(display)}
+        </p>
         {trend ? (
-          <p
-            className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
-              trend.up ? "text-emerald-200" : "text-rose-200"
+          <span
+            className={`mt-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ring-white/25 backdrop-blur-sm ${
+              trend.up ? "bg-emerald-400/25 text-emerald-50" : "bg-rose-400/25 text-rose-50"
             }`}
           >
-            {trend.up ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-            {trend.text}
-          </p>
+            {trend.up ? <TrendingUp size={13} aria-hidden="true" /> : <TrendingDown size={13} aria-hidden="true" />}
+            {trend.text} <span className="font-medium text-white/75">vs last month</span>
+          </span>
         ) : caption ? (
-          <p className="mt-1 text-xs text-white/75">{caption}</p>
+          <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/85 ring-1 ring-white/20 backdrop-blur-sm">
+            {caption}
+          </p>
         ) : null}
       </div>
+      <div className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-white/30" aria-hidden="true" />
     </div>
   );
 }
+
+// Count-up animation: eases the value from 0 to its target over ~700ms.
+function useCountUp(target: number, duration = 700): number {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(target * eased);
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
+const fmtInt = (n: number) => Math.round(n).toLocaleString();
 
 function monthLabel(month: string): string {
   const [y, m] = month.split("-").map(Number);
@@ -377,6 +422,12 @@ function ProfitLossCard({ profit }: { profit: DashboardData["profit"] }) {
         aria-hidden="true"
       />
       <div className="absolute -right-10 -top-10 h-44 w-44 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
+      <div
+        className="pointer-events-none absolute -bottom-6 -right-4 text-white/10"
+        aria-hidden="true"
+      >
+        {profitable ? <TrendingUp size={150} strokeWidth={1} /> : <TrendingDown size={150} strokeWidth={1} />}
+      </div>
       <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-4">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
@@ -395,22 +446,22 @@ function ProfitLossCard({ profit }: { profit: DashboardData["profit"] }) {
             </p>
           </div>
         </div>
-        <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-xs text-white/70">Revenue</dt>
-            <dd className="mt-0.5 font-semibold">{ngn(profit.revenue)}</dd>
+        <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div className="rounded-xl bg-white/10 px-3 py-2.5 ring-1 ring-white/15 backdrop-blur-sm">
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-white/65">Revenue</dt>
+            <dd className="mt-0.5 truncate font-bold text-white">{ngn(profit.revenue)}</dd>
           </div>
-          <div>
-            <dt className="text-xs text-white/70">Medical Services</dt>
-            <dd className="mt-0.5 font-semibold">{ngn(profit.medical)}</dd>
+          <div className="rounded-xl bg-white/10 px-3 py-2.5 ring-1 ring-white/15 backdrop-blur-sm">
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-white/65">Medical</dt>
+            <dd className="mt-0.5 truncate font-bold text-white">{ngn(profit.medical)}</dd>
           </div>
-          <div>
-            <dt className="text-xs text-white/70">Other Income</dt>
-            <dd className="mt-0.5 font-semibold">{ngn(profit.other)}</dd>
+          <div className="rounded-xl bg-white/10 px-3 py-2.5 ring-1 ring-white/15 backdrop-blur-sm">
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-white/65">Other income</dt>
+            <dd className="mt-0.5 truncate font-bold text-white">{ngn(profit.other)}</dd>
           </div>
-          <div>
-            <dt className="text-xs text-white/70">Expenses</dt>
-            <dd className="mt-0.5 font-semibold">{ngn(profit.expenses)}</dd>
+          <div className="rounded-xl bg-white/10 px-3 py-2.5 ring-1 ring-white/15 backdrop-blur-sm">
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-white/65">Expenses</dt>
+            <dd className="mt-0.5 truncate font-bold text-white">{ngn(profit.expenses)}</dd>
           </div>
         </dl>
       </div>
@@ -632,12 +683,17 @@ function QuickActions() {
           <Link
             key={a.label}
             href={a.href}
-            className="focus-ring flex w-full items-center gap-3 rounded-lg border border-[var(--color-border)] px-3 py-2.5 transition-colors duration-200 hover:bg-[var(--color-muted)]"
+            className="focus-ring group flex w-full items-center gap-3 rounded-xl border border-[var(--color-border)] px-3 py-2.5 transition-all duration-200 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] hover:shadow-sm"
           >
-            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${a.chip}`}>
-              <Icon size={14} aria-hidden="true" />
+            <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${a.chip} transition-transform duration-200 group-hover:scale-110`}>
+              <Icon size={15} aria-hidden="true" />
             </span>
             <span className="text-sm font-medium text-[var(--color-foreground)]">{a.label}</span>
+            <ArrowUpRight
+              size={15}
+              aria-hidden="true"
+              className="ml-auto text-[var(--color-muted-fg)] transition-colors duration-200 group-hover:text-[var(--color-primary)]"
+            />
           </Link>
         );
       })}
