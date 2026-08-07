@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Pencil, Plus, ShieldCheck, Trash2, UserRound, Users } from "lucide-react";
+import { KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserRound, Users } from "lucide-react";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 
 interface StaffUser {
@@ -68,6 +68,16 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<StaffUser | null>(null);
   const [busy, setBusy] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!menuOpenId) return;
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-staff-menu]")) setMenuOpenId(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [menuOpenId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -289,7 +299,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           {users.map((user) => (
             <div
               key={user.id}
-              className={`rounded-xl border bg-white p-4 shadow-[var(--shadow-sm)] ${
+              className={`relative rounded-xl border bg-white p-4 shadow-[var(--shadow-sm)] ${
                 user.is_active ? "border-[var(--color-border)]" : "border-dashed opacity-60"
               }`}
             >
@@ -308,7 +318,9 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     <p className="truncate font-medium text-[var(--color-foreground)]">
                       {user.full_name}
                     </p>
-                    <p className="truncate text-xs text-[var(--color-muted-fg)]">{user.email}</p>
+                    <p className="truncate text-xs font-medium text-[var(--color-primary-dark)]">
+                      {ROLE_LABELS[user.role] ?? user.role}
+                    </p>
                   </div>
                 </div>
                 <span
@@ -323,9 +335,6 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
               </div>
 
               <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 font-medium text-[var(--color-primary-dark)]">
-                  {ROLE_LABELS[user.role] ?? user.role}
-                </span>
                 {user.staff?.staff_number && (
                   <span className="font-mono text-[var(--color-muted-fg)]">
                     {user.staff.staff_number}
@@ -336,51 +345,108 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                 )}
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {user.staff && (
-                  <button
-                    type="button"
-                    onClick={() => setEditTarget(user)}
-                    disabled={busy}
-                    className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              <div className="mt-3 space-y-1.5 text-xs">
+                {user.phone && (
+                  <a
+                    className="focus-ring flex items-center gap-1.5 font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:text-[var(--color-primary)]"
+                    href={`tel:${user.phone}`}
                   >
-                    <Pencil size={13} aria-hidden="true" /> Edit Details
-                  </button>
+                    <Phone size={13} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                    {user.phone}
+                  </a>
                 )}
-                {user.role !== "super_admin" && user.id !== meId && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => resetPassword(user)}
-                      disabled={busy}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                    >
-                      <KeyRound size={13} aria-hidden="true" /> Reset Password
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(user)}
-                      disabled={busy}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 hover:border-red-300 hover:text-red-600"
-                    >
-                      <Trash2 size={13} aria-hidden="true" />
-                      {user.is_active ? "Deactivate" : "Activate"}
-                    </button>
-                    {myRole === "super_admin" || myRole === "hospital_admin" ? (
-                      <button
-                        type="button"
-                        onClick={() => deleteUser(user)}
-                        disabled={busy}
-                        className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-100"
-                      >
-                        <Trash2 size={13} aria-hidden="true" /> Delete
-                      </button>
-                    ) : null}
-                  </>
-                )}
+                <a
+                  className="focus-ring flex min-w-0 items-center gap-1.5 font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:text-[var(--color-primary)]"
+                  href={`mailto:${user.email}`}
+                >
+                  <Mail size={13} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                  <span className="truncate">{user.email}</span>
+                </a>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-2">
                 {user.id === meId && (
                   <span className="text-xs text-[var(--color-muted-fg)]">(you)</span>
                 )}
+                {(() => {
+                  const canManage = user.role !== "super_admin" && user.id !== meId;
+                  const canDelete =
+                    (myRole === "super_admin" || myRole === "hospital_admin") &&
+                    user.role !== "super_admin" &&
+                    user.id !== meId;
+                  if (!user.staff && !canManage && !canDelete) return null;
+                  return (
+                    <div className="relative ml-auto" data-staff-menu>
+                      <button
+                        type="button"
+                        onClick={() => setMenuOpenId(menuOpenId === user.id ? null : user.id)}
+                        disabled={busy}
+                        aria-label={`Actions for ${user.full_name}`}
+                        aria-expanded={menuOpenId === user.id}
+                        className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                      >
+                        <MoreHorizontal size={16} aria-hidden="true" />
+                      </button>
+                      {menuOpenId === user.id && (
+                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-[var(--shadow-lg)]">
+                          {user.staff && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                setEditTarget(user);
+                              }}
+                              disabled={busy}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            >
+                              <Pencil size={13} aria-hidden="true" /> Edit Details
+                            </button>
+                          )}
+                          {canManage && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMenuOpenId(null);
+                                  resetPassword(user);
+                                }}
+                                disabled={busy}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                              >
+                                <KeyRound size={13} aria-hidden="true" /> Reset Password
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setMenuOpenId(null);
+                                  toggleActive(user);
+                                }}
+                                disabled={busy}
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                              >
+                                <Power size={13} aria-hidden="true" />
+                                {user.is_active ? "Deactivate" : "Activate"}
+                              </button>
+                            </>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                deleteUser(user);
+                              }}
+                              disabled={busy}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors duration-150 hover:bg-red-50"
+                            >
+                              <Trash2 size={13} aria-hidden="true" /> Delete
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {user.role !== "super_admin" && user.id !== meId && (

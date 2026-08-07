@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, PhoneCall, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
+import { ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, Phone, PhoneCall, Plus, ShieldAlert, UserRound, Users } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { Combobox } from "@/components/ui/combobox";
@@ -827,33 +827,53 @@ export function PatientViewButton({
                   {[
                     ["Date of Birth", detail.date_of_birth ? formatDateOnly(detail.date_of_birth) : "—"],
                     ["Age", detail.date_of_birth ? calculateAge(detail.date_of_birth) : "—"],
-                    ["Phone", detail.phone],
-                    ["Email", detail.email],
-                    ["Address", [detail.address, detail.city, detail.state].filter(Boolean).join(", ") || "—"],
                     ["Blood Group", detail.blood_group],
                     ["Genotype", detail.genotype],
                     ["Height", detail.height_cm ? `${detail.height_cm} cm` : "—"],
                     ["Weight", detail.weight_kg ? `${detail.weight_kg} kg` : "—"],
                     ["Marital Status", detail.marital_status ? capitalize(detail.marital_status) : "—"],
                     ["Emergency Contact", detail.emergency_contact_name],
-                    ["Emergency Phone", detail.emergency_contact_phone],
                     ["Allergies", detail.allergies],
                   ].map(([k, v]) => (
                     <div key={k as string}>
                       <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{k}</dt>
-                      <dd className="mt-0.5 font-medium text-[var(--color-foreground)]">
-                        {k === "Phone" && v ? (
-                          <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${v}`}>{v}</a>
-                        ) : k === "Email" && v ? (
-                          <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`mailto:${v}`}>{v}</a>
-                        ) : k === "Emergency Phone" && v ? (
-                          <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${v}`}>{v}</a>
-                        ) : (
-                          v ?? "—"
-                        )}
-                      </dd>
+                      <dd className="mt-0.5 font-medium text-[var(--color-foreground)]">{v ?? "—"}</dd>
                     </div>
                   ))}
+                  <div className="col-span-2 sm:col-span-3">
+                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Address</dt>
+                    <dd className="mt-0.5 flex items-start gap-1.5 font-medium text-[var(--color-foreground)]">
+                      <MapPin size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
+                      {[detail.address, detail.city, detail.state].filter(Boolean).join(", ") || "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Phone</dt>
+                    <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-[var(--color-foreground)]">
+                      <Phone size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                      {detail.phone ? (
+                        <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${detail.phone}`}>{detail.phone}</a>
+                      ) : "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Email</dt>
+                    <dd className="mt-0.5 flex min-w-0 items-center gap-1.5 font-medium text-[var(--color-foreground)]">
+                      <Mail size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                      {detail.email ? (
+                        <a className="focus-ring truncate text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`mailto:${detail.email}`}>{detail.email}</a>
+                      ) : "—"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Emergency Phone</dt>
+                    <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-[var(--color-foreground)]">
+                      <Phone size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                      {detail.emergency_contact_phone ? (
+                        <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${detail.emergency_contact_phone}`}>{detail.emergency_contact_phone}</a>
+                      ) : "—"}
+                    </dd>
+                  </div>
                 </dl>
               )}
 
@@ -1019,13 +1039,15 @@ export function PatientViewButton({
                             </div>
                             <div>
                               <dt className="text-[var(--color-muted-fg)]">Phone</dt>
-                              <dd className="font-medium text-[var(--color-foreground)]">
+                              <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
+                                <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                                 {d.phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${d.phone}`}>{d.phone}</a> : "—"}
                               </dd>
                             </div>
                             <div className="col-span-2 sm:col-span-3">
                               <dt className="text-[var(--color-muted-fg)]">Address</dt>
-                              <dd className="font-medium text-[var(--color-foreground)]">
+                              <dd className="flex items-start gap-1 font-medium text-[var(--color-foreground)]">
+                                <MapPin size={12} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
                                 {[d.address, d.city, d.state].filter(Boolean).join(", ") || "—"}
                               </dd>
                             </div>
@@ -1035,7 +1057,8 @@ export function PatientViewButton({
                             </div>
                             <div>
                               <dt className="text-[var(--color-muted-fg)]">Emergency Phone</dt>
-                              <dd className="font-medium text-[var(--color-foreground)]">
+                              <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
+                                <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                                 {d.emergency_contact_phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${d.emergency_contact_phone}`}>{d.emergency_contact_phone}</a> : "—"}
                               </dd>
                             </div>
