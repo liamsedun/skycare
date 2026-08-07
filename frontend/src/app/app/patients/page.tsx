@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Search, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, getClaims } from "@/lib/auth";
@@ -6,6 +7,15 @@ import { PatientViewButton, type PatientRow } from "@/components/dashboard/patie
 import PatientActions from "@/components/dashboard/patient-actions";
 
 export const dynamic = "force-dynamic";
+
+type PatientCategory = "active" | "inactive" | "dependants";
+
+const PATIENT_CATEGORIES: { key: string; label: string }[] = [
+  { key: "", label: "All" },
+  { key: "active", label: "Active" },
+  { key: "inactive", label: "Inactive" },
+  { key: "dependants", label: "Dependants" },
+];
 
 interface PatientRowRaw {
   id: string;
@@ -24,10 +34,11 @@ interface PatientRowRaw {
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; category?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, category } = await searchParams;
   const query = q?.trim() ?? "";
+  const cat = (PATIENT_CATEGORIES.find((c) => c.key === category)?.key ?? "") as "" | PatientCategory;
 
   const supabase = await createClient();
   const {
@@ -45,6 +56,10 @@ export default async function PatientsPage({
       .order("created_at", { ascending: false })
       .limit(100);
 
+    if (cat === "active") builder = builder.eq("status", "active");
+    if (cat === "inactive") builder = builder.eq("status", "inactive");
+    if (cat === "dependants") builder = builder.not("primary_account_id", "is", null);
+
     if (query) {
       builder = builder.or(
         `first_name.ilike.%${query}%,last_name.ilike.%${query}%,patient_number.ilike.%${query}%,phone.ilike.%${query}%`
@@ -57,6 +72,16 @@ export default async function PatientsPage({
     patients = [];
   }
 
+  const catLabel =
+    cat === "active" ? "active patient(s)" : cat === "inactive" ? "inactive patient(s)" : cat === "dependants" ? "dependant(s)" : "patient(s)";
+  const chipHref = (key: string) => {
+    const params = new URLSearchParams();
+    if (key) params.set("category", key);
+    if (query) params.set("q", query);
+    const qs = params.toString();
+    return `/app/patients${qs ? `?${qs}` : ""}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -65,10 +90,27 @@ export default async function PatientsPage({
             Patients
           </h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            {query ? `${patients.length} result(s) for "${query}"` : `${patients.length} patient(s) on record`}
+            {query ? `${patients.length} result(s) for "${query}"` : `${patients.length} ${catLabel} on record`}
           </p>
         </div>
         <PatientActions patients={patients} />
+      </div>
+
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by patient category">
+        {PATIENT_CATEGORIES.map((c) => (
+          <Link
+            key={c.key}
+            href={chipHref(c.key)}
+            aria-current={cat === c.key ? "page" : undefined}
+            className={`focus-ring rounded-full px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+              cat === c.key
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-white text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+            }`}
+          >
+            {c.label}
+          </Link>
+        ))}
       </div>
 
       <form method="get" role="search" aria-label="Search patients">

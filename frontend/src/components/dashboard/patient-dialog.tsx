@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, ShieldAlert, Trash2, UserRound, Users } from "lucide-react";
+import { CalendarPlus, ClipboardList, Eye, EyeOff, FileText, HeartPulse, KeyRound, Mail, MapPin, Pencil, Phone, PhoneCall, Plus, ShieldAlert, Trash2, UserRound, Users } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { Combobox } from "@/components/ui/combobox";
@@ -405,6 +405,10 @@ export function PatientViewButton({
   const [showAddDependant, setShowAddDependant] = useState(false);
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [tab, setTab] = useState<"info" | "records" | "notes" | "reports">("info");
+  const [showSchedule, setShowSchedule] = useState(false);
+  const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
+  const [schedBusy, setSchedBusy] = useState(false);
+  const [schedError, setSchedError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -542,6 +546,74 @@ export function PatientViewButton({
     }
   }
 
+  async function removeQuick() {
+    if (
+      !confirm(
+        `Permanently delete ${patient.last_name}, ${patient.first_name}? This removes the patient and ALL of their records (billing, appointments, clinical notes, medical reports, chats) from the system. This cannot be undone.`
+      )
+    )
+      return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/patients/${patient.id}`, { method: "DELETE" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to delete patient");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete patient");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function openSchedule() {
+    setShowSchedule(true);
+    setSchedError(null);
+    try {
+      const res = await fetch("/api/staff?pageSize=100", { cache: "no-store" });
+      const body = await res.json();
+      setDoctors(
+        (body.data ?? [])
+          .filter((s: { users?: { role?: string } }) => s.users?.role === "doctor")
+          .map((s: { id: string; users?: { full_name?: string } }) => ({
+            id: s.id,
+            label: s.users?.full_name ?? "Doctor",
+          }))
+      );
+    } catch {
+      /* doctor options are non-critical */
+    }
+  }
+
+  async function scheduleAppointment(form: FormData) {
+    setSchedBusy(true);
+    setSchedError(null);
+    try {
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: patient.id,
+          doctorId: (form.get("doctorId") as string) || undefined,
+          scheduledDate: form.get("scheduledDate"),
+          startTime: form.get("startTime"),
+          type: form.get("type"),
+          reason: (form.get("reason") as string) || undefined,
+          notes: (form.get("notes") as string) || undefined,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to book appointment");
+      setShowSchedule(false);
+      router.refresh();
+    } catch (e) {
+      setSchedError(e instanceof Error ? e.message : "Failed to book appointment");
+    } finally {
+      setSchedBusy(false);
+    }
+  }
+
   async function transferPatient() {
     if (!detail) return;
     if (!confirm(`Transfer ${detail.last_name}, ${detail.first_name} to another hospital? Their record is kept and marked as "transferred", and their portal login is disabled.`)) return;
@@ -642,13 +714,45 @@ export function PatientViewButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)]"
-      >
-        <Eye size={13} aria-hidden="true" /> View
-      </button>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            setEditMode(false);
+            setOpen(true);
+          }}
+          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)]"
+        >
+          <Eye size={13} aria-hidden="true" /> View
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setEditMode(true);
+            setOpen(true);
+          }}
+          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
+          <Pencil size={13} aria-hidden="true" /> Edit
+        </button>
+        <button
+          type="button"
+          onClick={openSchedule}
+          className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+        >
+          <CalendarPlus size={13} aria-hidden="true" /> Schedule
+        </button>
+        {canDelete && (
+          <button
+            type="button"
+            onClick={removeQuick}
+            disabled={busy}
+            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs font-medium text-red-600 transition-colors duration-200 hover:border-red-300 hover:bg-red-50 disabled:opacity-60"
+          >
+            <Trash2 size={13} aria-hidden="true" /> Delete
+          </button>
+        )}
+      </div>
 
       {open && (
         <Modal
@@ -1292,6 +1396,109 @@ export function PatientViewButton({
             <ErrorNote error={error ?? "Patient not found"} />
           )}
         </Modal>
+      )}
+
+      {showSchedule && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Schedule appointment for ${patient.last_name}, ${patient.first_name}`}
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+                New Appointment — {patient.last_name}, {patient.first_name}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowSchedule(false)}
+                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                scheduleAppointment(new FormData(e.currentTarget));
+              }}
+            >
+              <div>
+                <label className={labelCls} htmlFor="sch-doctor">Doctor (optional)</label>
+                <select id="sch-doctor" name="doctorId" className={inputCls}>
+                  <option value="">No doctor assigned</option>
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls} htmlFor="sch-date">Date</label>
+                  <input
+                    id="sch-date"
+                    name="scheduledDate"
+                    type="date"
+                    required
+                    min={new Date().toISOString().slice(0, 10)}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="sch-start">Start time</label>
+                  <input id="sch-start" name="startTime" type="time" required className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="sch-type">Type</label>
+                <select id="sch-type" name="type" className={inputCls} defaultValue="in_person">
+                  <option value="in_person">In-person visit</option>
+                  <option value="telemedicine">Telemedicine</option>
+                  <option value="home_visit">Home visit</option>
+                  <option value="follow_up">Follow-up</option>
+                </select>
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="sch-reason">Reason</label>
+                <input id="sch-reason" name="reason" className={inputCls} placeholder="Reason for visit" />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="sch-notes">Notes (optional)</label>
+                <textarea id="sch-notes" name="notes" rows={2} className={inputCls} />
+              </div>
+              {schedError && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                >
+                  {schedError}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowSchedule(false)}
+                  className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={schedBusy}
+                  className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                >
+                  <CalendarPlus size={15} aria-hidden="true" />
+                  {schedBusy ? "Booking…" : "Book appointment"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </>
   );
