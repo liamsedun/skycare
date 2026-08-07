@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarRange, Download, FileUp, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserRoundPlus, Users } from "lucide-react";
+import { CalendarDays, CalendarOff, CalendarRange, Clock, Download, FileUp, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Stethoscope, Trash2, UserRoundCheck, UserRoundPlus, Users } from "lucide-react";
 import { ActionDropdown } from "@/components/ui/action-dropdown";
 import CsvImportModal, { type ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { fmtDate, fmtTime } from "@/lib/shift-format";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 
 interface StaffUser {
@@ -28,6 +29,8 @@ interface StaffUser {
     years_of_exp: number | null;
     base_salary: number | null;
     is_available: boolean;
+    available_from: string | null;
+    available_until: string | null;
     on_leave_until: string | null;
   } | null;
 }
@@ -104,7 +107,13 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<DutyStatus>("all");
   const [importOpen, setImportOpen] = useState(false);
-  const [onDutyToday, setOnDutyToday] = useState<Set<string>>(new Set());
+  const [todayShifts, setTodayShifts] = useState<Record<string, { from_time: string; until_time: string }>>({});
+  const [availTarget, setAvailTarget] = useState<StaffUser | null>(null);
+  const [availForm, setAvailForm] = useState({ is_available: true, available_from: "09:00", available_until: "17:00" });
+  const [leaveTarget, setLeaveTarget] = useState<StaffUser | null>(null);
+  const [leaveForm, setLeaveForm] = useState({ on_leave_until: "" });
+  const [roleTarget, setRoleTarget] = useState<StaffUser | null>(null);
+  const [roleForm, setRoleForm] = useState("");
   const router = useRouter();
 
   const todayISO = () => {
@@ -138,9 +147,13 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
       const dutyRes = await fetch(`/api/duty-roster?from=${today}&to=${today}`, { cache: "no-store" });
       if (dutyRes.ok) {
         const dutyBody = await dutyRes.json();
-        const ids = new Set<string>();
-        for (const r of dutyBody.data ?? []) if (r?.staff_id) ids.add(r.staff_id);
-        setOnDutyToday(ids);
+        const shifts: Record<string, { from_time: string; until_time: string }> = {};
+        for (const r of dutyBody.data ?? []) {
+          if (r?.staff_id && r?.from_time) {
+            shifts[r.staff_id] = { from_time: r.from_time, until_time: r.until_time ?? "" };
+          }
+        }
+        setTodayShifts(shifts);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load staff");
@@ -228,26 +241,6 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
     }
   }
 
-  async function changeRole(user: StaffUser, role: string) {
-    if (user.id === meId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/admin/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to update role");
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to update role");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function deleteUser(user: StaffUser) {
     const name = user.full_name || user.email;
     if (!confirm(`Permanently delete ${name}?\n\nThis removes their login, staff profile, schedules, leave, notifications, mail and chats. It cannot be undone.`)) return;
@@ -301,10 +294,91 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const dutyStatusOf = (user: StaffUser): Exclude<DutyStatus, "all"> => {
     if (user.staff) {
       if (user.staff.on_leave_until && todayISO() <= user.staff.on_leave_until) return "on_leave";
-      if (onDutyToday.has(user.staff.id)) return "on_duty";
+      if (todayShifts[user.staff.id]) return "on_duty";
     }
     return "off_duty";
   };
+
+  function openAvailability(user: StaffUser) {
+    setAvailTarget(user);
+    setAvailForm({
+      is_available: user.staff?.is_available ?? true,
+      available_from: user.staff?.available_from?.slice(0, 5) || "09:00",
+      available_until: user.staff?.available_until?.slice(0, 5) || "17:00",
+    });
+  }
+
+  function openLeave(user: StaffUser) {
+    setLeaveTarget(user);
+    setLeaveForm({ on_leave_until: user.staff?.on_leave_until ?? "" });
+  }
+
+  async function saveAvailability() {
+    if (!availTarget?.staff) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/staff/${availTarget.staff.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          is_available: availForm.is_available,
+          available_from: availForm.is_available ? availForm.available_from : null,
+          available_until: availForm.is_available ? availForm.available_until : null,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update availability");
+      setAvailTarget(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update availability");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveLeave() {
+    if (!leaveTarget?.staff) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/staff/${leaveTarget.staff.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ on_leave_until: leaveForm.on_leave_until || null }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update leave");
+      setLeaveTarget(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update leave");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveRole() {
+    if (!roleTarget) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${roleTarget.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: roleForm }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update role");
+      setRoleTarget(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update role");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const visibleUsers = users.filter(
     (u) => statusFilter === "all" || dutyStatusOf(u) === statusFilter
@@ -497,7 +571,13 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {visibleUsers.map((user) => (
+          {visibleUsers.map((user) => {
+            const canManage = user.role !== "super_admin" && user.id !== meId;
+            const canDelete =
+              (myRole === "super_admin" || myRole === "hospital_admin") &&
+              user.role !== "super_admin" &&
+              user.id !== meId;
+            return (
             <div
               key={user.id}
               className={`group relative overflow-hidden rounded-2xl border bg-white shadow-[var(--shadow-sm)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] ${
@@ -505,197 +585,230 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
               }`}
             >
               <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600" />
-              <div className="flex items-start justify-between gap-3 p-4 pb-3">
+              <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-5">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${gradientFor(user.role)} text-sm font-bold text-white shadow-md ring-2 ring-white`}>
+                  <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradientFor(user.role)} text-sm font-bold text-white shadow-md ring-2 ring-white`}>
                     {initialsOf(user.full_name) || "ST"}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-[var(--color-foreground)]">
-                      {user.full_name}
+                    <p className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-[var(--color-foreground)]">
+                      <span className="truncate">{user.full_name}</span>
+                      {user.id === meId && (
+                        <span className="shrink-0 text-xs font-normal text-[var(--color-muted-fg)]">(you)</span>
+                      )}
                     </p>
-                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-primary-dark)]">
+                    <p className="mt-0.5 truncate text-xs text-[var(--color-muted-fg)]">
                       {ROLE_LABELS[user.role] ?? user.role}
-                    </span>
+                    </p>
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  {(() => {
-                    const st = dutyStatusOf(user);
-                    const cfg =
-                      st === "on_duty"
-                        ? { cls: "bg-emerald-50 text-emerald-700", dot: "bg-emerald-500" }
-                        : st === "on_leave"
-                          ? { cls: "bg-amber-50 text-amber-700", dot: "bg-amber-500" }
-                          : { cls: "bg-slate-100 text-slate-500", dot: "bg-slate-400" };
-                    const label = st === "on_duty" ? "On Duty" : st === "on_leave" ? "On Leave" : "Off Duty";
-                    return (
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${cfg.cls}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
-                        {label}
-                      </span>
-                    );
-                  })()}
-                  {!user.is_active && (
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">
-                      Disabled
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mx-4 space-y-1.5 rounded-xl bg-[var(--color-muted)] p-3 text-xs">
-                {user.phone && (
-                  <a
-                    className="focus-ring flex min-w-0 items-center gap-2 font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline"
-                    href={`tel:${user.phone}`}
+                <div className="relative shrink-0" data-staff-menu>
+                  <button
+                    type="button"
+                    onClick={() => setMenuOpenId(menuOpenId === user.id ? null : user.id)}
+                    disabled={busy}
+                    aria-label={`Actions for ${user.full_name}`}
+                    aria-expanded={menuOpenId === user.id}
+                    className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[var(--color-primary-dark)] shadow-sm">
-                      <Phone size={12} aria-hidden="true" />
-                    </span>
-                    <span className="truncate">{user.phone}</span>
-                  </a>
-                )}
-                <a
-                  className="focus-ring flex min-w-0 items-center gap-2 font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline"
-                  href={`mailto:${user.email}`}
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white text-[var(--color-primary-dark)] shadow-sm">
-                    <Mail size={12} aria-hidden="true" />
-                  </span>
-                  <span className="truncate">{user.email}</span>
-                </a>
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-border)] bg-[var(--color-muted)]/50 px-4 py-3">
-                <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
-                  {user.staff?.staff_number && (
-                    <span className="rounded-md bg-white px-2 py-1 font-mono text-[var(--color-muted-fg)] shadow-sm">
-                      {user.staff.staff_number}
-                    </span>
-                  )}
-                  {user.staff?.department && (
-                    <span className="truncate rounded-md bg-white px-2 py-1 text-[var(--color-muted-fg)] shadow-sm">
-                      {user.staff.department}
-                    </span>
+                    <MoreHorizontal size={16} aria-hidden="true" />
+                  </button>
+                  {menuOpenId === user.id && (
+                    <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-[var(--shadow-lg)]">
+                      {user.staff && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            router.push(`/app/roster?staff=${user.staff!.id}`);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                        >
+                          <CalendarRange size={13} aria-hidden="true" /> Schedule Duty
+                        </button>
+                      )}
+                      {user.staff && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            openAvailability(user);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                        >
+                          <Clock size={13} aria-hidden="true" /> Availability
+                        </button>
+                      )}
+                      {user.staff &&
+                        (dutyStatusOf(user) === "on_leave" ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null);
+                              openLeave(user);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                          >
+                            <UserRoundCheck size={13} aria-hidden="true" /> Return to Duty
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null);
+                              openLeave(user);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                          >
+                            <CalendarOff size={13} aria-hidden="true" /> Mark On Leave
+                          </button>
+                        ))}
+                      {user.staff && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            setEditTarget(user);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                        >
+                          <Pencil size={13} aria-hidden="true" /> Edit
+                        </button>
+                      )}
+                      {canManage && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null);
+                              setRoleTarget(user);
+                              setRoleForm(user.role);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                          >
+                            <ShieldCheck size={13} aria-hidden="true" /> Change Role
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null);
+                              resetPassword(user);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                          >
+                            <KeyRound size={13} aria-hidden="true" /> Reset Password
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMenuOpenId(null);
+                              toggleActive(user);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                          >
+                            <Power size={13} aria-hidden="true" />
+                            {user.is_active ? "Deactivate" : "Activate"}
+                          </button>
+                        </>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            deleteUser(user);
+                          }}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors duration-150 hover:bg-red-50"
+                        >
+                          <Trash2 size={13} aria-hidden="true" /> Delete
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2 px-5 text-xs text-[var(--color-muted-fg)]">
+                {user.staff?.department && (
+                  <div className="flex items-center gap-2">
+                    <Stethoscope size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
+                    <span className="truncate font-medium text-[var(--color-foreground)]">
+                      {user.staff.department}
+                      {user.staff.specialization ? ` — ${user.staff.specialization}` : ""}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Clock size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
+                  {dutyStatusOf(user) === "on_leave" ? (
+                    <span className="font-medium text-amber-600">
+                      On leave until {user.staff?.on_leave_until ? fmtDate(user.staff.on_leave_until) : ""}
+                    </span>
+                  ) : user.staff && todayShifts[user.staff.id] ? (
+                    <span className="font-semibold text-emerald-700">
+                      Duty: FROM {fmtTime(todayShifts[user.staff.id].from_time)} UNTIL {fmtTime(todayShifts[user.staff.id].until_time)}
+                    </span>
+                  ) : user.staff?.is_available ? (
+                    <span className="font-medium text-[var(--color-foreground)]">
+                      Available: {user.staff.available_from ? fmtTime(user.staff.available_from) : "09:00 AM"}&nbsp;–&nbsp;
+                      {user.staff.available_until ? fmtTime(user.staff.available_until) : "05:00 PM"}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-[var(--color-muted-fg)]">Not available today</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
+                  {user.phone ? (
+                    <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${user.phone}`}>
+                      {user.phone}
+                    </a>
+                  ) : (
+                    <span>—</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
+                  <a className="focus-ring min-w-0 truncate font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`mailto:${user.email}`}>
+                    {user.email}
+                  </a>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-2 px-5 pb-5 pt-1">
+                {(() => {
+                  const st = dutyStatusOf(user);
+                  const cfg =
+                    st === "on_duty"
+                      ? { cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" }
+                      : st === "on_leave"
+                        ? { cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" }
+                        : { cls: "bg-slate-100 text-slate-500 border-slate-200", dot: "bg-slate-400" };
+                  return (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${cfg.cls}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+                      {st === "on_duty" ? "On Duty" : st === "on_leave" ? "On Leave" : "Off Duty"}
+                    </span>
+                  );
+                })()}
                 <div className="flex shrink-0 items-center gap-2">
-                  {user.id === meId && (
-                    <span className="truncate text-xs text-[var(--color-muted-fg)]">(you)</span>
+                  {!user.is_active && (
+                    <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Disabled</span>
                   )}
                   {user.staff && (
                     <button
                       type="button"
                       onClick={() => router.push(`/app/roster?staff=${user.staff!.id}`)}
-                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-primary-dark)] transition-colors duration-200 hover:bg-[var(--color-primary)] hover:text-white"
+                      className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--color-primary-dark)] transition-colors duration-200 hover:bg-[var(--color-primary)] hover:text-white"
                     >
-                      <CalendarRange size={13} aria-hidden="true" /> Schedule
+                      <CalendarDays size={13} aria-hidden="true" /> Schedule Duty
                     </button>
                   )}
-                  {(() => {
-                    const canManage = user.role !== "super_admin" && user.id !== meId;
-                    const canDelete =
-                      (myRole === "super_admin" || myRole === "hospital_admin") &&
-                      user.role !== "super_admin" &&
-                      user.id !== meId;
-                    if (!user.staff && !canManage && !canDelete) return null;
-                    return (
-                      <div className="relative" data-staff-menu>
-                      <button
-                        type="button"
-                        onClick={() => setMenuOpenId(menuOpenId === user.id ? null : user.id)}
-                        disabled={busy}
-                        aria-label={`Actions for ${user.full_name}`}
-                        aria-expanded={menuOpenId === user.id}
-                        className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[var(--color-muted-fg)] shadow-sm transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                      >
-                        <MoreHorizontal size={16} aria-hidden="true" />
-                      </button>
-                      {menuOpenId === user.id && (
-                        <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-[var(--shadow-lg)]">
-                          {user.staff && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMenuOpenId(null);
-                                setEditTarget(user);
-                              }}
-                              disabled={busy}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                            >
-                              <Pencil size={13} aria-hidden="true" /> Edit Details
-                            </button>
-                          )}
-                          {canManage && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMenuOpenId(null);
-                                  resetPassword(user);
-                                }}
-                                disabled={busy}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                              >
-                                <KeyRound size={13} aria-hidden="true" /> Reset Password
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setMenuOpenId(null);
-                                  toggleActive(user);
-                                }}
-                                disabled={busy}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                              >
-                                <Power size={13} aria-hidden="true" />
-                                {user.is_active ? "Deactivate" : "Activate"}
-                              </button>
-                            </>
-                          )}
-                          {canDelete && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setMenuOpenId(null);
-                                deleteUser(user);
-                              }}
-                              disabled={busy}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors duration-150 hover:bg-red-50"
-                            >
-                              <Trash2 size={13} aria-hidden="true" /> Delete
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
                 </div>
               </div>
-
-              {user.role !== "super_admin" && user.id !== meId && (
-                <label className="block px-4 pb-4 pt-3">
-                  <span className="mb-1 flex items-center gap-1 text-xs font-medium text-[var(--color-muted-fg)]">
-                    <ShieldCheck size={13} aria-hidden="true" /> Role
-                  </span>
-                  <select
-                    value={user.role}
-                    onChange={(e) => changeRole(user, e.target.value)}
-                    disabled={busy}
-                    className={inputCls}
-                  >
-                    {rolesFor(myRole).map((r) => (
-                      <option key={r} value={r}>
-                        {ROLE_LABELS[r]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -973,6 +1086,252 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Availability modal */}
+      {availTarget?.staff && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Availability for ${availTarget.full_name}`}
+        >
+          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+                Availability — {availTarget.full_name}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setAvailTarget(null)}
+                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-5 space-y-4">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={availForm.is_available}
+                  onChange={(e) => setAvailForm((f) => ({ ...f, is_available: e.target.checked }))}
+                  className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]"
+                />
+                Available for duty / appointments
+              </label>
+              {availForm.is_available && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium" htmlFor="av-from">
+                      From
+                    </label>
+                    <input
+                      id="av-from"
+                      type="time"
+                      value={availForm.available_from}
+                      onChange={(e) => setAvailForm((f) => ({ ...f, available_from: e.target.value }))}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium" htmlFor="av-until">
+                      Until
+                    </label>
+                    <input
+                      id="av-until"
+                      type="time"
+                      value={availForm.available_until}
+                      onChange={(e) => setAvailForm((f) => ({ ...f, available_until: e.target.value }))}
+                      className={inputCls}
+                    />
+                  </div>
+                </div>
+              )}
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                >
+                  {error}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAvailTarget(null)}
+                  className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveAvailability}
+                  disabled={busy}
+                  className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                >
+                  {busy ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave modal */}
+      {leaveTarget?.staff && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Leave for ${leaveTarget.full_name}`}
+        >
+          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+                {dutyStatusOf(leaveTarget) === "on_leave"
+                  ? `Return to duty — ${leaveTarget.full_name}`
+                  : `Mark on leave — ${leaveTarget.full_name}`}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setLeaveTarget(null)}
+                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-5 space-y-4">
+              {dutyStatusOf(leaveTarget) === "on_leave" ? (
+                <p className="text-sm text-[var(--color-muted-fg)]">
+                  {leaveTarget.full_name} is currently on leave until{" "}
+                  {leaveTarget.staff.on_leave_until ? fmtDate(leaveTarget.staff.on_leave_until) : ""}. Clear the date
+                  below to return them to duty.
+                </p>
+              ) : (
+                <p className="text-sm text-[var(--color-muted-fg)]">
+                  They will show as &quot;On Leave&quot; and not appear as available until this date.
+                </p>
+              )}
+              <label className="mb-1 block text-sm font-medium" htmlFor="lv-date">
+                Leave until
+              </label>
+              <input
+                id="lv-date"
+                type="date"
+                value={leaveForm.on_leave_until}
+                onChange={(e) => setLeaveForm((f) => ({ ...f, on_leave_until: e.target.value }))}
+                className={inputCls}
+              />
+              {dutyStatusOf(leaveTarget) === "on_leave" && (
+                <button
+                  type="button"
+                  onClick={() => setLeaveForm((f) => ({ ...f, on_leave_until: "" }))}
+                  className="text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  Clear date — return to duty
+                </button>
+              )}
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                >
+                  {error}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setLeaveTarget(null)}
+                  className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveLeave}
+                  disabled={busy}
+                  className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                >
+                  {busy ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change role modal */}
+      {roleTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Change role for ${roleTarget.full_name}`}
+        >
+          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold">
+                Change role — {roleTarget.full_name}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setRoleTarget(null)}
+                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mt-5 space-y-4">
+              <label className="mb-1 block text-sm font-medium" htmlFor="cr-role">
+                New role
+              </label>
+              <select
+                id="cr-role"
+                value={roleForm}
+                onChange={(e) => setRoleForm(e.target.value)}
+                className={inputCls}
+              >
+                {rolesFor(myRole).map((r) => (
+                  <option key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-[var(--color-muted-fg)]">
+                This controls what {roleTarget.full_name.split(" ")[0] ?? "they"} can see and do in the dashboard.
+              </p>
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                >
+                  {error}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setRoleTarget(null)}
+                  className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={saveRole}
+                  disabled={busy}
+                  className="focus-ring flex flex-1 items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                >
+                  {busy ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
