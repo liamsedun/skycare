@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const REQUEST_SELECT =
-  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, phone, user_id), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes)";
+  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, phone, user_id), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes, result, result_unit, is_abnormal, reported_at), lab_request_assignments(user_id, users(id, full_name, role))";
 
 async function getRequest(ctx: any, id: string, tenantId: string) {
   const { data } = await ctx.svc

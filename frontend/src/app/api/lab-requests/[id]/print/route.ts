@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const PRINT_SELECT =
-  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, requested_at, completed_at, notes, created_by, completed_by, patients(id, patient_number, first_name, last_name, date_of_birth, gender, primary_account_id), doctor_user:users!lab_requests_doctor_id_fkey(id, full_name, role), completed_user:users!lab_requests_completed_by_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes)";
+  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, requested_at, completed_at, notes, created_by, completed_by, patients(id, patient_number, first_name, last_name, date_of_birth, gender, primary_account_id), doctor_user:users!lab_requests_doctor_id_fkey(id, full_name, role), completed_user:users!lab_requests_completed_by_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes, result, result_unit, is_abnormal, reported_at)";
 
 function getAge(dob: string | null): number | null {
   if (!dob) return null;
@@ -134,11 +134,14 @@ export const GET = withStaff(async (req, ctx) => {
     requester,
     technician,
     services: (labRequest.lab_request_items ?? []).map(
-      (s: { service_name: string; priority: string; sample_type: string | null; notes: string | null }) => ({
+      (s: { service_name: string; priority: string; sample_type: string | null; notes: string | null; result?: string | null; result_unit?: string | null; is_abnormal?: boolean | null }) => ({
         name: s.service_name,
         priority: s.priority,
         sampleType: s.sample_type,
         notes: s.notes,
+        result: s.result ?? null,
+        resultUnit: s.result_unit ?? null,
+        isAbnormal: s.is_abnormal ?? false,
       })
     ),
     isExternal: labRequest.is_external,

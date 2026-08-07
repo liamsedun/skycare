@@ -7,7 +7,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const REQUEST_SELECT =
-  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, user_id), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes)";
+  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, user_id), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes, result, result_unit, is_abnormal, reported_at), lab_request_assignments(user_id, users(id, full_name, role))";
 
 // GET /api/lab-requests?patient_id=&status=&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {
@@ -52,6 +52,7 @@ export interface CreateLabRequestBody {
   isExternal?: boolean;
   externalLabId?: string;
   notes?: string;
+  assignedToIds?: string[];
   items: Array<{
     serviceId?: string;
     serviceName?: string;
@@ -99,6 +100,7 @@ export const POST = withStaff(async (req, ctx) => {
     p_branch_id: ctx.branchId ?? null,
     p_notes: body.notes?.trim() || null,
     p_created_by: ctx.user.id,
+    p_assigned_user_ids: body.isExternal ? null : (body.assignedToIds?.length ? body.assignedToIds : null),
   });
   if (rpcError) throw new ValidationError(rpcError.message);
 

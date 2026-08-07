@@ -35,6 +35,14 @@ interface LabRequest {
     priority: string;
     sample_type: string | null;
     notes: string | null;
+    result: string | null;
+    result_unit: string | null;
+    is_abnormal: boolean | null;
+    reported_at: string | null;
+  }>;
+  lab_request_assignments?: Array<{
+    user_id: string;
+    users: { id: string; full_name: string; role: string } | null;
   }>;
 }
 
@@ -991,6 +999,9 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [error, setError] = useState<string | null>(null);
   const [patients, setPatients] = useState<{ id: string; label: string }[]>([]);
   const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
+  const [labStaff, setLabStaff] = useState<{ id: string; label: string }[]>([]);
+  const [assigned, setAssigned] = useState<Set<string>>(new Set());
+  const [isExternal, setIsExternal] = useState(false);
   const [services, setServices] = useState<LabService[]>([]);
   const [selected, setSelected] = useState<Record<string, { sampleType: string; priority: string }>>({});
 
@@ -1017,6 +1028,14 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
             .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({
               id: s.users?.id ?? s.id,
               label: s.users?.full_name ?? "Doctor",
+            }))
+        );
+        setLabStaff(
+          (staffBody.data ?? [])
+            .filter((s: { users?: { role?: string; is_active?: boolean } }) => !!s.users?.is_active && ["lab_tech", "radiologist", "radiographer", "hospital_admin"].includes(s.users.role ?? ""))
+            .map((s: { id: string; users?: { id?: string; full_name?: string; role?: string } }) => ({
+              id: s.users?.id ?? s.id,
+              label: s.users?.full_name ?? "Lab staff",
             }))
         );
         setServices(
@@ -1058,6 +1077,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
           isExternal: form.get("isExternal") === "on",
           externalLabId: (form.get("externalLabId") as string) || undefined,
           notes: (form.get("notes") as string) || undefined,
+          assignedToIds: assigned.size ? Array.from(assigned) : undefined,
           items,
         }),
       });
@@ -1102,11 +1122,61 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
 
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
-            <input type="checkbox" name="isExternal" className="h-4 w-4 accent-[var(--color-primary)]" />
+            <input
+              type="checkbox"
+              name="isExternal"
+              checked={isExternal}
+              onChange={(e) => {
+                setIsExternal(e.target.checked);
+                if (e.target.checked) setAssigned(new Set());
+              }}
+              className="h-4 w-4 accent-[var(--color-primary)]"
+            />
             Send to an external lab
           </label>
           <input name="externalLabId" className={`${inputCls} !py-2 max-w-xs flex-1 text-sm`} placeholder="External lab ID (optional)" />
         </div>
+
+        {!isExternal && (
+          <div>
+            <span className="mb-2 block text-sm font-semibold text-[var(--color-foreground)]">
+              Assign lab staff ({assigned.size} selected)
+              <span className="ml-1 font-normal text-xs text-[var(--color-muted-fg)]">— they&apos;ll be notified to run the tests</span>
+            </span>
+            {labStaff.length === 0 ? (
+              <p className="rounded-lg bg-[var(--color-muted)]/40 px-3 py-2 text-xs text-[var(--color-muted-fg)]">
+                No lab staff available yet. Ask an admin to add lab technicians — the request will go to all lab staff.
+              </p>
+            ) : (
+              <div className="max-h-44 space-y-1 overflow-y-auto rounded-xl border border-[var(--color-border)] p-3">
+                {labStaff.map((s) => {
+                  const on = assigned.has(s.id);
+                  return (
+                    <label
+                      key={s.id}
+                      className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors duration-150 ${
+                        on ? "bg-[var(--color-primary-soft)]" : "hover:bg-[var(--color-muted)]"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) => {
+                          const next = new Set(assigned);
+                          if (e.target.checked) next.add(s.id);
+                          else next.delete(s.id);
+                          setAssigned(next);
+                        }}
+                        className="h-4 w-4 accent-[var(--color-primary)]"
+                      />
+                      <span className="font-medium text-[var(--color-foreground)]">{s.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <span className="mb-2 block text-sm font-semibold text-[var(--color-foreground)]">
@@ -1220,6 +1290,7 @@ function RequestDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [resultDraft, setResultDraft] = useState<Record<string, { result: string; unit: string; isAbnormal: boolean }>>({});
 
   async function downloadPdf() {
     setDownloading(true);
@@ -1258,6 +1329,37 @@ function RequestDetailModal({
       onChanged();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update request");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reportResults() {
+    setBusy(true);
+    setError(null);
+    try {
+      const results = request.lab_request_items.map((item) => {
+        const draft = resultDraft[item.id] ?? { result: "", unit: "", isAbnormal: false };
+        return {
+          itemId: item.id,
+          result: draft.result,
+          unit: draft.unit,
+          isAbnormal: draft.isAbnormal,
+        };
+      });
+      if (results.some((r) => !r.result.trim())) {
+        throw new Error("Fill in a result value for every service first");
+      }
+      const res = await fetch(`/api/lab-requests/${request.id}/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ results }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to report results");
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to report results");
     } finally {
       setBusy(false);
     }
@@ -1347,6 +1449,17 @@ function RequestDetailModal({
           </p>
         )}
 
+        {request.lab_request_assignments && request.lab_request_assignments.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Assigned to:</span>
+            {request.lab_request_assignments.map((a) => (
+              <span key={a.user_id} className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                {a.users?.full_name ?? "Lab staff"}
+              </span>
+            ))}
+          </div>
+        )}
+
         {error && (
           <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
             {error}
@@ -1360,7 +1473,7 @@ function RequestDetailModal({
                 <th scope="col" className="px-4 py-2.5 font-semibold">Service</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Priority</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Sample</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Notes</th>
+                <th scope="col" className="px-4 py-2.5 font-semibold">Result</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
@@ -1369,12 +1482,80 @@ function RequestDetailModal({
                   <td className="px-4 py-2.5 font-medium text-[var(--color-foreground)]">{item.service_name}</td>
                   <td className="px-4 py-2.5 text-xs capitalize text-[var(--color-muted-fg)]">{item.priority}</td>
                   <td className="px-4 py-2.5 text-xs text-[var(--color-muted-fg)]">{item.sample_type ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-xs text-[var(--color-muted-fg)]">{item.notes ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-xs">
+                    {item.result ? (
+                      <span className={item.is_abnormal ? "font-semibold text-red-600" : "font-medium text-[var(--color-foreground)]"}>
+                        {item.result}
+                        {item.result_unit ? ` ${item.result_unit}` : ""}
+                        {item.is_abnormal ? " ⚠" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--color-muted-fg)]">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {canWork && canEnterResults && !request.is_external && ["sample_collected", "in_progress"].includes(request.status) && (
+          <div className="rounded-xl border border-[var(--color-border)] bg-slate-50/60 p-4">
+            <p className="text-sm font-semibold text-[var(--color-foreground)]">Enter lab results</p>
+            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+              Fill in the result of each test below — sending will mark the request completed and mail the results to the requesting staff with the patient in copy.
+            </p>
+            <div className="mt-3 space-y-3">
+              {request.lab_request_items.map((item) => {
+                const draft = resultDraft[item.id] ?? { result: "", unit: "", isAbnormal: false };
+                return (
+                  <div key={item.id} className="rounded-lg border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-sm font-medium text-[var(--color-foreground)]">{item.service_name}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Result value (e.g. 12.5)"
+                        value={draft.result}
+                        onChange={(e) =>
+                          setResultDraft({ ...resultDraft, [item.id]: { ...draft, result: e.target.value } })
+                        }
+                        className={`${inputCls} max-w-[180px] !py-1.5 text-xs`}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Unit (e.g. g/dL)"
+                        value={draft.unit}
+                        onChange={(e) =>
+                          setResultDraft({ ...resultDraft, [item.id]: { ...draft, unit: e.target.value } })
+                        }
+                        className={`${inputCls} w-28 !py-1.5 text-xs`}
+                      />
+                      <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-[var(--color-foreground)]">
+                        <input
+                          type="checkbox"
+                          checked={draft.isAbnormal}
+                          onChange={(e) =>
+                            setResultDraft({ ...resultDraft, [item.id]: { ...draft, isAbnormal: e.target.checked } })
+                          }
+                          className="h-3.5 w-3.5 accent-red-600"
+                        />
+                        Abnormal
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={reportResults}
+              disabled={busy}
+              className="focus-ring mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+            >
+              {busy ? "Sending…" : "Report results & notify doctor + patient"}
+            </button>
+          </div>
+        )}
 
         {canWork && canEnterResults && (
           <button
