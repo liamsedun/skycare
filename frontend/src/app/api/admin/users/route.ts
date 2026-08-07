@@ -34,7 +34,7 @@ export const GRANTABLE_ROLES: StaffRole[] = [
   "paramedic",
 ];
 
-// GET /api/admin/users?role=&search=&is_active=&page=&pageSize=
+// GET /api/admin/users?role=&search=&is_active=&department=&specialization=&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
     throw new ForbiddenError("Admin access required");
@@ -43,6 +43,8 @@ export const GET = withAuth(async (req, ctx) => {
   const role = resolveParam(req.nextUrl.searchParams.get("role"));
   const search = resolveParam(req.nextUrl.searchParams.get("search"))?.trim();
   const isActive = resolveParam(req.nextUrl.searchParams.get("is_active"));
+  const department = resolveParam(req.nextUrl.searchParams.get("department"))?.trim();
+  const specialization = resolveParam(req.nextUrl.searchParams.get("specialization"))?.trim();
 
   // super_admin is platform-wide (tenant NULL) — list all staff; hospital_admin is tenant-scoped.
   let query = ctx.svc
@@ -61,6 +63,8 @@ export const GET = withAuth(async (req, ctx) => {
   if (search) query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
   if (isActive === "true") query = query.eq("is_active", true);
   if (isActive === "false") query = query.eq("is_active", false);
+  if (department) query = query.filter("staff.department", "ilike", `%${department}%`);
+  if (specialization) query = query.filter("staff.specialization", "ilike", `%${specialization}%`);
 
   const { data, count } = await query;
   return okPaginated(data ?? [], count ?? 0, page, pageSize);

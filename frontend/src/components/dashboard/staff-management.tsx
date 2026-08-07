@@ -101,6 +101,9 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [deptFilter, setDeptFilter] = useState("");
+  const [specFilter, setSpecFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [editTarget, setEditTarget] = useState<StaffUser | null>(null);
   const [busy, setBusy] = useState(false);
@@ -137,6 +140,9 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
     try {
       const params = new URLSearchParams();
       if (search.trim()) params.set("search", search.trim());
+      if (roleFilter) params.set("role", roleFilter);
+      if (deptFilter.trim()) params.set("department", deptFilter.trim());
+      if (specFilter.trim()) params.set("specialization", specFilter.trim());
       params.set("pageSize", "100");
       const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
@@ -160,7 +166,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, roleFilter, deptFilter, specFilter]);
 
   useEffect(() => {
     const t = setTimeout(load, 250);
@@ -552,6 +558,52 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           <option value="off_duty">Off Duty</option>
           <option value="on_leave">On Leave</option>
         </select>
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          aria-label="Filter by role"
+          className={inputCls + " w-auto"}
+        >
+          <option value="">All roles</option>
+          {rolesFor(myRole).map((r) => (
+            <option key={r} value={r}>
+              {ROLE_LABELS[r]}
+            </option>
+          ))}
+        </select>
+        <div className="relative max-w-xs flex-1 basis-48">
+          <input
+            type="text"
+            value={deptFilter}
+            onChange={(e) => setDeptFilter(e.target.value)}
+            placeholder="Filter by department…"
+            aria-label="Filter by department"
+            className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
+          />
+        </div>
+        <div className="relative max-w-xs flex-1 basis-48">
+          <input
+            type="text"
+            value={specFilter}
+            onChange={(e) => setSpecFilter(e.target.value)}
+            placeholder="Filter by specialization…"
+            aria-label="Filter by specialization"
+            className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
+          />
+        </div>
+        {((roleFilter) || deptFilter.trim() || specFilter.trim()) && (
+          <button
+            type="button"
+            onClick={() => {
+              setRoleFilter("");
+              setDeptFilter("");
+              setSpecFilter("");
+            }}
+            className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 hover:text-[var(--color-foreground)]"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
 
       {loading ? (
