@@ -37,7 +37,7 @@
    Dark mode (Account → preferences.theme === "dark") we set data-theme="dark"
    on <html> and the token overrides below flip every --color-* consumer plus
    the common Tailwind light-only utility classes (bg-white, bg-slate-*, etc.)
-   to a deep navy + gold scheme (the life-blossom project pattern).
+   to a deep navy + gold scheme (the "Dusk & Gold" brand pattern).
    ──────────────────────────────────────────────────────────────────────────── */
 
 html[data-theme="dark"] {

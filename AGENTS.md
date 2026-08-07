@@ -6,7 +6,9 @@ This version (16.2.12, Turbopack builds) has breaking changes â€” APIs, con
 
 ## What this project is
 
-SkyCare â€” a multi-tenant hospital management SaaS ("HMS SaaS"). Hospitals subscribe as **tenants** and get their own branded site at `<slug>.skycare.app` plus a staff dashboard (`/app/*`) and a patient portal (`/patient`, in progress). Every hospital manages its own admins/staff/patients; tenants are strictly isolated from each other. The admin/staff/patient features were ported from the life-blossom-hosp reference repo (`C:\Users\Admin\Downloads\life-blossom-hosp` â€” read-only, never modify it; its AGENTS.md is the house style for this workspace).
+SkyCare is a multi-tenant hospital management SaaS ("HMS SaaS"). Hospitals subscribe as **tenants** and get their own branded site at <slug>.skycare.app plus a staff dashboard (/app/*) and a patient portal (/patient, in progress). Every hospital manages its own admins/staff/patients; tenants are strictly isolated from each other.
+
+**IMPORTANT: SkyCare is an INDEPENDENT project.** The Life Blossom project (C:\Users\Admin\Downloads\life-blossom-hosp) is a SEPARATE single-hospital app with its own git repo (liamsedun/lifeblossomhosp), its own Supabase project (hkqhsgdutaaufqqrekdx), its own env files and its own Netlify site. The two projects must NEVER be mixed: same-named files exist in both, but they are different codebases with different databases and deployments. All work in this workspace is SkyCare-only; never read from, write to, or reference the Life Blossom folder as part of SkyCare work.
 
 ## Repo layout
 
