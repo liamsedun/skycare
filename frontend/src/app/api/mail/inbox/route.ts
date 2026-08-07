@@ -20,7 +20,7 @@ export const GET = withAuth(async (req, ctx) => {
   const { data, count, error } = await ctx.svc
     .from("internal_message_recipients")
     .select(
-      "id, message_id, is_read, read_at, internal_messages!internal_message_recipients_message_id_fkey(id, sender_id, subject, body, is_broadcast, broadcast_scope, created_at)",
+      "id, message_id, is_read, read_at, internal_messages!internal_message_recipients_message_id_fkey(id, sender_id, subject, body, attachments, is_broadcast, broadcast_scope, created_at)",
       { count: "exact" }
     )
     .eq("recipient_id", ctx.user.id)
@@ -54,6 +54,7 @@ interface SendMailBody {
   recipientIds?: string[];
   subject: string;
   body: string;
+  attachments?: string[];
   broadcast?: boolean;
   broadcastScope?: "staff" | "all";
 }
@@ -97,6 +98,7 @@ export const POST = withAuth(async (req, ctx) => {
       sender_id: ctx.user.id,
       subject: body.subject.trim(),
       body: body.body.trim(),
+      attachments: (body.attachments ?? []).slice(0, 5),
       is_broadcast: body.broadcast || false,
       broadcast_scope: body.broadcast ? (body.broadcastScope ?? "staff") : "staff",
     })

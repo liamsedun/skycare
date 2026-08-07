@@ -22,6 +22,8 @@ interface Prescription {
   diagnosis: string | null;
   notes: string | null;
   status: string;
+  pharmacy_type: string | null;
+  external_pharmacy_name: string | null;
   issued_date: string;
   expires_date: string | null;
   patients: { first_name: string; last_name: string } | null;
@@ -32,8 +34,9 @@ interface Prescription {
 function statusClass(status: string): string {
   switch (status) {
     case "dispensed": return "bg-emerald-100 text-emerald-700";
-    case "active": return "bg-sky-100 text-sky-700";
-    case "partially_dispensed": return "bg-amber-100 text-amber-700";
+    case "pending": return "bg-sky-100 text-sky-700";
+    case "processing": return "bg-indigo-100 text-indigo-700";
+    case "partial": return "bg-amber-100 text-amber-700";
     case "cancelled": case "expired": return "bg-slate-100 text-slate-500";
     default: return "bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]";
   }
@@ -106,6 +109,7 @@ export default function PatientPrescriptions() {
                         Issued {new Date(rx.issued_date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                         {rx.expires_date ? ` · expires ${new Date(rx.expires_date).toLocaleDateString("en-NG")}` : ""}
                         {rx.diagnosis ? ` · ${rx.diagnosis}` : ""}
+                        {rx.pharmacy_type === "external" ? ` · external pharmacy${rx.external_pharmacy_name ? `: ${rx.external_pharmacy_name}` : ""}` : ""}
                       </p>
                     </div>
                   </div>

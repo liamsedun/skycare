@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const RX_SELECT =
-  "id, tenant_id, branch_id, patient_id, doctor_id, visit_id, diagnosis, notes, status, issued_date, expires_date, created_at, updated_at, patients(id, patient_number, first_name, last_name), users(id, full_name, role), prescription_items(id, drug_id, medication_name, dosage, frequency, route, duration, quantity, refills, dispensed_qty, instructions)";
+  "id, tenant_id, branch_id, patient_id, doctor_id, visit_id, diagnosis, notes, status, pharmacy_type, external_pharmacy_name, dispensed_at, dispensed_by, issued_date, expires_date, created_at, updated_at, patients(id, patient_number, first_name, last_name), users(id, full_name, role), prescription_items(id, drug_id, pharmacy_drug_id, medication_name, dosage, frequency, route, duration, quantity, refills, dispensed_qty, instructions)";
 
 async function getPrescription(ctx: any, id: string, tenantId: string) {
   const { data } = await ctx.svc
@@ -39,7 +39,10 @@ export const GET = withAuth(async (req, ctx) => {
   return ok(rx);
 });
 
-// PUT /api/prescriptions/[id] — status + notes; items replace when provided
+const ALLOWED_STATUSES = ["pending", "processing", "dispensed", "partial", "cancelled", "completed"];
+
+// PUT /api/prescriptions/[id] — metadata + lifecycle transitions.
+// Dispensing itself lives at POST /api/prescriptions/[id]/dispense.
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const id = req.nextUrl.pathname.split("/").pop()!;
@@ -52,28 +55,8 @@ export const PUT = withStaff(async (req, ctx) => {
   for (const key of allowed) {
     if (key in body) patch[key] = body[key] ?? null;
   }
-  if (patch.status && !["active", "completed", "cancelled", "dispensed", "partially_dispensed"].includes(patch.status as string)) {
+  if (patch.status && !ALLOWED_STATUSES.includes(patch.status as string)) {
     throw new ValidationError("Invalid prescription status");
-  }
-
-  // Pharmacist dispense: update dispensed quantities per item
-  if (Array.isArray(body.dispenseItems)) {
-    for (const item of body.dispenseItems as Array<{ id: string; dispensedQty: number }>) {
-      const { error: itemError } = await ctx.svc
-        .from("prescription_items")
-        .update({ dispensed_qty: Math.max(0, Math.floor(Number(item.dispensedQty) || 0)) })
-        .eq("id", item.id)
-        .eq("prescription_id", id);
-      if (itemError) throw new ValidationError(itemError.message);
-    }
-    const { data: items, error: itemsError } = await ctx.svc
-      .from("prescription_items")
-      .select("quantity, dispensed_qty")
-      .eq("prescription_id", id);
-    if (itemsError) throw new ValidationError(itemsError.message);
-    const allDispensed = items.length > 0 && items.every((i) => i.dispensed_qty >= i.quantity);
-    const someDispensed = items.some((i) => i.dispensed_qty > 0);
-    patch.status = allDispensed ? "dispensed" : someDispensed ? "partially_dispensed" : "active";
   }
 
   const { data: updated, error } = await ctx.svc
@@ -89,11 +72,7 @@ export const PUT = withStaff(async (req, ctx) => {
     action: "update",
     entityType: "prescriptions",
     entityId: id,
-    description: Array.isArray(body.dispenseItems)
-      ? "Dispensed prescription items"
-      : patch.status
-        ? `Prescription status set to ${patch.status}`
-        : "Prescription updated",
+    description: patch.status ? `Prescription status set to ${patch.status}` : "Prescription updated",
   });
 
   return ok(updated);

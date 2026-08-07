@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Inbox, Loader2, MailPlus, Send, Trash2 } from "lucide-react";
+import { Inbox, Loader2, MailPlus, Paperclip, Send, Trash2 } from "lucide-react";
 import { initials, ROLE_LABELS } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
 
@@ -17,6 +17,7 @@ interface MailMessage {
   is_broadcast: boolean;
   broadcast_scope: string;
   created_at: string;
+  attachments?: string[];
   isRead?: boolean;
   sender?: { id: string; full_name: string; email: string; role: AppRole } | null;
   recipients?: Array<{ id: string; full_name: string; email: string }>;
@@ -307,6 +308,21 @@ export default function MailView() {
                   {open && (
                     <div className="border-t border-[var(--color-border)] bg-[var(--color-muted)]/20 px-4 py-4">
                       <div className="whitespace-pre-wrap text-sm text-[var(--color-foreground)]">{m.body}</div>
+                      {Array.isArray(m.attachments) && m.attachments.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {m.attachments.map((url, i) => (
+                            <a
+                              key={i}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-2.5 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-muted)]/40"
+                            >
+                              <Paperclip size={13} /> Attachment {i + 1}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                       {tab === "sent" && m.recipients && m.recipients.length > 0 && (
                         <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
                           To: {m.recipients.map((r) => r.full_name || r.email).join(", ")}

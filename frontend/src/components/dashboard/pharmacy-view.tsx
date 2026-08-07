@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pill, Plus, X } from "lucide-react";
+import { Pill, Plus, X, Printer } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 
 interface RxItem {
   id: string;
+  pharmacy_drug_id: string | null;
   medication_name: string | null;
   dosage: string;
   frequency: string;
@@ -21,6 +22,8 @@ interface RxItem {
 interface Prescription {
   id: string;
   status: string;
+  pharmacy_type: "in_house" | "external";
+  external_pharmacy_name: string | null;
   issued_date: string;
   diagnosis: string | null;
   notes: string | null;
@@ -29,7 +32,17 @@ interface Prescription {
   prescription_items: RxItem[];
 }
 
-const STATUS_FILTERS = ["all", "active", "partially_dispensed", "dispensed", "completed", "cancelled"];
+interface DrugOption {
+  id: string;
+  name: string;
+  genericName: string | null;
+  category: string | null;
+  dosage: string | null;
+  unitPrice: number;
+  inStock: number;
+}
+
+const STATUS_FILTERS = ["all", "pending", "processing", "partial", "dispensed", "cancelled", "completed"];
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -37,11 +50,13 @@ const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]"
 
 function statusClass(status: string): string {
   switch (status) {
-    case "active": return "bg-sky-100 text-sky-700";
+    case "pending": return "bg-amber-100 text-amber-700";
+    case "processing": return "bg-indigo-100 text-indigo-700";
     case "dispensed": return "bg-emerald-100 text-emerald-700";
-    case "partially_dispensed": return "bg-amber-100 text-amber-700";
+    case "partial": return "bg-orange-100 text-orange-700";
     case "completed": return "bg-slate-100 text-slate-600";
-    default: return "bg-red-100 text-red-700";
+    case "cancelled": return "bg-red-100 text-red-700";
+    default: return "bg-sky-100 text-sky-700";
   }
 }
 
@@ -82,11 +97,9 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Pharmacy
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Pharmacy</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            Prescriptions and dispensing.
+            Prescriptions, dispensing and stock.
           </p>
         </div>
         <button
@@ -147,7 +160,8 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
                 </span>
               </div>
               <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
-                {rx.prescription_items.length} medication(s) · by {rx.users?.full_name ?? "—"}
+                {rx.prescription_items.length} medication(s) · by {rx.users?.full_name ?? "—"} ·{" "}
+                {rx.pharmacy_type === "external" ? "External" : "In-house"}
               </p>
               <button
                 type="button"
@@ -167,7 +181,6 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
           onCreated={() => {
             setShowCreate(false);
             load();
-            router.refresh();
           }}
         />
       )}
@@ -177,24 +190,26 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
           rx={viewed}
           canDispense={canDispense}
           onClose={() => setViewId(null)}
-          onChanged={() => {
-            load();
-            router.refresh();
-          }}
+          onChanged={() => load()}
         />
       )}
     </div>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Doctor workflow — create a prescription. Free-text allowed, but the med
+// picker searches the pharmacy catalog (pharmacy_drugs) and links items so
+// the pharmacist can allocate stock batches when dispensing.
+// ---------------------------------------------------------------------------
 function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patients, setPatients] = useState<{ id: string; label: string }[]>([]);
   const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
-  const [items, setItems] = useState([
-    { medicationName: "", dosage: "1", frequency: "1x daily", route: "oral", duration: "", quantity: 10, instructions: "" },
-  ]);
+  const [pharmacyType, setPharmacyType] = useState<"in_house" | "external">("in_house");
+  const [externalName, setExternalName] = useState("");
+  const [items, setItems] = useState<CreateItem[]>([newItem()]);
 
   useEffect(() => {
     (async () => {
@@ -230,6 +245,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         .filter((item) => item.medicationName.trim())
         .map((item) => ({
           medicationName: item.medicationName.trim(),
+          pharmacyDrugId: item.pharmacyDrugId ?? undefined,
           dosage: item.dosage,
           frequency: item.frequency,
           route: item.route,
@@ -237,6 +253,9 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           quantity: item.quantity,
           instructions: item.instructions.trim() || undefined,
         }));
+      if (pharmacyType === "external" && !externalName.trim()) {
+        throw new Error("Enter the external pharmacy name");
+      }
       const res = await fetch("/api/prescriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -245,6 +264,8 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           doctorId: form.get("doctorId"),
           diagnosis: (form.get("diagnosis") as string) || undefined,
           notes: (form.get("notes") as string) || undefined,
+          pharmacyType,
+          externalPharmacyName: pharmacyType === "external" ? externalName.trim() : undefined,
           items: cleanItems,
         }),
       });
@@ -259,7 +280,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   }
 
   return (
-    <ModalShell title="New Prescription" onClose={onClose}>
+    <ModalShell title="New Prescription" onClose={onClose} wide>
       <form
         className="mt-5 space-y-4"
         onSubmit={(e) => {
@@ -290,6 +311,47 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             <label className={labelCls} htmlFor="rx-dx">Diagnosis (optional)</label>
             <input id="rx-dx" name="diagnosis" className={inputCls} />
           </div>
+          <div className="sm:col-span-2">
+            <label className={labelCls}>Fulfilment</label>
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Pharmacy type">
+              <button
+                type="button"
+                onClick={() => setPharmacyType("in_house")}
+                aria-pressed={pharmacyType === "in_house"}
+                className={`focus-ring rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                  pharmacyType === "in_house"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
+                    : "border-[var(--color-border)] text-[var(--color-muted-fg)]"
+                }`}
+              >
+                In-house pharmacy
+              </button>
+              <button
+                type="button"
+                onClick={() => setPharmacyType("external")}
+                aria-pressed={pharmacyType === "external"}
+                className={`focus-ring rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-200 ${
+                  pharmacyType === "external"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary)]"
+                    : "border-[var(--color-border)] text-[var(--color-muted-fg)]"
+                }`}
+              >
+                External pharmacy
+              </button>
+            </div>
+          </div>
+          {pharmacyType === "external" && (
+            <div className="sm:col-span-2">
+              <label className={labelCls} htmlFor="rx-ext-name">External pharmacy name</label>
+              <input
+                id="rx-ext-name"
+                value={externalName}
+                onChange={(e) => setExternalName(e.target.value)}
+                placeholder="e.g. HealthPlus Pharmacy, Ikeja"
+                className={inputCls}
+              />
+            </div>
+          )}
         </div>
 
         <div>
@@ -297,9 +359,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             <span className="text-sm font-semibold text-[var(--color-foreground)]">Medications</span>
             <button
               type="button"
-              onClick={() =>
-                setItems([...items, { medicationName: "", dosage: "1", frequency: "1x daily", route: "oral", duration: "", quantity: 10, instructions: "" }])
-              }
+              onClick={() => setItems([...items, newItem()])}
               className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
             >
               + Add medication
@@ -307,92 +367,17 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
           </div>
           <div className="space-y-3">
             {items.map((item, idx) => (
-              <div key={idx} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
-                <div className="grid grid-cols-12 gap-2">
-                  <input
-                    value={item.medicationName}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], medicationName: e.target.value };
-                      setItems(next);
-                    }}
-                    placeholder="Medication name"
-                    required
-                    className={`${inputCls} col-span-12 sm:col-span-6`}
-                  />
-                  <input
-                    value={item.dosage}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], dosage: e.target.value };
-                      setItems(next);
-                    }}
-                    placeholder="Dosage"
-                    className={`${inputCls} col-span-6 sm:col-span-2`}
-                  />
-                  <input
-                    value={item.frequency}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], frequency: e.target.value };
-                      setItems(next);
-                    }}
-                    placeholder="Frequency"
-                    className={`${inputCls} col-span-6 sm:col-span-3`}
-                  />
-                  <input
-                    value={item.route}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], route: e.target.value };
-                      setItems(next);
-                    }}
-                    placeholder="Route"
-                    className={`${inputCls} col-span-4 sm:col-span-2`}
-                  />
-                  <input
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], quantity: Number(e.target.value) };
-                      setItems(next);
-                    }}
-                    placeholder="Qty"
-                    className={`${inputCls} col-span-4 sm:col-span-2`}
-                  />
-                  <input
-                    value={item.duration}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], duration: e.target.value };
-                      setItems(next);
-                    }}
-                    placeholder="Duration (e.g. 7 days)"
-                    className={`${inputCls} col-span-4 sm:col-span-2`}
-                  />
-                  <input
-                    value={item.instructions}
-                    onChange={(e) => {
-                      const next = [...items];
-                      next[idx] = { ...next[idx], instructions: e.target.value };
-                      setItems(next);
-                    }}
-                    placeholder="Instructions (optional)"
-                    className={`${inputCls} col-span-11 sm:col-span-10`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                    disabled={items.length === 1}
-                    className="focus-ring col-span-1 flex items-center justify-center rounded-lg text-[var(--color-muted-fg)] hover:text-red-500 disabled:opacity-30"
-                    aria-label="Remove medication"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
+              <CreateItemRow
+                key={idx}
+                item={item}
+                onChange={(next) => {
+                  const all = [...items];
+                  all[idx] = next;
+                  setItems(all);
+                }}
+                onRemove={() => setItems(items.filter((_, i) => i !== idx))}
+                canRemove={items.length > 1}
+              />
             ))}
           </div>
         </div>
@@ -420,33 +405,237 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   );
 }
 
-function RxDetailModal({
-  rx,
-  canDispense,
-  onClose,
-  onChanged,
-}: {
-  rx: Prescription;
-  canDispense: boolean;
-  onClose: () => void;
-  onChanged: () => void;
-}) {
+interface CreateItem {
+  medicationName: string;
+  pharmacyDrugId: string | null;
+  dosage: string;
+  frequency: string;
+  route: string;
+  duration: string;
+  quantity: number;
+  instructions: string;
+}
+
+function newItem(): CreateItem {
+  return { medicationName: "", pharmacyDrugId: null, dosage: "1", frequency: "1x daily", route: "oral", duration: "", quantity: 10, instructions: "" };
+}
+
+// Medication row with catalog search — type to search pharmacy_drugs; a match
+// locks the pharmacyDrugId so dispensing can target stock batches.
+function CreateItemRow({ item, onChange, onRemove, canRemove }: { item: CreateItem; onChange: (i: CreateItem) => void; onRemove: () => void; canRemove: boolean }) {
+  const [query, setQuery] = useState(item.medicationName);
+  const [results, setResults] = useState<DrugOption[]>([]);
+  const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const debouncedSearch = useCallback((q: string) => {
+    if (q.trim().length < 2) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
+    setSearching(true);
+    fetch(`/api/pharmacy/drugs?query=${encodeURIComponent(q.trim())}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((body) => setResults(body.data ?? []))
+      .catch(() => setResults([]))
+      .finally(() => setSearching(false));
+  }, []);
+
+  useEffect(() => {
+    if (item.pharmacyDrugId) return;
+    const t = setTimeout(() => debouncedSearch(query), 400);
+    return () => clearTimeout(t);
+  }, [query, item.pharmacyDrugId, debouncedSearch]);
+
+  const pick = (d: DrugOption) => {
+    onChange({ ...item, medicationName: d.name, pharmacyDrugId: d.id });
+    setQuery(d.name);
+    setResults([]);
+    setOpen(false);
+  };
+
+  const displayName = item.pharmacyDrugId
+    ? results.find((r) => r.id === item.pharmacyDrugId)?.name ?? query
+    : query;
+
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
+      <div className="grid grid-cols-12 gap-2">
+        <div className="relative col-span-12 sm:col-span-6">
+          <input
+            ref={inputRef}
+            value={item.pharmacyDrugId ? (results.find((r) => r.id === item.pharmacyDrugId)?.name ?? displayName) : query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (item.pharmacyDrugId) onChange({ ...item, pharmacyDrugId: null });
+            }}
+            onFocus={() => {
+              if (!item.pharmacyDrugId) setOpen(true);
+            }}
+            placeholder="Search medication (catalog)…"
+            required
+            className={inputCls}
+          />
+          {open && (searching || results.length > 0) && (
+            <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-[var(--color-border)] bg-white shadow-lg">
+              {searching && (
+                <li className="px-3 py-2 text-xs text-[var(--color-muted-fg)]">Searching…</li>
+              )}
+              {!searching &&
+                results.map((d) => (
+                  <li key={d.id}>
+                    <button
+                      type="button"
+                      onClick={() => pick(d)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--color-primary-soft)]"
+                    >
+                      <span className="block font-medium text-[var(--color-foreground)]">{d.name}</span>
+                      <span className="block text-xs text-[var(--color-muted-fg)]">
+                        {[d.dosage, d.category].filter(Boolean).join(" · ") || " "}
+                        {" · "}
+                        {!d.inStock ? (
+                          <span className="font-semibold text-red-500">out of stock</span>
+                        ) : (
+                          <span className="font-semibold text-emerald-600">in stock</span>
+                        )}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              {!searching && results.length === 0 && (
+                <li className="px-3 py-2 text-xs text-[var(--color-muted-fg)]">No catalog match — free text allowed</li>
+              )}
+            </ul>
+          )}
+        </div>
+        <input
+          value={item.dosage}
+          onChange={(e) => onChange({ ...item, dosage: e.target.value })}
+          placeholder="Dosage"
+          className={`${inputCls} col-span-6 sm:col-span-2`}
+        />
+        <input
+          value={item.frequency}
+          onChange={(e) => onChange({ ...item, frequency: e.target.value })}
+          placeholder="Frequency"
+          className={`${inputCls} col-span-6 sm:col-span-3`}
+        />
+        <input
+          value={item.route}
+          onChange={(e) => onChange({ ...item, route: e.target.value })}
+          placeholder="Route"
+          className={`${inputCls} col-span-4 sm:col-span-2`}
+        />
+        <input
+          type="number"
+          min={1}
+          value={item.quantity}
+          onChange={(e) => onChange({ ...item, quantity: Number(e.target.value) })}
+          placeholder="Qty"
+          className={`${inputCls} col-span-4 sm:col-span-2`}
+        />
+        <input
+          value={item.duration}
+          onChange={(e) => onChange({ ...item, duration: e.target.value })}
+          placeholder="Duration (e.g. 7 days)"
+          className={`${inputCls} col-span-4 sm:col-span-2`}
+        />
+        <input
+          value={item.instructions}
+          onChange={(e) => onChange({ ...item, instructions: e.target.value })}
+          placeholder="Instructions (optional)"
+          className={`${inputCls} col-span-11 sm:col-span-10`}
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={!canRemove}
+          className="focus-ring col-span-1 flex items-center justify-center rounded-lg text-[var(--color-muted-fg)] hover:text-red-500 disabled:opacity-30"
+          aria-label="Remove medication"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pharmacist workflow: view pending prescriptions, select stock batches for
+// each item, dispense (full or partial), cancel, print the prescription.
+// ---------------------------------------------------------------------------
+interface BatchOption {
+  id: string;
+  batchNumber: string;
+  expiryDate: string;
+  quantityOnHand: number;
+  location: string | null;
+}
+
+function RxDetailModal({ rx, canDispense, onClose, onChanged }: { rx: Prescription; canDispense: boolean; onClose: () => void; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dispensed, setDispensed] = useState<Record<string, number>>(
-    Object.fromEntries(rx.prescription_items.map((item) => [item.id, item.dispensed_qty]))
-  );
+  const [batches, setBatches] = useState<Record<string, BatchOption[]>>({});
+  const [batchSel, setBatchSel] = useState<Record<string, string>>({});
+  const [plan, setPlan] = useState<Record<string, number>>({});
+  const [printing, setPrinting] = useState(false);
+
+  const dispatchable = canDispense && !["cancelled", "dispensed", "completed"].includes(rx.status);
+
+  // Load stock batches per item that has a pharmacy catalog link
+  useEffect(() => {
+    const itemsWithDrug = rx.prescription_items.filter((i) => i.pharmacy_drug_id);
+    if (itemsWithDrug.length === 0) return;
+    (async () => {
+      const entries = await Promise.all(
+        itemsWithDrug.map(async (i) => {
+          try {
+            const res = await fetch(`/api/pharmacy/drugs/${i.pharmacy_drug_id}/batches`, { cache: "no-store" });
+            const body = await res.json();
+            return [i.id, body.data?.batches ?? []] as const;
+          } catch {
+            return [i.id, [] as BatchOption[]] as const;
+          }
+        })
+      );
+      const map = Object.fromEntries(entries);
+      setBatches(map);
+      // Pre-select the largest available batch per item
+      const sel: Record<string, string> = {};
+      for (const [itemId, list] of entries) {
+        if (list.length > 0) sel[itemId] = list[0].id;
+      }
+      setBatchSel(sel);
+    })();
+  }, [rx.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const remaining = (item: RxItem) => Math.max(0, item.quantity - item.dispensed_qty);
 
   async function saveDispense() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/prescriptions/${rx.id}`, {
-        method: "PUT",
+const itemsPayload = rx.prescription_items
+        .map((item) => {
+          const qty = Math.floor(Number(plan[item.id] ?? 0) || 0);
+          if (qty <= 0) return null;
+          const hasCatalog = Boolean(item.pharmacy_drug_id);
+          const isHouse = rx.pharmacy_type === "in_house";
+          const batchId = hasCatalog && isHouse ? (batchSel[item.id] ?? null) : null;
+          if (hasCatalog && isHouse && !batchId) {
+            throw new Error(`No stock batch for "${item.medication_name ?? "item"}"`);
+          }
+          return { itemId: item.id, batchId, dispensedQty: qty };
+        })
+        .filter(Boolean) as Array<{ itemId: string; batchId: string | null; dispensedQty: number }>;
+      if (itemsPayload.length === 0) throw new Error("Enter a dispensed quantity for at least one item");
+
+      const res = await fetch(`/api/prescriptions/${rx.id}/dispense`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dispenseItems: rx.prescription_items.map((item) => ({ id: item.id, dispensedQty: dispensed[item.id] ?? 0 })),
-        }),
+        body: JSON.stringify({ items: itemsPayload }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to save dispensing");
@@ -458,25 +647,45 @@ function RxDetailModal({
     }
   }
 
-  async function cancelRx() {
-    if (!confirm("Cancel this prescription?")) return;
+  async function setStatus(status: string) {
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/prescriptions/${rx.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled" }),
+        body: JSON.stringify({ status }),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to cancel prescription");
+      if (!res.ok) throw new Error(body.error ?? "Failed to update prescription");
       onChanged();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to cancel prescription");
+      setError(e instanceof Error ? e.message : "Failed to update prescription");
     } finally {
       setBusy(false);
     }
   }
+
+  async function cancelRx() {
+    if (!confirm("Cancel this prescription?")) return;
+    await setStatus("cancelled");
+  }
+
+  async function printRx() {
+    setPrinting(true);
+    try {
+      const res = await fetch(`/api/prescriptions/${rx.id}/pdf`, { method: "POST", cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to generate PDF");
+      window.open(body.url, "_blank");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to print prescription");
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  const external = rx.pharmacy_type === "external";
 
   return (
     <ModalShell title={`Prescription — ${rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : ""}`} onClose={onClose} wide>
@@ -488,22 +697,29 @@ function RxDetailModal({
           <span className="text-sm text-[var(--color-muted-fg)]">
             Issued {rx.issued_date} · by {rx.users?.full_name ?? "—"}
           </span>
-          {rx.status !== "cancelled" && rx.status !== "completed" && (
-            <button
-              type="button"
-              onClick={cancelRx}
-              disabled={busy}
-              className="focus-ring ml-auto rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-            >
-              Cancel prescription
-            </button>
-          )}
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+            {external ? "External" : "In-house"}
+          </span>
+          <button
+            type="button"
+            onClick={printRx}
+            disabled={printing}
+            className="focus-ring ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] disabled:opacity-60"
+          >
+            <Printer size={14} /> {printing ? "Preparing…" : "Print"}
+          </button>
         </div>
 
         {rx.diagnosis && (
           <p className="text-sm">
             <span className="font-semibold text-[var(--color-foreground)]">Diagnosis: </span>
             {rx.diagnosis}
+          </p>
+        )}
+        {external && rx.external_pharmacy_name && (
+          <p className="text-sm">
+            <span className="font-semibold text-[var(--color-foreground)]">External pharmacy: </span>
+            {rx.external_pharmacy_name}
           </p>
         )}
 
@@ -520,45 +736,87 @@ function RxDetailModal({
                 <th scope="col" className="px-4 py-2.5 font-semibold">Medication</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Dosage</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Frequency</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Duration</th>
-                <th scope="col" className="px-4 py-2.5 text-right font-semibold">Qty</th>
+                <th scope="col" className="px-4 py-2.5 font-semibold">Qty</th>
                 {canDispense && (
-                  <th scope="col" className="px-4 py-2.5 text-right font-semibold">Dispensed</th>
+                  <>
+                    <th scope="col" className="px-4 py-2.5 font-semibold">Dispensed</th>
+                    {!external && (
+                      <th scope="col" className="px-4 py-2.5 font-semibold">Stock batch</th>
+                    )}
+                    {!external && (
+                      <th scope="col" className="px-4 py-2.5 text-right font-semibold">To dispense</th>
+                    )}
+                  </>
                 )}
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
-              {rx.prescription_items.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-4 py-2.5">
-                    <p className="font-medium text-[var(--color-foreground)]">{item.medication_name ?? "—"}</p>
-                    {item.instructions && (
-                      <p className="text-xs text-[var(--color-muted-fg)]">{item.instructions}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.dosage}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.frequency}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
-                    {item.duration ?? "—"} · {item.route ?? "oral"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-semibold">{item.quantity}</td>
-                  {canDispense && (
-                    <td className="px-4 py-2.5 text-right">
-                      <input
-                        type="number"
-                        min={0}
-                        max={item.quantity}
-                        value={dispensed[item.id] ?? 0}
-                        onChange={(e) => setDispensed({ ...dispensed, [item.id]: Number(e.target.value) })}
-                        className={`${inputCls} w-20 text-right`}
-                      />
+              {rx.prescription_items.map((item) => {
+                const rem = remaining(item);
+                const list = batches[item.id] ?? [];
+                return (
+                  <tr key={item.id}>
+                    <td className="px-4 py-2.5">
+                      <p className="font-medium text-[var(--color-foreground)]">{item.medication_name ?? "—"}</p>
+                      {item.instructions && (
+                        <p className="text-xs text-[var(--color-muted-fg)]">{item.instructions}</p>
+                      )}
                     </td>
-                  )}
-                </tr>
-              ))}
+                    <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.dosage}</td>
+                    <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.frequency}</td>
+                    <td className="px-4 py-2.5 font-semibold">{item.quantity}</td>
+                    {canDispense && (
+                      <>
+                        <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
+                          {item.dispensed_qty}/{item.quantity}
+                        </td>
+                        {!external && (
+                          <td className="px-4 py-2.5">
+                            {item.pharmacy_drug_id ? (
+                              <select
+                                value={batchSel[item.id] ?? ""}
+                                onChange={(e) => setBatchSel({ ...batchSel, [item.id]: e.target.value })}
+                                className={`${inputCls} w-48`}
+                              >
+                                {list.length === 0 && <option value="">No stock</option>}
+                                {list.map((b) => (
+                                  <option key={b.id} value={b.id}>
+                                    {b.batchNumber} · {b.quantityOnHand} left{b.location ? ` · ${b.location}` : ""}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-xs text-[var(--color-muted-fg)]">uncatalogued</span>
+                            )}
+                          </td>
+                        )}
+                        {!external && (
+                          <td className="px-4 py-2.5 text-right">
+                            <input
+                              type="number"
+                              min={0}
+                              max={rem}
+                              value={plan[item.id] ?? ""}
+                              onChange={(e) => setPlan({ ...plan, [item.id]: Number(e.target.value) })}
+                              placeholder={String(rem)}
+                              className={`${inputCls} w-20 text-right`}
+                            />
+                          </td>
+                        )}
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+
+        {external && canDispense && (
+          <p className="text-xs text-[var(--color-muted-fg)]">
+            External prescription — record dispensing without stock deduction. Enter quantities below and save.
+          </p>
+        )}
 
         {rx.notes && (
           <p className="text-sm text-[var(--color-muted-fg)]">
@@ -567,15 +825,47 @@ function RxDetailModal({
           </p>
         )}
 
-        {canDispense && rx.status !== "cancelled" && rx.status !== "completed" && (
-          <button
-            type="button"
-            onClick={saveDispense}
-            disabled={busy}
-            className="focus-ring w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-          >
-            {busy ? "Saving…" : "Save dispensing & update status"}
-          </button>
+        {canDispense && rx.status !== "cancelled" && rx.status !== "dispensed" && rx.status !== "completed" && (
+          <div className="space-y-2">
+            {rx.status === "pending" && (
+              <button
+                type="button"
+                onClick={() => setStatus("processing")}
+                disabled={busy}
+                className="focus-ring w-full rounded-lg border border-[var(--color-primary)] py-2.5 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] disabled:opacity-60"
+              >
+                Start processing
+              </button>
+            )}
+            {!external && (
+              <button
+                type="button"
+                onClick={saveDispense}
+                disabled={busy}
+                className="focus-ring w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {busy ? "Dispensing…" : "Dispense selected quantities"}
+              </button>
+            )}
+            {external && (
+              <button
+                type="button"
+                onClick={saveDispense}
+                disabled={busy}
+                className="focus-ring w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {busy ? "Recording…" : "Record dispensing"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={cancelRx}
+              disabled={busy}
+              className="focus-ring w-full rounded-lg border border-red-200 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+            >
+              Cancel prescription
+            </button>
+          </div>
         )}
       </div>
     </ModalShell>

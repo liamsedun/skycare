@@ -1,0 +1,5552 @@
+[
+  {
+    "name": "Amoxil 500mg Capsules x21",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxil 500mg Capsules x14",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxil 250mg/5ml Suspension 100ml",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "250mg/5ml",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxil 125mg/5ml Suspension 100ml",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "125mg/5ml",
+    "price_ngn": 1800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxicillin 500mg Capsules x10",
+    "generic_name": "Amoxicillin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 1150,
+    "requires_prescription": true
+  },
+  {
+    "name": "Clamoxyl 500mg Capsules x14",
+    "generic_name": "Amoxicillin",
+    "brand": "Clamoxyl",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Noclox 500mg Capsules x20",
+    "generic_name": "Cloxacillin",
+    "brand": "Noclox",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Noclox 125mg/5ml Syrup 100ml",
+    "generic_name": "Cloxacillin",
+    "brand": "Noclox",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "125mg/5ml",
+    "price_ngn": 1850,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cloxapen 500mg Capsules x20",
+    "generic_name": "Cloxacillin",
+    "brand": "Cloxapen",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ampiclox 500mg Capsules x20",
+    "generic_name": "Ampicillin/Cloxacillin",
+    "brand": "Ampiclox",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ampiclox 250mg/5ml Syrup 100ml",
+    "generic_name": "Ampicillin/Cloxacillin",
+    "brand": "Ampiclox",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "250mg/5ml",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ampicillin 500mg Capsules x20",
+    "generic_name": "Ampicillin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 1850,
+    "requires_prescription": true
+  },
+  {
+    "name": "Penbritin 500mg Capsules x20",
+    "generic_name": "Ampicillin",
+    "brand": "Penbritin",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 625mg Tablets x14",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 15890,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 1g Tablets x14",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "1g",
+    "price_ngn": 18250,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 228mg/5ml Suspension 70ml",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "228mg/5ml",
+    "price_ngn": 10340,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 457mg/5ml Suspension 70ml",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "457mg/5ml",
+    "price_ngn": 16610,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoksiklav 625mg Tablets x14",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Amoksiklav",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 8500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentane 625mg Tablets x14",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentane",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 7200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Clavamox 625mg Tablets x14",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Clavamox",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 7900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Amoxiclav 625mg Tablets x10",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 6200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amekem 1g Injection Vial",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Amekem",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "1g",
+    "price_ngn": 2200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ceporex 500mg Capsules x10",
+    "generic_name": "Cefalexin",
+    "brand": "Ceporex",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 4600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ceporex 250mg/5ml Suspension 100ml",
+    "generic_name": "Cefalexin",
+    "brand": "Ceporex",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "250mg/5ml",
+    "price_ngn": 3800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ceporex 125mg/5ml Suspension 100ml",
+    "generic_name": "Cefalexin",
+    "brand": "Ceporex",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "125mg/5ml",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cefalexin 500mg Capsules x12",
+    "generic_name": "Cefalexin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ceporex 500mg (Baby) Capsules",
+    "generic_name": "Cefalexin",
+    "brand": "Ceporex",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 3600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zinnat 250mg Tablets x14",
+    "generic_name": "Cefuroxime",
+    "brand": "Zinnat",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 12500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zinnat 500mg Tablets x14",
+    "generic_name": "Cefuroxime",
+    "brand": "Zinnat",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 15700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zinacef 750mg Injection",
+    "generic_name": "Cefuroxime",
+    "brand": "Zinacef",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "750mg",
+    "price_ngn": 4800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cefuroxime 250mg Tablets x10",
+    "generic_name": "Cefuroxime",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 7700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ceftriaxone 1g Injection",
+    "generic_name": "Ceftriaxone",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "1g",
+    "price_ngn": 1600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Rocilin 1250kg Injection",
+    "generic_name": "Ceftriaxone",
+    "brand": "Rocilin",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "1g",
+    "price_ngn": 2500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lendacin 250mg Injection",
+    "generic_name": "Lendacin",
+    "brand": "Ceftriaxone",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "500mg",
+    "price_ngn": 3100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cephexime 200mg Tablets x12",
+    "generic_name": "Cefixime",
+    "brand": "Cephexime",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 9800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cefixime 100mg/5ml Suspension 30ml",
+    "generic_name": "Cefixime",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "100mg/5ml",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Suprax 400mg Tablets x8",
+    "generic_name": "Cefixime",
+    "brand": "Suprax",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 16500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cefipime 1250mg Injection",
+    "generic_name": "Cefipime",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "1g",
+    "price_ngn": 6200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cepolet 500mg Tablets x14",
+    "generic_name": "Cefotaxime",
+    "brand": "Cepolet",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 5400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cefotax 250mg Injection",
+    "generic_name": "Cefotaxime",
+    "brand": "Cefotax",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "1g",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zithromax 2500mg Tablets x3",
+    "generic_name": "Azithromycin",
+    "brand": "Zithromax",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 6800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zithromax 200mg/5ml Suspension 15ml",
+    "generic_name": "Azithromycin",
+    "brand": "Zithromax",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "200mg/5ml",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Azithromycin 500mg Tablets x3",
+    "generic_name": "Azithromycin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Azithromycin 200mg/5ml Suspension 15ml",
+    "generic_name": "Azithromycin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "200mg/5ml",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Clarithromycin 500mg Tablets x14",
+    "generic_name": "Clarithromycin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 9800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Klaricid 500mg Tablets x14",
+    "generic_name": "Clarithromycin",
+    "brand": "Klaricid",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 16400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Klaricid 125mg/5ml Suspension 60ml",
+    "generic_name": "Clarithromycin",
+    "brand": "Klaricid",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "125mg/5ml",
+    "price_ngn": 9600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Erythromycin 500mg Tablets x16",
+    "generic_name": "Erythromycin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Erymax 500mg Capsules x16",
+    "generic_name": "Erythromycin",
+    "brand": "Erymax",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 3600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Erythromycin 200mg/5ml Syrup 30ml",
+    "generic_name": "Erythromycin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "200mg/5ml",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprotab 500mg Tablets x14",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprotab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 7420,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprotab 500mg Tablets x10",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprotab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 5620,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprotab 250mg Tablets x10",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprotab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciproxin 500mg Tablets x10",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciproxin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 7800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofloxacin 500mg Tablets x10",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 3800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofloxacin 250mg/5ml Suspension 100ml",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "250mg/5ml",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofarm 500mg Tablets x14",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprofarm",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 6200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tarivid 200mg Tablets x14",
+    "generic_name": "Ofloxacin",
+    "brand": "Tarivid",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 14170,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tarivid 400mg Tablets x14",
+    "generic_name": "Ofloxacin",
+    "brand": "Tarivid",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 19900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zanacin 400mg Tablets x10",
+    "generic_name": "Ofloxacin",
+    "brand": "Zanacin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 6800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ofloxacin 400mg Tablets x10",
+    "generic_name": "Ofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Levoquin 500mg Tablets x10",
+    "generic_name": "Levofloxacin",
+    "brand": "Levoquin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 11900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Levofloxacin 500mg Tablets x10",
+    "generic_name": "Levofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 7700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tavanic 500mg Tablets x10",
+    "generic_name": "Levofloxacin",
+    "brand": "Tavanic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 15400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Noroxin 400mg Tablets x10",
+    "generic_name": "Norfloxacin",
+    "brand": "Noroxin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Norfloxacin 400mg Tablets x10",
+    "generic_name": "Norfloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Vibramycin 100mg Capsules x10",
+    "generic_name": "Doxycycline",
+    "brand": "Vibramycin",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "100mg",
+    "price_ngn": 4900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Doxycycline 100mg Capsules x10",
+    "generic_name": "Doxycycline",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "100mg",
+    "price_ngn": 1650,
+    "requires_prescription": true
+  },
+  {
+    "name": "Doxytab 100mg Tablets x10",
+    "generic_name": "Oraxyl",
+    "brand": "Doxytab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tetracycline 250mg Capsules x20",
+    "generic_name": "Tetracycline",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "250mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tetrayclax 250mg Capsules x20",
+    "generic_name": "Tetracycline",
+    "brand": "Tetrayclax",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "250mg",
+    "price_ngn": 2700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Methenamine 500mg Capsules x20",
+    "generic_name": "Methenamine",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Bactrim 400mg Tablets x20",
+    "generic_name": "Co-Trimoxazole",
+    "brand": "Bactrim",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "80/400mg",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Trimoxazole 80/400mg Tablets x20",
+    "generic_name": "Co-Trimoxazole",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "80/400mg",
+    "price_ngn": 1100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Septrin 240mg/5ml Suspension 100ml",
+    "generic_name": "Co-Trimoxazole",
+    "brand": "Septrin",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "240mg/5ml",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flagyl 400mg Tablets x12",
+    "generic_name": "Metronidazole",
+    "brand": "Flagyl",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flagyl 500mg Tablets x14",
+    "generic_name": "Metronidazole",
+    "brand": "Flagyl",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metronidazole 120mg/5ml Suspension 100ml",
+    "generic_name": "Metronidazole",
+    "brand": "Flagyl",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "120mg/5ml",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flagyl 750mg Suppositories x10",
+    "generic_name": "Metronidazole",
+    "brand": "Flagyl",
+    "category": "Antibiotics",
+    "form": "suppository",
+    "dosage": "750mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metronidazole 400mg Tablets x12",
+    "generic_name": "Metronidazole",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 950,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lobolol Suspension 100ml",
+    "generic_name": "Metronidazole",
+    "brand": "Lobolol",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "200mg/5ml",
+    "price_ngn": 1850,
+    "requires_prescription": true
+  },
+  {
+    "name": "Omnicef 300mg Capsules",
+    "generic_name": "Cefdinir",
+    "brand": "Omnicef",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "300mg",
+    "price_ngn": 19500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 312mg/5ml Suspension 40ml",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "suspension",
+    "dosage": "312mg/5ml",
+    "price_ngn": 8200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Azactam 500mg Injection",
+    "generic_name": "Aztreonam",
+    "brand": "Azactam",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "500mg",
+    "price_ngn": 8400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flagenel 400mg Tablets x12",
+    "generic_name": "Metronidazole",
+    "brand": "Flagenel",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 1400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Doxycin 500mg Injection",
+    "generic_name": "Doxycycline",
+    "brand": "Doxycin",
+    "category": "Antibiotics",
+    "form": "injection",
+    "dosage": "500mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofloxacin 2mg/ml Infusion 100ml",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "infusion",
+    "dosage": "2mg/ml",
+    "price_ngn": 3800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cotrimoxazole 125mg/5ml Syrup",
+    "generic_name": "Co-Trimoxazole",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "syrup",
+    "dosage": "125mg/5ml",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diflucan 150mg Tablets x1",
+    "generic_name": "Fluconazole",
+    "brand": "Diflucan",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Fluconazole 150mg Capsules x1",
+    "generic_name": "Fluconazole",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "150mg",
+    "price_ngn": 1100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flucamed 150mg Capsules x6",
+    "generic_name": "Fluconazole",
+    "brand": "Flucamed",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "150mg",
+    "price_ngn": 6700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flucamed 200mg Capsules x10",
+    "generic_name": "Fluconazole",
+    "brand": "Flucamed",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "200mg",
+    "price_ngn": 7900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Nizoral 200mg Tablets x30",
+    "generic_name": "Ketoconazole",
+    "brand": "Nizoral",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 12900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ketoconazole 200mg Tablets x30",
+    "generic_name": "Ketoconazole",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 3900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Nizoral 2% Cream 30g",
+    "generic_name": "Ketoconazole",
+    "brand": "Nizoral",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "2%",
+    "price_ngn": 3800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Nizoral 2% Shampoo 100ml",
+    "generic_name": "Ketoconazole",
+    "brand": "Nizoral",
+    "category": "Antibiotics",
+    "form": "shampoo",
+    "dosage": "2%",
+    "price_ngn": 11500,
+    "requires_prescription": false
+  },
+  {
+    "name": "Daktarin 2% Cream 30g",
+    "generic_name": "Miconazole",
+    "brand": "Daktarin",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "2%",
+    "price_ngn": 3200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Daktarin Oral Gel 20g",
+    "generic_name": "Miconazole",
+    "brand": "Daktarin",
+    "category": "Antibiotics",
+    "form": "gel",
+    "dosage": "2%",
+    "price_ngn": 2600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Magra 2% Cream 30g",
+    "generic_name": "Miconazole",
+    "brand": "Magra",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "2%",
+    "price_ngn": 1800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Fulcin 125mg Tablets x16",
+    "generic_name": "Griseofulvin",
+    "brand": "Fulcin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "125mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Griseofulvin 500mg Tablets x16",
+    "generic_name": "Griseofulvin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Grisovin 500mg Tablets x16",
+    "generic_name": "Griseofulvin",
+    "brand": "Grisovin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 4800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zovirax 200mg Tablets x25",
+    "generic_name": "Aciclovir",
+    "brand": "Zovirax",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 5600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zovirax 5% Cream 10g",
+    "generic_name": "Aciclovir",
+    "brand": "Zovirax",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "5%",
+    "price_ngn": 3400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Aciclovir 200mg Tablets x20",
+    "generic_name": "Aciclovir",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 1950,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aciclovir 800mg Tablets x10",
+    "generic_name": "Aciclovir",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "800mg",
+    "price_ngn": 7500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Clotrimazole 100mg Pessaries x6",
+    "generic_name": "Clotrimazole",
+    "brand": "Clotrimazole",
+    "category": "Antibiotics",
+    "form": "pessary",
+    "dosage": "100mg",
+    "price_ngn": 1700,
+    "requires_prescription": false
+  },
+  {
+    "name": "Clotrimazole 500mg Pessaries x1",
+    "generic_name": "Clotrimazole",
+    "brand": "Canesten",
+    "category": "Antibiotics",
+    "form": "pessary",
+    "dosage": "500mg",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Canesten 10% Vaginal Cream 78g",
+    "generic_name": "Clotrimazole",
+    "brand": "Canesten",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "10%",
+    "price_ngn": 5400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Outrex 1% Ointment 15g",
+    "generic_name": "Clatrimazole",
+    "brand": "Except",
+    "category": "Antibiotics",
+    "form": "ointment",
+    "dosage": "1%",
+    "price_ngn": 850,
+    "requires_prescription": false
+  },
+  {
+    "name": "Unting 250mg Tablets x14",
+    "generic_name": "Terbinafine",
+    "brand": "Lamisil",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 16500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lamisil 1% Cream 15g",
+    "generic_name": "Terbinafine",
+    "brand": "Lamisil",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "1%",
+    "price_ngn": 5200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Clomic Clotrimazole 1% Cream 20g",
+    "generic_name": "Clotrimazole",
+    "brand": "Clomic",
+    "category": "Antibiotics",
+    "form": "cream",
+    "dosage": "1%",
+    "price_ngn": 950,
+    "requires_prescription": false
+  },
+  {
+    "name": "Bacitracin 500IU Ointment 15g",
+    "generic_name": "Bacitracin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "ointment",
+    "dosage": "500IU/g",
+    "price_ngn": 1150,
+    "requires_prescription": false
+  },
+  {
+    "name": "Bacuro 2% Ointment 15g",
+    "generic_name": "Mupirocin",
+    "brand": "Bactroban",
+    "category": "Antibiotics",
+    "form": "ointment",
+    "dosage": "2%",
+    "price_ngn": 5900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Furadin 100mg Tablets x28",
+    "generic_name": "Nitrofurantoin",
+    "brand": "Furadin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 6500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coartem 20/120mg Tablets x8",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Coartem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 5000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coartem 20/120mg Tablets x24",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Coartem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 13200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coartem 80/480mg Tablets x6",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Coartem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "80/480mg",
+    "price_ngn": 8200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lonart 20/120mg Tablets x8",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Lonart",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amatem 80/480mg Softgel Capsules x10",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Amatem",
+    "category": "Antimalarials",
+    "form": "softgel",
+    "dosage": "80/480mg",
+    "price_ngn": 3470,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amatem 20/120mg Tablets x8",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Amatem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amatem 60/480mg Tablets x6",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Amatem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "60/480mg",
+    "price_ngn": 4900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Artemether/Lumefantrine 20/120mg Tablets x8",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "IPCA Artemether-Lume Tablets x8",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "IPCA",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 4500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Artesiam 100mg Tablets x6",
+    "generic_name": "Artesunate",
+    "brand": "Artesiam",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 3900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Artesunate 1200mg Injection",
+    "generic_name": "Artesunate",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "injection",
+    "dosage": "120mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Artesunate 100mg Tablets x6",
+    "generic_name": "Artesunate",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Malinta 20/120mg Table x8",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Malinta",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 5800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Malacinia 400mg/15ml Inj",
+    "generic_name": "Artesunate/Mefloquine",
+    "brand": "Malacinia",
+    "category": "Antimalarials",
+    "form": "injection",
+    "dosage": "400mg",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Dihydroartemisinin 100mg Tablets x10",
+    "generic_name": "Dihydroartemisinin/Piperaquine",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 8500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Leister 100mg Tablets x10",
+    "generic_name": "Dihydroartemisinin/Piperaquine",
+    "brand": "Leister",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 15900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diastatin 100mg Tablets x10",
+    "generic_name": "Dihydroartemisinin",
+    "brand": "Diastatin",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 7200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Fansidar Tablets (25mg/500mg) x10",
+    "generic_name": "Sulfadoxine/Pyrimethamine",
+    "brand": "Fansidar",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "25/500mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Pyrimethamine 100mg Tablets x6",
+    "generic_name": "Pyrimethamine",
+    "brand": "Pyrimethamine",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 1200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Quinine Sulfate 300mg Tablets x10",
+    "generic_name": "Quinine",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "300mg",
+    "price_ngn": 1450,
+    "requires_prescription": true
+  },
+  {
+    "name": "Quinine Bi-Sulfate 300mg Tablets x12",
+    "generic_name": "Quinine",
+    "brand": "Quinine",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "300mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Palarime 300mg Tablets x12",
+    "generic_name": "Pyrimethamine/Quinine",
+    "brand": "Palarime",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "300mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Qualaquin 300mg Capsules x28",
+    "generic_name": "Quinine",
+    "brand": "Qualaquin",
+    "category": "Antimalarials",
+    "form": "capsule",
+    "dosage": "300mg",
+    "price_ngn": 15400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Chloroquine 250mg Tablets x20",
+    "generic_name": "Chloroquine",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 2100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Chloroquine 100mg/5ml Syrup 100ml",
+    "generic_name": "Chloroquine",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "syrup",
+    "dosage": "100mg/5ml",
+    "price_ngn": 1750,
+    "requires_prescription": false
+  },
+  {
+    "name": "Nivaquine 200mg Tablets x16",
+    "generic_name": "Chloroquine",
+    "brand": "Nivaquine",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 3200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Malarex 500mg Tablets x10",
+    "generic_name": "Chloroquine Phosphate",
+    "brand": "Malarex",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2300,
+    "requires_prescription": false
+  },
+  {
+    "name": "Daraprim 25mg Tablets x10",
+    "generic_name": "Audriprim (Pyrimethamine)",
+    "brand": "Daraprim",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "25mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Mekloquine 200mg Tablets x8",
+    "generic_name": "Mefloquine",
+    "brand": "Mekloquine",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 12900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Proguanil 100mg Tablets x20",
+    "generic_name": "Proguanil",
+    "brand": "Paludrine",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 3100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Doxycycline 100mg Capsules x10 (malaria)",
+    "generic_name": "Doxycycline",
+    "brand": "Generic",
+    "category": "Antimalarials",
+    "form": "capsule",
+    "dosage": "100mg",
+    "price_ngn": 1650,
+    "requires_prescription": true
+  },
+  {
+    "name": "Arzot 100mg Tablets x6",
+    "generic_name": "Artesunate",
+    "brand": "Arzot",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Paracetamol 500mg Tablets x16",
+    "generic_name": "Paracetamol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 650,
+    "requires_prescription": false
+  },
+  {
+    "name": "Emzor Paracetamol 500mg Tablets x32",
+    "generic_name": "Paracetamol",
+    "brand": "Emzor",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1700,
+    "requires_prescription": false
+  },
+  {
+    "name": "Emzor Paracetamol Suspension 100ml",
+    "generic_name": "Paracetamol",
+    "brand": "Emzor",
+    "category": "Analgesics",
+    "form": "syrup",
+    "dosage": "120mg/5ml",
+    "price_ngn": 1850,
+    "requires_prescription": false
+  },
+  {
+    "name": "Panadol Extra 500mg/65mg Tablets x16",
+    "generic_name": "Paracetamol/Caffeine",
+    "brand": "Panadol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg/65mg",
+    "price_ngn": 2600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Panadol 125mg Suppositories",
+    "generic_name": "Panadol",
+    "brand": "Panadol (GSK)",
+    "category": "Analgesics",
+    "form": "suppository",
+    "dosage": "125mg",
+    "price_ngn": 3100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Paracetamol B.P. 500mg x100",
+    "generic_name": "Paracetamol",
+    "brand": "BP",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1350,
+    "requires_prescription": false
+  },
+  {
+    "name": "Paracetamol 250mg/5ml Suspension 100ml",
+    "generic_name": "Paracetamol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "syrup",
+    "dosage": "250mg/5ml",
+    "price_ngn": 1750,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calpol 120mg/5ml Suspension 100ml",
+    "generic_name": "Paracetamol",
+    "brand": "Calpol",
+    "category": "Analgesics",
+    "form": "syrup",
+    "dosage": "120mg/5ml",
+    "price_ngn": 2300,
+    "requires_prescription": false
+  },
+  {
+    "name": "Intramand 300mg Injection",
+    "generic_name": "Paracetamol",
+    "brand": "Intramand",
+    "category": "Analgesics",
+    "form": "injection",
+    "dosage": "1g/100ml",
+    "price_ngn": 6800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Brufen 400mg Tablets x16",
+    "generic_name": "Ibuprofen",
+    "brand": "Brufen",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 3400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibuprofen 400mg Tablets x16",
+    "generic_name": "Ibuprofen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 950,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibuprofen 200mg Tablets x8",
+    "generic_name": "Ibuprofen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 830,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibuprofen 100mg/5ml Syrup 60ml",
+    "generic_name": "Ibuprofen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "syrup",
+    "dosage": "100mg/5ml",
+    "price_ngn": 1800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibucap 100mg/5ml Suspension 45ml",
+    "generic_name": "Ibuprofen",
+    "brand": "Ibucap",
+    "category": "Analgesics",
+    "form": "suspension",
+    "dosage": "100mg/5ml",
+    "price_ngn": 2450,
+    "requires_prescription": false
+  },
+  {
+    "name": "Nurofen 200mg Caplets 12",
+    "generic_name": "Ibuprofen",
+    "brand": "Nurofen",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 4200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Fenbid 200mg Tablets x8",
+    "generic_name": "Ibuprofen",
+    "brand": "Fenbid",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 2600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Diclofenac 50mg Tablets x20",
+    "generic_name": "Diclofenac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 1450,
+    "requires_prescription": true
+  },
+  {
+    "name": "Voltaren 50mg Tablets x20",
+    "generic_name": "Diclofenac",
+    "brand": "Voltaren",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 3450,
+    "requires_prescription": true
+  },
+  {
+    "name": "Voltarol 75mg Tablets x20",
+    "generic_name": "Diclofenac",
+    "brand": "Voltarol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "75mg",
+    "price_ngn": 4000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diclofenac 75mg Injection",
+    "generic_name": "Diclofenac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "injection",
+    "dosage": "75mg",
+    "price_ngn": 1600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Arthrotec 75mg Tablets x20",
+    "generic_name": "Diclofenac/Misoprostol",
+    "brand": "Arthrotec",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "75mg",
+    "price_ngn": 8420,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aclonal 50mg Tablets x15",
+    "generic_name": "Aclafenac",
+    "brand": "Aclonal",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 720,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aceclofenac 100mg Tablets x10",
+    "generic_name": "Aceclofenac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 1650,
+    "requires_prescription": true
+  },
+  {
+    "name": "Naproxen 250mg Tablets x16",
+    "generic_name": "Naproxen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 2650,
+    "requires_prescription": true
+  },
+  {
+    "name": "Apranax 250mg Tablets x20",
+    "generic_name": "Naproxen",
+    "brand": "Apranax",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Naproxen 500mg Tablets x20",
+    "generic_name": "Naproxen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 4100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ponstan Forte 500mg Tablets x12",
+    "generic_name": "Mefenamic Acid",
+    "brand": "Ponstan",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 5000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Mefenamic Acid 500mg Tablets x12",
+    "generic_name": "Mefenamic Acid",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Mefenamic Acid 125mg/5ml Syrup 100ml",
+    "generic_name": "Mefenamic Acid",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "syrup",
+    "dosage": "125mg/5ml",
+    "price_ngn": 2400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Novagin 500mg Tablets x10",
+    "generic_name": "Dextropropoxyphene/Paracetamol",
+    "brand": "Novagin",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "65/650mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aspirin 300mg Tablets x24",
+    "generic_name": "Aspirin",
+    "brand": "Aspirin",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "300mg",
+    "price_ngn": 2200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Aspirin EC 100mg Tablets x28",
+    "generic_name": "Aspirin",
+    "brand": "Cardiprin",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 2150,
+    "requires_prescription": false
+  },
+  {
+    "name": "Co-Codamol 500mg Tablets x20",
+    "generic_name": "Paracetamol/Codeine",
+    "brand": "Co-Codamol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500/30mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diclofenac Gel 1% 50g",
+    "generic_name": "Diclofenac",
+    "brand": "Voltaren",
+    "category": "Analgesics",
+    "form": "gel",
+    "dosage": "1%",
+    "price_ngn": 3100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Voltaren Emulgel 50g",
+    "generic_name": "Diclofenac",
+    "brand": "Voltaren",
+    "category": "Analgesics",
+    "form": "gel",
+    "dosage": "1%",
+    "price_ngn": 5200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Aedea 25mg Tablets x10",
+    "generic_name": "Aedesin Apeicenal",
+    "brand": "Ainto",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "25mg",
+    "price_ngn": 1100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Tomin 50mg Injection",
+    "generic_name": "Tetracaine Hydrochloride",
+    "brand": "Tomin",
+    "category": "Analgesics",
+    "form": "injection",
+    "dosage": "50mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zippy 25mg Tablets x20 (Diclofenac)",
+    "generic_name": "Diclofenac",
+    "brand": "Zippy",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "25mg",
+    "price_ngn": 1800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ketorolac 30mg Tablets",
+    "generic_name": "Ketorolac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "30mg",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Toradol 30mg Injection",
+    "generic_name": "Ketorolac",
+    "brand": "Toradol",
+    "category": "Analgesics",
+    "form": "injection",
+    "dosage": "30mg",
+    "price_ngn": 6900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Parajil 10mg Tablets",
+    "generic_name": "Paraclodine",
+    "brand": "Parajil",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Tramadol 50mg Capsules x20",
+    "generic_name": "Tramadol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "capsule",
+    "dosage": "50mg",
+    "price_ngn": 2450,
+    "requires_prescription": true
+  },
+  {
+    "name": "Capadex 50mg Capsules x10",
+    "generic_name": "Tramadol",
+    "brand": "Capadex",
+    "category": "Analgesics",
+    "form": "capsule",
+    "dosage": "50mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zyotol 50mg Tablets x20",
+    "generic_name": "Tramadol",
+    "brand": "Zyotol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 3100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Painux 755mg Injection",
+    "generic_name": "Metamizole",
+    "brand": "Panalgix",
+    "category": "Analgesics",
+    "form": "injection",
+    "dosage": "1g",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metazol 500mg Tablets",
+    "generic_name": "Metamizol",
+    "brand": "Metamizol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 5mg Tablets x30",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 1500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 10mg Tablets x30",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ampotenz 5mg Tablets x30",
+    "generic_name": "Amlodipine",
+    "brand": "Ampotenz",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Norvasc 5mg Tablets x28",
+    "generic_name": "Amlodipine",
+    "brand": "Norvasc",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 6100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Norvasc 10mg Tablets x28",
+    "generic_name": "Amlodipine",
+    "brand": "Norvasc",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 7400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlocard 10mg Tablets x30",
+    "generic_name": "Amlodipine",
+    "brand": "Amlocard",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 4300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losartan 50mg Tablets x30",
+    "generic_name": "Losartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 2300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cozaar 50mg Tablets x28",
+    "generic_name": "Losartan",
+    "brand": "Cozaar (MSD)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 7200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Arbitel 50mg Tablets x28",
+    "generic_name": "Losartan",
+    "brand": "Arbitel",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 5100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aprovel 50mg Tablets x28",
+    "generic_name": "Irbesartan",
+    "brand": "Aprovel (Sanofi)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 13100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aprovel 300mg Tablets x28",
+    "generic_name": "Irbesartan",
+    "brand": "Aprovel",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "300mg",
+    "price_ngn": 18900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Irbesartan 150mg Tablets x28",
+    "generic_name": "Irbesartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 6800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Valsartan 80mg Tablets x28",
+    "generic_name": "Valsartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diovan 80mg Tablets x28",
+    "generic_name": "Valsartan",
+    "brand": "Diovan (Novartis)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 22000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diovan 160mg Tablets x28",
+    "generic_name": "Valsartan",
+    "brand": "Diovan",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "160mg",
+    "price_ngn": 31000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Diovan 160/12.5mg Tablets x28",
+    "generic_name": "Valsartan/HCTZ",
+    "brand": "Co-Diovan",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "160/12.5mg",
+    "price_ngn": 41670,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Diovan 80/12.5mg Tablets x28",
+    "generic_name": "Valsartan/HCTZ",
+    "brand": "Co-Diovan",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80/12.5mg",
+    "price_ngn": 36670,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Diovan 160/25mg Tablets x28",
+    "generic_name": "Valsartan/HCTZ",
+    "brand": "Co-Diovan",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "160/25mg",
+    "price_ngn": 35570,
+    "requires_prescription": true
+  },
+  {
+    "name": "Telmisartan 40mg Tablets x14",
+    "generic_name": "Telmisartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Micardis 40mg Tablets x28",
+    "generic_name": "Telmisartan",
+    "brand": "Micardis",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 12800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Telmisartan 80mg Tablets x28",
+    "generic_name": "Telmisartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 6100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Atacand 8mg Tablets x28",
+    "generic_name": "Candesartan",
+    "brand": "Atacand (AstraZeneca)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "8mg",
+    "price_ngn": 21030,
+    "requires_prescription": true
+  },
+  {
+    "name": "Atacand 16mg Tablets x28",
+    "generic_name": "Candesartan",
+    "brand": "Atacand",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "16mg",
+    "price_ngn": 50420,
+    "requires_prescription": true
+  },
+  {
+    "name": "Atacand Plus 16/12.5mg Tablets x28",
+    "generic_name": "Candesartan/HCTZ",
+    "brand": "Atacand Plus",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "16/12.5mg",
+    "price_ngn": 37480,
+    "requires_prescription": true
+  },
+  {
+    "name": "Kancartan 8mg Tablets x28",
+    "generic_name": "Candesartan",
+    "brand": "Kancartan",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "8mg",
+    "price_ngn": 8200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Enalapril 5mg Tablets x20",
+    "generic_name": "Enalapril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 1200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Enalapril 20mg Tablets x20",
+    "generic_name": "Enalapril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 2200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Renitec 10mg Tablets x28",
+    "generic_name": "Enalapril",
+    "brand": "Renitec (MSD)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Renitec 20mg Tablets x28",
+    "generic_name": "Enalapril",
+    "brand": "Renitec",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 6800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lisin,prin 5mg Tablets x14",
+    "generic_name": "Lisinopril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 980,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lisinopril 10mg Tablets x14",
+    "generic_name": "Lisinopril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zestril 10mg Tablets x28",
+    "generic_name": "Lisinopril",
+    "brand": "Zestril (AstraZeneca)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zestril 20mg Tablets x28",
+    "generic_name": "Lisinopril",
+    "brand": "Zestril",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ramipril 5mg Tablets x14",
+    "generic_name": "Ramipril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ramipril 10mg Tablets x14",
+    "generic_name": "Ramipril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 4100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tritace 5mg Tablets x14",
+    "generic_name": "Ramipril",
+    "brand": "Tritace",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 3300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Treatace 10mg Tablets x28",
+    "generic_name": "Ramipril",
+    "brand": "Treatace",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 6300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coversyl 5mg Tablets x28",
+    "generic_name": "Perindopril",
+    "brand": "Coversyl (Servier)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 14200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coversyl 10mg Tablets x28",
+    "generic_name": "Perindopril",
+    "brand": "Coversyl",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 22200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coveram 5mg/10mg Tablets x28",
+    "generic_name": "Perindopril/Amlodipine",
+    "brand": "Coveram",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5/10mg",
+    "price_ngn": 21400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coveram 10mg/10mg Tablets x28",
+    "generic_name": "Perindopril/Amlodipine",
+    "brand": "Coveram",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10/10mg",
+    "price_ngn": 24600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Bisoprolol 5mg Tablets x28",
+    "generic_name": "Bisoprolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 2500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Concor 5mg Tablets x28",
+    "generic_name": "Bisoprolol",
+    "brand": "Concor (Merck)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Concor 10mg Tablets x28",
+    "generic_name": "Bisoprolol",
+    "brand": "Concor",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metoprolol 100mg Tablets x14",
+    "generic_name": "Metoprolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 1800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Betaloc ZOK 50mg Tablets x28",
+    "generic_name": "Metoprolol",
+    "brand": "Betaloc",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Propranolol 40mg Tablets x28",
+    "generic_name": "Propranolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 1750,
+    "requires_prescription": true
+  },
+  {
+    "name": "Propranolol 80mg Tablets x28",
+    "generic_name": "Propranolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Carvedilol 6.25mg Tablets x28",
+    "generic_name": "Carvedilol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "6.25mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tenoretic 50/25mg Tablets x28",
+    "generic_name": "Atenolol/Chlorthalidone",
+    "brand": "Tenoretic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50/25mg",
+    "price_ngn": 4300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Atenolol 50mg Tablets x28",
+    "generic_name": "Atenolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tenormin 50mg Tablets x28",
+    "generic_name": "Atenolol",
+    "brand": "Tenormin (AstraZeneca)",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 5800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Doxazosin 2mg Tablets x28",
+    "generic_name": "Doxazosin",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aldomet 250mg Tablets x28",
+    "generic_name": "Methyldopa",
+    "brand": "Aldomet",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 6900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Methyldopa 250mg Tablets x28",
+    "generic_name": "Methyldopa",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "250mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Methyldopa 125mg/5ml Suspension",
+    "generic_name": "Methyldopa",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "suspension",
+    "dosage": "125mg/5ml",
+    "price_ngn": 3400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Clonidine 200mcg Tablets x14",
+    "generic_name": "Clonidine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "200mcg",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Hytrin 2mg Tablets",
+    "generic_name": "Terzosin",
+    "brand": "Hytrin",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 5300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Telma 40mg Tablets x30",
+    "generic_name": "Telmisartan",
+    "brand": "Telma",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 8900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 500mg Tablets x30",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 850mg Tablets x30",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "850mg",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glucophage 500mg Tablets x28",
+    "generic_name": "Metformin",
+    "brand": "Glucophage",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 5400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glucophage XR 500mg Tablets x30",
+    "generic_name": "Metformin",
+    "brand": "Glucophage XR",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 6800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diaformin 500mg Tablets x30",
+    "generic_name": "Metformin",
+    "brand": "Diaformin",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glucovanance 250mg/1.25mg Tablets",
+    "generic_name": "Metformin/Glibenclamide",
+    "brand": "Glucovance",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "250/1.25mg",
+    "price_ngn": 3800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glibenclamide 5mg Tablets x20",
+    "generic_name": "Glibenclamide",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Daonil 5mg Tablets x30",
+    "generic_name": "Glibenclamide",
+    "brand": "Daonil (Sanofi)",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 4900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diaben 5mg Tablets",
+    "generic_name": "Glipizide",
+    "brand": "Diaben",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glipizide 5mg Tablets x30",
+    "generic_name": "Glipizide",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 2700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Gliclazide 80mg Tablets x30",
+    "generic_name": "Gliclazide",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 4800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diamicron 80mg Tablets x30",
+    "generic_name": "Gliclazide",
+    "brand": "Diamicron",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 12100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amaryl 1mg Tablets x30",
+    "generic_name": "Glimepiride",
+    "brand": "Amaryl (Sanofi)",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "1mg",
+    "price_ngn": 12500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amaryl 2mg Tablets x30",
+    "generic_name": "Glimepiride",
+    "brand": "Amaryl",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 16900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amaryl 4mg Tablets x30",
+    "generic_name": "Glimepiride",
+    "brand": "Amaryl",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "4mg",
+    "price_ngn": 22500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glimepiride 2mg Tablets x30",
+    "generic_name": "Glimepiride",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Pioglitazone 30mg Tablets x28",
+    "generic_name": "Pioglitazone",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "30mg",
+    "price_ngn": 10500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Actos 30mg Tablets x28",
+    "generic_name": "Pioglitazone",
+    "brand": "Actos",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "30mg",
+    "price_ngn": 21000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Piogen 15mg Tablets x30",
+    "generic_name": "Pioglitazone",
+    "brand": "Piogen",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "15mg",
+    "price_ngn": 7900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Suproc 50mg Tablets x28",
+    "generic_name": "Sitagliptin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 22800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Januvia 100mg Tablets x28",
+    "generic_name": "Sitagliptin",
+    "brand": "Januvia (MSD)",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 48000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Dapaglyn 10mg Tablets x28",
+    "generic_name": "Dapagliflozin",
+    "brand": "Dapaglyn",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 33500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Forxiga 10mg Tablets x28",
+    "generic_name": "Dapagliflozin",
+    "brand": "Forxiga (AstraZeneca)",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 36500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Dapagliflozin 10mg Tablets x30",
+    "generic_name": "Dapagliflozin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 19800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Empagliflozin 25mg Tablets x28",
+    "generic_name": "Empagliflozin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "25mg",
+    "price_ngn": 26500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Jardiance 10mg Tablets x30",
+    "generic_name": "Empagliflozin",
+    "brand": "Jardiance",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 31200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Linagliptin 5mg Tablets x30",
+    "generic_name": "Linagliptin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 21500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Trajenta 5mg Tablets x30",
+    "generic_name": "Linagliptin",
+    "brand": "Trajenta",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 34000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Vildagliptin 50mg Tablets x30",
+    "generic_name": "Vildagliptin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 15800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Insulin 30/70 Mixtard 10ml",
+    "generic_name": "Insulin (Mixed)",
+    "brand": "Mixtard 30/70",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml 10ml",
+    "price_ngn": 9200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Insulin R (Actrapid) 10ml",
+    "generic_name": "Insulin (Human)",
+    "brand": "Actrapid",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml",
+    "price_ngn": 9800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Humulin N 10ml",
+    "generic_name": "Insulin Isophane",
+    "brand": "Humulin N",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml",
+    "price_ngn": 9800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Humalog 100 3ml",
+    "generic_name": "Insulin Lispro",
+    "brand": "Humalog",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml",
+    "price_ngn": 14500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lantus 100 3ml",
+    "generic_name": "Insulin Glargine",
+    "brand": "Lantus",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml",
+    "price_ngn": 24500,
+    "requires_prescription": true
+  },
+  {
+    "name": "NovoRapid 100 3ml",
+    "generic_name": "Insulin Aspart",
+    "brand": "NovoRapid",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml",
+    "price_ngn": 12100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tresiba 100 3ml",
+    "generic_name": "Insulin Degludec",
+    "brand": "Tresiba",
+    "category": "Diabetes",
+    "form": "injection",
+    "dosage": "100 IU/ml",
+    "price_ngn": 25800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glycomet 850mg 30",
+    "generic_name": "Metformin",
+    "brand": "Glycomet",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "850mg",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metforal 500mg Tablets x30",
+    "generic_name": "Metformin",
+    "brand": "Metforal",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ventolin 100mcg Inhaler",
+    "generic_name": "Salbutamol",
+    "brand": "Ventolin (GSK)",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "100mcg",
+    "price_ngn": 4900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ventolin 500mcg Injection",
+    "generic_name": "Salbutamol",
+    "brand": "Ventolin",
+    "category": "Respiratory",
+    "form": "injection",
+    "dosage": "500mcg",
+    "price_ngn": 5800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Salbutamol 2mg Tablets x20",
+    "generic_name": "Salbutamol",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Salbutamol 2mg/5ml Syrup 100ml",
+    "generic_name": "Salbutamol",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "syrup",
+    "dosage": "2mg/5ml",
+    "price_ngn": 850,
+    "requires_prescription": false
+  },
+  {
+    "name": "Salbutamol Nebulising Solution 20ml",
+    "generic_name": "Salbutamol",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "solution",
+    "dosage": "2.5mg",
+    "price_ngn": 1650,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ventolin Nebules 2.5mg x20",
+    "generic_name": "Salbutamol",
+    "brand": "Ventolin",
+    "category": "Respiratory",
+    "form": "nebule",
+    "dosage": "2.5mg",
+    "price_ngn": 3900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Atrovent",
+    "generic_name": "Ipratropium Bromide",
+    "brand": "Atrovent",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "20mcg",
+    "price_ngn": 7200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ipravent 20mcg Inhaler",
+    "generic_name": "Ipratropium bromide",
+    "brand": "Ipravent",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "20mcg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Combivent 500mcg Inhaler",
+    "generic_name": "Ipratropium/Salbutamol",
+    "brand": "Combivent",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "100/20mcg",
+    "price_ngn": 7100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Seretide 250mcg Inhaler",
+    "generic_name": "Salmeterol/Fluticasone",
+    "brand": "Seretide",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "250/25mcg",
+    "price_ngn": 12400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Seretide 500mcg Inhaler",
+    "generic_name": "Salmeterol/Fluticasone",
+    "brand": "Seretide",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "500/25mcg",
+    "price_ngn": 15200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Flixotide 50mcg Inhaler",
+    "generic_name": "Fluticasone Propionate",
+    "brand": "Flixotide",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "50mcg",
+    "price_ngn": 5600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Symbicort 200 120dose",
+    "generic_name": "Budesonide/Formoterol",
+    "brand": "Symbicort",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "160/4.5mcg",
+    "price_ngn": 13800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Budesonide 200mcg Inhaler",
+    "generic_name": "Budesonide",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "200mcg",
+    "price_ngn": 7800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Budesonide Nebules 0.5mg x20",
+    "generic_name": "Budesonide",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "nebule",
+    "dosage": "0.5mg",
+    "price_ngn": 8400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Pulmicort 200mcg Inhaler",
+    "generic_name": "Budesonide",
+    "brand": "Pulmicort",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "200mcg",
+    "price_ngn": 12600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Montelukast 10mg Tablets x30",
+    "generic_name": "Montelukast",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 5800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Singulair 10mg Tablets x28",
+    "generic_name": "Montelukast",
+    "brand": "Singulair",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 11900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Montelukast 4mg Chewable Tablets x28",
+    "generic_name": "Montelukast",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "4mg",
+    "price_ngn": 4400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Montevac 10mg Tablets x30",
+    "generic_name": "Montelukast",
+    "brand": "Montevac",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 8900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Fexofenadine 180mg Tablets x10",
+    "generic_name": "Fexofenadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "180mg",
+    "price_ngn": 3100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Telfast 180mg Tablets x10",
+    "generic_name": "Fexofenadine",
+    "brand": "Telfast",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "180mg",
+    "price_ngn": 6800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Cetirizine 10mg Tablets x30",
+    "generic_name": "Cetirizine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zyrtec 10mg Tablets x10",
+    "generic_name": "Cetirizine",
+    "brand": "Zyrtec",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 5600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Loratadine 10mg Tablets x30",
+    "generic_name": "Loratadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Claritin 10mg Tablets x10",
+    "generic_name": "Loratadine",
+    "brand": "Claritin",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 6100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Cetirizine 5mg/5ml Syrup 100ml",
+    "generic_name": "Cetirizine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "syrup",
+    "dosage": "5mg/5ml",
+    "price_ngn": 2600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Desloratadine 5mg Tablets x30",
+    "generic_name": "Desloratadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 4900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Aerius 5mg Tablets x30",
+    "generic_name": "Desloratadine",
+    "brand": "Aerius",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 11800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Aerius Syrup 120ml",
+    "generic_name": "Desloratadine",
+    "brand": "Aerius",
+    "category": "Respiratory",
+    "form": "syrup",
+    "dosage": "0.5mg/ml",
+    "price_ngn": 9200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Theophylline 200mg Tablets x28",
+    "generic_name": "Theophylline",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Oncomelt 200mg Tablets x28",
+    "generic_name": "Theophylline PR",
+    "brand": "Oncomelt",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aminophylline 200mg Tablets x30",
+    "generic_name": "Aminophylline",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "200mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aminophylline 250mg Injection",
+    "generic_name": "Aminophylline",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "injection",
+    "dosage": "250mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ambroxol 30mg Tablets x20",
+    "generic_name": "Ambroxol",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "30mg",
+    "price_ngn": 1900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ambroxol 30mg/5ml Syrup 100ml",
+    "generic_name": "Ambroxol",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "syrup",
+    "dosage": "30mg/5ml",
+    "price_ngn": 2100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Tetralysal 30mg",
+    "generic_name": "Ambroxol",
+    "brand": "Tetralysal",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "30mg",
+    "price_ngn": 2400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Bronal 30mg Tablets x20",
+    "generic_name": "Ambroxol",
+    "brand": "Bronal",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "30mg",
+    "price_ngn": 1200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Acetylcysteine 600mg Tablets x20",
+    "generic_name": "Acetylcysteine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "600mg",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Dexamethasone 0.5mg Tablets x30",
+    "generic_name": "Dexamethasone",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "0.5mg",
+    "price_ngn": 1400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Prednisolone 5mg Tablets x30",
+    "generic_name": "Prednisolone",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 1900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Prednisolone 10mg Tablets x30",
+    "generic_name": "Prednisolone",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Methylprednisolone 16mg Tablets x30",
+    "generic_name": "Methyprednisolone",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "16mg",
+    "price_ngn": 6400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Methylprednisolone 125mg Injection",
+    "generic_name": "Methylprednisolone",
+    "brand": "Solu-Medrol",
+    "category": "Respiratory",
+    "form": "injection",
+    "dosage": "125mg",
+    "price_ngn": 9800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Hydrocortisone 100mg Injection",
+    "generic_name": "Hydrocortisone",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "injection",
+    "dosage": "100mg",
+    "price_ngn": 2500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Beclate 100mcg Inhaler",
+    "generic_name": "Becloforte",
+    "brand": "Beclate",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "100mcg",
+    "price_ngn": 7900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Clenil FC 100mcg Inhaler",
+    "generic_name": "Beclomethasone",
+    "brand": "Clenil",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "100mcg",
+    "price_ngn": 9800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Query 100mcg Meter Spray",
+    "generic_name": "Beclomethasone",
+    "brand": "Qvar",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "100mcg",
+    "price_ngn": 11500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Perex 400mcg Inhaler",
+    "generic_name": "Budesonide",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "inhaler",
+    "dosage": "400mcg",
+    "price_ngn": 14200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Omeprazole 20mg Capsules x20",
+    "generic_name": "Omeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 2200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losec 20mg Capsules x20",
+    "generic_name": "Omeprazole",
+    "brand": "Losec",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 6400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Dagolec 20mg Capsules x20",
+    "generic_name": "Omeprazole",
+    "brand": "Dagolec",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 2900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ozapin 20mg Capsules x20",
+    "generic_name": "Omeprazole",
+    "brand": "Ozapin",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 3800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Omeprazole 40mg Injection",
+    "generic_name": "Omeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "injection",
+    "dosage": "40mg",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Esomeprazole 40mg Tablets x28",
+    "generic_name": "Esomeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 8600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Nexium 40mg Tablets x28",
+    "generic_name": "Esomeprazole",
+    "brand": "Nexium (AstraZeneca)",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 18900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zontac 150mg Tablets x28",
+    "generic_name": "Zontac (Zantac)",
+    "brand": "Zantac",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 9300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ranitidine 150mg Tablets x28",
+    "generic_name": "Ranitidine",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Famotidine 40mg Tablets x28",
+    "generic_name": "Famotidine",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 2800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Pepcid 40mg Tablets x28",
+    "generic_name": "Famotidine",
+    "brand": "Pepcid",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 8200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cimetidine 400mg Tablets x28",
+    "generic_name": "Cimetidine",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 3500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Tagamet 400mg Tablets x28",
+    "generic_name": "Cimetidine",
+    "brand": "Tagamet",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 12500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Pantoprazole 40mg Tablets x28",
+    "generic_name": "Pantoprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 6900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Como 40mg Injectable",
+    "generic_name": "Pantoprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "injection",
+    "dosage": "40mg",
+    "price_ngn": 7800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lacerrolamid 2mg Capsules x16",
+    "generic_name": "Loperamide",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "2mg",
+    "price_ngn": 950,
+    "requires_prescription": false
+  },
+  {
+    "name": "Imodium 2mg Caplets x6",
+    "generic_name": "Loperamide",
+    "brand": "Imodium",
+    "category": "Gastrointestinal",
+    "form": "caplet",
+    "dosage": "2mg",
+    "price_ngn": 750,
+    "requires_prescription": false
+  },
+  {
+    "name": "Domperidone 10mg Tablets x20",
+    "generic_name": "Domperidone",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Motilium 10mg Tablets x28",
+    "generic_name": "Domperidone",
+    "brand": "Motilium",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 7900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Domperidone 5mg/5ml Suspension",
+    "generic_name": "Domperidone",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "suspension",
+    "dosage": "5mg/5ml",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metoclopramide 10mg Tablets x28",
+    "generic_name": "Metoclopramide",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Contralom 10mg Tablets",
+    "generic_name": "Metoclopramide",
+    "brand": "Cerucal",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Primperan 10mg Tablets x20",
+    "generic_name": "Metoclopramide",
+    "brand": "Primperan",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 5400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ondansetron 8mg Tablets x20",
+    "generic_name": "Ondansetron",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "8mg",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Zofran 8mg Tablets x20",
+    "generic_name": "Ondansetron",
+    "brand": "Zofran (GSK)",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "8mg",
+    "price_ngn": 8500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ondansetron 2mg/5ml Syrup 100ml",
+    "generic_name": "Ondansetron",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "syrup",
+    "dosage": "2mg/5ml",
+    "price_ngn": 4200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ondansetron 4mg Injection",
+    "generic_name": "Ondansetron",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "injection",
+    "dosage": "4mg",
+    "price_ngn": 3600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Maalox Suspension 250ml",
+    "generic_name": "Al(OH)3/Mg(OH)2",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "suspension",
+    "dosage": "250ml",
+    "price_ngn": 3400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Gaviscon Aniseed 600ml",
+    "generic_name": "Alginic Acid",
+    "brand": "Gaviscon",
+    "category": "Gastrointestinal",
+    "form": "suspension",
+    "dosage": "600ml",
+    "price_ngn": 5200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Gaviscon Advanced 250ml",
+    "generic_name": "Alginic Acid/NaHCO3",
+    "brand": "Gaviscon",
+    "category": "Gastrointestinal",
+    "form": "suspension",
+    "dosage": "250ml",
+    "price_ngn": 6400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Antasel Suspension",
+    "generic_name": "Alugelly",
+    "brand": "Antasel",
+    "category": "Gastrointestinal",
+    "form": "suspension",
+    "dosage": "250ml",
+    "price_ngn": 2800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Bisacodyl 5mg Tablets x10",
+    "generic_name": "Bisacodyl",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 1600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Dulcolax 5mg Tablets x10",
+    "generic_name": "Bisacodyl",
+    "brand": "Dulcolax",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 4400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Dulcosax 5mg Suppositories",
+    "generic_name": "Bisacodyl",
+    "brand": "Dulcosax",
+    "category": "Gastrointestinal",
+    "form": "suppository",
+    "dosage": "5mg",
+    "price_ngn": 3200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Senokot 7.5mg Tablets x20",
+    "generic_name": "Sennosides",
+    "brand": "Senokot",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "7.5mg",
+    "price_ngn": 3900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Lactulose 200ml",
+    "generic_name": "Lactulose",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "syrup",
+    "dosage": "200ml",
+    "price_ngn": 2800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Duphalac 200ml",
+    "generic_name": "Lactulose",
+    "brand": "Duphalac",
+    "category": "Gastrointestinal",
+    "form": "syrup",
+    "dosage": "200ml",
+    "price_ngn": 4900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Lactamol 200ml",
+    "generic_name": "Lactulose",
+    "brand": "Lactamol",
+    "category": "Gastrointestinal",
+    "form": "syrup",
+    "dosage": "200ml",
+    "price_ngn": 3800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Movicol Original 20 Sachets",
+    "generic_name": "Macrogol",
+    "brand": "Movicol",
+    "category": "Gastrointestinal",
+    "form": "powder",
+    "dosage": "13.8g",
+    "price_ngn": 13500,
+    "requires_prescription": false
+  },
+  {
+    "name": "Oral Rehydration Salts 5.3g x12",
+    "generic_name": "ORS",
+    "brand": "WHO",
+    "category": "Gastrointestinal",
+    "form": "powder",
+    "dosage": "5.3g",
+    "price_ngn": 850,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc Sulphate 20mg Tablets x20",
+    "generic_name": "Zinc Sulphate",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 1200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Enatrol 200ml Sachets",
+    "generic_name": "ORS+Zinc",
+    "brand": "Zentrol",
+    "category": "Gastrointestinal",
+    "form": "powder",
+    "dosage": "200ml",
+    "price_ngn": 6100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Smecta 3g Sachets x30",
+    "generic_name": "Diosmectite",
+    "brand": "Smecta",
+    "category": "Gastrointestinal",
+    "form": "sachet",
+    "dosage": "3g",
+    "price_ngn": 13400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cranberry 90mg",
+    "generic_name": "Cramberry",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "90mg",
+    "price_ngn": 1900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Unsuggar 80mg Tablets x20",
+    "generic_name": "Ursodeoxycholic Acid",
+    "brand": "Ursogal",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 5200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ugridol 300mg Tablets x20",
+    "generic_name": "Ursomax",
+    "brand": "Urso",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "300mg",
+    "price_ngn": 6100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Septilan 500mg x20",
+    "generic_name": "Sucralfate",
+    "brand": "Septilan",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Carafate 1g Susp 12ml",
+    "generic_name": "Sucralfate",
+    "brand": "Carafate",
+    "category": "Gastrointestinal",
+    "form": "suspension",
+    "dosage": "1g/5ml",
+    "price_ngn": 4800,
+    "requires_prescription": true
+  },
+  {
+    "name": "Antepsin 1g Tablets",
+    "generic_name": "Sucralfate",
+    "brand": "Antepsin",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "1g",
+    "price_ngn": 3900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Pariet 20mg Tablets x28",
+    "generic_name": "Rabeprazole",
+    "brand": "Pariet",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 16500,
+    "requires_prescription": true
+  },
+  {
+    "name": "Rabeprazole 20mg Tablets x28",
+    "generic_name": "Rabeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 5400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Perjeta 10mg",
+    "generic_name": "Rabeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 3900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Aluminum 20mg",
+    "generic_name": "Aluminium",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 2800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin B1 20mg",
+    "generic_name": "Thiamine",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 1600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin B6 20mg",
+    "generic_name": "Pyridoxine",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "20mg",
+    "price_ngn": 1450,
+    "requires_prescription": false
+  },
+  {
+    "name": "Compound 336",
+    "generic_name": "Vitamin B Comp",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1350,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin B Co Injection",
+    "generic_name": "Vitamin B Comp",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "injection",
+    "dosage": "2ml",
+    "price_ngn": 1800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Neurilin 100mg",
+    "generic_name": "Vitamin B1/B6/B12",
+    "brand": "Neurilin",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 3900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Nervica 150mg",
+    "generic_name": "Vitamin B",
+    "brand": "Nervica",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 2400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Nutrabio 30 Tablets",
+    "generic_name": "Multivitamin",
+    "brand": "Multivite",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "30 tabs",
+    "price_ngn": 1150,
+    "requires_prescription": false
+  },
+  {
+    "name": "Multivite 60",
+    "generic_name": "Multivitamin",
+    "brand": "Multivite",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "60 tabs",
+    "price_ngn": 2200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Daily Gear 30",
+    "generic_name": "Multivitamin/Multimineral",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "30 caps",
+    "price_ngn": 3300,
+    "requires_prescription": false
+  },
+  {
+    "name": "Men's Multi 30",
+    "generic_name": "Multivitamin (Men)",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "30 tabs",
+    "price_ngn": 4700,
+    "requires_prescription": false
+  },
+  {
+    "name": "Women's Multi 30",
+    "generic_name": "Multivitamin (Women)",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "30 tabs",
+    "price_ngn": 4900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitest 250ml",
+    "generic_name": "Multivitamin Syrup",
+    "brand": "Vitest",
+    "category": "Vitamins & Supplements",
+    "form": "syrup",
+    "dosage": "100ml",
+    "price_ngn": 4200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Cod Liver Oil 500ml",
+    "generic_name": "Omega-3",
+    "brand": "Cod Liver Oil",
+    "category": "Vitamins & Supplements",
+    "form": "syrup",
+    "dosage": "500ml",
+    "price_ngn": 6100,
+    "requires_prescription": false
+  },
+  {
+    "name": "Cod Liver Oil 1000ml",
+    "generic_name": "Omega-3",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "syrup",
+    "dosage": "1000ml",
+    "price_ngn": 8900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Omega 3 1000mg 60",
+    "generic_name": "Omega-3",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "1000mg",
+    "price_ngn": 5200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Omega 3 90",
+    "generic_name": "Omega-3",
+    "brand": "Omgar",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "1000mg",
+    "price_ngn": 7200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calcium 600mg",
+    "generic_name": "Calcium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "600mg",
+    "price_ngn": 3400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calcium Forte 600mg 30",
+    "generic_name": "Calcium",
+    "brand": "Calcium Forte",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "600mg",
+    "price_ngn": 6200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calcium + Vit D",
+    "generic_name": "Calcium/Vitamin D",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "600mg/400IU",
+    "price_ngn": 4800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Magnesium 400mg 30",
+    "generic_name": "Magnesium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "400mg",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Magnesium Glycinate 30",
+    "generic_name": "Magnesium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "200mg",
+    "price_ngn": 3800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc 100mg 30",
+    "generic_name": "Zinc",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 1900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc + Vitamin C",
+    "generic_name": "Zinc/Vitamin C",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg+500mg",
+    "price_ngn": 2300,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc Sulphate Syrup 100ml",
+    "generic_name": "Zinc",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "syrup",
+    "dosage": "20mg/5ml",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Iron 100mg",
+    "generic_name": "Ferrous Sulphate",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 2600,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ferrous + Folic",
+    "generic_name": "Ferrous/Folic Acid",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "200+150mg",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Fabgran 30",
+    "generic_name": "Iron Liquid",
+    "brand": "Fabgran",
+    "category": "Vitamins & Supplements",
+    "form": "syrup",
+    "dosage": "100ml",
+    "price_ngn": 2400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Folic Acid 400mcg 25",
+    "generic_name": "Folic Acid",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "400mcg",
+    "price_ngn": 650,
+    "requires_prescription": false
+  },
+  {
+    "name": "Folic Acid 5mg",
+    "generic_name": "Folic Acid",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Folpro-T 40",
+    "generic_name": "Folic Acid/Vit B12",
+    "brand": "Folate-T",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "40 tabs",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin D3 2000IU",
+    "generic_name": "Cholecalciferol",
+    "brand": "Vitamin D3",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "2000IU",
+    "price_ngn": 3200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin D3 4000IU",
+    "generic_name": "Cholecalciferol",
+    "brand": "Vitamin D3",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "4000IU",
+    "price_ngn": 3900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vital D3 2000",
+    "generic_name": "Vitamin D3",
+    "brand": "Vital D3",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "2000IU",
+    "price_ngn": 2700,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin E 400IU",
+    "generic_name": "Alpha Tocopherol",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "400IU",
+    "price_ngn": 2900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin A 2000IU",
+    "generic_name": "Retinol",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "2000IU",
+    "price_ngn": 1400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin K 90",
+    "generic_name": "Phytonadione",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mcg",
+    "price_ngn": 6200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Biotin 5000mcg 60",
+    "generic_name": "Biotin",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "5000mcg",
+    "price_ngn": 2800,
+    "requires_prescription": false
+  },
+  {
+    "name": "CoQ10 100mg",
+    "generic_name": "Coenzym",
+    "brand": "CoQ10",
+    "category": "Vitamins & Supplements",
+    "form": "capsule",
+    "dosage": "100mg",
+    "price_ngn": 8500,
+    "requires_prescription": false
+  },
+  {
+    "name": "Potassium 99mg 90",
+    "generic_name": "Potassium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "99mg",
+    "price_ngn": 3900,
+    "requires_prescription": false
+  },
+  {
+    "name": "Chromium 200mcg 90",
+    "generic_name": "Chromium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "200mcg",
+    "price_ngn": 4200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Spectrum 90",
+    "generic_name": "Multivitamin",
+    "brand": "Spectrum",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "90 tabs",
+    "price_ngn": 3200,
+    "requires_prescription": false
+  },
+  {
+    "name": "Paracetamol 500mg x8",
+    "generic_name": "Paracetamol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 325,
+    "requires_prescription": false
+  },
+  {
+    "name": "Paracetamol 500mg x20",
+    "generic_name": "Paracetamol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 891,
+    "requires_prescription": false
+  },
+  {
+    "name": "Paracetamol 500mg x32",
+    "generic_name": "Paracetamol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1339,
+    "requires_prescription": false
+  },
+  {
+    "name": "Paracetamol 500mg x100",
+    "generic_name": "Paracetamol",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 3881,
+    "requires_prescription": false
+  },
+  {
+    "name": "Emzor Paracetamol 500mg x8",
+    "generic_name": "Paracetamol",
+    "brand": "Emzor",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 425,
+    "requires_prescription": false
+  },
+  {
+    "name": "Emzor Paracetamol 500mg x16",
+    "generic_name": "Paracetamol",
+    "brand": "Emzor",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 850,
+    "requires_prescription": false
+  },
+  {
+    "name": "Emzor Paracetamol 500mg x64",
+    "generic_name": "Paracetamol",
+    "brand": "Emzor",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 3502,
+    "requires_prescription": false
+  },
+  {
+    "name": "Panadol Extra x12",
+    "generic_name": "Paracetamol/Caffeine",
+    "brand": "Panadol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg/65mg",
+    "price_ngn": 2080,
+    "requires_prescription": false
+  },
+  {
+    "name": "Panadol Extra x16",
+    "generic_name": "Paracetamol/Caffeine",
+    "brand": "Panadol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg/65mg",
+    "price_ngn": 2678,
+    "requires_prescription": false
+  },
+  {
+    "name": "Panadol Extra x24",
+    "generic_name": "Paracetamol/Caffeine",
+    "brand": "Panadol",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "500mg/65mg",
+    "price_ngn": 3874,
+    "requires_prescription": false
+  },
+  {
+    "name": "Amoxil 500mg x7",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 1067,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxil 500mg x14",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2133,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxil 500mg x28",
+    "generic_name": "Amoxicillin",
+    "brand": "Amoxil",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 4629,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxicillin 500mg x14",
+    "generic_name": "Amoxicillin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 1734,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxicillin 500mg x20",
+    "generic_name": "Amoxicillin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 2369,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amoxicillin 500mg x28",
+    "generic_name": "Amoxicillin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "capsule",
+    "dosage": "500mg",
+    "price_ngn": 3215,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprotab 500mg x6",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprotab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 3180,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprotab 500mg x10",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprotab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 5300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprotab 500mg x20",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Ciprotab",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 11384,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofloxacin 500mg x14",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 5730,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofloxacin 500mg x20",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 7828,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ciprofloxacin 500mg x28",
+    "generic_name": "Ciprofloxacin",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 10625,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 625mg x6",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 6810,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 625mg x10",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 11350,
+    "requires_prescription": true
+  },
+  {
+    "name": "Augmentin 625mg x21",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Augmentin",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 25424,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Amoxiclav 625mg x6",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 3720,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Amoxiclav 625mg x14",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 9350,
+    "requires_prescription": true
+  },
+  {
+    "name": "Co-Amoxiclav 625mg x20",
+    "generic_name": "Amoxicillin/Clavulanic Acid",
+    "brand": "Generic",
+    "category": "Antibiotics",
+    "form": "tablet",
+    "dosage": "625mg",
+    "price_ngn": 12772,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amatem 80/480mg x6",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Amatem",
+    "category": "Antimalarials",
+    "form": "softgel",
+    "dosage": "80/480mg",
+    "price_ngn": 2082,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amatem 80/480mg x12",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Amatem",
+    "category": "Antimalarials",
+    "form": "softgel",
+    "dosage": "80/480mg",
+    "price_ngn": 4594,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amatem 80/480mg x18",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Amatem",
+    "category": "Antimalarials",
+    "form": "softgel",
+    "dosage": "80/480mg",
+    "price_ngn": 6510,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coartem 20/120mg x6",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Coartem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 3750,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coartem 20/120mg x12",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Coartem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 8000,
+    "requires_prescription": true
+  },
+  {
+    "name": "Coartem 20/120mg x24",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Coartem",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 14900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lonart 20/120mg x6",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Lonart",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 3150,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lonart 20/120mg x12",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Lonart",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 6720,
+    "requires_prescription": true
+  },
+  {
+    "name": "Lonart 20/120mg x24",
+    "generic_name": "Artemether/Lumefantrine",
+    "brand": "Lonart",
+    "category": "Antimalarials",
+    "form": "tablet",
+    "dosage": "20/120mg",
+    "price_ngn": 12516,
+    "requires_prescription": true
+  },
+  {
+    "name": "Brufen 400mg x8",
+    "generic_name": "Ibuprofen",
+    "brand": "Brufen",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 1700,
+    "requires_prescription": false
+  },
+  {
+    "name": "Brufen 400mg x10",
+    "generic_name": "Ibuprofen",
+    "brand": "Brufen",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 2125,
+    "requires_prescription": false
+  },
+  {
+    "name": "Brufen 400mg x20",
+    "generic_name": "Ibuprofen",
+    "brand": "Brufen",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 4658,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibuprofen 400mg x8",
+    "generic_name": "Ibuprofen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 475,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibuprofen 400mg x12",
+    "generic_name": "Ibuprofen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 713,
+    "requires_prescription": false
+  },
+  {
+    "name": "Ibuprofen 400mg x30",
+    "generic_name": "Ibuprofen",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "400mg",
+    "price_ngn": 1848,
+    "requires_prescription": false
+  },
+  {
+    "name": "Diclofenac 50mg x10",
+    "generic_name": "Diclofenac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 725,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diclofenac 50mg x16",
+    "generic_name": "Diclofenac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 1160,
+    "requires_prescription": true
+  },
+  {
+    "name": "Diclofenac 50mg x30",
+    "generic_name": "Diclofenac",
+    "brand": "Generic",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 2320,
+    "requires_prescription": true
+  },
+  {
+    "name": "Voltaren 50mg x10",
+    "generic_name": "Diclofenac",
+    "brand": "Voltaren",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 1725,
+    "requires_prescription": true
+  },
+  {
+    "name": "Voltaren 50mg x15",
+    "generic_name": "Diclofenac",
+    "brand": "Voltaren",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 2588,
+    "requires_prescription": true
+  },
+  {
+    "name": "Voltaren 50mg x28",
+    "generic_name": "Diclofenac",
+    "brand": "Voltaren",
+    "category": "Analgesics",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 5203,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 5mg x14",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 700,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 5mg x28",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 1400,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 5mg x60",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 3090,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 10mg x14",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 793,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 10mg x28",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1587,
+    "requires_prescription": true
+  },
+  {
+    "name": "Amlodipine 10mg x60",
+    "generic_name": "Amlodipine",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 3502,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losartan 50mg x10",
+    "generic_name": "Losartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 767,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losartan 50mg x14",
+    "generic_name": "Losartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 1073,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losartan 50mg x28",
+    "generic_name": "Losartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 2147,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losartan 50mg x56",
+    "generic_name": "Losartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "50mg",
+    "price_ngn": 4456,
+    "requires_prescription": true
+  },
+  {
+    "name": "Telmisartan 40mg x10",
+    "generic_name": "Telmisartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 2429,
+    "requires_prescription": true
+  },
+  {
+    "name": "Telmisartan 40mg x28",
+    "generic_name": "Telmisartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 7004,
+    "requires_prescription": true
+  },
+  {
+    "name": "Telmisartan 40mg x30",
+    "generic_name": "Telmisartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 7451,
+    "requires_prescription": true
+  },
+  {
+    "name": "Valsartan 80mg x14",
+    "generic_name": "Valsartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 2600,
+    "requires_prescription": true
+  },
+  {
+    "name": "Valsartan 80mg x30",
+    "generic_name": "Valsartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 6270,
+    "requires_prescription": true
+  },
+  {
+    "name": "Valsartan 80mg x56",
+    "generic_name": "Valsartan",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "80mg",
+    "price_ngn": 10712,
+    "requires_prescription": true
+  },
+  {
+    "name": "Enalapril 10mg x14",
+    "generic_name": "Enalapril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1120,
+    "requires_prescription": true
+  },
+  {
+    "name": "Enalapril 10mg x28",
+    "generic_name": "Enalapril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2413,
+    "requires_prescription": true
+  },
+  {
+    "name": "Enalapril 10mg x56",
+    "generic_name": "Enalapril",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 4474,
+    "requires_prescription": true
+  },
+  {
+    "name": "Bisoprolol 5mg x14",
+    "generic_name": "Bisoprolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 1250,
+    "requires_prescription": true
+  },
+  {
+    "name": "Bisoprolol 5mg x30",
+    "generic_name": "Bisoprolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 3014,
+    "requires_prescription": true
+  },
+  {
+    "name": "Bisoprolol 5mg x56",
+    "generic_name": "Bisoprolol",
+    "brand": "Generic",
+    "category": "Antihypertensives",
+    "form": "tablet",
+    "dosage": "5mg",
+    "price_ngn": 5150,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 500mg x14",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 1027,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 500mg x28",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 2053,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 500mg x60",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 4532,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 500mg x84",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "500mg",
+    "price_ngn": 6151,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 850mg x14",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "850mg",
+    "price_ngn": 1493,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 850mg x28",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "850mg",
+    "price_ngn": 2987,
+    "requires_prescription": true
+  },
+  {
+    "name": "Metformin 850mg x60",
+    "generic_name": "Metformin",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "850mg",
+    "price_ngn": 6592,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glimepiride 2mg x10",
+    "generic_name": "Glimepiride",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 867,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glimepiride 2mg x14",
+    "generic_name": "Glimepiride",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 1213,
+    "requires_prescription": true
+  },
+  {
+    "name": "Glimepiride 2mg x28",
+    "generic_name": "Glimepiride",
+    "brand": "Generic",
+    "category": "Diabetes",
+    "form": "tablet",
+    "dosage": "2mg",
+    "price_ngn": 2427,
+    "requires_prescription": true
+  },
+  {
+    "name": "Montelukast 10mg x10",
+    "generic_name": "Montelukast",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 1933,
+    "requires_prescription": true
+  },
+  {
+    "name": "Montelukast 10mg x14",
+    "generic_name": "Montelukast",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2707,
+    "requires_prescription": true
+  },
+  {
+    "name": "Montelukast 10mg x28",
+    "generic_name": "Montelukast",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 5413,
+    "requires_prescription": true
+  },
+  {
+    "name": "Cetirizine 10mg x10",
+    "generic_name": "Cetirizine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 367,
+    "requires_prescription": false
+  },
+  {
+    "name": "Cetirizine 10mg x14",
+    "generic_name": "Cetirizine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 513,
+    "requires_prescription": false
+  },
+  {
+    "name": "Cetirizine 10mg x20",
+    "generic_name": "Cetirizine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 733,
+    "requires_prescription": false
+  },
+  {
+    "name": "Loratadine 10mg x10",
+    "generic_name": "Loratadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 400,
+    "requires_prescription": false
+  },
+  {
+    "name": "Loratadine 10mg x14",
+    "generic_name": "Loratadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 560,
+    "requires_prescription": false
+  },
+  {
+    "name": "Loratadine 10mg x20",
+    "generic_name": "Loratadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 800,
+    "requires_prescription": false
+  },
+  {
+    "name": "Fexofenadine 180mg x6",
+    "generic_name": "Fexofenadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "180mg",
+    "price_ngn": 1860,
+    "requires_prescription": false
+  },
+  {
+    "name": "Fexofenadine 180mg x15",
+    "generic_name": "Fexofenadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "180mg",
+    "price_ngn": 4960,
+    "requires_prescription": false
+  },
+  {
+    "name": "Fexofenadine 180mg x30",
+    "generic_name": "Fexofenadine",
+    "brand": "Generic",
+    "category": "Respiratory",
+    "form": "tablet",
+    "dosage": "180mg",
+    "price_ngn": 9238,
+    "requires_prescription": false
+  },
+  {
+    "name": "Omeprazole 20mg x10",
+    "generic_name": "Omeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 1100,
+    "requires_prescription": true
+  },
+  {
+    "name": "Omeprazole 20mg x14",
+    "generic_name": "Omeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 1540,
+    "requires_prescription": true
+  },
+  {
+    "name": "Omeprazole 20mg x28",
+    "generic_name": "Omeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 3318,
+    "requires_prescription": true
+  },
+  {
+    "name": "Omeprazole 20mg x56",
+    "generic_name": "Omeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 6151,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losec 20mg x10",
+    "generic_name": "Omeprazole",
+    "brand": "Losec",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 3200,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losec 20mg x14",
+    "generic_name": "Omeprazole",
+    "brand": "Losec",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 4480,
+    "requires_prescription": true
+  },
+  {
+    "name": "Losec 20mg x28",
+    "generic_name": "Omeprazole",
+    "brand": "Losec",
+    "category": "Gastrointestinal",
+    "form": "capsule",
+    "dosage": "20mg",
+    "price_ngn": 9651,
+    "requires_prescription": true
+  },
+  {
+    "name": "Esomeprazole 40mg x7",
+    "generic_name": "Esomeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 2150,
+    "requires_prescription": true
+  },
+  {
+    "name": "Esomeprazole 40mg x14",
+    "generic_name": "Esomeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 4300,
+    "requires_prescription": true
+  },
+  {
+    "name": "Esomeprazole 40mg x30",
+    "generic_name": "Esomeprazole",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "40mg",
+    "price_ngn": 10369,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ranitidine 150mg x14",
+    "generic_name": "Ranitidine",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 1050,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ranitidine 150mg x30",
+    "generic_name": "Ranitidine",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 2532,
+    "requires_prescription": true
+  },
+  {
+    "name": "Ranitidine 150mg x56",
+    "generic_name": "Ranitidine",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "150mg",
+    "price_ngn": 4326,
+    "requires_prescription": true
+  },
+  {
+    "name": "Domperidone 10mg x10",
+    "generic_name": "Domperidone",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 900,
+    "requires_prescription": true
+  },
+  {
+    "name": "Domperidone 10mg x28",
+    "generic_name": "Domperidone",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2714,
+    "requires_prescription": true
+  },
+  {
+    "name": "Domperidone 10mg x30",
+    "generic_name": "Domperidone",
+    "brand": "Generic",
+    "category": "Gastrointestinal",
+    "form": "tablet",
+    "dosage": "10mg",
+    "price_ngn": 2880,
+    "requires_prescription": true
+  },
+  {
+    "name": "Vitamin B Comp x14",
+    "generic_name": "Vitamin B Complex",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "500g",
+    "price_ngn": 630,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin B Comp x60",
+    "generic_name": "Vitamin B Complex",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "500g",
+    "price_ngn": 2781,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin B Comp x90",
+    "generic_name": "Vitamin B Complex",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "500g",
+    "price_ngn": 4023,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calcium 600mg x14",
+    "generic_name": "Calcium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "600mg",
+    "price_ngn": 1587,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calcium 600mg x60",
+    "generic_name": "Calcium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "600mg",
+    "price_ngn": 7004,
+    "requires_prescription": false
+  },
+  {
+    "name": "Calcium 600mg x90",
+    "generic_name": "Calcium",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "600mg",
+    "price_ngn": 10132,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin C 1000mg x14",
+    "generic_name": "Ascorbic Acid",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "1000mg",
+    "price_ngn": 1353,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin C 1000mg x60",
+    "generic_name": "Ascorbic Acid",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "1000mg",
+    "price_ngn": 5974,
+    "requires_prescription": false
+  },
+  {
+    "name": "Vitamin C 1000mg x120",
+    "generic_name": "Ascorbic Acid",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "1000mg",
+    "price_ngn": 11310,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc 100mg x15",
+    "generic_name": "Zinc",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 950,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc 100mg x60",
+    "generic_name": "Zinc",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 3914,
+    "requires_prescription": false
+  },
+  {
+    "name": "Zinc 100mg x90",
+    "generic_name": "Zinc",
+    "brand": "Generic",
+    "category": "Vitamins & Supplements",
+    "form": "tablet",
+    "dosage": "100mg",
+    "price_ngn": 5662,
+    "requires_prescription": false
+  }
+]
