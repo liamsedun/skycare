@@ -48,7 +48,7 @@ export const GET = withAuth(async (req, ctx) => {
   let query = ctx.svc
     .from("users")
     .select(
-      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, on_leave_until)",
+      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, available_from, available_until, on_leave_until)",
       { count: "exact" }
     )
     .neq("role", "patient_api")
@@ -145,12 +145,12 @@ export const POST = withAuth(async (req, ctx) => {
   }
 
   // Staff rows give clinical/support staff roster, leave, and availability.
-  const clinical = ["doctor", "nurse", "pharmacist", "lab_tech", "cashier", "receptionist",
+  const staffRoles = ["hospital_admin", "doctor", "nurse", "pharmacist", "lab_tech", "cashier", "receptionist",
     "medical_officer", "surgeon", "anesthesiologist", "radiologist", "radiographer",
     "physiotherapist", "dentist", "optometrist", "dietician", "medical_records",
     "accountant", "hr_officer", "it_support", "security", "ward_orderly", "hmo_officer", "paramedic"];
   let staff = null;
-  if (clinical.includes(body.role)) {
+  if (staffRoles.includes(body.role)) {
     const { data: staffRow } = await ctx.svc
       .from("staff")
       .insert({
