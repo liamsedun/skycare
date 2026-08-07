@@ -87,9 +87,8 @@ const BLOOD_GROUPS: string[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"
 const GENOTYPES: string[] = ["AA", "AS", "SS", "AC", "SC", "CC"];
 const MARITAL_STATUSES: string[] = ["Single", "Married", "Divorced", "Widowed", "Separated"];
 
-export function AddPatientButton() {
+export function AddPatientModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [portalLogin, setPortalLogin] = useState(false);
@@ -131,7 +130,7 @@ export function AddPatientButton() {
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to register patient");
-      setOpen(false);
+      onClose();
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to register patient");
@@ -140,26 +139,18 @@ export function AddPatientButton() {
     }
   }
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
-      >
-        <Plus size={16} aria-hidden="true" /> Register Patient
-      </button>
+  if (!open) return null;
 
-      {open && (
-        <Modal
-          title="Register Patient"
-          onClose={() => setOpen(false)}
-          error={error}
-          busy={busy}
-          submitLabel={busy ? "Registering…" : "Register Patient"}
-          onSubmit={handleSubmit}
-          wide
-        >
+  return (
+    <Modal
+      title="Register Patient"
+      onClose={onClose}
+      error={error}
+      busy={busy}
+      submitLabel={busy ? "Registering…" : "Register Patient"}
+      onSubmit={handleSubmit}
+      wide
+    >
           <div className="space-y-5">
             <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/25 p-4">
               <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
@@ -375,7 +366,21 @@ export function AddPatientButton() {
             </section>
           </div>
         </Modal>
-      )}
+  );
+}
+
+export function AddPatientButton() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+      >
+        <Plus size={16} aria-hidden="true" /> Register Patient
+      </button>
+      <AddPatientModal open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

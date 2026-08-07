@@ -1,0 +1,159 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Download, FileUp, Plus, UserRoundPlus } from "lucide-react";
+import { ActionDropdown } from "@/components/ui/action-dropdown";
+import CsvImportModal, { type ImportResult } from "@/components/ui/csv-import-modal";
+import { AddPatientModal, type PatientRow } from "@/components/dashboard/patient-dialog";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+
+const EXPORT_COLUMNS = [
+  "patient_number",
+  "first_name",
+  "last_name",
+  "gender",
+  "date_of_birth",
+  "phone",
+  "email",
+  "city",
+  "state",
+  "status",
+];
+
+const IMPORT_COLUMNS = [
+  "first_name",
+  "last_name",
+  "gender",
+  "date_of_birth",
+  "phone",
+  "email",
+  "address",
+  "city",
+  "state",
+  "blood_group",
+  "marital_status",
+];
+
+const IMPORT_SAMPLE = [
+  ["Ada", "Okafor", "Female", "1990-04-12", "0803 000 1111", "ada.okafor@example.com", "12 Unity Road", "Enugu", "Enugu", "O+", "Single"],
+];
+
+export default function PatientActions({ patients }: { patients: PatientRow[] }) {
+  const router = useRouter();
+  const [addOpen, setAddOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const rowsFor = (ps: PatientRow[]) =>
+    ps.map((p) => [
+      p.patient_number,
+      p.first_name,
+      p.last_name,
+      p.gender ?? "",
+      p.date_of_birth ?? "",
+      p.phone ?? "",
+      p.email ?? "",
+      p.city ?? "",
+      p.state ?? "",
+      p.status,
+    ]);
+
+  function exportCsv() {
+    if (patients.length === 0) {
+      alert("Nothing to export — there are no patients yet.");
+      return;
+    }
+    downloadCsv(`patients-${dateStamp()}.csv`, EXPORT_COLUMNS, rowsFor(patients));
+  }
+
+  function exportPdf() {
+    if (patients.length === 0) {
+      alert("Nothing to export — there are no patients yet.");
+      return;
+    }
+    printTable("Patients List", EXPORT_COLUMNS, rowsFor(patients));
+  }
+
+  async function importPatients(rows: string[][]): Promise<ImportResult> {
+    const records = rows.map((r) => ({
+      firstName: r[0]?.trim(),
+      lastName: r[1]?.trim(),
+      gender: r[2]?.trim() || undefined,
+      dateOfBirth: r[3]?.trim() || undefined,
+      phone: r[4]?.trim() || undefined,
+      email: r[5]?.trim() || undefined,
+      address: r[6]?.trim() || undefined,
+      city: r[7]?.trim() || undefined,
+      state: r[8]?.trim() || undefined,
+      bloodGroup: r[9]?.trim() || undefined,
+      maritalStatus: r[10]?.trim() || undefined,
+    }));
+    const res = await fetch("/api/patients/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ records }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error ?? "Import failed");
+    const errors = (body.errors ?? []).map(
+      (e: { row?: number; message?: string }) =>
+        `Row ${e.row ?? "?"}: ${e.message ?? "Unknown error"}`
+    );
+    return { created: body.created ?? 0, failed: errors.length, errors };
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <ActionDropdown
+        label="New"
+        icon={<Plus size={16} aria-hidden="true" />}
+        items={[
+          {
+            label: "Patient",
+            description: "Register a single patient",
+            icon: <UserRoundPlus size={14} aria-hidden="true" />,
+            onClick: () => setAddOpen(true),
+          },
+          {
+            label: "Import Patients (CSV)",
+            description: "Upload a CSV to add many patients at once",
+            icon: <FileUp size={14} aria-hidden="true" />,
+            onClick: () => setImportOpen(true),
+          },
+        ]}
+      />
+      <ActionDropdown
+        label="Export"
+        variant="outline"
+        icon={<Download size={16} aria-hidden="true" />}
+        items={[
+          {
+            label: "Patients (CSV)",
+            description: "Download the patient list as a spreadsheet",
+            icon: <Download size={14} aria-hidden="true" />,
+            onClick: exportCsv,
+          },
+          {
+            label: "Patients (PDF)",
+            description: "Open a printable PDF of the patient list",
+            icon: <Download size={14} aria-hidden="true" />,
+            onClick: exportPdf,
+          },
+        ]}
+      />
+
+      <AddPatientModal open={addOpen} onClose={() => setAddOpen(false)} />
+      <CsvImportModal
+        open={importOpen}
+        title="Import Patients"
+        description="Add multiple patients from a CSV file. The first row must be the header with the columns below, in this order."
+        columns={IMPORT_COLUMNS}
+        sampleRows={IMPORT_SAMPLE}
+        templateFilename="patients-import-template.csv"
+        onClose={() => setImportOpen(false)}
+        onImport={importPatients}
+        onImported={() => router.refresh()}
+      />
+    </div>
+  );
+}

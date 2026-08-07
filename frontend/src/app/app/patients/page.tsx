@@ -2,7 +2,8 @@ import { Search, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, getClaims } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
-import { AddPatientButton, PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
+import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
+import PatientActions from "@/components/dashboard/patient-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export default async function PatientsPage({
             {query ? `${patients.length} result(s) for "${query}"` : `${patients.length} patient(s) on record`}
           </p>
         </div>
-        <AddPatientButton />
+        <PatientActions patients={patients} />
       </div>
 
       <form method="get" role="search" aria-label="Search patients">

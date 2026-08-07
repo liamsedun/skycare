@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarRange, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, Users } from "lucide-react";
+import { CalendarRange, Download, FileUp, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Trash2, UserRoundPlus, Users } from "lucide-react";
+import { ActionDropdown } from "@/components/ui/action-dropdown";
+import CsvImportModal, { type ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 
 interface StaffUser {
@@ -100,6 +103,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [busy, setBusy] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<DutyStatus>("all");
+  const [importOpen, setImportOpen] = useState(false);
   const [onDutyToday, setOnDutyToday] = useState<Set<string>>(new Set());
   const router = useRouter();
 
@@ -306,6 +310,92 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
     (u) => statusFilter === "all" || dutyStatusOf(u) === statusFilter
   );
 
+  const STAFF_EXPORT_COLUMNS = [
+    "full_name",
+    "email",
+    "phone",
+    "role",
+    "department",
+    "specialization",
+    "staff_number",
+    "account_status",
+  ];
+
+  function staffRows() {
+    return users.map((u) => [
+      u.full_name,
+      u.email,
+      u.phone ?? "",
+      ROLE_LABELS[u.role] ?? u.role,
+      u.staff?.department ?? "",
+      u.staff?.specialization ?? "",
+      u.staff?.staff_number ?? "",
+      u.is_active ? "Active" : "Disabled",
+    ]);
+  }
+
+  function exportStaffCsv() {
+    if (users.length === 0) {
+      alert("Nothing to export — there are no staff yet.");
+      return;
+    }
+    downloadCsv(`staff-${dateStamp()}.csv`, STAFF_EXPORT_COLUMNS, staffRows());
+  }
+
+  function exportStaffPdf() {
+    if (users.length === 0) {
+      alert("Nothing to export — there are no staff yet.");
+      return;
+    }
+    printTable("Staff List", STAFF_EXPORT_COLUMNS, staffRows());
+  }
+
+  async function importStaff(rows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    const notes: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const rowNo = i + 2;
+      const fullName = `${r[0]?.trim() ?? ""} ${r[1]?.trim() ?? ""}`.trim();
+      const email = r[2]?.trim() ?? "";
+      if (!fullName || !email) {
+        errors.push(`Row ${rowNo}: first_name, last_name and email are required`);
+        continue;
+      }
+      let password = r[7]?.trim() ?? "";
+      let generated = false;
+      if (password.length < 8) {
+        password = `SkyCare@${Math.random().toString(36).slice(2, 8)}`;
+        generated = true;
+      }
+      try {
+        const res = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName,
+            email,
+            phone: r[3]?.trim() || undefined,
+            role: (r[4]?.trim() as StaffRole) || "nurse",
+            department: r[5]?.trim() || undefined,
+            specialization: r[6]?.trim() || undefined,
+            password,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to create user");
+        created++;
+        notes.push(`${email}${generated ? ` — temp password: ${password}` : ""}`);
+      } catch (e) {
+        errors.push(
+          `Row ${rowNo} (${email}): ${e instanceof Error ? e.message : "Failed to create user"}`
+        );
+      }
+    }
+    return { created, failed: errors.length, errors, notes };
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -317,13 +407,45 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
             Manage your hospital&apos;s team — admins, doctors, nurses, pharmacists and more.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
-        >
-          <Plus size={16} aria-hidden="true" /> Add Admin / Staff
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ActionDropdown
+            label="New"
+            icon={<Plus size={16} aria-hidden="true" />}
+            items={[
+              {
+                label: "Staff",
+                description: "Add an admin or staff member",
+                icon: <UserRoundPlus size={14} aria-hidden="true" />,
+                onClick: () => setShowCreate(true),
+              },
+              {
+                label: "Import Staff (CSV)",
+                description: "Upload a CSV to add many staff at once",
+                icon: <FileUp size={14} aria-hidden="true" />,
+                onClick: () => setImportOpen(true),
+              },
+            ]}
+          />
+          <ActionDropdown
+            label="Export"
+            variant="outline"
+            icon={<Download size={16} aria-hidden="true" />}
+            items={[
+              {
+                label: "Staff (CSV)",
+                description: "Download the staff list as a spreadsheet",
+                icon: <Download size={14} aria-hidden="true" />,
+                onClick: exportStaffCsv,
+              },
+              {
+                label: "Staff (PDF)",
+                description: "Open a printable PDF of the staff list",
+                icon: <Download size={14} aria-hidden="true" />,
+                onClick: exportStaffPdf,
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {error && (
@@ -854,6 +976,20 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           </div>
         </div>
       )}
+
+      <CsvImportModal
+        open={importOpen}
+        title="Import Staff"
+        description="Add multiple staff members from a CSV file. The first row must be the header with the columns below, in this order. Leave password empty to generate a temporary one — it will be shown after import."
+        columns={["first_name", "last_name", "email", "phone", "role", "department", "specialization", "password"]}
+        sampleRows={[
+          ["Ada", "Okafor", "ada.okafor@clinic.com", "0803 000 1111", "doctor", "Cardiology", "Consultant", ""],
+        ]}
+        templateFilename="staff-import-template.csv"
+        onClose={() => setImportOpen(false)}
+        onImport={importStaff}
+        onImported={() => load()}
+      />
     </div>
   );
 }
