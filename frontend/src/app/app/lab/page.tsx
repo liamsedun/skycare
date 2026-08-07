@@ -21,6 +21,7 @@ export default async function LabPage() {
   return (
     <LabView
       canManageCatalog={role === "hospital_admin" || role === "super_admin"}
+      canEditService={role === "lab_tech" || role === "hospital_admin" || role === "super_admin"}
       canEnterResults={role === "lab_tech" || role === "hospital_admin" || role === "super_admin" || role === "doctor"}
     />
   );

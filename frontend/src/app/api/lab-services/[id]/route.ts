@@ -25,7 +25,8 @@ export const GET = withStaff(async (req, ctx) => {
   return ok(service);
 });
 
-// PATCH /api/lab-services/[id] — edit fields (staff) or approve/reject (admin)
+// PATCH /api/lab-services/[id] — edit fields + active toggle (hospital admin +
+// lab staff), or approve/reject (admin only)
 export const PATCH = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const id = req.nextUrl.pathname.split("/").pop()!;
@@ -33,11 +34,15 @@ export const PATCH = withStaff(async (req, ctx) => {
   if (!existing) throw new NotFoundError("Service not found");
 
   const isAdmin = ctx.role === "hospital_admin" || ctx.role === "super_admin";
+  const canEditCatalog = isAdmin || ctx.role === "lab_tech";
   const body = (await req.json()) as Record<string, unknown>;
 
   const patch: Record<string, unknown> = {};
   for (const key of ["name", "category_id", "type", "price", "reference_range", "external_lab_id"]) {
     if (key in body) patch[key] = body[key];
+  }
+  if (Object.keys(patch).length > 0 && !canEditCatalog) {
+    throw new ValidationError("Only hospital admins and lab staff can edit services");
   }
 
   if ("approval_status" in body) {
@@ -54,7 +59,7 @@ export const PATCH = withStaff(async (req, ctx) => {
   }
 
   if ("is_active" in body) {
-    if (!isAdmin) throw new ValidationError("Only hospital admins can toggle service availability");
+    if (!canEditCatalog) throw new ValidationError("Only hospital admins and lab staff can toggle service availability");
     patch.is_active = !!body.is_active;
   }
 

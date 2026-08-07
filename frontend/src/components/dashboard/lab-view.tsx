@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FlaskConical, Loader2, Plus, TestTube, Wrench } from "lucide-react";
+import { CalendarPlus, FlaskConical, Loader2, Plus, Search, TestTube, Wrench } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 
 interface LabService {
@@ -62,7 +62,7 @@ function approvalBadge(status: string): string {
   }
 }
 
-export default function LabView({ canManageCatalog, canEnterResults }: { canManageCatalog: boolean; canEnterResults: boolean }) {
+export default function LabView({ canManageCatalog, canEditService, canEnterResults }: { canManageCatalog: boolean; canEditService: boolean; canEnterResults: boolean }) {
   const router = useRouter();
   const [tab, setTab] = useState<"requests" | "services">("requests");
   const [requests, setRequests] = useState<LabRequest[]>([]);
@@ -227,7 +227,7 @@ export default function LabView({ canManageCatalog, canEnterResults }: { canMana
           )}
         </>
       ) : (
-        <ServicesTab canManageCatalog={canManageCatalog} onChanged={() => router.refresh()} />
+        <ServicesTab canManageCatalog={canManageCatalog} canEditService={canEditService} onChanged={() => router.refresh()} />
       )}
 
       {showCreate && (
@@ -263,14 +263,18 @@ export default function LabView({ canManageCatalog, canEnterResults }: { canMana
 }
 
 // ---------------------------------------------------------------------------
-// SERVICES TAB — catalog grouped by category with approval management
+// SERVICES TAB — catalog grouped by category with search, edit and approval
 // ---------------------------------------------------------------------------
-function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolean; onChanged: () => void }) {
+function ServicesTab({ canManageCatalog, canEditService, onChanged }: { canManageCatalog: boolean; canEditService: boolean; onChanged: () => void }) {
   const [services, setServices] = useState<LabService[]>([]);
   const [typeFilter, setTypeFilter] = useState<"all" | "lab" | "imaging">("all");
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<LabService | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -293,15 +297,31 @@ function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolea
     load();
   }, [load]);
 
+  const categories = useMemo(() => {
+    const set = new Set(services.map((s) => s.lab_categories?.name ?? "Uncategorized"));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [services]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return services.filter((s) => {
+      if (activeFilter === "active" && !s.is_active) return false;
+      if (activeFilter === "inactive" && s.is_active) return false;
+      if (categoryFilter !== "all" && (s.lab_categories?.name ?? "Uncategorized") !== categoryFilter) return false;
+      if (q && !s.name.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [services, search, categoryFilter, activeFilter]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, LabService[]>();
-    for (const s of services) {
+    for (const s of filtered) {
       const key = s.lab_categories?.name ?? "Uncategorized";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(s);
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [services]);
+  }, [filtered]);
 
   async function patch(id: string, body: Record<string, unknown>) {
     setBusyId(id);
@@ -364,6 +384,45 @@ function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolea
         ))}
       </div>
 
+      <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-white p-3 shadow-[var(--shadow-sm)] sm:flex-row sm:items-center">
+        <div className="relative min-w-[220px] flex-1">
+          <Search
+            size={16}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]"
+          />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search services by name…"
+            aria-label="Search services by name"
+            className={`${inputCls} pl-9`}
+          />
+        </div>
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          aria-label="Filter by group"
+          className={`${inputCls} sm:w-56`}
+        >
+          <option value="all">All groups</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          value={activeFilter}
+          onChange={(e) => setActiveFilter(e.target.value as "all" | "active" | "inactive")}
+          aria-label="Filter by availability"
+          className={`${inputCls} sm:w-44`}
+        >
+          <option value="all">Active &amp; inactive</option>
+          <option value="active">Active only</option>
+          <option value="inactive">Inactive only</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 size={24} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
@@ -371,7 +430,9 @@ function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolea
       ) : grouped.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <TestTube size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No services in the catalog yet.</p>
+          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+            {services.length === 0 ? "No services in the catalog yet." : "No services match your search."}
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -409,6 +470,16 @@ function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolea
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${approvalBadge(s.approval_status)}`}>
                         {s.approval_status}
                       </span>
+                      {canEditService && (
+                        <button
+                          type="button"
+                          disabled={busyId === s.id}
+                          onClick={() => setEditing(s)}
+                          className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)] disabled:opacity-60"
+                        >
+                          Edit
+                        </button>
+                      )}
                       {canManageCatalog && s.approval_status !== "approved" && (
                         <button
                           type="button"
@@ -429,7 +500,7 @@ function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolea
                           Reject
                         </button>
                       )}
-                      {canManageCatalog && (
+                      {canEditService && (
                         <button
                           type="button"
                           disabled={busyId === s.id}
@@ -459,7 +530,149 @@ function ServicesTab({ canManageCatalog, onChanged }: { canManageCatalog: boolea
           ))}
         </div>
       )}
+
+      {editing && (
+        <EditServiceModal
+          service={editing}
+          canCreateCategories={canManageCatalog}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            load();
+            onChanged();
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// EDIT SERVICE MODAL — name, group, type, amount, availability (admin + lab staff)
+// ---------------------------------------------------------------------------
+function EditServiceModal({
+  service,
+  canCreateCategories,
+  onClose,
+  onSaved,
+}: {
+  service: LabService;
+  canCreateCategories: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [isActive, setIsActive] = useState(service.is_active);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/lab-categories?pageSize=100", { cache: "no-store" });
+        const body = await res.json();
+        if (res.ok) setCategories(body.data ?? []);
+      } catch {
+        /* options non-critical */
+      }
+    })();
+  }, []);
+
+  async function handleSubmit(form: FormData) {
+    setBusy(true);
+    setError(null);
+    try {
+      const body: Record<string, unknown> = {
+        name: form.get("name"),
+        category_id: (form.get("categoryId") as string) || null,
+        type: form.get("type") || "lab",
+        price: Number(form.get("price") ?? 0),
+        reference_range: (form.get("referenceRange") as string) || null,
+        external_lab_id: (form.get("externalLabId") as string) || null,
+        is_active: isActive,
+      };
+      const res = await fetch(`/api/lab-services/${service.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to save changes");
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save changes");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalShell title={`Edit service — ${service.name}`} onClose={onClose}>
+      <form
+        className="mt-5 space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(new FormData(e.currentTarget));
+        }}
+      >
+        <div>
+          <label className={labelCls} htmlFor="edit-name">Service name</label>
+          <input id="edit-name" name="name" required defaultValue={service.name} className={inputCls} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls} htmlFor="edit-type">Type</label>
+            <select id="edit-type" name="type" className={inputCls} defaultValue={service.type}>
+              <option value="lab">Lab test</option>
+              <option value="imaging">Imaging / Scan</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="edit-price">Amount (₦)</label>
+            <input id="edit-price" name="price" type="number" min={0} step="0.01" defaultValue={service.price ?? 0} className={inputCls} />
+          </div>
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="edit-category">Group / category</label>
+          <select id="edit-category" name="categoryId" className={inputCls} defaultValue={service.category_id ?? ""}>
+            <option value="">Uncategorized</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          {canCreateCategories && (
+            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+              New groups can be created from the &quot;Add Service&quot; form.
+            </p>
+          )}
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="edit-range">Reference range (optional)</label>
+          <input id="edit-range" name="referenceRange" defaultValue={service.reference_range ?? ""} className={inputCls} placeholder="e.g. 30–100 ng/mL" />
+        </div>
+        <div>
+          <label className={labelCls} htmlFor="edit-ext">External lab ID (optional)</label>
+          <input id="edit-ext" name="externalLabId" defaultValue={service.external_lab_id ?? ""} className={inputCls} placeholder="e.g. EXT-0091" />
+        </div>
+        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
+          <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 accent-[var(--color-primary)]" />
+          Available for ordering (active)
+        </label>
+        {error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            {error}
+          </p>
+        )}
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="submit" disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+            {busy ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }
 
@@ -817,6 +1030,7 @@ function RequestDetailModal({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   async function updateStatus(status: string) {
     setBusy(true);
@@ -867,6 +1081,16 @@ function RequestDetailModal({
               className="focus-ring ml-auto rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-60"
             >
               Sample collected
+            </button>
+          )}
+          {canWork && (
+            <button
+              type="button"
+              onClick={() => setShowSchedule(true)}
+              disabled={busy}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-60"
+            >
+              <CalendarPlus size={14} aria-hidden="true" /> Schedule collection
             </button>
           )}
           {canWork && canEnterResults && request.status === "sample_collected" && (
@@ -944,6 +1168,173 @@ function RequestDetailModal({
           </button>
         )}
       </div>
+
+      {showSchedule && (
+        <ScheduleAppointmentModal
+          patient={request.patients}
+          servicesSummary={request.lab_request_items.map((t) => t.service_name).join(", ")}
+          onClose={() => setShowSchedule(false)}
+          onScheduled={() => setShowSchedule(false)}
+        />
+      )}
+    </ModalShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SCHEDULE APPOINTMENT MODAL — book a collection appointment for the request's
+// patient (or dependant) via /api/appointments
+// ---------------------------------------------------------------------------
+function ScheduleAppointmentModal({
+  patient,
+  servicesSummary,
+  onClose,
+  onScheduled,
+}: {
+  patient: LabRequest["patients"];
+  servicesSummary: string;
+  onClose: () => void;
+  onScheduled: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/staff?pageSize=100", { cache: "no-store" });
+        const body = await res.json();
+        setDoctors(
+          (body.data ?? [])
+            .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
+            .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({
+              id: s.users?.id ?? s.id,
+              label: s.users?.full_name ?? "Doctor",
+            }))
+        );
+      } catch {
+        /* options non-critical */
+      }
+    })();
+  }, []);
+
+  async function handleSubmit(form: FormData) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: patient?.id,
+          doctorId: (form.get("doctorId") as string) || undefined,
+          scheduledDate: form.get("date"),
+          startTime: form.get("startTime"),
+          endTime: (form.get("endTime") as string) || undefined,
+          type: form.get("type") || "in_person",
+          reason: `Sample collection — ${servicesSummary}`,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to schedule appointment");
+      setSuccess(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to schedule appointment");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalShell title="Schedule sample collection" onClose={onClose}>
+      {success ? (
+        <div className="mt-5 space-y-4">
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+            Appointment scheduled. The patient&apos;s portal account has been notified.
+          </p>
+          <button type="button" onClick={onClose} className="focus-ring w-full rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]">
+            Done
+          </button>
+        </div>
+      ) : (
+        <form
+          className="mt-5 space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(new FormData(e.currentTarget));
+          }}
+        >
+          <div>
+            <label className={labelCls}>Patient</label>
+            <p className="rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 px-3 py-2.5 text-sm font-medium text-[var(--color-foreground)]">
+              {patient ? `${patient.first_name} ${patient.last_name} (${patient.patient_number})` : "Unknown"}
+            </p>
+            <p className="mt-1.5 text-xs text-[var(--color-muted-fg)]">{servicesSummary}</p>
+          </div>
+
+          <div>
+            <label className={labelCls} htmlFor="sch-doctor">Doctor (optional)</label>
+            <select id="sch-doctor" name="doctorId" className={inputCls}>
+              <option value="">No doctor assigned</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>{d.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls} htmlFor="sch-date">Date</label>
+              <input
+                id="sch-date"
+                name="date"
+                type="date"
+                required
+                min={new Date().toISOString().split("T")[0]}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="sch-type">Type</label>
+              <select id="sch-type" name="type" className={inputCls} defaultValue="in_person">
+                <option value="in_person">In person</option>
+                <option value="home_visit">Home visit</option>
+                <option value="follow_up">Follow up</option>
+                <option value="video_call">Video call</option>
+                <option value="telephone">Telephone</option>
+                <option value="telemedicine">Telemedicine</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelCls} htmlFor="sch-start">Start time</label>
+              <input id="sch-start" name="startTime" type="time" required className={inputCls} />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="sch-end">End time (optional)</label>
+              <input id="sch-end" name="endTime" type="time" className={inputCls} />
+            </div>
+          </div>
+
+          {error && (
+            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">
+              Cancel
+            </button>
+            <button type="submit" disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+              {busy ? "Scheduling…" : "Schedule appointment"}
+            </button>
+          </div>
+        </form>
+      )}
     </ModalShell>
   );
 }
