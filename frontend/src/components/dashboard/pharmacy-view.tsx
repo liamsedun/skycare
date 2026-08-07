@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pill, Plus, X, Printer } from "lucide-react";
+import { Pill, Plus, X, Printer, Sparkles, AlertTriangle } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 
 interface RxItem {
@@ -40,6 +40,40 @@ interface DrugOption {
   dosage: string | null;
   unitPrice: number;
   inStock: number;
+}
+
+interface AiRec {
+  id: string;
+  name: string;
+  category: string | null;
+  dosage: string | null;
+  unitPrice: number | null;
+  stockQty: number;
+}
+
+interface AiInteraction {
+  drugAId: string;
+  drugBId: string;
+  drugAName: string;
+  drugBName: string;
+  severity: "major" | "moderate" | "minor";
+  effect: string | null;
+  advice: string | null;
+}
+
+interface AiAlternative {
+  id: string;
+  name: string;
+  sameGeneric: boolean;
+  inStock: boolean;
+  stockQty: number;
+  unitPrice: number | null;
+}
+
+interface AiPricing {
+  suggestedLow: number;
+  suggestedHigh: number;
+  currentPrice: number;
 }
 
 const STATUS_FILTERS = ["all", "pending", "processing", "partial", "dispensed", "cancelled", "completed"];
@@ -111,11 +145,11 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
         </button>
       </div>
 
-      {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
-          {error}
-        </p>
-      )}
+{error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            {error}
+          </p>
+        )}
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter prescriptions">
         {STATUS_FILTERS.map((item) => (
@@ -210,6 +244,11 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
   const [pharmacyType, setPharmacyType] = useState<"in_house" | "external">("in_house");
   const [externalName, setExternalName] = useState("");
   const [items, setItems] = useState<CreateItem[]>([newItem()]);
+  const [diagnosis, setDiagnosis] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiRecs, setAiRecs] = useState<AiRec[] | null>(null);
+  const [aiAdded, setAiAdded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     (async () => {
@@ -236,6 +275,45 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
       }
     })();
   }, []);
+
+  async function aiSuggest() {
+    const dx = diagnosis.trim();
+    if (dx.length < 3) {
+      setAiError("Type a diagnosis (3+ characters) to get suggestions");
+      return;
+    }
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await fetch("/api/pharmacy/ai/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ diagnosis: dx }),
+        cache: "no-store",
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "AI suggestion failed");
+      setAiRecs(body.data ?? []);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "AI suggestion failed");
+      setAiRecs(null);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function addRec(r: AiRec) {
+    if (aiAdded.has(r.id)) return;
+    setItems((prev) => [
+      ...prev,
+      { ...newItem(), medicationName: r.name, pharmacyDrugId: r.id, dosage: r.dosage ?? "1" },
+    ]);
+    setAiAdded((prev) => new Set(prev).add(r.id));
+  }
+
+  function addAllRecs() {
+    for (const r of aiRecs ?? []) addRec(r);
+  }
 
   async function handleSubmit(form: FormData) {
     setBusy(true);
@@ -308,8 +386,85 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className={labelCls} htmlFor="rx-dx">Diagnosis (optional)</label>
-            <input id="rx-dx" name="diagnosis" className={inputCls} />
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className={labelCls + " mb-0"} htmlFor="rx-dx">Diagnosis (optional)</label>
+              <button
+                type="button"
+                onClick={aiSuggest}
+                disabled={aiLoading || diagnosis.trim().length < 3}
+                className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-primary)]/40 px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:bg-[var(--color-primary-soft)] disabled:opacity-50"
+              >
+                <Sparkles size={13} aria-hidden="true" />
+                {aiLoading ? "Analysing…" : "AI medication suggestions"}
+              </button>
+            </div>
+            <input
+              id="rx-dx"
+              name="diagnosis"
+              value={diagnosis}
+              onChange={(e) => setDiagnosis(e.target.value)}
+              placeholder="e.g. Malaria, uncomplicated"
+              className={inputCls}
+            />
+            {aiError && (
+              <p role="alert" className="mt-1 text-xs font-medium text-[var(--color-destructive)]">{aiError}</p>
+            )}
+            {aiRecs && (
+              <div className="mt-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                    Suggested medications
+                  </p>
+                  {aiRecs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={addAllRecs}
+                      disabled={aiRecs.every((r) => aiAdded.has(r.id))}
+                      className="focus-ring text-xs font-semibold text-[var(--color-primary)] hover:underline disabled:opacity-50"
+                    >
+                      Add all
+                    </button>
+                  )}
+                </div>
+                {aiRecs.length === 0 ? (
+                  <p className="text-xs text-[var(--color-muted-fg)]">
+                    No catalog match for this diagnosis — type medication names below.
+                  </p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {aiRecs.map((r) => {
+                      const added = aiAdded.has(r.id);
+                      const outOfStock = Number(r.stockQty ?? 0) <= 0;
+                      return (
+                        <li key={r.id} className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{r.name}</p>
+                            <p className="text-xs text-[var(--color-muted-fg)]">
+                              {[r.category, r.dosage ? `dose ${r.dosage}` : null].filter(Boolean).join(" · ")}
+                              {" · "}
+                              {outOfStock ? (
+                                <span className="font-semibold text-red-500">out of stock</span>
+                              ) : (
+                                <span className="font-semibold text-emerald-600">{r.stockQty} in stock</span>
+                              )}
+                              {Number(r.unitPrice ?? 0) > 0 && ` · ₦${Number(r.unitPrice).toLocaleString()}`}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => addRec(r)}
+                            disabled={added}
+                            className="focus-ring shrink-0 rounded-lg border border-[var(--color-primary)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:bg-[var(--color-primary-soft)] disabled:cursor-default disabled:border-[var(--color-border)] disabled:text-[var(--color-muted-fg)]"
+                          >
+                            {added ? "Added" : "Add"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
           <div className="sm:col-span-2">
             <label className={labelCls}>Fulfilment</label>
@@ -581,13 +736,20 @@ function RxDetailModal({ rx, canDispense, onClose, onChanged }: { rx: Prescripti
   const [batchSel, setBatchSel] = useState<Record<string, string>>({});
   const [plan, setPlan] = useState<Record<string, number>>({});
   const [printing, setPrinting] = useState(false);
+  const [interactions, setInteractions] = useState<AiInteraction[]>([]);
+  const [pricingByDrug, setPricingByDrug] = useState<Record<string, AiPricing>>({});
+  const [alts, setAlts] = useState<Record<string, AiAlternative[]>>({});
+  const [altLoadingFor, setAltLoadingFor] = useState<string | null>(null);
 
   const dispatchable = canDispense && !["cancelled", "dispensed", "completed"].includes(rx.status);
 
-  // Load stock batches per item that has a pharmacy catalog link
+  // Load stock batches per item that has a pharmacy catalog link, then run the
+  // AI assists: interaction watch across catalogued drugs + suggested retail
+  // pricing per catalogued drug.
   useEffect(() => {
     const itemsWithDrug = rx.prescription_items.filter((i) => i.pharmacy_drug_id);
     if (itemsWithDrug.length === 0) return;
+    let alive = true;
     (async () => {
       const entries = await Promise.all(
         itemsWithDrug.map(async (i) => {
@@ -600,6 +762,7 @@ function RxDetailModal({ rx, canDispense, onClose, onChanged }: { rx: Prescripti
           }
         })
       );
+      if (!alive) return;
       const map = Object.fromEntries(entries);
       setBatches(map);
       // Pre-select the largest available batch per item
@@ -608,8 +771,52 @@ function RxDetailModal({ rx, canDispense, onClose, onChanged }: { rx: Prescripti
         if (list.length > 0) sel[itemId] = list[0].id;
       }
       setBatchSel(sel);
+
+      // AI: dangerous-combination check across the catalogue drugs
+      const drugIds = itemsWithDrug.map((i) => i.pharmacy_drug_id!);
+      if (drugIds.length >= 2) {
+        try {
+          const res = await fetch("/api/pharmacy/ai/interactions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ drugIds }),
+            cache: "no-store",
+          });
+          const body = await res.json();
+          if (alive && res.ok) setInteractions(body.data ?? []);
+        } catch { /* non-critical */ }
+      }
+
+      // AI: suggested retail price band per catalogued drug
+      const priceEntries = await Promise.all(
+        drugIds.map(async (drugId) => {
+          try {
+            const res = await fetch(`/api/pharmacy/ai/pricing/${drugId}`, { cache: "no-store" });
+            const body = await res.json();
+            return res.ok && body.data ? ([drugId, body.data] as const) : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      if (alive) {
+        setPricingByDrug(Object.fromEntries(priceEntries.filter((e): e is [string, AiPricing] => e !== null)));
+      }
     })();
+    return () => { alive = false; };
   }, [rx.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function loadAlternatives(drugId: string) {
+    if (alts[drugId]) return;
+    setAltLoadingFor(drugId);
+    try {
+      const res = await fetch(`/api/pharmacy/ai/alternatives/${drugId}`, { cache: "no-store" });
+      const body = await res.json();
+      if (res.ok) setAlts((prev) => ({ ...prev, [drugId]: body.data ?? [] }));
+    } catch { /* non-critical */ } finally {
+      setAltLoadingFor(null);
+    }
+  }
 
   const remaining = (item: RxItem) => Math.max(0, item.quantity - item.dispensed_qty);
 
@@ -729,6 +936,44 @@ const itemsPayload = rx.prescription_items
           </p>
         )}
 
+        {interactions.length > 0 && (
+          <div className="space-y-2">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-foreground)]">
+              <AlertTriangle size={15} className="text-amber-500" aria-hidden="true" />
+              Interaction check
+            </p>
+            {interactions.map((ix) => {
+              const strong = ix.severity === "major";
+              const warn = ix.severity === "moderate";
+              return (
+                <div
+                  key={`${ix.drugAId}-${ix.drugBId}`}
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    strong
+                      ? "border-red-200 bg-red-50 text-red-800"
+                      : warn
+                        ? "border-amber-200 bg-amber-50 text-amber-800"
+                        : "border-slate-200 bg-slate-50 text-slate-700"
+                  }`}
+                >
+                  <p className="font-semibold">
+                    {ix.drugAName} + {ix.drugBName}
+                    <span
+                      className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                        strong ? "bg-red-600 text-white" : warn ? "bg-amber-500 text-white" : "bg-slate-400 text-white"
+                      }`}
+                    >
+                      {ix.severity}
+                    </span>
+                  </p>
+                  {ix.effect && <p className="mt-0.5 text-xs">{ix.effect}</p>}
+                  {ix.advice && <p className="mt-0.5 text-xs font-medium">Advice: {ix.advice}</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
           <table className="w-full text-left text-sm">
             <thead>
@@ -761,6 +1006,70 @@ const itemsPayload = rx.prescription_items
                       {item.instructions && (
                         <p className="text-xs text-[var(--color-muted-fg)]">{item.instructions}</p>
                       )}
+                      {item.pharmacy_drug_id &&
+                        (() => {
+                          const drugId = item.pharmacy_drug_id;
+                          const price = pricingByDrug[drugId];
+                          const outOfStock = !external && list.length > 0 && list.every((b) => b.quantityOnHand <= 0);
+                          const altList = alts[drugId];
+                          return (
+                            <>
+                              {price && price.suggestedLow > 0 && (
+                                <p className="mt-0.5 text-[11px] font-medium text-emerald-700">
+                                  Suggested retail ₦{Math.round(price.suggestedLow).toLocaleString()}–₦
+                                  {Math.round(price.suggestedHigh).toLocaleString()}
+                                  {price.currentPrice > 0 && price.currentPrice !== price.suggestedLow && (
+                                    <span className="text-[var(--color-muted-fg)]">
+                                      {" "}· current ₦{Math.round(price.currentPrice).toLocaleString()}
+                                    </span>
+                                  )}
+                                </p>
+                              )}
+                              {outOfStock && (
+                                <div className="mt-1">
+                                  {altList ? (
+                                    <div className="space-y-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-2">
+                                      <p className="text-[10px] font-bold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                                        Alternatives
+                                      </p>
+                                      {altList.length === 0 ? (
+                                        <p className="text-xs text-[var(--color-muted-fg)]">
+                                          No same-category alternatives in the catalog.
+                                        </p>
+                                      ) : (
+                                        altList.map((alt) => (
+                                          <p key={alt.id} className="text-xs text-[var(--color-foreground)]">
+                                            <span className="font-semibold">{alt.name}</span>
+                                            {alt.sameGeneric && (
+                                              <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[9px] font-bold uppercase text-sky-700">
+                                                same generic
+                                              </span>
+                                            )}
+                                            <span className="text-[var(--color-muted-fg)]">
+                                              {" · "}
+                                              {alt.inStock ? `${alt.stockQty} in stock` : "out of stock"}
+                                              {Number(alt.unitPrice ?? 0) > 0 && ` · ₦${Number(alt.unitPrice).toLocaleString()}`}
+                                            </span>
+                                          </p>
+                                        ))
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => loadAlternatives(drugId)}
+                                      disabled={altLoadingFor === drugId}
+                                      className="focus-ring flex items-center gap-1 text-xs font-semibold text-[var(--color-primary)] hover:underline disabled:opacity-50"
+                                    >
+                                      <Sparkles size={12} aria-hidden="true" />
+                                      {altLoadingFor === drugId ? "Checking catalog…" : "Out of stock — find alternatives"}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                     </td>
                     <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.dosage}</td>
                     <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.frequency}</td>

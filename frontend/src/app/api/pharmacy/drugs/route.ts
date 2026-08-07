@@ -5,13 +5,14 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 // GET /api/pharmacy/drugs?query=&category=&branch_id=
-// Doctor's drug picker — searches the pharmacy catalog (name / generic /
-// brand trigram indexes) via the search_pharmacy_drugs RPC. Also returns
-// available stock (sum of non-expired batch quantities) so the clinician
-// knows what's in-house before prescribing.
+// Doctor's drug picker with auto-complete ranking: the catalog RPC does
+// trigram-prefixed substring matching; we re-rank here for typing-ahead —
+// exact name prefix of the query first, then generic-name prefix, then
+// fuzzy bits so "amg" surfaces "Amoxicillin" before alphabetically earlier
+// rows.
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const query = resolveParam(req.nextUrl.searchParams.get("query"));
+  const query = (resolveParam(req.nextUrl.searchParams.get("query")) ?? "").trim();
   const category = resolveParam(req.nextUrl.searchParams.get("category"));
   const branchId = resolveParam(req.nextUrl.searchParams.get("branch_id"));
 
@@ -38,21 +39,39 @@ export const GET = withStaff(async (req, ctx) => {
     }
   }
 
-  return ok(
-    rows.map((d: any) => ({
-      id: d.id,
-      name: d.name,
-      genericName: d.generic_name,
-      brand: d.brand,
-      category: d.category,
-      form: d.form,
-      dosage: d.dosage,
-      unitPrice: d.unit_price,
-      requiresRx: d.requires_rx,
-      isControlled: d.is_controlled,
-      inStock: stockMap.get(d.id) ?? 0,
-    }))
-  );
+  const mapRow = (d: any) => ({
+    id: d.id,
+    name: d.name,
+    genericName: d.generic_name,
+    brand: d.brand,
+    category: d.category,
+    form: d.form,
+    dosage: d.dosage,
+    unitPrice: d.unit_price,
+    requiresRx: d.requires_rx,
+    isControlled: d.is_controlled,
+    inStock: stockMap.get(d.id) ?? 0,
+  });
+
+  if (!query) return ok(rows.map(mapRow));
+
+  // Auto-complete ranking: name prefix beats name substring and generic prefix,
+  // and abbreviation (e.g. "amox") still matches via generic-name starts-with.
+  const q = query.toLowerCase();
+  const score = (d: any): number => {
+    const name = (d.name ?? "").toLowerCase();
+    const generic = (d.generic_name ?? "").toLowerCase();
+    const brand = (d.brand ?? "").toLowerCase();
+    if (name.startsWith(q)) return 1000;
+    if (generic.startsWith(q)) return 900;
+    if (brand.startsWith(q)) return 899;
+    if (name.includes(" " + q)) return 800; // word boundary
+    if (name.includes(q)) return 700;
+    if (generic.includes(q)) return 690;
+    return 600;
+  };
+
+  return ok(rows.map((d: any) => ({ d, s: score(d) })).sort((a, b) => b.s - a.s).map((x) => mapRow(x.d)));
 });
 
 export const runtime = "nodejs";
