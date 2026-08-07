@@ -16,6 +16,11 @@ interface FamilyMember {
   dependant_relationship: string | null;
   is_primary_account: boolean;
   user_id: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
 }
 
 const inputCls =
@@ -33,6 +38,7 @@ function age(dob: string | null): string | null {
 export default function PatientFamily() {
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [rootId, setRootId] = useState<string | null>(null);
+  const [selfId, setSelfId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -47,6 +53,7 @@ export default function PatientFamily() {
       if (!res.ok) throw new Error(body.error ?? "Failed to load family");
       setFamily(body.family ?? []);
       setRootId(body.rootId ?? null);
+      setSelfId(body.selfId ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load family");
     } finally {
@@ -115,6 +122,7 @@ export default function PatientFamily() {
 
   const self = family.find((m) => m.is_primary_account);
   const dependants = family.filter((m) => !m.is_primary_account);
+  const isMainAccount = selfId !== null && selfId === rootId;
 
   return (
     <div className="space-y-6">
@@ -122,10 +130,12 @@ export default function PatientFamily() {
         <div>
           <h1 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[var(--color-foreground)]">Family</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            Manage your family account{dependants.length > 0 ? ` — ${dependants.length} of 5 members added` : ""}.
+            {isMainAccount
+              ? `Manage your family account${dependants.length > 0 ? ` — ${dependants.length} of 5 members added` : ""}.`
+              : "You are a family member on this account. Only the main account holder can add or remove members."}
           </p>
         </div>
-        {rootId && dependants.length < 5 && (
+        {isMainAccount && rootId && dependants.length < 5 && (
           <button
             type="button"
             onClick={() => setShowAdd(true)}
@@ -159,17 +169,22 @@ export default function PatientFamily() {
           {family.map((m) => (
             <div key={m.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-[var(--color-foreground)]">
-                    {m.first_name} {m.last_name}
-                  </p>
-                  <p className="font-mono text-xs text-[var(--color-muted-fg)]">{m.patient_number}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-sm font-bold text-[var(--color-primary-dark)]">
+                    {`${m.first_name[0] ?? ""}${m.last_name[0] ?? ""}`.toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-[var(--color-foreground)]">
+                      {m.first_name} {m.last_name}
+                    </p>
+                    <p className="font-mono text-xs text-[var(--color-muted-fg)]">{m.patient_number}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase text-[var(--color-primary-dark)]">
                     {m.is_primary_account ? "Main account" : (m.dependant_relationship ?? "Family").replace(/_/g, " ")}
                   </span>
-                  {!m.is_primary_account && !m.user_id && (
+                  {isMainAccount && !m.is_primary_account && !m.user_id && (
                     <button
                       type="button"
                       onClick={() => removeMember(m.id, m.first_name)}
@@ -200,6 +215,22 @@ export default function PatientFamily() {
                   <dt className="text-xs text-[var(--color-muted-fg)]">Email</dt>
                   <dd className="truncate text-[var(--color-foreground)]">
                     {m.email ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`mailto:${m.email}`}>{m.email}</a> : "—"}
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-xs text-[var(--color-muted-fg)]">Address</dt>
+                  <dd className="text-[var(--color-foreground)]">
+                    {[m.address, m.city, m.state].filter(Boolean).join(", ") || "—"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-[var(--color-muted-fg)]">Emergency Contact</dt>
+                  <dd className="text-[var(--color-foreground)]">{m.emergency_contact_name ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-[var(--color-muted-fg)]">Emergency Phone</dt>
+                  <dd className="text-[var(--color-foreground)]">
+                    {m.emergency_contact_phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${m.emergency_contact_phone}`}>{m.emergency_contact_phone}</a> : "—"}
                   </dd>
                 </div>
               </dl>

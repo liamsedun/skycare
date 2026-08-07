@@ -39,7 +39,7 @@ export const GET = withAuth(async (req, ctx) => {
 
   const { data: family } = await ctx.svc
     .from("patients")
-    .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, dependant_relationship, is_primary_account, status, user_id, marital_status, blood_group, genotype, medical_plan, address, city, state")
+    .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, dependant_relationship, is_primary_account, status, user_id, marital_status, blood_group, genotype, medical_plan, address, city, state, emergency_contact_name, emergency_contact_phone")
     .eq("tenant_id", tenantId)
     .or(`id.eq.${rootId},primary_account_id.eq.${rootId}`)
     .order("is_primary_account", { ascending: false })

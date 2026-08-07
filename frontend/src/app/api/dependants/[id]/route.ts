@@ -56,6 +56,7 @@ export const PUT = withAuth(async (req, ctx) => {
   const allowed = [
     "first_name", "last_name", "gender", "date_of_birth", "phone", "email",
     "blood_group", "genotype", "allergies", "chronic_conditions", "dependant_relationship", "status",
+    "address", "city", "state", "emergency_contact_name", "emergency_contact_phone",
   ];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {

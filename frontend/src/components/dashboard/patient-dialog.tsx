@@ -43,6 +43,14 @@ export interface PatientRow {
   status: string;
 }
 
+interface DependantRow extends PatientRow {
+  address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  dependant_relationship: string | null;
+  user_id: string | null;
+}
+
 interface PatientDetail extends PatientRow {
   address: string | null;
   blood_group: string | null;
@@ -54,7 +62,7 @@ interface PatientDetail extends PatientRow {
   emergency_contact_phone: string | null;
   marital_status: string | null;
   user_id: string | null;
-  dependants: PatientRow[];
+  dependants: DependantRow[];
 }
 
 const inputCls =
@@ -380,6 +388,8 @@ export function PatientViewButton({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [editDependant, setEditDependant] = useState<DependantRow | null>(null);
+  const [showAddDependant, setShowAddDependant] = useState(false);
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [tab, setTab] = useState<"info" | "records" | "notes" | "reports">("info");
 
@@ -552,6 +562,11 @@ export function PatientViewButton({
           dateOfBirth: form.get("dateOfBirth") || undefined,
           phone: form.get("phone") || undefined,
           relationship: form.get("relationship"),
+          address: form.get("address") || undefined,
+          city: form.get("city") || undefined,
+          state: form.get("state") || undefined,
+          emergencyContactName: form.get("emergencyContactName") || undefined,
+          emergencyContactPhone: form.get("emergencyContactPhone") || undefined,
         }),
       });
       const body = await res.json();
@@ -559,6 +574,38 @@ export function PatientViewButton({
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add dependant");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateDependant(id: string, form: FormData) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/dependants/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: form.get("firstName"),
+          last_name: form.get("lastName"),
+          gender: form.get("gender") || null,
+          date_of_birth: form.get("dateOfBirth") || null,
+          phone: form.get("phone") || null,
+          dependant_relationship: form.get("relationship"),
+          address: form.get("address") || null,
+          city: form.get("city") || null,
+          state: form.get("state") || null,
+          emergency_contact_name: form.get("emergencyContactName") || null,
+          emergency_contact_phone: form.get("emergencyContactPhone") || null,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update dependant");
+      setEditDependant(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update dependant");
     } finally {
       setBusy(false);
     }
@@ -778,7 +825,8 @@ export function PatientViewButton({
               ) : (
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
                   {[
-                    ["DOB", detail.date_of_birth ? formatDateOnly(detail.date_of_birth) : "—"],
+                    ["Date of Birth", detail.date_of_birth ? formatDateOnly(detail.date_of_birth) : "—"],
+                    ["Age", detail.date_of_birth ? calculateAge(detail.date_of_birth) : "—"],
                     ["Phone", detail.phone],
                     ["Email", detail.email],
                     ["Address", [detail.address, detail.city, detail.state].filter(Boolean).join(", ") || "—"],
@@ -793,46 +841,216 @@ export function PatientViewButton({
                   ].map(([k, v]) => (
                     <div key={k as string}>
                       <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{k}</dt>
-                      <dd className="mt-0.5 font-medium text-[var(--color-foreground)]">{v ?? "—"}</dd>
+                      <dd className="mt-0.5 font-medium text-[var(--color-foreground)]">
+                        {k === "Phone" && v ? (
+                          <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${v}`}>{v}</a>
+                        ) : k === "Email" && v ? (
+                          <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`mailto:${v}`}>{v}</a>
+                        ) : k === "Emergency Phone" && v ? (
+                          <a className="focus-ring text-[var(--color-primary)] transition-colors duration-200 hover:underline" href={`tel:${v}`}>{v}</a>
+                        ) : (
+                          v ?? "—"
+                        )}
+                      </dd>
                     </div>
                   ))}
                 </dl>
               )}
 
               <section>
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
-                  <Users size={15} aria-hidden="true" /> Dependants
-                  <span className="text-xs font-normal text-[var(--color-muted-fg)]">
-                    ({detail.dependants.length}/5)
-                  </span>
-                </h3>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
+                    <Users size={15} aria-hidden="true" /> Dependants
+                    <span className="text-xs font-normal text-[var(--color-muted-fg)]">
+                      {detail.dependants.length} of 5 family members
+                    </span>
+                  </h3>
+                  {detail.dependants.length < 5 && !editDependant && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddDependant((v) => !v)}
+                      className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
+                    >
+                      {showAddDependant ? "Close form" : "+ Add Dependant"}
+                    </button>
+                  )}
+                </div>
                 {error && <ErrorNote error={error} />}
+
                 {detail.dependants.length > 0 && (
-                  <ul className="mb-4 space-y-2">
-                    {detail.dependants.map((d) => (
-                      <li
-                        key={d.id}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-[var(--color-foreground)]">
-                            {d.last_name}, {d.first_name}
-                          </p>
-                          <p className="font-mono text-xs text-[var(--color-muted-fg)]">{d.patient_number}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeDependant(d.id)}
-                          disabled={busy}
-                          className="focus-ring shrink-0 rounded-lg px-2 py-1 text-xs font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
+                  <div className="mb-4 space-y-3">
+                    {detail.dependants.map((d) =>
+                      editDependant?.id === d.id ? (
+                        <form
+                          key={d.id}
+                          className="grid grid-cols-1 gap-3 rounded-xl border border-[var(--color-primary)]/40 bg-[var(--color-primary-soft)]/40 p-4 sm:grid-cols-2"
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            updateDependant(d.id, new FormData(e.currentTarget));
+                          }}
                         >
-                          Remove
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-primary-dark)] sm:col-span-2">
+                            Edit Dependant — {d.first_name} {d.last_name}
+                          </p>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-f-${d.id}`}>First Name</label>
+                            <input id={`dep-f-${d.id}`} name="firstName" defaultValue={d.first_name} required className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-l-${d.id}`}>Last Name</label>
+                            <input id={`dep-l-${d.id}`} name="lastName" defaultValue={d.last_name} required className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-g-${d.id}`}>Gender</label>
+                            <Combobox
+                              id={`dep-g-${d.id}`}
+                              name="gender"
+                              options={GENDERS}
+                              normalize={capitalize}
+                              defaultValue={d.gender ? capitalize(d.gender) : ""}
+                              placeholder="Pick or Type"
+                            />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-dob-${d.id}`}>Date of Birth</label>
+                            <input id={`dep-dob-${d.id}`} name="dateOfBirth" type="date" defaultValue={d.date_of_birth?.slice(0, 10) ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-ph-${d.id}`}>Phone</label>
+                            <input id={`dep-ph-${d.id}`} name="phone" defaultValue={d.phone ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-r-${d.id}`}>Relationship</label>
+                            <select id={`dep-r-${d.id}`} name="relationship" defaultValue={d.dependant_relationship ?? "other"} className={inputCls}>
+                              <option value="spouse">Spouse</option>
+                              <option value="child">Child</option>
+                              <option value="parent">Parent</option>
+                              <option value="sibling">Sibling</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className={labelCls} htmlFor={`dep-a-${d.id}`}>Address</label>
+                            <input id={`dep-a-${d.id}`} name="address" defaultValue={d.address ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-c-${d.id}`}>City</label>
+                            <input id={`dep-c-${d.id}`} name="city" defaultValue={d.city ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-s-${d.id}`}>State</label>
+                            <input id={`dep-s-${d.id}`} name="state" defaultValue={d.state ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-ec-${d.id}`}>Emergency Contact</label>
+                            <input id={`dep-ec-${d.id}`} name="emergencyContactName" defaultValue={d.emergency_contact_name ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-ep-${d.id}`}>Emergency Phone</label>
+                            <input id={`dep-ep-${d.id}`} name="emergencyContactPhone" defaultValue={d.emergency_contact_phone ?? ""} className={inputCls} />
+                          </div>
+                          <div className="flex gap-3 sm:col-span-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditDependant(null)}
+                              disabled={busy}
+                              className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              disabled={busy}
+                              className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                            >
+                              {busy ? "Saving…" : "Save Changes"}
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div
+                          key={d.id}
+                          className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary-soft)] text-sm font-bold text-[var(--color-primary-dark)]">
+                                {`${d.first_name[0] ?? ""}${d.last_name[0] ?? ""}`.toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-semibold text-[var(--color-foreground)]">
+                                  {d.last_name}, {d.first_name}
+                                </p>
+                                <p className="font-mono text-xs text-[var(--color-muted-fg)]">{d.patient_number}</p>
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              <span className="rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-primary-dark)]">
+                                {d.dependant_relationship ?? "Family"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setEditDependant(d)}
+                                disabled={busy}
+                                className="focus-ring rounded-lg px-2 py-1 text-xs font-medium text-[var(--color-primary)] transition-colors duration-200 hover:bg-[var(--color-primary-soft)]"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeDependant(d.id)}
+                                disabled={busy}
+                                className="focus-ring rounded-lg px-2 py-1 text-xs font-medium text-red-600 transition-colors duration-200 hover:bg-red-50"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                          <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+                            <div>
+                              <dt className="text-[var(--color-muted-fg)]">Gender</dt>
+                              <dd className="font-medium capitalize text-[var(--color-foreground)]">{d.gender ?? "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-[var(--color-muted-fg)]">Date of Birth</dt>
+                              <dd className="font-medium text-[var(--color-foreground)]">
+                                {d.date_of_birth ? formatDateOnly(d.date_of_birth) : "—"}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[var(--color-muted-fg)]">Phone</dt>
+                              <dd className="font-medium text-[var(--color-foreground)]">
+                                {d.phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${d.phone}`}>{d.phone}</a> : "—"}
+                              </dd>
+                            </div>
+                            <div className="col-span-2 sm:col-span-3">
+                              <dt className="text-[var(--color-muted-fg)]">Address</dt>
+                              <dd className="font-medium text-[var(--color-foreground)]">
+                                {[d.address, d.city, d.state].filter(Boolean).join(", ") || "—"}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[var(--color-muted-fg)]">Emergency Contact</dt>
+                              <dd className="font-medium text-[var(--color-foreground)]">{d.emergency_contact_name ?? "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="text-[var(--color-muted-fg)]">Emergency Phone</dt>
+                              <dd className="font-medium text-[var(--color-foreground)]">
+                                {d.emergency_contact_phone ? <a className="focus-ring text-[var(--color-primary)] hover:underline" href={`tel:${d.emergency_contact_phone}`}>{d.emergency_contact_phone}</a> : "—"}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-[var(--color-muted-fg)]">Portal Login</dt>
+                              <dd className="font-medium text-[var(--color-foreground)]">{d.user_id ? "Active" : "None"}</dd>
+                            </div>
+                          </dl>
+                        </div>
+                      )
+                    )}
+                  </div>
                 )}
-                {detail.dependants.length < 5 && (
+
+                {showAddDependant && detail.dependants.length < 5 && !editDependant && (
                   <form
                     className="grid grid-cols-1 gap-3 rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4 sm:grid-cols-2"
                     onSubmit={(e) => {
@@ -880,6 +1098,29 @@ export function PatientViewButton({
                         <option value="other">Other</option>
                       </select>
                     </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls} htmlFor="d-address">Address</label>
+                      <input id="d-address" name="address" defaultValue={detail.address ?? ""} className={inputCls} placeholder="Copied from main patient — editable" />
+                    </div>
+                    <div>
+                      <label className={labelCls} htmlFor="d-city">City</label>
+                      <input id="d-city" name="city" defaultValue={detail.city ?? ""} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls} htmlFor="d-state">State</label>
+                      <input id="d-state" name="state" defaultValue={detail.state ?? ""} className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls} htmlFor="d-ec-name">Emergency Contact</label>
+                      <input id="d-ec-name" name="emergencyContactName" defaultValue={detail.emergency_contact_name ?? ""} className={inputCls} placeholder="Copied from main patient — editable" />
+                    </div>
+                    <div>
+                      <label className={labelCls} htmlFor="d-ec-phone">Emergency Phone</label>
+                      <input id="d-ec-phone" name="emergencyContactPhone" defaultValue={detail.emergency_contact_phone ?? ""} className={inputCls} placeholder="Copied from main patient — editable" />
+                    </div>
+                    <p className="text-xs text-[var(--color-muted-fg)] sm:col-span-2">
+                      Address, City, State and emergency contacts are copied from the main patient record. You can adjust them here — they are editable later.
+                    </p>
                     <button
                       type="submit"
                       disabled={busy}
@@ -1104,4 +1345,19 @@ function formatDateOnly(value: string): string {
     month: "short",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function calculateAge(value: string): string {
+  const birth = new Date(value);
+  if (Number.isNaN(birth.getTime())) return "—";
+  const today = new Date();
+  let years = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) years--;
+  if (years < 0) return "—";
+  if (years === 0) {
+    const months = Math.max(0, Math.floor((today.getTime() - birth.getTime()) / (30.44 * 864e5)));
+    return months < 12 ? `${months} mo` : `${years} yr`;
+  }
+  return `${years} yr`;
 }

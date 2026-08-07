@@ -9,7 +9,7 @@ async function getPatient(ctx: any, id: string, tenantId: string | null) {
   let query = ctx.svc
     .from("patients")
     .select(
-      "*, dependants:patients!primary_account_id(id, patient_number, first_name, last_name, gender, date_of_birth, phone, dependant_relationship, status, user_id)"
+      "*, dependants:patients!primary_account_id(id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, address, city, state, emergency_contact_name, emergency_contact_phone, dependant_relationship, status, user_id)"
     )
     .eq("id", id);
   if (tenantId) query = query.eq("tenant_id", tenantId);

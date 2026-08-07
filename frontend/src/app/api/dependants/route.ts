@@ -55,6 +55,11 @@ export interface CreateDependantBody {
   genotype?: string;
   allergies?: string;
   chronicConditions?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   portalEmail?: string;
   portalPassword?: string;
 }
@@ -74,7 +79,9 @@ export const POST = withAuth(async (req, ctx) => {
   // The primary must exist in the caller's tenant (or be the caller's own family root)
   const { data: primary } = await ctx.svc
     .from("patients")
-    .select("id, tenant_id, is_primary_account")
+    .select(
+      "id, tenant_id, is_primary_account, address, city, state, emergency_contact_name, emergency_contact_phone"
+    )
     .eq("id", body.primaryPatientId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -82,16 +89,16 @@ export const POST = withAuth(async (req, ctx) => {
   if (ctx.role === "patient_api") {
     const { data: self } = await ctx.svc
       .from("patients")
-      .select("id, primary_account_id")
+      .select("id, primary_account_id, is_primary_account")
       .eq("user_id", ctx.user.id)
       .maybeSingle();
-    const root = self?.primary_account_id ?? self?.id;
-    if (!root || (primary.id !== root && primary.is_primary_account !== true)) {
-      throw new ValidationError("You can only add dependants to your own family account");
+    // Only the main account holder may add family members — a dependant
+    // must never add another person as a dependant.
+    if (!self || self.primary_account_id !== null || self.is_primary_account !== true) {
+      throw new ValidationError("Only the main account holder can add family members");
     }
-    // dependant must link to the family root
-    if (primary.is_primary_account !== true) {
-      throw new ValidationError("Dependants link to the primary account holder");
+    if (primary.id !== self.id) {
+      throw new ValidationError("You can only add dependants to your own family account");
     }
   }
 
@@ -158,6 +165,14 @@ export const POST = withAuth(async (req, ctx) => {
       genotype: body.genotype || null,
       allergies: body.allergies || null,
       chronic_conditions: body.chronicConditions || null,
+      // Shared info inherited from the primary account (editable later).
+      address: body.address?.trim() || primary.address || null,
+      city: body.city?.trim() || primary.city || null,
+      state: body.state?.trim() || primary.state || null,
+      emergency_contact_name:
+        body.emergencyContactName?.trim() || primary.emergency_contact_name || null,
+      emergency_contact_phone:
+        body.emergencyContactPhone?.trim() || primary.emergency_contact_phone || null,
       is_primary_account: false,
       primary_account_id: body.primaryPatientId,
       dependant_relationship: body.relationship.trim(),
