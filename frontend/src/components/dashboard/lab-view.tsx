@@ -1300,7 +1300,7 @@ function RequestDetailModal({
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to prepare PDF");
       const { generateLabPDF } = await import("@/components/pdf/generateLabPDF");
-      const url = await generateLabPDF(body);
+      const url = await generateLabPDF(body.data ?? body);
       const link = document.createElement("a");
       link.href = url;
       link.download = `lab-request-${request.id}.pdf`;

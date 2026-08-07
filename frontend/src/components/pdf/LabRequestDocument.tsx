@@ -115,6 +115,18 @@ const styles = StyleSheet.create({
     color: "#222",
   },
 
+  resultRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#ddd",
+    borderBottomStyle: "solid",
+    paddingVertical: 5,
+  },
+  resultName: { fontSize: 9, fontWeight: "bold", flex: 1, paddingRight: 12 },
+  resultValue: { fontSize: 9, color: "#222" },
+  resultMeta: { fontSize: 8, color: MUTED, marginTop: 8, fontStyle: "italic" },
+
   signatures: {
     flexDirection: "row",
     marginTop: 46,
@@ -150,9 +162,10 @@ export default function LabRequestDocument({ data }: { data: any }) {
   const doctor = data.doctor ?? null;
   const requester = data.requester ?? null;
   const technician = data.technician ?? null;
-  const services: Array<{ name: string; priority: string; sampleType: string | null; notes: string | null }> =
+  const services: Array<{ name: string; priority: string; sampleType: string | null; notes: string | null; result?: string | null; resultUnit?: string | null; isAbnormal?: boolean | null }> =
     data.services ?? [];
   const requestedByName = doctor?.name ?? requester?.full_name ?? "—";
+  const hasResults = services.some((s) => s.result);
 
   return (
     <Document title={`Lab Request ${data.id ?? ""}`} author={h.name ?? "Hospital"}>
@@ -244,6 +257,30 @@ export default function LabRequestDocument({ data }: { data: any }) {
             )}
           </View>
         </View>
+
+        {/* Results */}
+        {hasResults && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Lab Results</Text>
+            {services
+              .filter((s) => s.result)
+              .map((s, i) => (
+                <View key={i} style={styles.resultRow}>
+                  <Text style={styles.resultName}>{s.name}</Text>
+                  <Text style={styles.resultValue}>
+                    {s.result}
+                    {s.resultUnit ? ` ${s.resultUnit}` : ""}
+                    {s.isAbnormal ? "  ⚠ ABNORMAL" : ""}
+                  </Text>
+                </View>
+              ))}
+            {technician && (
+              <Text style={styles.resultMeta}>
+                Reported by {technician.full_name} on {formatDate(data.completedAt)}
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* Notes */}
         {data.notes && (
