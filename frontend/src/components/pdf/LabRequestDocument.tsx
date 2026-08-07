@@ -2,8 +2,8 @@ import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/render
 
 // ---------------------------------------------------------------------------
 // Lab request printout — tenant branding (name/logo/address/email/phone),
-// requesting doctor, lab clinician/technician, and a CONFIDENTIAL stamp on
-// every page (diagonal watermark + header/footer ribbons).
+// requesting doctor, lab clinician/technician, and a slim footer ribbon with
+// page numbers.
 // ---------------------------------------------------------------------------
 
 const RIBBON = "#7f1d1d";
@@ -18,40 +18,6 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     color: "#111",
     position: "relative",
-  },
-  // ---- watermark: repeated CONFIDENTIAL grid, fixed across all pages ----
-  watermark: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    transform: "rotate(-32deg)",
-    transformOrigin: "center",
-  },
-  watermarkRow: { flexDirection: "row", justifyContent: "space-around", marginVertical: 46 },
-  watermarkText: {
-    fontSize: 26,
-    fontWeight: "bold",
-    letterSpacing: 6,
-    color: "#c0c0c0",
-    opacity: 0.35,
-  },
-  // ---- fixed header ribbon ----
-  headerRibbon: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: RIBBON,
-    paddingVertical: 4,
-  },
-  headerRibbonText: {
-    color: "#ffffff",
-    fontSize: 8,
-    fontWeight: "bold",
-    letterSpacing: 4,
-    textAlign: "center",
   },
   // ---- fixed footer ribbon with page numbers ----
   footerRibbon: {
@@ -191,22 +157,6 @@ export default function LabRequestDocument({ data }: { data: any }) {
   return (
     <Document title={`Lab Request ${data.id ?? ""}`} author={h.name ?? "Hospital"}>
       <Page size="A4" style={styles.page}>
-        {/* CONFIDENTIAL watermark — repeats on every page */}
-        <View style={styles.watermark} fixed>
-          {[0, 1, 2, 3].map((r) => (
-            <View key={r} style={styles.watermarkRow}>
-              {[0, 1, 2].map((c) => (
-                <Text key={c} style={styles.watermarkText}>CONFIDENTIAL</Text>
-              ))}
-            </View>
-          ))}
-        </View>
-
-        {/* CONFIDENTIAL header ribbon — every page */}
-        <View style={styles.headerRibbon} fixed>
-          <Text style={styles.headerRibbonText}>CONFIDENTIAL — LABORATORY DOCUMENT</Text>
-        </View>
-
         {/* Header */}
         <View style={styles.header}>
           {h.logo && <Image src={h.logo} style={styles.logo} />}
@@ -317,12 +267,12 @@ export default function LabRequestDocument({ data }: { data: any }) {
           </View>
         </View>
 
-        {/* CONFIDENTIAL footer ribbon with page numbers — every page */}
+        {/* Footer ribbon with page numbers — every page */}
         <View style={styles.footerRibbon} fixed>
           <Text
             style={styles.footerRibbonText}
             render={({ pageNumber, totalPages }) =>
-              `CONFIDENTIAL — FOR AUTHORIZED USE ONLY  ·  PAGE ${pageNumber} OF ${totalPages}`
+              `${(h.name ?? "Hospital").toUpperCase()}  ·  LABORATORY REQUEST  ·  PAGE ${pageNumber} OF ${totalPages}`
             }
           />
         </View>

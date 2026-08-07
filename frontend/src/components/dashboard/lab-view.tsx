@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, FileDown, FlaskConical, Loader2, Plus, Search, TestTube, Wrench } from "lucide-react";
+import { CalendarPlus, FileDown, FlaskConical, ListChecks, Loader2, Plus, Search, TestTube, Wrench } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 
 interface LabService {
@@ -275,6 +275,7 @@ function ServicesTab({ canManageCatalog, canEditService, onChanged }: { canManag
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editing, setEditing] = useState<LabService | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -421,6 +422,15 @@ function ServicesTab({ canManageCatalog, canEditService, onChanged }: { canManag
           <option value="active">Active only</option>
           <option value="inactive">Inactive only</option>
         </select>
+        {canEditService && services.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setBulkOpen(true)}
+            className="focus-ring inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--color-primary)] bg-[var(--color-primary)] px-3.5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+          >
+            <ListChecks size={16} aria-hidden="true" /> Bulk prices
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -538,6 +548,18 @@ function ServicesTab({ canManageCatalog, canEditService, onChanged }: { canManag
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
+            load();
+            onChanged();
+          }}
+        />
+      )}
+
+      {bulkOpen && (
+        <BulkPriceModal
+          services={services}
+          onClose={() => setBulkOpen(false)}
+          onSaved={() => {
+            setBulkOpen(false);
             load();
             onChanged();
           }}
@@ -672,6 +694,172 @@ function EditServiceModal({
           </button>
         </div>
       </form>
+    </ModalShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BULK PRICE MODAL — enter amounts for many services at once (admin + lab staff)
+// ---------------------------------------------------------------------------
+function BulkPriceModal({
+  services,
+  onClose,
+  onSaved,
+}: {
+  services: LabService[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [prices, setPrices] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    for (const s of services) map[s.id] = String(s.price ?? 0);
+    return map;
+  });
+  const [search, setSearch] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+
+  const changed = useMemo(
+    () => services.filter((s) => Number(prices[s.id] ?? 0) !== Number(s.price ?? 0)),
+    [services, prices]
+  );
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return services.filter((s) => !q || s.name.toLowerCase().includes(q));
+  }, [services, search]);
+
+  async function handleSave() {
+    setBusy(true);
+    setError(null);
+    setSummary(null);
+    const updates = services.filter((s) => Number(prices[s.id] ?? 0) !== Number(s.price ?? 0));
+    let saved = 0;
+    try {
+      for (const s of updates) {
+        const value = Number(prices[s.id]);
+        if (!Number.isFinite(value) || value < 0) {
+          throw new Error(`Invalid amount for "${s.name}"`);
+        }
+        const res = await fetch(`/api/lab-services/${s.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ price: value }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? `Failed to update "${s.name}"`);
+        saved++;
+      }
+      setSummary(`${saved} service${saved === 1 ? "" : "s"} updated.`);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Bulk update failed");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalShell title="Bulk service prices" onClose={onClose} wide>
+      <div className="mt-5 space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-[200px] flex-1">
+            <Search
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Filter services…"
+              aria-label="Filter services"
+              className={`${inputCls} pl-9`}
+            />
+          </div>
+          <p className="text-xs text-[var(--color-muted-fg)]">
+            {changed.length} changed · {rows.length} shown
+          </p>
+        </div>
+
+        <div className="max-h-[55vh] overflow-y-auto rounded-xl border border-[var(--color-border)]">
+          <table className="w-full text-left text-sm">
+            <thead className="sticky top-0 bg-[var(--color-muted)]">
+              <tr className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <th scope="col" className="px-4 py-2.5 font-semibold">Service</th>
+                <th scope="col" className="px-4 py-2.5 font-semibold">Group</th>
+                <th scope="col" className="px-4 py-2.5 font-semibold">Current</th>
+                <th scope="col" className="px-4 py-2.5 font-semibold">Amount (₦)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-border)]">
+              {rows.map((s) => {
+                const edited = Number(prices[s.id] ?? 0) !== Number(s.price ?? 0);
+                return (
+                  <tr key={s.id} className={edited ? "bg-[var(--color-primary-soft)]/50" : undefined}>
+                    <td className="px-4 py-2">
+                      <p className={`font-medium ${s.is_active ? "text-[var(--color-foreground)]" : "text-[var(--color-muted-fg)]"}`}>
+                        {s.name}
+                      </p>
+                      <p className="text-xs text-[var(--color-muted-fg)]">
+                        {s.type} · {s.approval_status}
+                      </p>
+                    </td>
+                    <td className="px-4 py-2 text-xs text-[var(--color-muted-fg)]">
+                      {s.lab_categories?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-2 text-xs text-[var(--color-muted-fg)]">
+                      ₦{Number(s.price ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={prices[s.id] ?? ""}
+                        onChange={(e) => setPrices({ ...prices, [s.id]: e.target.value })}
+                        aria-label={`Amount for ${s.name}`}
+                        className={`${inputCls} !py-1.5 w-36`}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {rows.length === 0 && (
+            <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">No services match your filter.</p>
+          )}
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            {error}
+          </p>
+        )}
+        {summary && (
+          <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">{summary}</p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={busy || changed.length === 0}
+            className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+          >
+            {busy ? "Saving…" : changed.length === 0 ? "No changes" : `Save ${changed.length} price${changed.length === 1 ? "" : "s"}`}
+          </button>
+        </div>
+      </div>
     </ModalShell>
   );
 }
