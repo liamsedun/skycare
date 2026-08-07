@@ -374,7 +374,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
         setDoctors(
           (staffBody.data ?? [])
             .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
-            .map((s: { id: string; users?: { full_name?: string } }) => ({ id: s.id, label: s.users?.full_name ?? "Doctor" }))
+            .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({ id: s.users?.id ?? s.id, label: s.users?.full_name ?? "Doctor" }))
         );
       } catch {
         /* options non-critical */

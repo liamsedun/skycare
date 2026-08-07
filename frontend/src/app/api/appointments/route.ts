@@ -1,5 +1,6 @@
 import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
+import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
 import type { NextRequest } from "next/server";
@@ -91,7 +92,7 @@ export const POST = withAuth(async (req, ctx) => {
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .maybeSingle();
-    if (!doctor || !["doctor", "hospital_admin"].includes(doctor.role)) {
+    if (!doctor || !["hospital_admin", ...CLINICIAN_ROLES].includes(doctor.role)) {
       throw new ValidationError("Invalid doctor selected");
     }
   }

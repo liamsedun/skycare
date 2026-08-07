@@ -1,5 +1,6 @@
 import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
+import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generateInvoiceNumber } from "@/lib/tenant-settings";
 import type { NextRequest } from "next/server";
@@ -103,7 +104,7 @@ export const POST = withStaff(async (req, ctx) => {
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .maybeSingle();
-    if (!doctor || !["doctor", "nurse", "hospital_admin"].includes(doctor.role)) {
+    if (!doctor || !["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(doctor.role)) {
       throw new ValidationError("Invalid attending staff selected");
     }
   }
