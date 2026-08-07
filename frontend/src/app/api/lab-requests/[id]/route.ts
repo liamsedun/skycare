@@ -66,8 +66,14 @@ export const PATCH = withStaff(async (req, ctx) => {
       throw new ValidationError(`Cannot change status from ${existing.status} to ${status}`);
     }
     patch.status = status;
-    if (status === "completed") patch.completed_at = new Date().toISOString();
-    if (status === "cancelled") patch.completed_at = null;
+    if (status === "completed") {
+      patch.completed_at = new Date().toISOString();
+      patch.completed_by = ctx.user.id; // lab clinician/technician who carried out the testing
+    }
+    if (status === "cancelled") {
+      patch.completed_at = null;
+      patch.completed_by = null;
+    }
   }
 
   for (const key of ["notes", "is_external", "external_lab_id"]) {

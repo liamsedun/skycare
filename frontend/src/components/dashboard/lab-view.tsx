@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, FlaskConical, Loader2, Plus, Search, TestTube, Wrench } from "lucide-react";
+import { CalendarPlus, FileDown, FlaskConical, Loader2, Plus, Search, TestTube, Wrench } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 
 interface LabService {
@@ -1031,6 +1031,30 @@ function RequestDetailModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  async function downloadPdf() {
+    setDownloading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/lab-requests/${request.id}/print`, { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to prepare PDF");
+      const { generateLabPDF } = await import("@/components/pdf/generateLabPDF");
+      const url = await generateLabPDF(body);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `lab-request-${request.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to download PDF");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function updateStatus(status: string) {
     setBusy(true);
@@ -1091,6 +1115,16 @@ function RequestDetailModal({
               className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-60"
             >
               <CalendarPlus size={14} aria-hidden="true" /> Schedule collection
+            </button>
+          )}
+          {request.status !== "cancelled" && (
+            <button
+              type="button"
+              onClick={downloadPdf}
+              disabled={downloading}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)] disabled:opacity-60"
+            >
+              <FileDown size={14} aria-hidden="true" /> {downloading ? "Preparing…" : "Download PDF"}
             </button>
           )}
           {canWork && canEnterResults && request.status === "sample_collected" && (
