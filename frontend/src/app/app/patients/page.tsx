@@ -3,7 +3,8 @@ import { Search, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, getClaims } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
-import { PatientViewButton, patientGradient, patientInitials, type PatientRow } from "@/components/dashboard/patient-dialog";
+import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
+import { patientGradient, patientInitials } from "@/lib/patient-avatar";
 import PatientActions from "@/components/dashboard/patient-actions";
 
 export const dynamic = "force-dynamic";
