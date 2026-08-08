@@ -1,10 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
+  BedDouble,
   CalendarClock,
   CalendarDays,
   CalendarRange,
   CreditCard,
   Download,
+  DoorOpen,
   FlaskConical,
   FileText,
   LayoutDashboard,
@@ -77,6 +80,19 @@ export const NAV_ITEMS: NavItem[] = [
       { href: "/app/lab/requests", label: "Requests", icon: FileText },
       { href: "/app/lab/services", label: "Services", icon: TestTube },
       { href: "/app/lab/income", label: "Services Income", icon: TrendingUp, roles: ["hospital_admin", "lab_tech", "super_admin"] },
+    ],
+  },
+  {
+    href: "/app/wards",
+    label: "Wards",
+    icon: BedDouble,
+    roles: ["hospital_admin", "doctor", "nurse", "receptionist", "super_admin"],
+    children: [
+      { href: "/app/wards/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/app/wards/bed-map", label: "Bed Map", icon: BedDouble },
+      { href: "/app/wards/admissions", label: "Admissions", icon: FileText },
+      { href: "/app/wards/rounds", label: "Ward Rounds", icon: Activity },
+      { href: "/app/wards/discharges", label: "Discharges", icon: DoorOpen },
     ],
   },
   { href: "/app/billing", label: "Billing", icon: ReceiptText, roles: [...ADMIN, "cashier"] },

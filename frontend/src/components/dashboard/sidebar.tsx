@@ -150,7 +150,7 @@ function NavRow({
                 href={child.href}
                 onClick={onClose}
                 aria-current={childActive ? "page" : undefined}
-                className={`focus-ring flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-200 ${
+                className={`focus-ring flex items-center gap-3 rounded-lg px-3 py-1.5 text-xs transition-colors duration-200 ${
                   childActive
                     ? "bg-[var(--color-primary-soft)] font-semibold text-[var(--color-primary-dark)]"
                     : "text-[var(--color-foreground)] hover:bg-slate-50"

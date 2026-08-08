@@ -77,13 +77,13 @@ export default function RootLayout({
       className={`${figtree.variable} ${inter.variable} ${notoSans.variable} antialiased`}
       suppressHydrationWarning
     >
-      <Script id="skycare-theme-init" strategy="beforeInteractive">
-        {`(function(){try{document.documentElement.dataset.theme=(localStorage.getItem("skycare-theme")||"light")}catch(e){}})();`}
-      </Script>
       <body
         className="min-h-screen font-[family-name:var(--font-inter)]"
         suppressHydrationWarning
       >
+        <Script id="skycare-theme-init" strategy="beforeInteractive">
+          {`(function(){try{document.documentElement.dataset.theme=(localStorage.getItem("skycare-theme")||"light")}catch(e){}})();`}
+        </Script>
         <PwaWrapper>{children}</PwaWrapper>
       </body>
     </html>
