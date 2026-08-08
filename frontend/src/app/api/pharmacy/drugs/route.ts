@@ -28,14 +28,34 @@ export const GET = withStaff(async (req, ctx) => {
   const rows = Array.isArray(drugs) ? drugs : [];
   const ids = rows.map((d: { id: string }) => d.id);
   const stockMap = new Map<string, number>();
+  const effectiveByDrug = new Map<string, number>();
   if (ids.length > 0) {
-    const { data: batches } = await ctx.svc
-      .from("pharmacy_stock_batches")
-      .select("drug_id, quantity_on_hand")
-      .in("drug_id", ids)
-      .gte("expiry_date", new Date().toISOString().slice(0, 10));
-    for (const b of batches ?? []) {
+    const [batchRes, overrideRes] = await Promise.all([
+      ctx.svc
+        .from("pharmacy_stock_batches")
+        .select("drug_id, quantity_on_hand")
+        .in("drug_id", ids)
+        .gte("expiry_date", new Date().toISOString().slice(0, 10)),
+      ctx.svc
+        .from("pharmacy_price_overrides")
+        .select("drug_id, branch_id, unit_price")
+        .eq("tenant_id", tenantId)
+        .in("drug_id", ids),
+    ]);
+    for (const b of batchRes.data ?? []) {
       stockMap.set(b.drug_id, (stockMap.get(b.drug_id) ?? 0) + (b.quantity_on_hand ?? 0));
+    }
+    // effective price: exact branch override beats base (branch NULL) override
+    const exactOverride = new Map<string, number>();
+    const baseOverride = new Map<string, number>();
+    for (const o of overrideRes.data ?? []) {
+      if (o.branch_id === null) baseOverride.set(o.drug_id, o.unit_price);
+      else exactOverride.set(o.drug_id, o.unit_price);
+    }
+    const effective = (drugId: string, fallback: number) =>
+      (ctx.branchId && exactOverride.has(drugId) ? exactOverride.get(drugId) : baseOverride.get(drugId)) ?? fallback;
+    for (const d of rows as Array<{ id: string; unit_price: number }>) {
+      effectiveByDrug.set(d.id, effective(d.id, Number(d.unit_price ?? 0)));
     }
   }
 
@@ -47,7 +67,7 @@ export const GET = withStaff(async (req, ctx) => {
     category: d.category,
     form: d.form,
     dosage: d.dosage,
-    unitPrice: d.unit_price,
+    unitPrice: effectiveByDrug.get(d.id) ?? d.unit_price,
     requiresRx: d.requires_rx,
     isControlled: d.is_controlled,
     inStock: stockMap.get(d.id) ?? 0,
