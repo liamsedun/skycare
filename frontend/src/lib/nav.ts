@@ -20,6 +20,9 @@ import {
   Users,
   UserCog,
   Wallet,
+  Package,
+  Building2,
+  Tag,
 } from "lucide-react";
 import type { StaffRole } from "@/lib/auth";
 
@@ -31,10 +34,13 @@ export interface NavItem {
   roles?: StaffRole[];
   /** Module is planned but not built yet — rendered as a disabled "Soon" entry. */
   soon?: boolean;
+  /** Sub-items rendered as an expandable group under this item. */
+  children?: NavItem[];
 }
 
 const ADMIN = ["hospital_admin", "super_admin"] as StaffRole[];
 const CLINICAL = ["hospital_admin", "doctor", "nurse"] as StaffRole[];
+const PHARM_TEAM = ["hospital_admin", "super_admin", "pharmacist"] as StaffRole[];
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Overview", icon: LayoutDashboard },
@@ -50,6 +56,15 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Pharmacy",
     icon: Pill,
     roles: ["hospital_admin", "pharmacist", "doctor", "nurse", "super_admin"],
+    children: [
+      { href: "/app/pharmacy/dashboard", label: "Pharmacy Dashboard", icon: LayoutDashboard },
+      { href: "/app/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
+      { href: "/app/pharmacy/inventory", label: "Drug Inventory", icon: Package },
+      { href: "/app/pharmacy/billing", label: "Billing & Sales", icon: ReceiptText, roles: [...PHARM_TEAM, "cashier"] },
+      { href: "/app/pharmacy/suppliers", label: "Suppliers & POs", icon: Building2, roles: PHARM_TEAM },
+      { href: "/app/pharmacy/prices", label: "Branch Prices", icon: Tag, roles: ADMIN },
+      { href: "/app/pharmacy/compliance", label: "NAFDAC & Compliance", icon: ShieldCheck, roles: PHARM_TEAM },
+    ],
   },
   {
     href: "/app/lab",

@@ -106,7 +106,7 @@ interface DrugRow {
 
 interface CategoryRow { id: string; name: string; color: string | null; isPlatform: boolean }
 
-function DrugsTab() {
+export function DrugsTab() {
   const [rows, setRows] = useState<DrugRow[]>([]);
   const [summary, setSummary] = useState<Record<string, number> | null>(null);
   const [categories, setCategories] = useState<CategoryRow[]>([]);
@@ -468,7 +468,7 @@ interface SupplierRow {
   isActive: boolean;
 }
 
-function SuppliersTab() {
+export function SuppliersTab() {
   const [rows, setRows] = useState<SupplierRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<{ open: true; supplier: SupplierRow | null } | { open: false }>({ open: false });
@@ -650,7 +650,7 @@ interface OverrideRow {
 interface BranchRow { id: string; name: string; code: string | null; isMain: boolean; isActive: boolean }
 interface DrugOption { id: string; name: string; dosage: string | null; category: string; unitPrice: number }
 
-function PricesTab() {
+export function PricesTab() {
   const [overrides, setOverrides] = useState<OverrideRow[]>([]);
   const [branches, setBranches] = useState<BranchRow[]>([]);
   const [search, setSearch] = useState("");
@@ -838,7 +838,7 @@ interface ImportReport {
   errors: Array<{ row: number | null; reason: string }>;
 }
 
-function ImportTab() {
+export function ImportTab() {
   const [csv, setCsv] = useState("");
   const [skipExisting, setSkipExisting] = useState(false);
   const [defaultCategory, setDefaultCategory] = useState("");
