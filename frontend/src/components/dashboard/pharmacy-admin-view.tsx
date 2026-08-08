@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pill, Building2, Tag, Upload, Search, Plus, Trash2, X, Pencil, CheckCircle2,
-  AlertTriangle, Download, Archive,
+  AlertTriangle, Download, Archive, Package,
 } from "lucide-react";
 import { FORM_OPTIONS } from "@/lib/pharmacy-admin";
+import PharmacyStockView from "@/components/dashboard/pharmacy-stock-view";
 
 // ============================================================================
 // Pharmacy Admin — catalogue administration for hospital admins:
@@ -23,9 +24,10 @@ const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
 const ngn = (v: number | null | undefined) => `₦${Number(v ?? 0).toLocaleString()}`;
 
-type Tab = "drugs" | "suppliers" | "prices" | "import";
+type Tab = "stock" | "drugs" | "suppliers" | "prices" | "import";
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof Pill }> = [
+  { id: "stock", label: "Stock", icon: Package },
   { id: "drugs", label: "Drugs", icon: Pill },
   { id: "suppliers", label: "Suppliers", icon: Building2 },
   { id: "prices", label: "Branch prices", icon: Tag },
@@ -60,6 +62,7 @@ export default function PharmacyAdminView() {
         </div>
       </div>
 
+      {tab === "stock" && <PharmacyStockView />}
       {tab === "drugs" && <DrugsTab />}
       {tab === "suppliers" && <SuppliersTab />}
       {tab === "prices" && <PricesTab />}
