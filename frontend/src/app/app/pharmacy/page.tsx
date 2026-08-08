@@ -5,6 +5,7 @@ import PharmacyView from "@/components/dashboard/pharmacy-view";
 import PharmacyAdminView from "@/components/dashboard/pharmacy-admin-view";
 import PharmacyBillingView from "@/components/dashboard/pharmacy-billing-view";
 import PharmacyComplianceView from "@/components/dashboard/pharmacy-compliance-view";
+import PharmacyAiView from "@/components/dashboard/pharmacy-ai-view";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function PharmacyPage() {
   return (
     <div className="space-y-6">
       <PharmacyView canDispense={role === "pharmacist" || role === "hospital_admin" || role === "super_admin"} />
+      <PharmacyAiView />
       {canBill && <PharmacyBillingView />}
       {canCompliance && <PharmacyComplianceView />}
       {canAdmin && <PharmacyAdminView />}
