@@ -23,6 +23,7 @@ import {
   Package,
   Building2,
   Tag,
+  TestTube,
 } from "lucide-react";
 import type { StaffRole } from "@/lib/auth";
 
@@ -71,6 +72,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Lab",
     icon: FlaskConical,
     roles: ["hospital_admin", "lab_tech", "doctor", "nurse", "super_admin"],
+    children: [
+      { href: "/app/lab/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["hospital_admin", "lab_tech", "super_admin"] },
+      { href: "/app/lab/requests", label: "Requests", icon: FileText },
+      { href: "/app/lab/services", label: "Services", icon: TestTube },
+      { href: "/app/lab/income", label: "Services Income", icon: TrendingUp, roles: ["hospital_admin", "lab_tech", "super_admin"] },
+    ],
   },
   { href: "/app/billing", label: "Billing", icon: ReceiptText, roles: [...ADMIN, "cashier"] },
   { href: "/app/expenses", label: "Expenses", icon: Wallet, roles: ADMIN },

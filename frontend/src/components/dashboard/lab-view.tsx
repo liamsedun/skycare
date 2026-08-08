@@ -70,9 +70,11 @@ function approvalBadge(status: string): string {
   }
 }
 
-export default function LabView({ canManageCatalog, canEditService, canEnterResults }: { canManageCatalog: boolean; canEditService: boolean; canEnterResults: boolean }) {
+export default function LabView({ canManageCatalog, canEditService, canEnterResults, initialTab = "requests" }: {
+  canManageCatalog: boolean; canEditService: boolean; canEnterResults: boolean; initialTab?: "requests" | "services";
+}) {
   const router = useRouter();
-  const [tab, setTab] = useState<"requests" | "services">("requests");
+  const [tab, setTab] = useState<"requests" | "services">(initialTab);
   const [requests, setRequests] = useState<LabRequest[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
