@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
 import PharmacyView from "@/components/dashboard/pharmacy-view";
 import PharmacyAdminView from "@/components/dashboard/pharmacy-admin-view";
+import PharmacyBillingView from "@/components/dashboard/pharmacy-billing-view";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +21,12 @@ export default async function PharmacyPage() {
   }
 
   const canAdmin = role === "hospital_admin" || role === "super_admin";
+  const canBill = role === "hospital_admin" || role === "super_admin" || role === "pharmacist" || role === "cashier";
 
   return (
     <div className="space-y-6">
       <PharmacyView canDispense={role === "pharmacist" || role === "hospital_admin" || role === "super_admin"} />
+      {canBill && <PharmacyBillingView />}
       {canAdmin && <PharmacyAdminView />}
     </div>
   );
