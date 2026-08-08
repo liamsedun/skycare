@@ -12,6 +12,7 @@ interface DischargeRow {
   follow_up: string | null; medications?: unknown[] | null;
   admission?: {
     patients?: { first_name: string; last_name: string; patient_number: string } | { first_name: string; last_name: string; patient_number: string }[] | null;
+    invoices?: { invoice_number: string; total_amount: number; status: string } | { invoice_number: string; total_amount: number; status: string }[] | null;
   } | null;
 }
 
@@ -36,6 +37,11 @@ export default function DischargesView() {
     const a = d.admission as any;
     const p = Array.isArray(a?.patients) ? a.patients[0] : a?.patients;
     return p ? `${p.first_name} ${p.last_name}` : "Unknown";
+  };
+
+  const invoiceOf = (d: DischargeRow) => {
+    const a = d.admission as any;
+    return Array.isArray(a?.invoices) ? a.invoices[0] : a?.invoices;
   };
 
   const openPdf = async (admissionId: string) => {
@@ -88,25 +94,38 @@ export default function DischargesView() {
                   <th className="px-4 py-3 font-semibold">Discharged</th>
                   <th className="px-4 py-3 font-semibold">Summary</th>
                   <th className="px-4 py-3 font-semibold">Follow-up</th>
+                  <th className="px-4 py-3 font-semibold">Ward charges</th>
                   <th className="px-4 py-3 font-semibold text-right">PDF</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((d) => (
-                  <tr key={d.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-slate-50/60">
-                    <td className="px-4 py-3 font-semibold text-[var(--color-foreground)]">{nameOf(d)}</td>
-                    <td className="px-4 py-3 text-xs">
-                      {new Date(d.discharged_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                    </td>
-                    <td className="max-w-md px-4 py-3 text-xs line-clamp-2">{d.summary}</td>
-                    <td className="px-4 py-3 text-xs">{d.follow_up ?? "—"}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button onClick={() => void openPdf(d.admission_id)} className={btnGhost} disabled={pdfing === d.admission_id} title="Print discharge summary">
-                        {pdfing === d.admission_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download size={14} />}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((d) => {
+                  const inv = invoiceOf(d);
+                  return (
+                    <tr key={d.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-slate-50/60">
+                      <td className="px-4 py-3 font-semibold text-[var(--color-foreground)]">{nameOf(d)}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {new Date(d.discharged_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                      </td>
+                      <td className="max-w-md px-4 py-3 text-xs line-clamp-2">{d.summary}</td>
+                      <td className="px-4 py-3 text-xs">{d.follow_up ?? "—"}</td>
+                      <td className="px-4 py-3 text-xs">
+                        {inv ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">
+                            {inv.invoice_number} · ₦{Number(inv.total_amount ?? 0).toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--color-muted-fg)]">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => void openPdf(d.admission_id)} className={btnGhost} disabled={pdfing === d.admission_id} title="Print discharge summary">
+                          {pdfing === d.admission_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download size={14} />}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -32,7 +32,7 @@ export default function AdmissionsView() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"active" | "discharged">("active");
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const [showAdmit, setShowAdmit] = useState(false);
@@ -55,7 +55,7 @@ export default function AdmissionsView() {
     setLoading(true);
     const res = await fetch(`/api/admissions?status=${tab}`, { cache: "no-store" });
     const body = await res.json();
-    if (!res.ok) { setToast(body.error ?? "Failed to load admissions"); setLoading(false); return; }
+    if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Failed to load admissions" }); setLoading(false); return; }
     setRows(body.data ?? []);
     setLoading(false);
   }, [tab]);
@@ -102,7 +102,7 @@ export default function AdmissionsView() {
     });
     const body = await res.json();
     setBusy(false);
-    if (!res.ok) { setToast(body.error ?? "Admission failed"); return; }
+    if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Admission failed" }); return; }
     setShowAdmit(false);
     setToast(null);
     await load();
@@ -118,7 +118,7 @@ export default function AdmissionsView() {
     });
     const body = await res.json();
     setBusy(false);
-    if (!res.ok) { setToast(body.error ?? "Transfer failed"); return; }
+    if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Transfer failed" }); return; }
     setTransferFor(null); setToBedId(""); setReason("");
     await load();
   };
@@ -138,7 +138,13 @@ export default function AdmissionsView() {
     });
     const body = await res.json();
     setBusy(false);
-    if (!res.ok) { setToast(body.error ?? "Discharge failed"); return; }
+    if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Discharge failed" }); return; }
+    const ch = body?.data?.charge;
+    if (ch?.invoiceNumber) {
+      setToast({ kind: "ok", msg: `${patientName(dischargeFor)} discharged — ${ch.invoiceNumber} (₦${Number(ch.charge ?? 0).toLocaleString()}) posted` });
+    } else {
+      setToast(null);
+    }
     setDischargeFor(null); setSummary(""); setFollowUp(""); setMedications("");
     await load();
   };
@@ -183,7 +189,11 @@ export default function AdmissionsView() {
             ))}
           </div>
         </div>
-        {toast && <p className="mt-3 text-xs text-rose-600">{toast}</p>}
+        {toast && (
+          <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-semibold ${toast.kind === "ok" ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>
+            {toast.msg}
+          </p>
+        )}
       </div>
 
       <div className="rounded-2xl border border-[var(--color-border)] bg-white shadow-sm">

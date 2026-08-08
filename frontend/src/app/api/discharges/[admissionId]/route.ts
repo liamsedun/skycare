@@ -116,6 +116,20 @@ export const GET = withStaff(async (req, ctx) => {
     } catch { /* logo optional */ }
   }
 
+  const { data: invoice } = (await ctx.svc
+    .from("invoices")
+    .select("invoice_number, status, total_amount, issue_date, " +
+      "invoice_items(description, quantity, unit_price, total_price)")
+    .eq("admission_id", admissionId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle()) as unknown as {
+    data: {
+      invoice_number: string; status: string; total_amount: number; issue_date: string;
+      invoice_items: Array<{ description: string; quantity: number; unit_price: number; total_price: number }> | null;
+    } | null;
+    error?: { message?: string } | null;
+  };
+
   await logView(req, ctx, "admissions", admissionId, "Printed discharge summary");
 
   const patient = Array.isArray(typedAdm.patients) ? typedAdm.patients[0] : typedAdm.patients;
@@ -156,6 +170,20 @@ export const GET = withStaff(async (req, ctx) => {
     summary: dch.summary,
     medications: Array.isArray(dch.medications) ? dch.medications : [],
     followUp: dch.follow_up,
+    billing: invoice
+      ? {
+          invoiceNumber: invoice.invoice_number,
+          status: invoice.status,
+          amount: Number(invoice.total_amount ?? 0),
+          issueDate: invoice.issue_date,
+          items: (invoice.invoice_items ?? []).map((it) => ({
+            description: it.description,
+            quantity: it.quantity,
+            unitPrice: Number(it.unit_price ?? 0),
+            total: Number(it.total_price ?? 0),
+          })),
+        }
+      : null,
     rounds: (rounds ?? []).map((r) => ({
       at: r.round_time,
       vitals: r.vitals ?? {},

@@ -175,6 +175,29 @@ export default function DischargeDocument({ data }: { data: any }) {
           </View>
         )}
 
+        {data.billing && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Ward Charges</Text>
+            <View style={styles.kvRow}>
+              <Text style={styles.kvLabel}>Invoice</Text>
+              <Text style={styles.kvValue}>{data.billing.invoiceNumber} ({data.billing.status})</Text>
+            </View>
+            {Array.isArray(data.billing.items) &&
+              data.billing.items.map((it: any, i: number) => (
+                <View key={i} style={styles.medRow}>
+                  <Text style={styles.medName}>{it.description ?? "—"}</Text>
+                  <Text style={styles.medMeta}>
+                    {it.quantity} × ₦{Number(it.unitPrice ?? 0).toLocaleString()} = ₦{Number(it.total ?? 0).toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            <View style={styles.kvRow}>
+              <Text style={styles.kvLabel}>Total</Text>
+              <Text style={styles.kvValue}>₦{Number(data.billing.amount ?? 0).toLocaleString()}</Text>
+            </View>
+          </View>
+        )}
+
         {medications.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Medications on discharge</Text>

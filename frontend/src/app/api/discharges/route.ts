@@ -34,5 +34,42 @@ export const POST = withStaff(async (req, ctx) => {
     changes: { status: "discharged", summary },
     description: "Discharged patient from ward",
   });
-  return ok(data);
+
+  // Post the room charge (ward_daily_rates x nights) to the invoices ledger.
+  // Billing is best-effort: the discharge is already committed, so a billing
+  // failure is logged and surfaced as charge:null rather than failing the
+  // response. ward_discharge_charges is idempotent (invoices.admission_id).
+  let charge = null;
+  const { data: ch, error: chError } = await ctx.svc.rpc("ward_discharge_charges", {
+    p_tenant: tenantId,
+    p_admission_id: admissionId,
+    p_by: ctx.user.id,
+  });
+  if (!chError && ch) {
+    charge = {
+      invoiceId: ch.invoice_id,
+      invoiceNumber: ch.invoice_number,
+      description: ch.description,
+      charge: Number(ch.charge ?? 0),
+      nights: Number(ch.nights ?? 0),
+      rate: Number(ch.rate ?? 0),
+      alreadyPosted: ch.already_posted === true,
+    };
+    await logAudit(req, ctx, {
+      action: "create",
+      entityType: "invoices",
+      entityId: ch.invoice_id,
+      changes: { charge, admission_id: admissionId },
+      description: `Ward charges ${charge.invoiceNumber} (₦${charge.charge.toLocaleString()}) posted on discharge`,
+    });
+  } else if (chError) {
+    await logAudit(req, ctx, {
+      action: "update",
+      entityType: "admissions",
+      entityId: data ?? null,
+      description: `Ward discharge billing failed: ${chError.message}`,
+    });
+  }
+
+  return ok({ admissionId: data, charge });
 });
