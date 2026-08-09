@@ -87,7 +87,7 @@ export default function HrRosterView() {
       if (!s.ok) throw new Error(sb.error ?? "Failed to load shifts");
       setRows(rb.data ?? []);
       setShifts(sb.data ?? []);
-      if (admin && staff.length === 0) {
+      if (admin) {
         const stRes = await fetch("/api/hr/staff?pageSize=200", { cache: "no-store" });
         const stb = await stRes.json();
         if (stRes.ok) setStaff(stb.data ?? []);
