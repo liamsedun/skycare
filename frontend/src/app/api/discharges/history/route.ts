@@ -10,7 +10,7 @@ export const GET = withStaff(async (req, ctx) => {
     .from("discharges")
     .select(
       "id, admission_id, summary, medications, follow_up, discharged_at, " +
-      "admission(patients(first_name, last_name, patient_number), " +
+      "admission:admissions(patients(first_name, last_name, patient_number), " +
       "invoices(invoice_number, total_amount, status))"
     )
     .eq("tenant_id", tenantId)

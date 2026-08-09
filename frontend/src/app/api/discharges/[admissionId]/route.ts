@@ -45,7 +45,7 @@ export const GET = withStaff(async (req, ctx) => {
       "id, tenant_id, bed_id, patient_id, visit_id, admitted_at, discharged_at, expected_discharge, " +
       "admitting_doctor, status, diagnosis_at_admission, notes, " +
       "patients(id, first_name, last_name, patient_number, date_of_birth, gender), " +
-      "beds(ward_id, bed_number, ward(name, ward_type)), " +
+      "beds(ward_id, bed_number, ward:wards(name, ward_type)), " +
       "doctor:users!admissions_admitting_doctor_fkey(id, full_name, role)"
     )
     .eq("id", admissionId)

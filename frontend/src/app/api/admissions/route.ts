@@ -20,7 +20,7 @@ export const GET = withStaff(async (req, ctx) => {
       "id, tenant_id, branch_id, patient_id, visit_id, bed_id, admitted_at, discharged_at, " +
       "expected_discharge, admitting_doctor, status, diagnosis_at_admission, notes, created_at, updated_at, " +
       "patients(id, first_name, last_name, patient_number, gender, date_of_birth), " +
-      "beds(id, bed_number, status, ward_id, ward(name, ward_type))"
+      "beds(id, bed_number, status, ward_id, ward:wards(name, ward_type))"
     )
     .eq("tenant_id", tenantId);
   if (branch) query = query.eq("branch_id", branch);
