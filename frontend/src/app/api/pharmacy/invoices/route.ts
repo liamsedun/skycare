@@ -1,6 +1,7 @@
 import { withStaff, ok, okPaginated, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { mirrorPharmacyInvoiceToCentral } from "@/lib/pharmacy-billing";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -104,35 +105,7 @@ export const POST = withStaff(async (req, ctx) => {
 
   // Central-ledger sync (best effort): mirror the invoice so cashier billing
   // dashboards and the patient portal see pharmacy charges under one ledger.
-  if (invoice.patient_id && !invoice.synced_invoice_id) {
-    const { data: central, error: syncError } = await ctx.svc
-      .from("invoices")
-      .insert({
-        tenant_id: tenantId,
-        branch_id: invoice.branch_id ?? null,
-        patient_id: invoice.patient_id,
-        invoice_number: `CPX-${invoice.invoice_number}`.replace(/^CPX-PHX-/, "CPX-"),
-        issue_date: new Date().toISOString().slice(0, 10),
-        status: "pending",
-        subtotal: Number(invoice.subtotal),
-        tax_amount: Number(invoice.tax_amount),
-        discount_amount: Number(invoice.discount_amount),
-        total_amount: Number(invoice.total_amount),
-        paid_amount: 0,
-        insurance_claimable: invoice.insurance_claimable,
-        notes: invoice.notes,
-        created_by: ctx.user.id,
-        attending_staff_id: ctx.user.id,
-      })
-      .select("id")
-      .single();
-    if (!syncError && central) {
-      await ctx.svc
-        .from("pharmacy_invoices")
-        .update({ synced_invoice_id: central.id })
-        .eq("id", invoice.id);
-    }
-  }
+  await mirrorPharmacyInvoiceToCentral(ctx.svc, tenantId, invoice, ctx.user.id);
 
   await logAudit(req, ctx, {
     action: "create",

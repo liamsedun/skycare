@@ -1,4 +1,5 @@
 import QRCode from "qrcode";
+import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type React from "react";
 
@@ -204,11 +205,29 @@ async function loadBundle(
 
 /** Render the PDF document to a Buffer (Node side). */
 async function renderPrescriptionBuffer(bundle: PrescriptionPdfBundle, qrDataUrl: string): Promise<Buffer> {
-  const [{ pdf }, { createElement }, { default: PrescriptionDocument }] = await Promise.all([
+  const [{ pdf, Font }, { createElement }, { default: PrescriptionDocument }] = await Promise.all([
     import("@react-pdf/renderer"),
     import("react"),
     import("@/components/pdf/PrescriptionDocument"),
   ]);
+
+  // DejaVu Sans covers the Naira sign (U+20A6), which Helvetica does not —
+  // without it the amount renders as a broken-bar "¦". All four variants are
+  // registered because the document mixes bold and italic styles.
+  const fontDir = path.join(process.cwd(), "public", "fonts");
+  const registered = Font.getRegisteredFontFamilies?.() ?? [];
+  if (!registered.includes("DejaVuSans")) {
+    Font.register({
+      family: "DejaVuSans",
+      fonts: [
+        { src: path.join(fontDir, "DejaVuSans.ttf"), fontWeight: "normal", fontStyle: "normal" },
+        { src: path.join(fontDir, "DejaVuSans-Bold.ttf"), fontWeight: "bold", fontStyle: "normal" },
+        { src: path.join(fontDir, "DejaVuSans-Oblique.ttf"), fontWeight: "normal", fontStyle: "italic" },
+        { src: path.join(fontDir, "DejaVuSans-BoldOblique.ttf"), fontWeight: "bold", fontStyle: "italic" },
+      ],
+    });
+  }
+
   const data = { ...bundle, qrCode: qrDataUrl, totalCostLabel: bundle.totalCostLabel };
   const element = createElement(PrescriptionDocument as React.ComponentType<{ data: unknown }>, { data });
   const rendered = pdf(element as never);

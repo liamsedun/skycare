@@ -261,6 +261,28 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
     setError(null);
     try {
       if (items.length === 0) throw new Error("Add at least one drug");
+
+      // Pre-flight: verify dispensable stock for the whole basket BEFORE the
+      // invoice exists, so shortages block the sale cleanly instead of
+      // recording a sale whose stock cannot move.
+      if (dispense) {
+        const shortages: string[] = [];
+        for (const it of items) {
+          const inv = await fetch(`/api/pharmacy/inventory/${it.drugId}`, { cache: "no-store" });
+          if (inv.ok) {
+            const invBody = await inv.json();
+            const avail = Number(invBody.data?.totals?.dispensableStock ?? 0);
+            const need = Math.floor(Number(it.qty) || 1);
+            if (avail < need) {
+              shortages.push(`${it.name}: have ${avail}, need ${need}`);
+            }
+          }
+        }
+        if (shortages.length > 0) {
+          throw new Error(`Insufficient stock — ${shortages.join(" · ")}`);
+        }
+      }
+
       const res = await fetch("/api/pharmacy/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,6 +299,10 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
       if (!res.ok) throw new Error(body.error ?? "Failed to create invoice");
 
       if (dispense) {
+        // Dispense every item. A failure here is a race (stock changed after
+        // the pre-flight) — cancel the invoice so we never keep a sale whose
+        // stock did not move, then surface exactly what went wrong.
+        const failed: Array<{ name: string; reason: string }> = [];
         for (const it of items) {
           const disp = await fetch("/api/pharmacy/dispense", {
             method: "POST",
@@ -284,9 +310,20 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
             body: JSON.stringify({ drugId: it.drugId, quantity: Number(it.qty) || 1, sourceRef: body.data?.invoice_number ?? undefined }),
           });
           const dBody = await disp.json();
-          if (!disp.ok && !/stock|insufficient|not found/i.test(dBody.error ?? "")) {
-            throw new Error(dBody.error ?? "Dispensing failed");
+          if (!disp.ok) failed.push({ name: it.name, reason: dBody.error ?? "dispensing failed" });
+        }
+        if (failed.length > 0) {
+          let cancelled = false;
+          if (body.data?.id) {
+            const del = await fetch(`/api/pharmacy/invoices/${body.data.id}`, { method: "DELETE" });
+            cancelled = del.ok;
           }
+          const detail = failed.map((f) => `${f.name}: ${f.reason}`).join(" · ");
+          throw new Error(
+            cancelled
+              ? `Sale cancelled — dispense failed: ${detail}`
+              : `Dispense failed: ${detail} — invoice ${body.data?.invoice_number ?? ""} was KEPT, please review it`
+          );
         }
       }
       onSaved();

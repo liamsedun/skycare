@@ -99,6 +99,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
   const [rxs, setRxs] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [showCreate, setShowCreate] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
@@ -148,6 +149,11 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
 {error && (
           <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
             {error}
+          </p>
+        )}
+        {success && (
+          <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+            {success}
           </p>
         )}
 
@@ -225,6 +231,10 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
           canDispense={canDispense}
           onClose={() => setViewId(null)}
           onChanged={() => load()}
+          onDispensed={(msg) => {
+            setSuccess(msg);
+            setError(null);
+          }}
         />
       )}
     </div>
@@ -726,7 +736,7 @@ interface BatchOption {
   location: string | null;
 }
 
-function RxDetailModal({ rx, canDispense, onClose, onChanged }: { rx: Prescription; canDispense: boolean; onClose: () => void; onChanged: () => void }) {
+function RxDetailModal({ rx, canDispense, onClose, onChanged, onDispensed }: { rx: Prescription; canDispense: boolean; onClose: () => void; onChanged: () => void; onDispensed: (msg: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [batches, setBatches] = useState<Record<string, BatchOption[]>>({});
@@ -843,7 +853,14 @@ const itemsPayload = rx.prescription_items
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to save dispensing");
+      const autoInvoice = body.data?.autoInvoice as { invoice_number: string; total_amount: number } | null | undefined;
+      onDispensed(
+        autoInvoice
+          ? `Fully dispensed — invoice ${autoInvoice.invoice_number} auto-created (₦${Number(autoInvoice.total_amount).toLocaleString()})`
+          : "Dispensing saved"
+      );
       onChanged();
+      onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to save dispensing");
     } finally {
@@ -971,8 +988,8 @@ const itemsPayload = rx.prescription_items
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
+          <table className="w-full min-w-[860px] text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                 <th scope="col" className="px-4 py-2.5 font-semibold">Medication</th>
@@ -1186,7 +1203,7 @@ function ModalShell({ title, onClose, children, wide }: { title: string; onClose
       aria-modal="true"
       aria-label={title}
     >
-      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-2xl" : "max-w-md"}`}>
+      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-5xl" : "max-w-md"}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">{title}</h2>
           <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">

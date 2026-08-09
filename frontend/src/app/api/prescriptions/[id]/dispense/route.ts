@@ -1,6 +1,7 @@
 import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { generatePrescriptionPdf } from "@/lib/prescription-pdf";
+import { createPrescriptionInvoice } from "@/lib/pharmacy-billing";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -156,7 +157,11 @@ export const POST = withStaff(async (req, ctx) => {
     description: `Dispensed ${done.length} item(s) — status ${newStatus} (${someDispensed ? "part-" : ""}filled)`,
   });
 
-  // 4) Fully dispensed prescriptions get their PDF generated automatically.
+  // 4) Fully dispensed in-house prescriptions get their PDF generated
+  // automatically, and their pharmacy invoice created automatically so the
+  // cashier does not have to re-key the sale. Both are best-effort: the
+  // dispense itself already succeeded.
+  let autoInvoice: { id: string; invoice_number: string; total_amount: number } | null = null;
   if (newStatus === "dispensed") {
     try {
       await generatePrescriptionPdf(ctx.svc, tenantId, id, req.nextUrl.origin);
@@ -164,9 +169,36 @@ export const POST = withStaff(async (req, ctx) => {
       // best-effort: the dispense itself already succeeded
       console.error("prescription-pdf auto-generate failed", e);
     }
+
+    if (rx.pharmacy_type !== "external") {
+      try {
+        autoInvoice = await createPrescriptionInvoice(
+          ctx.svc,
+          tenantId,
+          rx,
+          (rx.prescription_items as any[]).map((i) => ({
+            pharmacy_drug_id: i.pharmacy_drug_id ?? null,
+            quantity: i.quantity,
+          })),
+          ctx.user.id
+        );
+        if (autoInvoice) {
+          await logAudit(req, ctx, {
+            action: "create",
+            entityType: "pharmacy_invoices",
+            entityId: autoInvoice.id,
+            description: `Invoice ${autoInvoice.invoice_number} auto-created for fully dispensed prescription ${id} — ₦${Number(
+              autoInvoice.total_amount
+            ).toLocaleString()}`,
+          });
+        }
+      } catch (e) {
+        console.error("auto-invoice creation failed", e);
+      }
+    }
   }
 
-  return ok(updated);
+  return ok({ ...updated, autoInvoice });
 });
 
 export const runtime = "nodejs";

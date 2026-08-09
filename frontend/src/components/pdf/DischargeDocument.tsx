@@ -16,7 +16,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     paddingHorizontal: 34,
     fontSize: 10,
-    fontFamily: "Helvetica",
+    fontFamily: "DejaVuSans",
     color: "#111",
     position: "relative",
   },
