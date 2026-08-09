@@ -93,8 +93,8 @@ export default function PharmacyStockView() {
       const res = await fetch(`/api/pharmacy/inventory?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (res.ok) {
-        setRows(body.items ?? []);
-        setTotal(body.total ?? 0);
+        setRows(body.data?.items ?? []);
+        setTotal(body.data?.total ?? 0);
       }
     } catch { /* non-critical */ }
     finally { setLoading(false); }
@@ -129,7 +129,7 @@ export default function PharmacyStockView() {
   const runSweep = async () => {
     const res = await fetch("/api/pharmacy/inventory/sweep", { method: "POST" });
     const body = await res.json();
-    if (res.ok) showToast(`Expiry sweep complete — ${body.checked ?? 0} batch(es) checked`);
+    if (res.ok) showToast(`Expiry sweep complete — ${body.data?.checked ?? 0} batch(es) checked`);
     else showToast(body.error ?? "Sweep failed");
     load();
   };
@@ -347,7 +347,7 @@ function BatchDrawer({ drugId, onClose, onRestock, onToast }: { drugId: string; 
     try {
       const res = await fetch(`/api/pharmacy/inventory/${drugId}`, { cache: "no-store" });
       const body = await res.json();
-      if (res.ok) setData(body);
+      if (res.ok) setData(body.data);
     } catch { /* non-critical */ }
     finally { setLoading(false); }
   }, [drugId]);

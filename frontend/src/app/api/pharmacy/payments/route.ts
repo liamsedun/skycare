@@ -24,6 +24,7 @@ export interface RecordPharmacyPaymentsBody {
   invoiceId: string;
   payments: PaymentSplit[];
   branchId?: string | null;
+  bankAccountId?: string | null;
 }
 
 // POST /api/pharmacy/payments — record one or more payment splits against a
@@ -75,8 +76,24 @@ export const POST = withStaff(async (req, ctx) => {
     .single();
   if (afterError || !afterInvoice) throw new ValidationError(afterError?.message ?? "Invoice not found");
 
-  // Central-ledger sync: mirror each split as a central payment row and keep
-  // the mirrored invoice's paid_amount/status in lockstep.
+  // Dedicated bank-account ledger: pick the target account (explicit choice or
+  // the first active account) so every payment credits the bank side of the
+  // ledger — the walk-in/counter cash and transfer takings are reconcilable.
+  let bankAccountId: string | null = body.bankAccountId ?? null;
+  if (!bankAccountId) {
+    const { data: defaultAccount } = await ctx.svc
+      .from("hospital_bank_accounts")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    bankAccountId = defaultAccount?.id ?? null;
+  }
+
+  // Central-ledger sync: mirror each split as a central payment row, post the
+  // bank-ledger credit, and keep the mirrored invoice's status in lockstep.
   if (invoice.synced_invoice_id) {
     for (let i = 0; i < body.payments.length; i++) {
       const p = body.payments[i];
@@ -116,6 +133,32 @@ export const POST = withStaff(async (req, ctx) => {
               : "pending",
       })
       .eq("id", invoice.synced_invoice_id);
+  }
+
+  // Bank ledger rows (best-effort but never silent): one 'in' credit per
+  // payment split, tied to the pharmacy payment row for full traceability.
+  try {
+    for (let i = 0; i < body.payments.length; i++) {
+      const p = body.payments[i];
+      if (!paymentIds?.[i]) continue;
+      await ctx.svc.from("pharmacy_bank_ledger").insert({
+        tenant_id: tenantId,
+        branch_id: body.branchId ?? null,
+        account_id: bankAccountId,
+        direction: "in",
+        amount: Number(p.amount),
+        source: "pharmacy_payment",
+        source_ref: afterInvoice.invoice_number,
+        invoice_id: afterInvoice.id,
+        payment_id: paymentIds[i],
+        method: p.method,
+        reference: p.reference?.trim() || null,
+        notes: `Payment received on ${afterInvoice.invoice_number}`,
+        created_by: ctx.user.id,
+      });
+    }
+  } catch (e) {
+    console.error("bank-ledger post failed", e);
   }
 
   const totalPaid = body.payments.reduce((s, p) => s + Number(p.amount), 0);
