@@ -83,7 +83,7 @@ function Stat({ label, value, tone }: { label: string; value: number | string; t
 // ---------------------------------------------------------------------------
 // DRUGS TAB
 // ---------------------------------------------------------------------------
-interface DrugRow {
+export interface DrugRow {
   id: string;
   name: string;
   genericName: string | null;
@@ -104,7 +104,7 @@ interface DrugRow {
   stock: number;
 }
 
-interface CategoryRow { id: string; name: string; color: string | null; isPlatform: boolean }
+export interface CategoryRow { id: string; name: string; color: string | null; isPlatform: boolean }
 
 export function DrugsTab() {
   const [rows, setRows] = useState<DrugRow[]>([]);
@@ -298,7 +298,7 @@ interface DrugFormState {
   nafdacNumber: string;
 }
 
-function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: DrugRow | null; categories: CategoryRow[]; onClose: () => void; onSaved: () => void }) {
+export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: DrugRow | null; categories: CategoryRow[]; onClose: () => void; onSaved: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<DrugFormState>(

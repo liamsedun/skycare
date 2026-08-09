@@ -214,9 +214,19 @@ async function renderPrescriptionBuffer(bundle: PrescriptionPdfBundle, qrDataUrl
   // DejaVu Sans covers the Naira sign (U+20A6), which Helvetica does not —
   // without it the amount renders as a broken-bar "¦". All four variants are
   // registered because the document mixes bold and italic styles.
+  //
+  // Guard on *variant availability* rather than the family name: FontStore is
+  // a process-level singleton that survives hot reloads, so a family name may
+  // already be registered with too few variants from earlier code.
   const fontDir = path.join(process.cwd(), "public", "fonts");
-  const registered = Font.getRegisteredFontFamilies?.() ?? [];
-  if (!registered.includes("DejaVuSans")) {
+  let hasItalicVariant = false;
+  try {
+    Font.getFont({ fontFamily: "DejaVuSans", fontStyle: "italic", fontWeight: 400 });
+    hasItalicVariant = true;
+  } catch {
+    // not registered with an italic variant yet
+  }
+  if (!hasItalicVariant) {
     Font.register({
       family: "DejaVuSans",
       fonts: [

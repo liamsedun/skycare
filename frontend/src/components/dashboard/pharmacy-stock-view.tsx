@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, RefreshCcw, PackagePlus, ArrowLeftRight, Pill, X, AlertTriangle,
   Sparkles, CalendarX, ChevronLeft, ChevronRight, CheckCircle2, Package,
+  Pencil, Archive,
 } from "lucide-react";
+import { DrugFormModal } from "@/components/dashboard/pharmacy-admin-view";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -24,8 +26,14 @@ interface InventoryRow {
   dosage: string | null;
   unitPrice: number;
   wholesalePrice: number;
+  effectivePrice: number;
   reorderLevel: number;
   reorderQty: number;
+  sku: string | null;
+  requiresRx: boolean;
+  isControlled: boolean;
+  nafdacNumber: string | null;
+  isActive: boolean;
   stock: number;
   lowStock: boolean;
   outOfStock: boolean;
@@ -64,6 +72,8 @@ export default function PharmacyStockView() {
 
   const [detailDrugId, setDetailDrugId] = useState<string | null>(null);
   const [actModal, setActModal] = useState<null | { kind: "restock"; drugId: string } | { kind: "transfer"; drugId: string } | { kind: "dispense"; drugId: string }>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const [drugModal, setDrugModal] = useState<{ open: true; drug: InventoryRow | null } | { open: false }>({ open: false });
 
   const pageSize = 25;
   const showToast = useCallback((msg: string) => {
@@ -77,6 +87,7 @@ export default function PharmacyStockView() {
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (search.trim()) params.set("q", search.trim());
       if (category) params.set("category", category);
+      if (showArchived) params.set("includeInactive", "1");
       if (branch === "central") params.set("branch", "central");
       else if (branch) params.set("branch", branch);
       const res = await fetch(`/api/pharmacy/inventory?${params.toString()}`, { cache: "no-store" });
@@ -87,7 +98,7 @@ export default function PharmacyStockView() {
       }
     } catch { /* non-critical */ }
     finally { setLoading(false); }
-  }, [page, search, category, branch]);
+  }, [page, search, category, branch, showArchived]);
 
   const loadMeta = useCallback(async () => {
     try {
@@ -159,6 +170,13 @@ export default function PharmacyStockView() {
           <option value="expiring">Expiring soon</option>
           <option value="expired">Expired</option>
         </select>
+        <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+          <input type="checkbox" checked={showArchived} onChange={(e) => { setShowArchived(e.target.checked); setPage(1); }} className="accent-[var(--color-primary)]" />
+          Show archived
+        </label>
+        <button type="button" onClick={() => setDrugModal({ open: true, drug: null })} className={btnPrimary}>
+          <PackagePlus size={14} /> Add drug
+        </button>
         <button type="button" className={btnGhost} onClick={() => { load(); loadMeta(); }}><RefreshCcw size={14} /> Refresh</button>
         <button type="button" className={btnGhost} onClick={runSweep}><Sparkles size={14} /> Run expiry sweep</button>
       </div>
@@ -170,8 +188,10 @@ export default function PharmacyStockView() {
             <thead className="bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
               <tr>
                 <th className="px-4 py-2.5">Drug</th>
+                <th className="px-4 py-2.5">Category</th>
                 <th className="px-4 py-2.5">Form / Dosage</th>
-                <th className="px-4 py-2.5 text-right">Unit</th>
+                <th className="px-4 py-2.5 text-right">Retail</th>
+                <th className="px-4 py-2.5 text-right">Effective</th>
                 <th className="px-4 py-2.5 text-right">Stock</th>
                 <th className="px-4 py-2.5 text-right">Reorder</th>
                 <th className="px-4 py-2.5">Alerts</th>
@@ -193,6 +213,15 @@ export default function PharmacyStockView() {
                   onRestock={() => setActModal({ kind: "restock", drugId: r.id })}
                   onTransfer={() => setActModal({ kind: "transfer", drugId: r.id })}
                   onDispense={() => setActModal({ kind: "dispense", drugId: r.id })}
+                  onEdit={() => setDrugModal({ open: true, drug: r })}
+                  onToggleActive={async () => {
+                    await fetch(`/api/pharmacy/admin/drugs/${r.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ isActive: !r.isActive }),
+                    });
+                    load();
+                  }}
                 />
               ))}
             </tbody>
@@ -215,6 +244,14 @@ export default function PharmacyStockView() {
           branches={branches}
           onClose={() => setActModal(null)}
           onDone={(msg) => { showToast(msg); setActModal(null); load(); loadMeta(); }}
+        />
+      )}
+      {drugModal.open && (
+        <DrugFormModal
+          drug={drugModal.drug}
+          categories={categories}
+          onClose={() => setDrugModal({ open: false })}
+          onSaved={() => { setDrugModal({ open: false }); load(); }}
         />
       )}
       {toast && (
@@ -242,19 +279,31 @@ function StatChunk({ label, value, icon, tone }: { label: string; value: number 
   );
 }
 
-function StockRow({ row, onOpen, onRestock, onTransfer, onDispense }: { row: InventoryRow; onOpen: () => void; onRestock: () => void; onTransfer: () => void; onDispense: () => void }) {
+function StockRow({ row, onOpen, onRestock, onTransfer, onDispense, onEdit, onToggleActive }: { row: InventoryRow; onOpen: () => void; onRestock: () => void; onTransfer: () => void; onDispense: () => void; onEdit: () => void; onToggleActive: () => void }) {
   const severity = row.outOfStock ? SUBTLE.out : row.lowStock ? SUBTLE.low : undefined;
   return (
-    <tr className="transition-colors duration-150 hover:bg-slate-50">
+    <tr className={`transition-colors duration-150 hover:bg-slate-50 ${row.isActive ? "" : "opacity-50"}`}>
       <td className="px-4 py-3">
         <button type="button" onClick={onOpen} className="focus-ring text-left">
           <span className="font-semibold text-[var(--color-foreground)]">{row.name}</span>
           {row.brand && <span className="ml-1 text-xs text-[var(--color-muted-fg)]">({row.brand})</span>}
           {row.genericName && <span className="block text-xs text-[var(--color-muted-fg)]">{row.genericName}</span>}
+          {row.isControlled && (
+            <span className="ml-1 rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold uppercase text-red-700">controlled</span>
+          )}
+          {!row.isActive && <span className="ml-1 rounded bg-slate-200 px-1 py-0.5 text-[9px] font-bold uppercase text-slate-600">archived</span>}
         </button>
       </td>
+      <td className="px-4 py-3 text-xs text-[var(--color-muted-fg)]">{row.category}</td>
       <td className="px-4 py-3 text-xs">{row.form}{row.dosage ? ` · ${row.dosage}` : ""}</td>
       <td className="px-4 py-3 text-right">{ngnv(row.unitPrice)}</td>
+      <td className="px-4 py-3 text-right">
+        {row.effectivePrice !== row.unitPrice ? (
+          <span className="font-semibold text-[var(--color-primary)]">{ngnv(row.effectivePrice)}</span>
+        ) : (
+          <span className="text-[var(--color-muted-fg)]">—</span>
+        )}
+      </td>
       <td className={`px-4 py-3 text-right font-bold ${severity ? severity.text : "text-[var(--color-foreground)]"}`}>{row.stock}</td>
       <td className="px-4 py-3 text-right text-xs text-[var(--color-muted-fg)]">{row.reorderLevel}</td>
       <td className="px-4 py-3">
@@ -268,6 +317,8 @@ function StockRow({ row, onOpen, onRestock, onTransfer, onDispense }: { row: Inv
       </td>
       <td className="px-4 py-3">
         <div className="flex justify-end gap-1.5">
+          <button type="button" onClick={onEdit} className="focus-ring rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100" title={row.isActive ? "Edit drug" : "Edit drug"}><Pencil size={15} /></button>
+          <button type="button" onClick={onToggleActive} className="focus-ring rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100" title={row.isActive ? "Archive" : "Restore"}><Archive size={15} /></button>
           <button type="button" onClick={onRestock} className="focus-ring rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100" title="Receive stock"><PackagePlus size={15} /></button>
           <button type="button" onClick={onTransfer} className="focus-ring rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100" title="Transfer"><ArrowLeftRight size={15} /></button>
           <button type="button" onClick={onDispense} className="focus-ring rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-muted-fg)] hover:bg-slate-100" title="Dispense"><Pill size={15} /></button>

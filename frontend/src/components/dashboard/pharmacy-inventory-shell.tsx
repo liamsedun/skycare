@@ -1,20 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Package, Pill, Upload } from "lucide-react";
+import { Package, Upload } from "lucide-react";
 import PharmacyStockView from "@/components/dashboard/pharmacy-stock-view";
-import { DrugsTab, ImportTab } from "@/components/dashboard/pharmacy-admin-view";
+import { ImportTab } from "@/components/dashboard/pharmacy-admin-view";
 
 // ============================================================================
 // Pharmacy → Drug Inventory — stock levels & movements, catalogue, bulk import.
+// Stock and catalogue were merged into one view: the inventory table carries
+// stock operations (restock / transfer / dispense / batches) AND catalogue
+// administration (add / edit / archive, retail & effective pricing).
 // ============================================================================
 
 export default function PharmacyInventoryShell() {
-  const [tab, setTab] = useState<"stock" | "drugs" | "import">("stock");
+  const [tab, setTab] = useState<"stock" | "import">("stock");
 
   const TABS = [
-    { id: "stock" as const, label: "Stock", icon: Package },
-    { id: "drugs" as const, label: "Drugs", icon: Pill },
+    { id: "stock" as const, label: "Stock & catalogue", icon: Package },
     { id: "import" as const, label: "Bulk import", icon: Upload },
   ];
 
@@ -46,7 +48,6 @@ export default function PharmacyInventoryShell() {
       </div>
 
       {tab === "stock" && <PharmacyStockView />}
-      {tab === "drugs" && <DrugsTab />}
       {tab === "import" && <ImportTab />}
     </div>
   );
