@@ -611,20 +611,17 @@ function CreateItemRow({ item, onChange, onRemove, canRemove }: { item: CreateIt
     setOpen(false);
   };
 
-  const displayName = item.pharmacyDrugId
-    ? results.find((r) => r.id === item.pharmacyDrugId)?.name ?? query
-    : query;
-
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
       <div className="grid grid-cols-12 gap-2">
         <div className="relative col-span-12 sm:col-span-6">
           <input
             ref={inputRef}
-            value={item.pharmacyDrugId ? (results.find((r) => r.id === item.pharmacyDrugId)?.name ?? displayName) : query}
+            value={item.pharmacyDrugId ? item.medicationName : query}
             onChange={(e) => {
-              setQuery(e.target.value);
-              if (item.pharmacyDrugId) onChange({ ...item, pharmacyDrugId: null });
+              const v = e.target.value;
+              setQuery(v);
+              onChange({ ...item, medicationName: v, pharmacyDrugId: null });
             }}
             onFocus={() => {
               if (!item.pharmacyDrugId) setOpen(true);
