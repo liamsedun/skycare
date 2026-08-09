@@ -43,8 +43,20 @@ export const metadata: Metadata = {
     title: "SkyCare",
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icons/apple-touch-icon.png",
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/favicon.svg",
+        color: "#0b0b0f",
+      },
+    ],
   },
   openGraph: {
     title: "SkyCare — The Smart Hospital OS for Africa",

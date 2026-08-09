@@ -144,25 +144,30 @@ function LoginForm() {
 
     const role = data.user?.app_metadata?.role as string | undefined;
 
-    // Record the login audit + last_login_at (best effort)
+    // Record the login audit + last_login_at, and gate deactivated accounts,
+    // in a single round trip. Fall back to /api/auth/me if it fails.
     try {
-      await fetch("/api/auth/log-login", { method: "POST" });
-    } catch {
-      /* ignore */
-    }
-
-    // Deactivated accounts must be blocked even with a valid auth session
-    try {
-      const me = await fetch("/api/auth/me", { method: "GET" });
-      const meData = await me.json();
-      if (meData.data?.user && meData.data.user.is_active === false) {
+      const res = await fetch("/api/auth/log-login", { method: "POST" });
+      const body = await res.json();
+      if (body?.data?.is_active === false) {
         await getSupabase().auth.signOut();
         setError("Your account has been deactivated. Contact your hospital admin.");
         setLoading(false);
         return;
       }
     } catch {
-      /* ignore */
+      try {
+        const me = await fetch("/api/auth/me", { method: "GET" });
+        const meData = await me.json();
+        if (meData.data?.user && meData.data.user.is_active === false) {
+          await getSupabase().auth.signOut();
+          setError("Your account has been deactivated. Contact your hospital admin.");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        /* ignore */
+      }
     }
 
     const fallback = role === "patient_api" ? "/patient" : "/app";
