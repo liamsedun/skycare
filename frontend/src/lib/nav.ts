@@ -27,6 +27,7 @@ import {
   Building2,
   Tag,
   TestTube,
+  Clock,
 } from "lucide-react";
 import type { StaffRole } from "@/lib/auth";
 
@@ -45,6 +46,8 @@ export interface NavItem {
 const ADMIN = ["hospital_admin", "super_admin"] as StaffRole[];
 const CLINICAL = ["hospital_admin", "doctor", "nurse"] as StaffRole[];
 const PHARM_TEAM = ["hospital_admin", "super_admin", "pharmacist"] as StaffRole[];
+const HR_ADMIN = ["hospital_admin", "hr_officer", "super_admin"] as StaffRole[];
+const HR_FINANCE = ["hospital_admin", "hr_officer", "accountant", "super_admin"] as StaffRole[];
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Overview", icon: LayoutDashboard },
@@ -101,6 +104,19 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/app/staff", label: "Staff", icon: UserCog, roles: ADMIN },
   { href: "/app/leave", label: "Leave", icon: CalendarDays },
   { href: "/app/roster", label: "Roster", icon: CalendarRange },
+  {
+    href: "/app/hr",
+    label: "HR",
+    icon: UserCog,
+    children: [
+      { href: "/app/hr", label: "HR Dashboard", icon: LayoutDashboard },
+      { href: "/app/hr/staff", label: "Staff Profiles", icon: UserCog, roles: HR_ADMIN },
+      { href: "/app/hr/roster", label: "Shifts & Roster", icon: CalendarRange, roles: HR_ADMIN },
+      { href: "/app/hr/attendance", label: "Attendance", icon: Clock },
+      { href: "/app/hr/payroll", label: "Payroll", icon: Wallet, roles: HR_FINANCE },
+      { href: "/app/hr/credentials", label: "Credentials", icon: ShieldCheck, roles: HR_ADMIN },
+    ],
+  },
   { href: "/app/mail", label: "Mail", icon: Mail, roles: ADMIN },
   { href: "/app/chats", label: "Chats", icon: MessageSquare, roles: ADMIN },
   { href: "/app/reports", label: "Medical Reports", icon: FileText, roles: [...CLINICAL, "super_admin"] },
