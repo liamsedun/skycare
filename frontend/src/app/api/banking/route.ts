@@ -45,7 +45,7 @@ export const GET = withStaff(async (req, ctx) => {
       .eq("tenant_id", tenantId),
     ctx.svc
       .from("pharmacy_bank_ledger")
-      .select("id, account_id, direction, amount, method, source, source_ref, reference, notes, recorded_at")
+      .select("id, account_id, direction, amount, method, source, source_ref, reference, notes, created_at")
       .eq("tenant_id", tenantId),
   ]);
   if (banksRes.error) throw new ValidationError(banksRes.error.message);
@@ -73,14 +73,14 @@ export const GET = withStaff(async (req, ctx) => {
     accs.set(b.id, { id: b.id, label: labelFor(b.id), is_active: b.is_active, balance: 0, monthIn: 0, monthOut: 0 });
   }
 
-  const apply = (rows: LedgerRow[], balanceOnly: boolean) => {
+  const apply = (rows: Array<Record<string, unknown>>, balanceOnly: boolean) => {
     for (const r of rows) {
-      const acc = accs.get(r.account_id ?? null);
+      const acc = accs.get((r.account_id as string | null) ?? null);
       if (!acc) continue;
       const signed = r.direction === "in" ? Number(r.amount) : -Number(r.amount);
       acc.balance += signed;
       if (!balanceOnly) {
-        const inMonth = new Date(r.recorded_at) >= monthStart;
+        const inMonth = new Date((r.recorded_at ?? r.created_at) as string) >= monthStart;
         if (!inMonth) continue;
         if (r.direction === "in") acc.monthIn += Number(r.amount);
         else acc.monthOut += Number(r.amount);
@@ -108,7 +108,7 @@ export const GET = withStaff(async (req, ctx) => {
       source_ref: r.source_ref,
       reference: r.reference,
       notes: r.notes,
-      recorded_at: r.recorded_at,
+      recorded_at: (r.recorded_at ?? r.created_at) as string,
     });
   }
   recent.sort((a, b) => String(b.recorded_at).localeCompare(String(a.recorded_at)));

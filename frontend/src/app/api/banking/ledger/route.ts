@@ -44,15 +44,22 @@ export const GET = withStaff(async (req, ctx) => {
 
   const accountIds = account && account !== "cash" ? [account] : null;
   const build = (table: "hospital_bank_ledger" | "pharmacy_bank_ledger") => {
+    // pharmacy_bank_ledger (0061) predates recorded_at and stamps its rows
+    // with created_at; normalize to recorded_at after the fetch.
+    const tsCol = table === "pharmacy_bank_ledger" ? "created_at" : "recorded_at";
+    const select =
+      table === "pharmacy_bank_ledger"
+        ? "id, account_id, direction, amount, source, source_ref, payment_id, method, reference, notes, created_at"
+        : "id, account_id, direction, amount, source, source_ref, payment_id, method, reference, notes, recorded_at";
     let query = ctx.svc
       .from(table)
-      .select("id, account_id, direction, amount, source, source_ref, payment_id, method, reference, notes, recorded_at")
+      .select(select)
       .eq("tenant_id", tenantId);
     if (account === "cash") query = query.is("account_id", null);
     else if (accountIds) query = query.in("account_id", accountIds);
     if (direction) query = query.eq("direction", direction);
-    if (dateFrom) query = query.gte("recorded_at", dateFrom);
-    if (dateTo) query = query.lte("recorded_at", dateTo);
+    if (dateFrom) query = query.gte(tsCol, dateFrom);
+    if (dateTo) query = query.lte(tsCol, dateTo);
     return query;
   };
 
@@ -70,19 +77,22 @@ export const GET = withStaff(async (req, ctx) => {
     return bankById.get(accountId) ?? "Bank";
   };
 
-  const sourceById = await classifyLedgerSources(ctx.svc, tenantId, (mainRes.data ?? []) as LedgerRow[]);
+  const sourceById = await classifyLedgerSources(ctx.svc, tenantId, (mainRes.data ?? []) as Array<{ payment_id: string | null }>);
 
+  const mainRows = (mainRes.data ?? []) as Array<Record<string, unknown>>;
+  const pharmRows = (pharmRes.data ?? []) as Array<Record<string, unknown>>;
   const rows: Array<Record<string, unknown>> = [
-    ...(mainRes.data ?? []).map((r: LedgerRow) => ({
+    ...mainRows.map((r) => ({
       ...r,
-      source: sourceById.get(r.payment_id ?? "") ?? r.source,
-      account_label: labelFor(r.account_id),
+      source: sourceById.get((r.payment_id as string) ?? "") ?? r.source,
+      account_label: labelFor(r.account_id as string | null),
       amount: Number(r.amount),
     })),
-    ...(pharmRes.data ?? []).map((r: LedgerRow) => ({
+    ...pharmRows.map((r) => ({
       ...r,
       source: "pharmacy",
-      account_label: labelFor(r.account_id),
+      recorded_at: r.created_at,
+      account_label: labelFor(r.account_id as string | null),
       amount: Number(r.amount),
     })),
   ];
