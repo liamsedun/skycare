@@ -1,4 +1,4 @@
-import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
 import type { NextRequest } from "next/server";
@@ -78,6 +78,10 @@ export const POST = withAuth(async (req, ctx) => {
   const createdPayments = [];
   const touchedInvoices = [];
 
+  // Banking ledger: cash receipts go to the Cash account; every other method
+  // credits the default bank account (or Cash when none is configured).
+  const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
+
   for (const item of body.allocation) {
     const { data: invoice } = await ctx.svc
       .from("invoices")
@@ -147,6 +151,29 @@ export const POST = withAuth(async (req, ctx) => {
 
     createdPayments.push(payment);
     touchedInvoices.push(updatedInvoice);
+
+    // Banking ledger auto-post: one 'in' receipt per confirmed payment.
+    if (payment.gateway !== "pharmacy") {
+      try {
+        await postBankLedger(ctx.svc, {
+          tenantId,
+          branchId: ctx.branchId ?? null,
+          accountId: bankLedgerAccountForMethod(payment.payment_method, defaultBankId),
+          direction: "in",
+          amount: Number(payment.amount),
+          source: "payment",
+          sourceRef: updatedInvoice.invoice_number,
+          paymentId: payment.id,
+          method: payment.payment_method,
+          reference,
+          notes: `Payment for ${patient.first_name} ${patient.last_name}`,
+          recordedAt: payment.paid_at ?? new Date().toISOString(),
+          createdBy: ctx.user.id,
+        });
+      } catch (e) {
+        console.error("banking-ledger post failed", e);
+      }
+    }
   }
 
   // Notify the patient's portal account and other billing staff

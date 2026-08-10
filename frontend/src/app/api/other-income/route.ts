@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { INCOME_CATEGORIES } from "@/lib/expense-categories";
@@ -81,6 +81,29 @@ export const POST = withStaff(async (req, ctx) => {
     entityId: income.id,
     description: `Recorded income ₦${body.amount.toLocaleString()} — ${body.description.trim()}`,
   });
+
+  // Banking ledger auto-post: cash receipts go to Cash, every other method
+  // credits the default bank account (or Cash when none is configured).
+  try {
+    const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
+    await postBankLedger(ctx.svc, {
+      tenantId,
+      branchId: ctx.branchId ?? null,
+      accountId: bankLedgerAccountForMethod(income.payment_method, defaultBankId),
+      direction: "in",
+      amount: Number(income.amount),
+      source: "other_income",
+      sourceRef: income.description,
+      incomeId: income.id,
+      method: income.payment_method,
+      reference: income.source ?? null,
+      notes: `${income.category} income`,
+      recordedAt: new Date(`${income.income_date}T12:00:00`).toISOString(),
+      createdBy: ctx.user.id,
+    });
+  } catch (e) {
+    console.error("banking-ledger post failed", e);
+  }
 
   return ok(income, 201);
 });

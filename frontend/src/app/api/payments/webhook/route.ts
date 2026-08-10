@@ -8,6 +8,7 @@ import {
   type PaystackKeys,
 } from "@/lib/paystack";
 import { notifyUsers } from "@/lib/notify";
+import { resolveBankAccountId, postBankLedger } from "@/lib/api-utils";
 
 export const runtime = "nodejs";
 
@@ -147,6 +148,28 @@ export async function POST(req: NextRequest) {
         .update({ paid_amount: newPaid, status: invoiceStatus })
         .eq("id", invoiceId);
       if (invError) console.error("[Paystack Webhook] Invoice update failed:", invError);
+    }
+
+    // Banking ledger auto-post: gateway receipts always credit a bank account
+    // (the default active bank, mirroring the pharmacy flow).
+    try {
+      const defaultBankId = await resolveBankAccountId(svc, tenantId);
+      await postBankLedger(svc, {
+        tenantId,
+        accountId: defaultBankId,
+        direction: "in",
+        amount: amountNaira,
+        source: "payment",
+        sourceRef: invoice?.invoice_number ?? null,
+        paymentId: payment.id,
+        method: paymentMethod,
+        reference,
+        notes: `Online payment via Paystack (${data.channel})`,
+        recordedAt: data.paid_at || new Date().toISOString(),
+        createdBy: null,
+      });
+    } catch (e) {
+      console.error("[Paystack Webhook] Banking ledger post failed:", e);
     }
 
     // Notify billing staff that the online payment arrived (auto-completed).

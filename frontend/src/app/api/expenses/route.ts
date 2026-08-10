@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
@@ -81,6 +81,29 @@ export const POST = withStaff(async (req, ctx) => {
     entityId: expense.id,
     description: `Recorded expense ₦${body.amount.toLocaleString()} — ${body.description.trim()}`,
   });
+
+  // Banking ledger auto-post: cash payments leave Cash, every other method
+  // debits the default bank account (or Cash when none is configured).
+  try {
+    const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
+    await postBankLedger(ctx.svc, {
+      tenantId,
+      branchId: ctx.branchId ?? null,
+      accountId: bankLedgerAccountForMethod(expense.payment_method, defaultBankId),
+      direction: "out",
+      amount: Number(expense.amount),
+      source: "expense",
+      sourceRef: expense.description,
+      expenseId: expense.id,
+      method: expense.payment_method,
+      reference: expense.vendor ?? null,
+      notes: `${expense.category} expense`,
+      recordedAt: new Date(`${expense.expense_date}T12:00:00`).toISOString(),
+      createdBy: ctx.user.id,
+    });
+  } catch (e) {
+    console.error("banking-ledger post failed", e);
+  }
 
   return ok(expense, 201);
 });

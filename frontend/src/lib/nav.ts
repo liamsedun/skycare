@@ -28,6 +28,7 @@ import {
   Tag,
   TestTube,
   Clock,
+  Landmark,
 } from "lucide-react";
 import type { StaffRole } from "@/lib/auth";
 
@@ -99,6 +100,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { href: "/app/billing", label: "Billing", icon: ReceiptText, roles: [...ADMIN, "cashier"] },
+  { href: "/app/banking", label: "Banking", icon: Landmark, roles: [...ADMIN, "cashier", "accountant"] },
   { href: "/app/expenses", label: "Expenses", icon: Wallet, roles: ADMIN },
   { href: "/app/other-income", label: "Other Income", icon: TrendingUp, roles: ADMIN },
   { href: "/app/staff", label: "Staff", icon: UserCog, roles: ADMIN },

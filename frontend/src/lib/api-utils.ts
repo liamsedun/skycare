@@ -106,6 +106,85 @@ export function sanitizeLike(term: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// BANKING LEDGER (automated posting helpers)
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve the default bank account for a tenant: the first active account,
+ * mirroring the pharmacy payment flow (0061). Returns null when the admin
+ * has not added any active bank in Settings.
+ */
+export async function resolveBankAccountId(
+  svc: SupabaseClient,
+  tenantId: string
+): Promise<string | null> {
+  const { data } = await svc
+    .from("hospital_bank_accounts")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+/** Cash vs bank for an incoming/outgoing payment method. Raw banks → Cash, anything else → bank. */
+export function bankLedgerAccountForMethod(
+  method: string | null | undefined,
+  bankAccountId: string | null
+): string | null {
+  const m = (method ?? "").toLowerCase();
+  return m === "cash" ? null : bankAccountId;
+}
+
+export interface PostBankLedgerInput {
+  tenantId: string;
+  branchId?: string | null;
+  accountId?: string | null;
+  direction: "in" | "out";
+  amount: number;
+  source: "payment" | "other_income" | "expense" | "adjustment";
+  sourceRef?: string | null;
+  paymentId?: string | null;
+  incomeId?: string | null;
+  expenseId?: string | null;
+  method?: string | null;
+  reference?: string | null;
+  notes?: string | null;
+  recordedAt?: string | null;
+  createdBy?: string | null;
+}
+
+/**
+ * Insert one Banking ledger row (service client). account_id NULL = Cash.
+ * Callers pass a resolved accountId — use resolveBankAccountId() +
+ * bankLedgerAccountForMethod() to derive it.
+ */
+export async function postBankLedger(
+  svc: SupabaseClient,
+  input: PostBankLedgerInput
+): Promise<void> {
+  await svc.from("hospital_bank_ledger").insert({
+    tenant_id: input.tenantId,
+    branch_id: input.branchId ?? null,
+    account_id: input.accountId ?? null,
+    direction: input.direction,
+    amount: input.amount,
+    source: input.source,
+    source_ref: input.sourceRef ?? null,
+    payment_id: input.paymentId ?? null,
+    income_id: input.incomeId ?? null,
+    expense_id: input.expenseId ?? null,
+    method: input.method ?? null,
+    reference: input.reference ?? null,
+    notes: input.notes ?? null,
+    recorded_at: input.recordedAt ?? new Date().toISOString(),
+    created_by: input.createdBy ?? null,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // AUTH CONTEXT
 // ---------------------------------------------------------------------------
 export interface AuthedContext {
