@@ -1,4 +1,4 @@
-import { withStaff, withAuth, ok, okPaginated, requireTenant, resolveParam, ValidationError } from "@/lib/api-utils";
+import { withStaff, withAuth, ok, okPaginated, requireTenant, resolveParam, ValidationError, sanitizeLike } from "@/lib/api-utils";
 import { validateDrugInput } from "@/lib/pharmacy-admin";
 import type { NextRequest } from "next/server";
 
@@ -26,7 +26,7 @@ export const GET = withStaff(async (req, ctx) => {
   if (!includeInactive) q = q.eq("is_active", true);
   if (category) q = q.eq("category", category);
   if (search) {
-    q = q.or(`name_normalized.ilike.%${search}%,generic_name.ilike.%${search}%,brand.ilike.%${search}%,sku.ilike.%${search}%`);
+    q = q.or(`name_normalized.ilike.%${sanitizeLike(search)}%,generic_name.ilike.%${sanitizeLike(search)}%,brand.ilike.%${sanitizeLike(search)}%,sku.ilike.%${sanitizeLike(search)}%`);
   }
   q = q.order("name", { ascending: true }).range(from, to);
   const { data, error, count } = await q;

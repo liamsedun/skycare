@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
@@ -25,7 +25,7 @@ export const GET = withStaff(async (req, ctx) => {
 
   if (q) {
     query = query.or(
-      `first_name.ilike.%${q}%,last_name.ilike.%${q}%,patient_number.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`
+      `first_name.ilike.%${sanitizeLike(q)}%,last_name.ilike.%${sanitizeLike(q)}%,patient_number.ilike.%${sanitizeLike(q)}%,phone.ilike.%${sanitizeLike(q)}%,email.ilike.%${sanitizeLike(q)}%`
     );
   }
   if (status) query = query.eq("status", status);

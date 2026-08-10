@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
@@ -29,7 +29,7 @@ export const GET = withStaff(async (req, ctx) => {
   if (category) query = query.eq("category", category);
   if (dateFrom) query = query.gte("expense_date", dateFrom);
   if (dateTo) query = query.lte("expense_date", dateTo);
-  if (search) query = query.or(`description.ilike.%${search}%,vendor.ilike.%${search}%`);
+  if (search) query = query.or(`description.ilike.%${sanitizeLike(search)}%,vendor.ilike.%${sanitizeLike(search)}%`);
 
   const { data, count } = await query;
   return okPaginated(data ?? [], count ?? 0, page, pageSize);

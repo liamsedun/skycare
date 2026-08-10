@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
@@ -22,7 +22,7 @@ export const GET = withStaff(async (req, ctx) => {
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (q) query = query.or(`staff_number.ilike.%${q}%,specialization.ilike.%${q}%`);
+  if (q) query = query.or(`staff_number.ilike.%${sanitizeLike(q)}%,specialization.ilike.%${sanitizeLike(q)}%`);
   if (department) query = query.ilike("department", `%${department}%`);
 
   const { data, count } = await query;

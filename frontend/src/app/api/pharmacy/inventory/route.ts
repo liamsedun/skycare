@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export const GET = withStaff(async (req, ctx) => {
     .order("name");
   if (activeFilter !== undefined) drugsQuery = drugsQuery.eq("is_active", activeFilter);
   if (category) drugsQuery = drugsQuery.eq("category", category);
-  if (q) drugsQuery = drugsQuery.or(`name.ilike.%${q}%,generic_name.ilike.%${q}%,brand.ilike.%${q}%`);
+  if (q) drugsQuery = drugsQuery.or(`name.ilike.%${sanitizeLike(q)}%,generic_name.ilike.%${sanitizeLike(q)}%,brand.ilike.%${sanitizeLike(q)}%`);
 
   const [drugsRes, batchesRes, countsRes] = await Promise.all([
     drugsQuery,

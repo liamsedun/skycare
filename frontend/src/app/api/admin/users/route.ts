@@ -1,4 +1,4 @@
-import { withAuth, okPaginated, ok, ValidationError, ForbiddenError, requireTenant } from "@/lib/api-utils";
+import { withAuth, okPaginated, ok, ValidationError, ForbiddenError, requireTenant, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
@@ -60,7 +60,7 @@ export const GET = withAuth(async (req, ctx) => {
   if (ctx.tenantId) query = query.eq("tenant_id", ctx.tenantId);
 
   if (role) query = query.eq("role", role);
-  if (search) query = query.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+  if (search) query = query.or(`full_name.ilike.%${sanitizeLike(search)}%,email.ilike.%${sanitizeLike(search)}%`);
   if (isActive === "true") query = query.eq("is_active", true);
   if (isActive === "false") query = query.eq("is_active", false);
   if (department) query = query.filter("staff.department", "ilike", `%${department}%`);

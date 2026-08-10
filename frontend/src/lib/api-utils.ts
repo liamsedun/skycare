@@ -92,6 +92,19 @@ export function resolveParam(value: string | string[] | null | undefined): strin
   return value ?? null;
 }
 
+/**
+ * Sanitize a free-text search term before embedding it in a PostgREST
+ * `or(...)` ILIKE filter. PostgREST parses the or-expression by scanning for
+ * parenthesis and comma separators, so a value like "Bisoprolol (Sandoz) 5mg"
+ * would terminate the expression early at the closing paren and silently
+ * return ZERO rows. Replacing those characters with the LIKE wildcard turns
+ * the term back into a match ("Bisoprolol %Sandoz% 5mg" matches
+ * "Bisoprolol (Sandoz) 5mg Tablets x28") while keeping fuzzy matching.
+ */
+export function sanitizeLike(term: string): string {
+  return term.replace(/[(),]/g, "%");
+}
+
 // ---------------------------------------------------------------------------
 // AUTH CONTEXT
 // ---------------------------------------------------------------------------

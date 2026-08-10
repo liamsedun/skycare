@@ -1,4 +1,4 @@
-import { withStaff, ok, okPaginated, ValidationError, ForbiddenError, requireTenant, getPagination } from "@/lib/api-utils";
+import { withStaff, ok, okPaginated, ValidationError, ForbiddenError, requireTenant, getPagination, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { isHrAdmin } from "@/lib/hr-perms";
 import type { NextRequest } from "next/server";
@@ -20,7 +20,7 @@ export const GET = withStaff(async (req, ctx) => {
     .from("staff")
     .select("id, staff_number, department, specialization, employment_type, base_salary, is_available, on_leave_until, created_at, users(full_name, role, email, phone, is_active), profiles:staff_profiles(id, hire_date, salary_grade, bank_name, bank_account_name, credentials_status)", { count: "exact" })
     .eq("tenant_id", tenantId);
-  if (q) query = query.or(`staff_number.ilike.%${q}%,users.full_name.ilike.%${q}%,users.email.ilike.%${q}%`);
+  if (q) query = query.or(`staff_number.ilike.%${sanitizeLike(q)}%,users.full_name.ilike.%${sanitizeLike(q)}%,users.email.ilike.%${sanitizeLike(q)}%`);
   if (department) query = query.eq("department", department);
   if (role) query = query.eq("users.role", role);
   const { data, error, count } = await query
