@@ -78,8 +78,9 @@ export function BalancesTab() {
       const res = await fetch("/api/pharmacy/procurement/summary", { cache: "no-store" });
       const body = await res.json();
       if (res.ok) {
-        setRows(body.suppliers ?? []);
-        setTotals(body.totals ?? {});
+        const d = body.data ?? {};
+        setRows(d.suppliers ?? []);
+        setTotals(d.totals ?? {});
       }
     } finally {
       setLoading(false);
@@ -937,7 +938,7 @@ export function PaymentsTab() {
       const suppliersBody = await suppliersRes.json();
       const summaryBody = await summaryRes.json();
       setSuppliers(((suppliersBody.data ?? []) as Array<{ id: string; name: string }>).map((s) => ({ id: s.id, name: s.name })));
-      setBalances((summaryBody.suppliers ?? []) as SupplierBalance[]);
+      setBalances(((summaryBody.data?.suppliers ?? []) as SupplierBalance[]));
     } catch { /* non-critical */ }
   }, []);
 
