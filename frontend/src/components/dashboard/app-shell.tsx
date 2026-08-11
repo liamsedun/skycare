@@ -4,9 +4,11 @@ import { useState } from "react";
 import Sidebar from "@/components/dashboard/sidebar";
 import Topbar from "@/components/dashboard/topbar";
 import type { StaffRole } from "@/lib/auth";
+import type { ModuleAccess } from "@/lib/nav";
 
 export default function AppShell({
   role,
+  moduleAccess,
   tenantName,
   userName,
   tenantLogoUrl,
@@ -14,6 +16,7 @@ export default function AppShell({
   children,
 }: Readonly<{
   role: StaffRole;
+  moduleAccess?: ModuleAccess;
   tenantName: string | null;
   userName: string;
   tenantLogoUrl: string | null;
@@ -34,14 +37,14 @@ export default function AppShell({
             aria-label="Close navigation"
           />
           <div className="absolute inset-y-0 left-0 shadow-[var(--shadow-xl)]">
-            <Sidebar role={role} tenantName={tenantName} onClose={() => setMobileOpen(false)} />
+            <Sidebar role={role} moduleAccess={moduleAccess} tenantName={tenantName} onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen shrink-0 md:block">
-        <Sidebar role={role} tenantName={tenantName} />
+        <Sidebar role={role} moduleAccess={moduleAccess} tenantName={tenantName} />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

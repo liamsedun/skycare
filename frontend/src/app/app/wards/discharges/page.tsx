@@ -20,7 +20,7 @@ export default async function DischargesPage() {
 
   return (
     <div className="space-y-6">
-      <DischargesView />
+      <DischargesView canBill={role === "hospital_admin" || role === "super_admin"} />
     </div>
   );
 }

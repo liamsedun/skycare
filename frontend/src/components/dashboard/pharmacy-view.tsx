@@ -101,6 +101,8 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,6 +113,8 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
     try {
       const params = new URLSearchParams({ pageSize: "100" });
       if (filter !== "all") params.set("status", filter);
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
       const res = await fetch(`/api/prescriptions?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load prescriptions");
@@ -120,7 +124,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, fromDate, toDate]);
 
   useEffect(() => {
     load();
@@ -157,7 +161,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
           </p>
         )}
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Filter prescriptions">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter prescriptions">
         {STATUS_FILTERS.map((item) => (
           <button
             key={item}
@@ -173,6 +177,28 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
             {item.replace(/_/g, " ")}
           </button>
         ))}
+        <span className="mx-1 hidden h-5 w-px bg-[var(--color-border)] sm:block" aria-hidden="true" />
+        <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+          From
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+            aria-label="Issued from"
+          />
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+          To
+          <input
+            type="date"
+            value={toDate}
+            min={fromDate || undefined}
+            onChange={(e) => setToDate(e.target.value)}
+            className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+            aria-label="Issued to"
+          />
+        </label>
       </div>
 
       {loading ? (

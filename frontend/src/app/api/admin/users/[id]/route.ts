@@ -1,5 +1,7 @@
-import { withAuth, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { MODULE_KEYS } from "@/lib/nav";
+import type { AccessLevel, ModuleAccess } from "@/lib/nav";
 import type { NextRequest } from "next/server";
 import { GRANTABLE_ROLES } from "../route";
 
@@ -8,7 +10,7 @@ export const dynamic = "force-dynamic";
 async function loadUser(ctx: Parameters<typeof withAuth>[0] extends never ? never : any, id: string) {
   const { data } = await ctx.svc
     .from("users")
-    .select("id, tenant_id, email, full_name, role, phone, is_active, created_at")
+    .select("id, tenant_id, email, full_name, role, phone, is_active, module_access, created_at")
     .eq("id", id)
     .maybeSingle();
   return data;
@@ -26,12 +28,13 @@ export const GET = withAuth(async (req, ctx) => {
   return ok(user);
 });
 
-// PATCH /api/admin/users/[id] — update role / is_active (tenant-scoped)
+// PATCH /api/admin/users/[id] — update role / is_active / module_access (tenant-scoped)
 export const PATCH = withAuth(async (req, ctx) => {
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
   if (ctx.role !== "super_admin") requireTenant(ctx);
+  await requireModuleLevel(ctx, "staff", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
-  const body = (await req.json()) as { role?: string; is_active?: boolean };
+  const body = (await req.json()) as { role?: string; is_active?: boolean; module_access?: ModuleAccess };
 
   const user = await loadUser(ctx, id);
   if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
@@ -50,6 +53,26 @@ export const PATCH = withAuth(async (req, ctx) => {
       throw new ValidationError("Cannot assign that role");
     }
     patch.role = body.role;
+  }
+  if ("module_access" in body) {
+    const access = body.module_access;
+    if (access !== null) {
+      if (typeof access !== "object" || Array.isArray(access)) {
+        throw new ValidationError("module_access must be an object of module key → level");
+      }
+      const normalized: Record<string, AccessLevel> = {};
+      for (const [key, level] of Object.entries(access)) {
+        if (!MODULE_KEYS.includes(key)) throw new ValidationError(`Unknown module key: ${key}`);
+        if (level !== "full" && level !== "view_only" && level !== "none") {
+          throw new ValidationError(`Invalid level for ${key}: ${level}`);
+        }
+        // Missing keys mean "none" — don't store explicit none entries.
+        if (level !== "none") normalized[key] = level;
+      }
+      patch.module_access = Object.keys(normalized).length > 0 ? normalized : {};
+    } else {
+      patch.module_access = null;
+    }
   }
   if (Object.keys(patch).length === 0) return ok(user);
 
@@ -74,7 +97,7 @@ export const PATCH = withAuth(async (req, ctx) => {
     action: "update",
     entityType: "users",
     entityId: id,
-    description: `Updated ${user.email}${patch.role ? ` — role → ${patch.role}` : ""}${typeof body.is_active === "boolean" ? ` — active: ${body.is_active}` : ""}`,
+    description: `Updated ${user.email}${patch.role ? ` — role → ${patch.role}` : ""}${typeof body.is_active === "boolean" ? ` — active: ${body.is_active}` : ""}${"module_access" in body ? ` — module access: ${body.module_access && Object.keys(body.module_access).length > 0 ? Object.entries(body.module_access).map(([k, v]) => `${k}=${v}`).join(", ") : "role default"}` : ""}`,
   });
   return ok(data);
 });
@@ -89,6 +112,7 @@ export const DELETE = withAuth(async (req, ctx) => {
     throw new ForbiddenError("Admin access required");
   }
   if (ctx.role !== "super_admin") requireTenant(ctx);
+  await requireModuleLevel(ctx, "staff", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);
   if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {

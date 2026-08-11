@@ -1,4 +1,4 @@
-import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
@@ -74,6 +74,7 @@ export interface CreateInvoiceBody {
 // POST /api/invoices
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "billing", "full");
   const body = (await req.json()) as CreateInvoiceBody;
 
   if (!body.patientId || body.subtotal == null || body.totalAmount == null) {

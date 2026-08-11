@@ -1,5 +1,10 @@
 export type ExportCell = string | number | null | undefined;
 
+const pdfWorkerUrl = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
+
 export function escapeCsv(val: ExportCell): string {
   const s = val == null ? "" : String(val);
   return s.includes(",") || s.includes('"') || s.includes("\n")
@@ -124,4 +129,41 @@ export function printTable(
   w.document.open();
   w.document.write(html);
   w.document.close();
+}
+
+/** Split a text line into cells on runs of 2+ spaces (how printTable PDFs lay out). */
+export function splitPdfLine(line: string): string[] {
+  const cells = line.split(/\s{2,}/).map((c) => c.trim());
+  if (cells[0] === "") cells.shift();
+  return cells;
+}
+
+/**
+ * Extract tabular rows from a PDF file (client-side, pdfjs-dist).
+ * Returns rows as string[][] with the header first — same shape as parseCsv.
+ * Designed for PDFs produced by printTable(); arbitrary PDFs may parse loosely.
+ */
+export async function parsePdfRows(file: File): Promise<string[][]> {
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const rows: string[][] = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const content = await page.getTextContent();
+    let line = "";
+    for (const item of content.items) {
+      if ("str" in item) {
+        const s = item.str;
+        line += s;
+        if (item.hasEOL) {
+          if (line.trim()) rows.push(splitPdfLine(line));
+          line = "";
+        }
+      }
+    }
+    if (line.trim()) rows.push(splitPdfLine(line));
+  }
+  return rows;
 }

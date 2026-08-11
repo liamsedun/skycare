@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit, logView } from "@/lib/audit";
 import { normalizeBloodGroup } from "@/app/api/patients/route";
 import type { NextRequest } from "next/server";
@@ -30,6 +30,7 @@ export const GET = withStaff(async (req, ctx) => {
 // PUT /api/patients/[id]
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "patients", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getPatient(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Patient not found");
@@ -75,6 +76,7 @@ export const PUT = withStaff(async (req, ctx) => {
 // POST /api/patients/[id]/transfer — mark patient as transferred to another hospital (soft: keep record, disable portal)
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "patients", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getPatient(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Patient not found");
@@ -111,6 +113,7 @@ export const DELETE = withStaff(async (req, ctx) => {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = ctx.role === "super_admin" ? null : requireTenant(ctx);
+  await requireModuleLevel(ctx, "patients", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getPatient(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Patient not found");

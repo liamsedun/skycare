@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, FileUp, Plus, UserRoundPlus } from "lucide-react";
+import { Plus, UserRoundPlus } from "lucide-react";
 import { ActionDropdown } from "@/components/ui/action-dropdown";
-import CsvImportModal, { type ImportResult } from "@/components/ui/csv-import-modal";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { AddPatientModal, type PatientRow } from "@/components/dashboard/patient-dialog";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
@@ -42,7 +43,6 @@ const IMPORT_SAMPLE = [
 export default function PatientActions({ patients }: { patients: PatientRow[] }) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
 
   const rowsFor = (ps: PatientRow[]) =>
     ps.map((p) => [
@@ -114,46 +114,20 @@ export default function PatientActions({ patients }: { patients: PatientRow[] })
             icon: <UserRoundPlus size={14} aria-hidden="true" />,
             onClick: () => setAddOpen(true),
           },
-          {
-            label: "Import Patients (CSV)",
-            description: "Upload a CSV to add many patients at once",
-            icon: <FileUp size={14} aria-hidden="true" />,
-            onClick: () => setImportOpen(true),
-          },
         ]}
       />
-      <ActionDropdown
-        label="Export"
-        variant="outline"
-        icon={<Download size={16} aria-hidden="true" />}
-        items={[
-          {
-            label: "Patients (CSV)",
-            description: "Download the patient list as a spreadsheet",
-            icon: <Download size={14} aria-hidden="true" />,
-            onClick: exportCsv,
-          },
-          {
-            label: "Patients (PDF)",
-            description: "Open a printable PDF of the patient list",
-            icon: <Download size={14} aria-hidden="true" />,
-            onClick: exportPdf,
-          },
-        ]}
-      />
-
-      <AddPatientModal open={addOpen} onClose={() => setAddOpen(false)} />
-      <CsvImportModal
-        open={importOpen}
-        title="Import Patients"
-        description="Add multiple patients from a CSV file. The first row must be the header with the columns below, in this order."
-        columns={IMPORT_COLUMNS}
-        sampleRows={IMPORT_SAMPLE}
+      <ImportExportMenu
+        entityLabel="Patients"
+        exportCsv={exportCsv}
+        exportPdf={exportPdf}
+        importColumns={IMPORT_COLUMNS}
+        importSample={IMPORT_SAMPLE}
         templateFilename="patients-import-template.csv"
-        onClose={() => setImportOpen(false)}
         onImport={importPatients}
         onImported={() => router.refresh()}
       />
+
+      <AddPatientModal open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );
 }

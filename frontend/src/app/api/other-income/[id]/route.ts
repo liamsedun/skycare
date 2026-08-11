@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, NotFoundError, requireTenant, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, NotFoundError, requireTenant, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { INCOME_CATEGORIES } from "@/lib/expense-categories";
 import type { NextRequest } from "next/server";
@@ -27,6 +27,7 @@ export const GET = withStaff(async (req, ctx) => {
 // PUT /api/other-income/[id]
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "other-income", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getIncome(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Income record not found");
@@ -88,6 +89,7 @@ export const PUT = withStaff(async (req, ctx) => {
 // DELETE /api/other-income/[id]
 export const DELETE = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "other-income", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getIncome(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Income record not found");

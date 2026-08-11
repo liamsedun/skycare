@@ -1,4 +1,4 @@
-import { withAuth, withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, withStaff, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit, logView } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
@@ -43,6 +43,7 @@ export const GET = withAuth(async (req, ctx) => {
 // PUT /api/appointments/[id]
 export const PUT = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "appointments", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getAppointment(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Appointment not found");
@@ -83,6 +84,7 @@ export const PUT = withAuth(async (req, ctx) => {
 // DELETE /api/appointments/[id] — staff cancels/removes
 export const DELETE = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "appointments", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getAppointment(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Appointment not found");

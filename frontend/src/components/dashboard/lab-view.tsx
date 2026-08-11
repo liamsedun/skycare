@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, FileDown, FlaskConical, ListChecks, Loader2, Plus, Search, TestTube, Wrench } from "lucide-react";
+import { CalendarPlus, FileDown, FlaskConical, ListChecks, Loader2, Plus, ReceiptText, Search, TestTube, Wrench } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 interface LabService {
   id: string;
@@ -26,6 +29,7 @@ interface LabRequest {
   external_lab_id: string | null;
   requested_at: string;
   notes: string | null;
+  invoice_id: string | null;
   patients: { id: string; patient_number: string; first_name: string; last_name: string; user_id: string | null } | null;
   users: { id: string; full_name: string } | null;
   lab_request_items: Array<{
@@ -44,9 +48,43 @@ interface LabRequest {
     user_id: string;
     users: { id: string; full_name: string; role: string } | null;
   }>;
+  invoices?: { id: string; invoice_number: string; status: string; total_amount: number } | null;
 }
 
 const STATUS_FILTERS = ["all", "requested", "sample_collected", "in_progress", "completed", "cancelled"];
+
+const REQUEST_EXPORT_COLUMNS = [
+  "patient",
+  "patient_number",
+  "status",
+  "requested_at",
+  "requested_by",
+  "services",
+  "notes",
+  "is_external",
+  "invoice_number",
+];
+
+const SERVICE_EXPORT_COLUMNS = [
+  "name",
+  "type",
+  "category",
+  "price",
+  "reference_range",
+  "approval_status",
+  "is_active",
+  "external_lab_id",
+];
+
+const REQUEST_IMPORT_COLUMNS = ["patient_id", "service_name", "priority", "sample_type", "notes"];
+const REQUEST_IMPORT_SAMPLE = [
+  ["<patient UUID>", "Malaria Parasite", "routine", "Blood", "Routine check"],
+];
+
+const SERVICE_IMPORT_COLUMNS = ["name", "type", "price", "new_category", "reference_range", "external_lab_id"];
+const SERVICE_IMPORT_SAMPLE = [
+  ["Vitamin D Test", "lab", "15000", "Endocrinology", "30–100 ng/mL", ""],
+];
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -70,8 +108,8 @@ function approvalBadge(status: string): string {
   }
 }
 
-export default function LabView({ canManageCatalog, canEditService, canEnterResults, initialTab = "requests" }: {
-  canManageCatalog: boolean; canEditService: boolean; canEnterResults: boolean; initialTab?: "requests" | "services";
+export default function LabView({ canManageCatalog, canEditService, canEnterResults, canBill, initialTab = "requests" }: {
+  canManageCatalog: boolean; canEditService: boolean; canEnterResults: boolean; canBill: boolean; initialTab?: "requests" | "services";
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<"requests" | "services">(initialTab);
@@ -82,6 +120,9 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
   const [showCreate, setShowCreate] = useState(false);
   const [showAddService, setShowAddService] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
+
+  const servicesRef = useRef<LabService[]>([]);
+  const [servicesReload, setServicesReload] = useState(0);
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
@@ -105,6 +146,140 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
   }, [loadRequests]);
 
   const viewed = viewId ? requests.find((r) => r.id === viewId) ?? null : null;
+
+  const requestRowsFor = (rs: LabRequest[]) =>
+    rs.map((r) => [
+      r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : "Unknown",
+      r.patients?.patient_number ?? "",
+      r.status,
+      r.requested_at ?? "",
+      r.users?.full_name ?? "",
+      r.lab_request_items.map((t) => t.service_name).join("; "),
+      r.notes ?? "",
+      r.is_external ? "yes" : "no",
+      r.invoices?.invoice_number ?? "",
+    ]);
+
+  const serviceRowsFor = (svcs: LabService[]) =>
+    svcs.map((s) => [
+      s.name,
+      s.type,
+      s.lab_categories?.name ?? "",
+      s.price,
+      s.reference_range ?? "",
+      s.approval_status,
+      s.is_active ? "active" : "inactive",
+      s.external_lab_id ?? "",
+    ]);
+
+  function exportCsv() {
+    if (tab === "requests") {
+      if (requests.length === 0) {
+        alert("Nothing to export — there are no lab requests yet.");
+        return;
+      }
+      downloadCsv(`lab-requests-${dateStamp()}.csv`, REQUEST_EXPORT_COLUMNS, requestRowsFor(requests));
+    } else {
+      const svcs = servicesRef.current;
+      if (svcs.length === 0) {
+        alert("Nothing to export — there are no lab services yet.");
+        return;
+      }
+      downloadCsv(`lab-services-${dateStamp()}.csv`, SERVICE_EXPORT_COLUMNS, serviceRowsFor(svcs));
+    }
+  }
+
+  function exportPdf() {
+    if (tab === "requests") {
+      if (requests.length === 0) {
+        alert("Nothing to export — there are no lab requests yet.");
+        return;
+      }
+      printTable("Lab Requests", REQUEST_EXPORT_COLUMNS, requestRowsFor(requests));
+    } else {
+      const svcs = servicesRef.current;
+      if (svcs.length === 0) {
+        alert("Nothing to export — there are no lab services yet.");
+        return;
+      }
+      printTable("Lab Services", SERVICE_EXPORT_COLUMNS, serviceRowsFor(svcs));
+    }
+  }
+
+  async function importRequests(rows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      try {
+        const res = await fetch("/api/lab-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patientId: r[0]?.trim(),
+            items: [
+              {
+                serviceName: r[1]?.trim() || undefined,
+                priority: r[2]?.trim() || "routine",
+                sampleType: r[3]?.trim() || undefined,
+                notes: r[4]?.trim() || undefined,
+              },
+            ],
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          errors.push(`Row ${i + 1}: ${body.error ?? "Failed to create lab request"}`);
+          continue;
+        }
+        created++;
+      } catch (e) {
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : "Network error"}`);
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
+  async function importServices(rows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      try {
+        const res = await fetch("/api/lab-services", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: r[0]?.trim(),
+            type: r[1]?.trim() === "imaging" ? "imaging" : "lab",
+            price: Number(r[2] ?? 0) || 0,
+            newCategory: r[3]?.trim() || undefined,
+            referenceRange: r[4]?.trim() || undefined,
+            externalLabId: r[5]?.trim() || undefined,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          errors.push(`Row ${i + 1}: ${body.error ?? "Failed to add service"}`);
+          continue;
+        }
+        created++;
+      } catch (e) {
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : "Network error"}`);
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
+  const handleImported = () => {
+    if (tab === "requests") void loadRequests();
+    else setServicesReload((n) => n + 1);
+    router.refresh();
+  };
+
+  const handleServicesChange = useCallback((svcs: LabService[]) => {
+    servicesRef.current = svcs;
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -133,6 +308,16 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
               <Plus size={16} aria-hidden="true" /> New Lab Request
             </button>
           )}
+          <ImportExportMenu
+            entityLabel={tab === "requests" ? "Lab Requests" : "Lab Services"}
+            exportCsv={exportCsv}
+            exportPdf={exportPdf}
+            importColumns={tab === "requests" ? REQUEST_IMPORT_COLUMNS : SERVICE_IMPORT_COLUMNS}
+            importSample={tab === "requests" ? REQUEST_IMPORT_SAMPLE : SERVICE_IMPORT_SAMPLE}
+            templateFilename={tab === "requests" ? "lab-requests-import-template.csv" : "lab-services-import-template.csv"}
+            onImport={tab === "requests" ? importRequests : importServices}
+            onImported={handleImported}
+          />
         </div>
       </div>
 
@@ -237,7 +422,13 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
           )}
         </>
       ) : (
-        <ServicesTab canManageCatalog={canManageCatalog} canEditService={canEditService} onChanged={() => router.refresh()} />
+        <ServicesTab
+          canManageCatalog={canManageCatalog}
+          canEditService={canEditService}
+          onChanged={() => router.refresh()}
+          onServicesChange={handleServicesChange}
+          reloadKey={servicesReload}
+        />
       )}
 
       {showCreate && (
@@ -264,6 +455,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
         <RequestDetailModal
           request={viewed}
           canEnterResults={canEnterResults}
+          canBill={canBill}
           onClose={() => setViewId(null)}
           onChanged={loadRequests}
         />
@@ -275,7 +467,19 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
 // ---------------------------------------------------------------------------
 // SERVICES TAB — catalog grouped by category with search, edit and approval
 // ---------------------------------------------------------------------------
-function ServicesTab({ canManageCatalog, canEditService, onChanged }: { canManageCatalog: boolean; canEditService: boolean; onChanged: () => void }) {
+function ServicesTab({
+  canManageCatalog,
+  canEditService,
+  onChanged,
+  onServicesChange,
+  reloadKey,
+}: {
+  canManageCatalog: boolean;
+  canEditService: boolean;
+  onChanged: () => void;
+  onServicesChange?: (services: LabService[]) => void;
+  reloadKey?: number;
+}) {
   const [services, setServices] = useState<LabService[]>([]);
   const [typeFilter, setTypeFilter] = useState<"all" | "lab" | "imaging">("all");
   const [search, setSearch] = useState("");
@@ -307,6 +511,14 @@ function ServicesTab({ canManageCatalog, canEditService, onChanged }: { canManag
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    onServicesChange?.(services);
+  }, [services, onServicesChange]);
+
+  useEffect(() => {
+    if (reloadKey && reloadKey > 0) void load();
+  }, [reloadKey, load]);
 
   const categories = useMemo(() => {
     const set = new Set(services.map((s) => s.lab_categories?.name ?? "Uncategorized"));
@@ -1280,11 +1492,13 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
 function RequestDetailModal({
   request,
   canEnterResults,
+  canBill,
   onClose,
   onChanged,
 }: {
   request: LabRequest;
   canEnterResults: boolean;
+  canBill: boolean;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -1292,6 +1506,7 @@ function RequestDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [billing, setBilling] = useState(false);
   const [resultDraft, setResultDraft] = useState<Record<string, { result: string; unit: string; isAbnormal: boolean }>>({});
 
   async function downloadPdf() {
@@ -1333,6 +1548,25 @@ function RequestDetailModal({
       setError(e instanceof Error ? e.message : "Failed to update request");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function generateInvoice() {
+    if (!confirm("Generate an invoice from this lab request using the catalogue service prices?")) return;
+    setBilling(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/lab-requests/${request.id}/invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to generate invoice");
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to generate invoice");
+    } finally {
+      setBilling(false);
     }
   }
 
@@ -1419,6 +1653,31 @@ function RequestDetailModal({
               <FileDown size={14} aria-hidden="true" /> {downloading ? "Preparing…" : "Download PDF"}
             </button>
           )}
+          {request.status === "completed" &&
+            (request.invoices ? (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700"
+                title="Invoice generated for this request"
+              >
+                <ReceiptText size={13} aria-hidden="true" />
+                {request.invoices.invoice_number} · {request.invoices.status.replace(/_/g, " ")} · ₦
+                {Number(request.invoices.total_amount).toLocaleString()}
+              </span>
+            ) : canBill ? (
+              <button
+                type="button"
+                onClick={generateInvoice}
+                disabled={billing}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+              >
+                {billing ? (
+                  <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <ReceiptText size={14} aria-hidden="true" />
+                )}
+                {billing ? "Generating…" : "Generate invoice"}
+              </button>
+            ) : null)}
           {canWork && canEnterResults && request.status === "sample_collected" && (
             <button
               type="button"

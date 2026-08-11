@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Clock, Loader2, LogIn, LogOut, RefreshCw } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -98,6 +101,44 @@ export default function HrAttendanceView() {
 
   const myRow = rows.find((r) => r.user_id === me?.user_id);
 
+  const ATT_EXPORT_COLUMNS = ["staff", "role", "department", "status", "check_in", "check_out", "notes"];
+
+  function attRows() {
+    return rows.map((r) => [
+      r.users?.full_name ?? "",
+      r.users?.role ?? "",
+      r.staff?.department ?? "",
+      r.status,
+      r.check_in ?? "",
+      r.check_out ?? "",
+      r.notes ?? "",
+    ]);
+  }
+
+  function exportAttCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no attendance records for this date.");
+      return;
+    }
+    downloadCsv(`attendance-${date}.csv`, ATT_EXPORT_COLUMNS, attRows());
+  }
+
+  function exportAttPdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no attendance records for this date.");
+      return;
+    }
+    printTable(`Attendance — ${date}`, ATT_EXPORT_COLUMNS, attRows());
+  }
+
+  async function importAttendance(): Promise<ImportResult> {
+    return {
+      created: 0,
+      failed: 0,
+      errors: ["Attendance is recorded via clock-in/out and cannot be imported."],
+    };
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -107,6 +148,15 @@ export default function HrAttendanceView() {
             <RefreshCw className={`h-4 w-4 ${clocking ? "animate-spin" : ""}`} /> Mark missed shifts
           </button>
         )}
+        <ImportExportMenu
+          entityLabel="Attendance"
+          exportCsv={exportAttCsv}
+          exportPdf={exportAttPdf}
+          importColumns={ATT_EXPORT_COLUMNS}
+          templateFilename="attendance-import-template.csv"
+          onImport={importAttendance}
+          onImported={() => load()}
+        />
         <span className="text-sm text-[var(--color-muted-fg)]">{rows.length} records</span>
       </div>
 

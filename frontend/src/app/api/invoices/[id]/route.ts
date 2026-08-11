@@ -1,4 +1,4 @@
-import { withAuth, withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, withStaff, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit, logView } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
@@ -45,6 +45,7 @@ export const GET = withAuth(async (req, ctx) => {
 // PUT /api/invoices/[id] — status / notes / amounts; items replace when provided
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "billing", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getInvoice(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Invoice not found");
@@ -101,6 +102,7 @@ export const PUT = withStaff(async (req, ctx) => {
 // DELETE /api/invoices/[id]
 export const DELETE = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "billing", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getInvoice(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Invoice not found");

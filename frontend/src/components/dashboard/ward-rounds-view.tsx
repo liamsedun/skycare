@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Activity, ClipboardList, Loader2, Plus, RefreshCw, X } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -9,6 +12,20 @@ const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
 const inputCls =
   "h-10 w-full rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
+
+const EXPORT_COLUMNS = [
+  "patient",
+  "patient_number",
+  "bed_number",
+  "round_time",
+  "vitals",
+  "notes",
+];
+
+const IMPORT_COLUMNS = ["admission_id", "notes", "vitals"];
+const IMPORT_SAMPLE = [
+  ["<admission UUID>", "Clinical findings, patient response…", '{"temp":"36.8","hr":"72"}'],
+];
 
 interface ActiveAdmission {
   id: string; patient_id: string; admitted_at: string; diagnosis_at_admission: string | null;
@@ -93,6 +110,74 @@ export default function WardRoundsView() {
     await load();
   };
 
+  const rowsFor = (rs: RoundRow[]) =>
+    rs.map((r) => {
+      const a = active.find((x) => x.id === r.admission_id);
+      const p = a ? (Array.isArray(a.patients) ? a.patients[0] : a.patients) : null;
+      return [
+        p ? `${p.first_name} ${p.last_name}` : "—",
+        p?.patient_number ?? "",
+        a?.beds?.bed_number ?? "",
+        r.round_time ?? "",
+        r.vitals ? JSON.stringify(r.vitals) : "",
+        r.notes ?? "",
+      ];
+    });
+
+  function exportCsv() {
+    if (rounds.length === 0) {
+      alert("Nothing to export — there are no ward round entries yet.");
+      return;
+    }
+    downloadCsv(`ward-rounds-${dateStamp()}.csv`, EXPORT_COLUMNS, rowsFor(rounds));
+  }
+
+  function exportPdf() {
+    if (rounds.length === 0) {
+      alert("Nothing to export — there are no ward round entries yet.");
+      return;
+    }
+    printTable("Ward Rounds", EXPORT_COLUMNS, rowsFor(rounds));
+  }
+
+  function parseVitals(raw: string | undefined): Record<string, unknown> {
+    if (!raw?.trim()) return {};
+    try {
+      const v = JSON.parse(raw);
+      return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  async function importRounds(rws: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rws.length; i++) {
+      const r = rws[i];
+      try {
+        const res = await fetch("/api/ward-rounds", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            admission_id: r[0]?.trim(),
+            notes: r[1]?.trim(),
+            vitals: parseVitals(r[2]),
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          errors.push(`Row ${i + 1}: ${body.error ?? "Failed to add ward round"}`);
+          continue;
+        }
+        created++;
+      } catch (e) {
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : "Network error"}`);
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-sm">
@@ -110,6 +195,16 @@ export default function WardRoundsView() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />} Refresh
             </button>
             <button onClick={openAdd} className={btnPrimary}><Plus size={14} /> New round entry</button>
+            <ImportExportMenu
+              entityLabel="Ward Rounds"
+              exportCsv={exportCsv}
+              exportPdf={exportPdf}
+              importColumns={IMPORT_COLUMNS}
+              importSample={IMPORT_SAMPLE}
+              templateFilename="ward-rounds-import-template.csv"
+              onImport={importRounds}
+              onImported={() => void load()}
+            />
           </div>
         </div>
         {toast && <p className="mt-3 text-xs text-rose-600">{toast}</p>}

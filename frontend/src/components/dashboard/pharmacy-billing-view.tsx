@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Receipt, Wallet, FileText, ShieldCheck, Printer, Plus, X, Search, CheckCircle2, Clock, Banknote,
 } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 // ============================================================================
 // Pharmacy Billing — sales invoices, multi-method payments, insurance claims,
@@ -67,8 +70,21 @@ export default function PharmacyBillingView() {
   );
 }
 
-function statusBadge(status: string): string {
-  switch (status) {
+async function fetchAll<T>(url: string): Promise<T[]> {
+  const out: T[] = [];
+  for (let page = 1; page <= 10; page++) {
+    const sep = url.includes("?") ? "&" : "?";
+    const res = await fetch(`${url}${sep}page=${page}&pageSize=100`, { cache: "no-store" });
+    if (!res.ok) break;
+    const body = await res.json();
+    const data = (body.data ?? []) as T[];
+    out.push(...data);
+    if (data.length < 100) break;
+  }
+  return out;
+}
+
+function statusBadge(status: string): string {  switch (status) {
     case "paid": return "bg-emerald-100 text-emerald-700";
     case "partial": return "bg-amber-100 text-amber-700";
     case "unpaid": return "bg-red-100 text-red-700";
@@ -140,6 +156,44 @@ function SalesTab() {
     if (res.ok) setDetail((await res.json()).data);
   }
 
+  const SALES_COLUMNS = [
+    "invoice_number", "patient_number", "patient_name", "source", "subtotal",
+    "discount", "tax", "total_amount", "paid_amount", "status", "created_at",
+  ];
+
+  const salesRows = () =>
+    rows.map((r) => [
+      r.invoice_number,
+      r.patients?.patient_number ?? "",
+      r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : "",
+      r.source,
+      r.subtotal,
+      r.discount_amount,
+      r.tax_amount,
+      r.total_amount,
+      r.paid_amount,
+      r.status,
+      r.created_at,
+    ]);
+
+  function exportCsv() {
+    if (rows.length === 0) { alert("Nothing to export — there are no sales yet."); return; }
+    downloadCsv(`pharmacy-sales-${dateStamp()}.csv`, SALES_COLUMNS, salesRows());
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) { alert("Nothing to export — there are no sales yet."); return; }
+    printTable("Pharmacy Sales", SALES_COLUMNS, salesRows());
+  }
+
+  async function importSales(_rows: string[][]): Promise<ImportResult> {
+    return {
+      created: 0,
+      failed: 0,
+      errors: ["Sales are recorded through the New sale workflow (they require prescription/stock items) and cannot be imported."],
+    };
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -150,6 +204,14 @@ function SalesTab() {
           <option value="partial">Partial</option>
           <option value="paid">Paid</option>
         </select>
+        <ImportExportMenu
+          entityLabel="Pharmacy Sales"
+          exportCsv={exportCsv}
+          exportPdf={exportPdf}
+          importColumns={SALES_COLUMNS}
+          templateFilename="pharmacy-sales-import-template.csv"
+          onImport={importSales}
+        />
         <button type="button" onClick={() => setConvertOpen(true)} className={btnGhost}>
           <FileText size={14} aria-hidden="true" /> Convert prescription
         </button>
@@ -982,8 +1044,73 @@ function PaymentsTab() {
 
   const total = useMemo(() => rows.reduce((s, r) => s + Number(r.amount), 0), [rows]);
 
+  const PAYMENTS_COLUMNS = ["invoice_number", "patient_name", "method", "amount", "reference", "received_at"];
+
+  const paymentsRows = () =>
+    rows.map((r) => [
+      r.pharmacy_invoices?.invoice_number ?? "",
+      r.pharmacy_invoices?.patients ? `${r.pharmacy_invoices.patients.first_name} ${r.pharmacy_invoices.patients.last_name}` : "Walk-in",
+      r.method,
+      r.amount,
+      r.reference ?? "",
+      r.received_at,
+    ]);
+
+  function exportCsv() {
+    if (rows.length === 0) { alert("Nothing to export — there are no payments yet."); return; }
+    downloadCsv(`pharmacy-payments-${dateStamp()}.csv`, PAYMENTS_COLUMNS, paymentsRows());
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) { alert("Nothing to export — there are no payments yet."); return; }
+    printTable("Pharmacy Payments", PAYMENTS_COLUMNS, paymentsRows());
+  }
+
+  async function importPayments(rowsIn: string[][]): Promise<ImportResult> {
+    const invoices = await fetchAll<{ id: string; invoice_number: string }>("/api/pharmacy/invoices");
+    const invMap = new Map<string, string>(invoices.map((i) => [String(i.invoice_number), i.id]));
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      const invoiceId = invMap.get(String(r[0] ?? "").trim());
+      if (!invoiceId) { errors.push(`Row ${i + 1}: unknown invoice number "${r[0] ?? ""}"`); continue; }
+      const amount = Number(r[3]);
+      if (!Number.isFinite(amount) || amount <= 0) { errors.push(`Row ${i + 1}: invalid amount "${r[3] ?? ""}"`); continue; }
+      const res = await fetch("/api/pharmacy/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceId,
+          payments: [{ method: String(r[2] ?? "cash").trim().toLowerCase() || "cash", amount, reference: String(r[4] ?? "").trim() || undefined }],
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${body.error ?? "payment failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Payments</h4>
+        <ImportExportMenu
+          entityLabel="Pharmacy Payments"
+          exportCsv={exportCsv}
+          exportPdf={exportPdf}
+          importColumns={PAYMENTS_COLUMNS}
+          importSample={[["PH-INV-0001", "Ada Okafor", "cash", "15000", "REF-1001"]]}
+          templateFilename="pharmacy-payments-import-template.csv"
+          onImport={importPayments}
+          onImported={() => void (async () => {
+            const res = await fetch("/api/pharmacy/payments", { cache: "no-store" });
+            if (res.ok) setRows((await res.json()).data ?? []);
+          })()}
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Transactions" value={rows.length} />
         <Stat label="Collected" value={ngn(total)} tone="ok" />
@@ -1108,9 +1235,72 @@ function ClaimsTab() {
     }
   }
 
+  const CLAIMS_COLUMNS = ["claim_number", "invoice_number", "provider", "policy_number", "claim_amount", "co_pay_amount", "approved_amount", "status", "created_at"];
+
+  const claimsRows = () =>
+    rows.map((r) => [
+      r.claim_number,
+      r.pharmacy_invoices?.invoice_number ?? "",
+      r.provider_name,
+      r.policy_number ?? "",
+      r.claim_amount,
+      r.co_pay_amount,
+      r.approved_amount ?? "",
+      r.status,
+      r.created_at,
+    ]);
+
+  function exportCsv() {
+    if (rows.length === 0) { alert("Nothing to export — there are no claims yet."); return; }
+    downloadCsv(`pharmacy-claims-${dateStamp()}.csv`, CLAIMS_COLUMNS, claimsRows());
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) { alert("Nothing to export — there are no claims yet."); return; }
+    printTable("Pharmacy Insurance Claims", CLAIMS_COLUMNS, claimsRows());
+  }
+
+  async function importClaims(rowsIn: string[][]): Promise<ImportResult> {
+    const invoices = await fetchAll<{ id: string; invoice_number: string }>("/api/pharmacy/invoices");
+    const invMap = new Map<string, string>(invoices.map((i) => [String(i.invoice_number), i.id]));
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      const invoiceId = invMap.get(String(r[1] ?? "").trim());
+      if (!invoiceId) { errors.push(`Row ${i + 1}: unknown invoice number "${r[1] ?? ""}"`); continue; }
+      if (!String(r[2] ?? "").trim()) { errors.push(`Row ${i + 1}: provider is required`); continue; }
+      const res = await fetch("/api/pharmacy/insurance/claims", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceId,
+          providerName: String(r[2]).trim(),
+          policyNumber: String(r[3] ?? "").trim() || undefined,
+          mode: "manual",
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${body.error ?? "claim failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex-1" />
+        <ImportExportMenu
+          entityLabel="Insurance Claims"
+          exportCsv={exportCsv}
+          exportPdf={exportPdf}
+          importColumns={["invoice_number", "provider", "policy_number"]}
+          importSample={[["PH-INV-0001", "NHIS", "NH-88231"]]}
+          templateFilename="pharmacy-claims-import-template.csv"
+          onImport={importClaims}
+          onImported={() => void load()}
+        />
         <button type="button" onClick={async () => {
           const res = await fetch("/api/pharmacy/invoices?status=unpaid&pageSize=100", { cache: "no-store" });
           if (res.ok) { setInvoices((await res.json()).data ?? []); setOpen(true); }
@@ -1348,6 +1538,60 @@ function CoverageTab() {
 
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
+  const COVERAGE_COLUMNS = ["provider_name", "drug_name", "is_covered", "co_pay_type", "co_pay_value", "max_qty_per_claim"];
+
+  const coverageRows = () =>
+    rows.map((r) => [
+      r.provider_name,
+      r.pharmacy_drugs?.name ?? "",
+      r.is_covered ? "yes" : "no",
+      r.co_pay_type,
+      r.co_pay_value,
+      r.max_qty_per_claim ?? "",
+    ]);
+
+  function exportCsv() {
+    if (rows.length === 0) { alert("Nothing to export — there are no formulary rules yet."); return; }
+    downloadCsv(`pharmacy-formulary-${dateStamp()}.csv`, COVERAGE_COLUMNS, coverageRows());
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) { alert("Nothing to export — there are no formulary rules yet."); return; }
+    printTable("Pharmacy Formulary Coverage", COVERAGE_COLUMNS, coverageRows());
+  }
+
+  async function importCoverage(rowsIn: string[][]): Promise<ImportResult> {
+    const drugs = await fetchAll<{ id: string; name: string }>("/api/pharmacy/drugs");
+    const drugMap = new Map<string, string>(drugs.map((d) => [String(d.name).trim().toLowerCase(), d.id]));
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      const provider = String(r[0] ?? "").trim();
+      const drugName = String(r[1] ?? "").trim();
+      if (!provider) { errors.push(`Row ${i + 1}: provider is required`); continue; }
+      const drugId = drugMap.get(drugName.toLowerCase());
+      if (!drugId) { errors.push(`Row ${i + 1}: unknown drug "${drugName}"`); continue; }
+      const coPayType = (["percent", "fixed", "none"].includes(String(r[3] ?? "").toLowerCase()) ? String(r[3]).toLowerCase() : "percent") as "percent" | "fixed" | "none";
+      const res = await fetch("/api/pharmacy/insurance/coverage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerName: provider,
+          drugId,
+          isCovered: !["no", "false", "0"].includes(String(r[2] ?? "").trim().toLowerCase()),
+          coPayType,
+          coPayValue: ["percent", "fixed"].includes(coPayType) ? Number(r[4]) || 0 : undefined,
+          maxQtyPerClaim: String(r[5] ?? "").trim() ? Number(r[5]) : undefined,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${body.error ?? "save failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
@@ -1421,7 +1665,19 @@ function CoverageTab() {
       </div>
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
-        <h3 className="text-sm font-bold text-[var(--color-foreground)]">Rules</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-[var(--color-foreground)]">Rules</h3>
+          <ImportExportMenu
+            entityLabel="Formulary Rules"
+            exportCsv={exportCsv}
+            exportPdf={exportPdf}
+            importColumns={COVERAGE_COLUMNS}
+            importSample={[["NHIS", "Paracetamol 500mg", "yes", "percent", "25", "30"]]}
+            templateFilename="pharmacy-formulary-import-template.csv"
+            onImport={importCoverage}
+            onImported={() => void load()}
+          />
+        </div>
         {loading ? (
           <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">Loading…</p>
         ) : rows.length === 0 ? (
@@ -1517,12 +1773,53 @@ function ReportTab() {
 
   const maxMethod = useMemo(() => Math.max(1, ...methods.map(([, v]) => Number(v))), [methods]);
 
+  const REPORT_COLUMNS = ["date", "metric", "value"];
+
+  const reportRows = () => {
+    if (!report) return [];
+    const out: (string | number)[][] = [
+      [date, "total_sales", report.total_sales],
+      [date, "invoice_count", report.invoice_count],
+      [date, "item_count", report.item_count],
+      [date, "outstanding", report.outstanding],
+    ];
+    for (const [label, value] of methods) out.push([date, String(label).toLowerCase(), Number(value)]);
+    for (const d of report.top_drugs) out.push([date, `top_drug:${d.name}`, d.qty]);
+    return out;
+  };
+
+  function exportCsv() {
+    if (!report) { alert("Nothing to export — load the report for a date first."); return; }
+    downloadCsv(`pharmacy-daily-report-${date}.csv`, REPORT_COLUMNS, reportRows());
+  }
+
+  function exportPdf() {
+    if (!report) { alert("Nothing to export — load the report for a date first."); return; }
+    printTable(`Pharmacy Daily Report — ${date}`, REPORT_COLUMNS, reportRows());
+  }
+
+  async function importReport(_rowsIn: string[][]): Promise<ImportResult> {
+    return {
+      created: 0,
+      failed: 0,
+      errors: ["The daily report is generated by the system from sales records and cannot be imported."],
+    };
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <label className="text-xs font-medium text-[var(--color-foreground)]" htmlFor="rp-date">Date</label>
         <input id="rp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inputCls} w-auto`} />
         {loading && <Clock size={14} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" />}
+        <ImportExportMenu
+          entityLabel="Daily Report"
+          exportCsv={exportCsv}
+          exportPdf={exportPdf}
+          importColumns={REPORT_COLUMNS}
+          templateFilename="pharmacy-daily-report-import-template.csv"
+          onImport={importReport}
+        />
       </div>
 
       {error && <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}

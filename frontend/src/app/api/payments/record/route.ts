@@ -1,4 +1,4 @@
-import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, requireModuleLevel, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
 import type { NextRequest } from "next/server";
@@ -30,6 +30,7 @@ export interface RecordPaymentBody {
 // POST /api/payments/record — staff confirms payment and allocates to invoices.
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "billing", "full");
   if (!["hospital_admin", "cashier", "super_admin"].includes(ctx.role)) {
     throw new ForbiddenError("Billing access required");
   }

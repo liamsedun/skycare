@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Download, FileUp, X } from "lucide-react";
-import { downloadCsv, parseCsv, type ExportCell } from "@/lib/export";
+import { downloadCsv, parseCsv, parsePdfRows, type ExportCell } from "@/lib/export";
 
 export interface ImportResult {
   created: number;
@@ -21,6 +21,7 @@ interface CsvImportModalProps {
   onClose: () => void;
   onImport: (rows: string[][]) => Promise<ImportResult>;
   onImported?: () => void;
+  acceptPdf?: boolean;
 }
 
 export default function CsvImportModal({
@@ -33,6 +34,7 @@ export default function CsvImportModal({
   onClose,
   onImport,
   onImported,
+  acceptPdf = true,
 }: CsvImportModalProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -52,13 +54,26 @@ export default function CsvImportModal({
     setFileName(file.name);
     let rows: string[][];
     try {
-      rows = parseCsv(await file.text());
-    } catch {
-      rows = [];
+      const isPdf =
+        file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      rows = isPdf ? await parsePdfRows(file) : parseCsv(await file.text());
+      if (isPdf && columns.length > 0) {
+        const headerIdx = rows.findIndex((r) =>
+          r.some((c) => c.trim().toLowerCase() === columns[0]!.trim().toLowerCase())
+        );
+        if (headerIdx > 0) rows = rows.slice(headerIdx);
+      }
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `Could not read ${file.name}: ${e.message}`
+          : `Could not read ${file.name}.`
+      );
+      return;
     }
     const dataRows = rows.slice(1);
     if (dataRows.length === 0) {
-      setError("The CSV has no data rows (only a header). Add records and try again.");
+      setError("The file has no data rows (only a header). Add records and try again.");
       return;
     }
     setBusy(true);
@@ -125,7 +140,7 @@ export default function CsvImportModal({
           <input
             ref={fileRef}
             type="file"
-            accept=".csv,text/csv"
+            accept={acceptPdf ? ".csv,text/csv,.pdf,application/pdf" : ".csv,text/csv"}
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -140,7 +155,7 @@ export default function CsvImportModal({
             className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[var(--color-border)] bg-[var(--color-muted)]/30 px-4 py-6 text-sm font-semibold text-[var(--color-primary-dark)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)] disabled:opacity-60"
           >
             <FileUp size={18} aria-hidden="true" />
-            {busy ? "Importing…" : fileName ? "Choose a different file" : "Choose a .csv file to import"}
+            {busy ? "Importing…" : fileName ? "Choose a different file" : acceptPdf ? "Choose a .csv or .pdf file to import" : "Choose a .csv file to import"}
           </button>
           {fileName && !busy && (
             <p className="mt-2 truncate text-xs text-[var(--color-muted-fg)]">Selected: {fileName}</p>

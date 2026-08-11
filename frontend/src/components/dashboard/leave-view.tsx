@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CalendarDays, Loader2, Plus, X } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -130,6 +133,82 @@ export default function LeaveView() {
     }
   }
 
+  const LEAVE_EXPORT_COLUMNS = [
+    "staff",
+    "leave_type",
+    "start_date",
+    "end_date",
+    "days",
+    "reason",
+    "status",
+  ];
+
+  function leaveRows() {
+    return rows.map((r) => [
+      r.users?.full_name ?? "",
+      LEAVE_LABELS[r.leave_type] ?? r.leave_type,
+      r.start_date,
+      r.end_date,
+      r.days ?? "",
+      r.reason ?? "",
+      r.status,
+    ]);
+  }
+
+  function exportLeaveCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no leave requests yet.");
+      return;
+    }
+    downloadCsv(`leave-requests-${dateStamp()}.csv`, LEAVE_EXPORT_COLUMNS, leaveRows());
+  }
+
+  function exportLeavePdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no leave requests yet.");
+      return;
+    }
+    printTable("Leave Requests", LEAVE_EXPORT_COLUMNS, leaveRows());
+  }
+
+  const LEAVE_IMPORT_COLUMNS = ["leave_type", "start_date", "end_date", "reason"];
+
+  async function importLeave(importRows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < importRows.length; i++) {
+      const r = importRows[i];
+      const rowNo = i + 2;
+      const leaveType = r[0]?.trim() ?? "";
+      const startDate = r[1]?.trim() ?? "";
+      const endDate = r[2]?.trim() ?? "";
+      if (!leaveType || !startDate || !endDate) {
+        errors.push(`Row ${rowNo}: leave_type, start_date and end_date are required`);
+        continue;
+      }
+      try {
+        const res = await fetch("/api/staff/leave", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            leaveType,
+            startDate,
+            endDate,
+            reason: r[3]?.trim() || undefined,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to submit request");
+        created++;
+      } catch (e) {
+        errors.push(
+          `Row ${rowNo}: ${e instanceof Error ? e.message : "Failed to submit request"}`
+        );
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -144,6 +223,16 @@ export default function LeaveView() {
         >
           <Plus size={15} /> Request Leave
         </button>
+        <ImportExportMenu
+          entityLabel="Leave Requests"
+          exportCsv={exportLeaveCsv}
+          exportPdf={exportLeavePdf}
+          importColumns={LEAVE_IMPORT_COLUMNS}
+          importSample={[["annual", "2026-09-01", "2026-09-05", "Family event"]]}
+          templateFilename="leave-import-template.csv"
+          onImport={importLeave}
+          onImported={() => load()}
+        />
       </div>
 
       {isAdmin && (

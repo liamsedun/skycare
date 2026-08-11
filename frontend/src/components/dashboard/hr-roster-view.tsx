@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CalendarRange, Loader2, Plus, Trash2, X } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -192,6 +195,84 @@ export default function HrRosterView() {
   }
   const dates = [...byDate.keys()].sort();
 
+  const HR_ROSTER_EXPORT_COLUMNS = [
+    "shift_date",
+    "staff",
+    "role",
+    "department",
+    "shift",
+    "time",
+    "status",
+    "notes",
+  ];
+
+  function hrRosterRows() {
+    return rows.map((r) => [
+      r.shift_date,
+      r.staff?.users?.full_name ?? "",
+      r.staff?.users?.role ?? "",
+      r.staff?.department ?? "",
+      r.shift?.name ?? "",
+      r.shift ? `${String(r.shift.start_time).slice(0, 5)}–${String(r.shift.end_time).slice(0, 5)}` : "",
+      r.status,
+      r.notes ?? "",
+    ]);
+  }
+
+  function exportHrRosterCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no shift assignments this month.");
+      return;
+    }
+    downloadCsv(`shift-roster-${month}.csv`, HR_ROSTER_EXPORT_COLUMNS, hrRosterRows());
+  }
+
+  function exportHrRosterPdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no shift assignments this month.");
+      return;
+    }
+    printTable(`Shift & Roster — ${month}`, HR_ROSTER_EXPORT_COLUMNS, hrRosterRows());
+  }
+
+  const HR_ROSTER_IMPORT_COLUMNS = ["staff_id", "shift_id", "shift_date", "notes"];
+
+  async function importHrRoster(importRows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < importRows.length; i++) {
+      const r = importRows[i];
+      const rowNo = i + 2;
+      const staff_id = r[0]?.trim() ?? "";
+      const shift_id = r[1]?.trim() ?? "";
+      const shift_date = r[2]?.trim() ?? "";
+      if (!staff_id || !shift_id || !shift_date) {
+        errors.push(`Row ${rowNo}: staff_id, shift_id and shift_date are required`);
+        continue;
+      }
+      try {
+        const res = await fetch("/api/hr/roster", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            staff_id,
+            shift_id,
+            shift_date,
+            notes: r[3]?.trim() || undefined,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to assign shift");
+        created++;
+      } catch (e) {
+        errors.push(
+          `Row ${rowNo}: ${e instanceof Error ? e.message : "Failed to assign shift"}`
+        );
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -206,6 +287,16 @@ export default function HrRosterView() {
             </button>
           </>
         )}
+        <ImportExportMenu
+          entityLabel="Shift Assignments"
+          exportCsv={exportHrRosterCsv}
+          exportPdf={exportHrRosterPdf}
+          importColumns={HR_ROSTER_IMPORT_COLUMNS}
+          importSample={[["<staff_id>", "<shift_id>", "2026-09-01", "Ward A"]]}
+          templateFilename="shift-roster-import-template.csv"
+          onImport={importHrRoster}
+          onImported={() => load()}
+        />
         <span className="text-sm text-[var(--color-muted-fg)]">{rows.length} assignments · {shifts.filter((s) => s.is_active).length} shift templates</span>
       </div>
 

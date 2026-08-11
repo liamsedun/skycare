@@ -49,10 +49,19 @@ export default function PharmacyAnalyticsView() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [months, setMonths] = useState(12);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const customPeriod = fromDate !== "" && toDate !== "";
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/pharmacy/analytics/dashboard?months=${months}`, { cache: "no-store" });
+    const params = new URLSearchParams({ months: String(months) });
+    if (customPeriod) {
+      params.set("from", fromDate);
+      params.set("to", toDate);
+    }
+    const res = await fetch(`/api/pharmacy/analytics/dashboard?${params.toString()}`, { cache: "no-store" });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as ApiErr;
       setToast({ kind: "err", msg: body.error ?? "Failed to load analytics" });
@@ -62,7 +71,7 @@ export default function PharmacyAnalyticsView() {
     const body = (await res.json()) as { data: DashboardPayload | null };
     setData(body.data ?? null);
     setLoading(false);
-  }, [months]);
+  }, [months, fromDate, toDate, customPeriod]);
 
   useEffect(() => {
     void load();
@@ -116,15 +125,36 @@ export default function PharmacyAnalyticsView() {
               Top sellers, profit margins, monthly performance, payment mix and stock losses.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+              From
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+              />
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+              To
+              <input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+              />
+            </label>
             <select
               className={btnPrimary.replace(/px-3 py-2/, "px-2 py-2")}
               style={{ background: "transparent", color: "inherit", border: "1px solid var(--color-border)" }}
               value={months}
               onChange={(e) => setMonths(Number(e.target.value))}
+              disabled={customPeriod}
+              aria-label="Analysis window"
             >
-              {[3, 6, 12, 24].map((m) => (
-                <option key={m} value={m}>{m} months</option>
+              {[1, 3, 6, 12, 24].map((m) => (
+                <option key={m} value={m}>{m} month{m > 1 ? "s" : ""}</option>
               ))}
             </select>
             <button type="button" className={btnPrimary} onClick={() => void load()} disabled={loading}>

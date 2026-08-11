@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { fmtDate, fmtTime } from "@/lib/shift-format";
 import type { LucideIcon } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -359,6 +362,87 @@ export default function RosterView() {
   const shiftDept = (r: RosterRow) => r.staff?.department ?? null;
   const shiftInfo = (r: RosterRow) => `FROM ${fmtTime(r.from_time)} UNTIL ${fmtTime(r.until_time)}`;
 
+  const ROSTER_EXPORT_COLUMNS = [
+    "shift_date",
+    "staff",
+    "department",
+    "from_time",
+    "until_time",
+    "note",
+  ];
+
+  function rosterExportRows() {
+    return rows.map((r) => [
+      r.shift_date,
+      shiftName(r),
+      shiftDept(r) ?? "",
+      r.from_time,
+      r.until_time,
+      r.note ?? "",
+    ]);
+  }
+
+  function exportRosterCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no shifts in this range.");
+      return;
+    }
+    downloadCsv(`duty-roster-${dateStamp()}.csv`, ROSTER_EXPORT_COLUMNS, rosterExportRows());
+  }
+
+  function exportRosterPdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no shifts in this range.");
+      return;
+    }
+    printTable("Duty Roster", ROSTER_EXPORT_COLUMNS, rosterExportRows());
+  }
+
+  const ROSTER_IMPORT_COLUMNS = ["staffId", "shiftDate", "fromTime", "untilTime", "note"];
+
+  async function importRoster(importRows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < importRows.length; i++) {
+      const r = importRows[i];
+      const rowNo = i + 2;
+      const staffId = r[0]?.trim() ?? "";
+      const shiftDate = r[1]?.trim() ?? "";
+      const fromTime = r[2]?.trim() ?? "";
+      const untilTime = r[3]?.trim() ?? "";
+      if (!staffId || !shiftDate || !fromTime || !untilTime) {
+        errors.push(`Row ${rowNo}: staffId, shiftDate, fromTime and untilTime are required`);
+        continue;
+      }
+      try {
+        const res = await fetch("/api/duty-roster", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            entries: [
+              {
+                staffId,
+                shiftDate,
+                fromTime,
+                untilTime,
+                note: r[4]?.trim() || undefined,
+              },
+            ],
+            notify: false,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to save shift");
+        created++;
+      } catch (e) {
+        errors.push(
+          `Row ${rowNo}: ${e instanceof Error ? e.message : "Failed to save shift"}`
+        );
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   const RowActions = ({ r }: { r: RosterRow }) =>
     isAdmin ? (
       <div className="flex items-center justify-end gap-1">
@@ -450,6 +534,16 @@ export default function RosterView() {
             <CalendarClock size={16} aria-hidden="true" /> Schedule Duty
           </button>
         )}
+        <ImportExportMenu
+          entityLabel="Roster"
+          exportCsv={exportRosterCsv}
+          exportPdf={exportRosterPdf}
+          importColumns={ROSTER_IMPORT_COLUMNS}
+          importSample={[["<staff_id>", "2026-09-01", "08:00", "16:00", "Ward A"]]}
+          templateFilename="duty-roster-import-template.csv"
+          onImport={importRoster}
+          onImported={() => load()}
+        />
       </div>
 
       {error && (

@@ -4,6 +4,22 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ReceiptText, X } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+
+async function fetchAllPatients() {
+  const out: Array<{ id: string; patient_number: string }> = [];
+  for (let page = 1; page <= 20; page++) {
+    const res = await fetch(`/api/patients?page=${page}&pageSize=100`, { cache: "no-store" });
+    if (!res.ok) break;
+    const body = await res.json();
+    const data = (body.data ?? []) as Array<{ id: string; patient_number: string }>;
+    out.push(...data);
+    if (data.length < 100) break;
+  }
+  return out;
+}
 
 interface PatientOption {
   id: string;
@@ -116,6 +132,72 @@ export default function BillingView() {
 
   const viewed = viewId ? invoices.find((i) => i.id === viewId) ?? null : null;
 
+  const INVOICE_COLUMNS = ["invoice_number", "patient_number", "patient_name", "issue_date", "due_date", "status", "subtotal", "tax_amount", "discount_amount", "total_amount", "paid_amount"];
+
+  const invoiceRows = () =>
+    invoices.map((i) => [
+      i.invoice_number,
+      i.patients?.patient_number ?? "",
+      i.patients ? `${i.patients.first_name} ${i.patients.last_name}` : "",
+      i.issue_date,
+      i.due_date ?? "",
+      i.status,
+      i.subtotal,
+      i.tax_amount,
+      i.discount_amount,
+      i.total_amount,
+      i.paid_amount,
+    ]);
+
+  function exportCsv() {
+    if (invoices.length === 0) { alert("Nothing to export — there are no invoices yet."); return; }
+    downloadCsv(`invoices-${dateStamp()}.csv`, INVOICE_COLUMNS, invoiceRows());
+  }
+
+  function exportPdf() {
+    if (invoices.length === 0) { alert("Nothing to export — there are no invoices yet."); return; }
+    printTable("Billing Invoices", INVOICE_COLUMNS, invoiceRows());
+  }
+
+  async function importInvoices(rowsIn: string[][]): Promise<ImportResult> {
+    const patients = await fetchAllPatients();
+    const patientMap = new Map<string, string>(patients.map((p) => [String(p.patient_number).trim().toLowerCase(), p.id]));
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      const patientNumber = String(r[0] ?? "").trim();
+      const description = String(r[1] ?? "").trim();
+      const quantity = Number(r[2]);
+      const unitPrice = Number(r[3]);
+      if (!description) { errors.push(`Row ${i + 1}: item description is required`); continue; }
+      if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+        errors.push(`Row ${i + 1}: quantity and unit price must be positive numbers`);
+        continue;
+      }
+      const patientId = patientMap.get(patientNumber.toLowerCase());
+      if (!patientId) { errors.push(`Row ${i + 1}: unknown patient number "${patientNumber}"`); continue; }
+      const subtotal = quantity * unitPrice;
+      const res = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId,
+          issueDate: String(r[4] ?? "").trim() || undefined,
+          dueDate: String(r[5] ?? "").trim() || undefined,
+          notes: String(r[6] ?? "").trim() || undefined,
+          subtotal,
+          totalAmount: subtotal,
+          items: [{ description, quantity, unit_price: unitPrice, total_price: subtotal }],
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${body.error ?? "invoice creation failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -127,13 +209,25 @@ export default function BillingView() {
             Invoices, payments and patient declarations.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
-        >
-          <Plus size={16} aria-hidden="true" /> Create Invoice
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportExportMenu
+            entityLabel="Invoices"
+            exportCsv={exportCsv}
+            exportPdf={exportPdf}
+            importColumns={["patient_number", "description", "quantity", "unit_price", "issue_date", "due_date", "notes"]}
+            importSample={[["LB-P-0001", "Consultation", "1", "5000", "2026-08-11", "2026-08-25", "Annual checkup"]]}
+            templateFilename="invoices-import-template.csv"
+            onImport={importInvoices}
+            onImported={() => void load()}
+          />
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+          >
+            <Plus size={16} aria-hidden="true" /> Create Invoice
+          </button>
+        </div>
       </div>
 
       {error && (

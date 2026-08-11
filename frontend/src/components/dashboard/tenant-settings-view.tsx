@@ -14,11 +14,13 @@ import {
   Save,
   Stethoscope,
   Trash2,
+  UserCog,
 } from "lucide-react";
 import { DEFAULT_TENANT_SETTINGS, PREFIX_PATTERN } from "@/lib/tenant-settings";
 import BankAccountsSection from "@/components/dashboard/bank-accounts-section";
 import WebsiteDoctorsSection from "@/components/dashboard/website-doctors-section";
 import SystemBackupSection from "@/components/dashboard/system-backup-section";
+import UsersRolesSection from "@/components/dashboard/users-roles-section";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -60,6 +62,7 @@ const SECTIONS = [
   { id: "numbering", label: "Staff & Patient Numbering", icon: Hash },
   { id: "payments", label: "Online Payments (Paystack)", icon: CreditCard },
   { id: "bank-accounts", label: "Bank Accounts", icon: Landmark },
+  { id: "users", label: "Users & Roles", icon: UserCog },
   { id: "doctors", label: "Website Doctors", icon: Stethoscope },
   { id: "backup", label: "System Backup", icon: Database },
 ] as const;
@@ -512,6 +515,7 @@ export default function TenantSettingsView() {
       )}
 
       {activeSection === "bank-accounts" && <BankAccountsSection />}
+      {activeSection === "users" && <UsersRolesSection />}
       {activeSection === "doctors" && <WebsiteDoctorsSection />}
       {activeSection === "backup" && <SystemBackupSection />}
 

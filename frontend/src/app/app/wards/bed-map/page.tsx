@@ -20,7 +20,7 @@ export default async function BedMapPage() {
 
   return (
     <div className="space-y-6">
-      <BedMapView />
+      <BedMapView canManage={role === "hospital_admin" || role === "super_admin"} />
     </div>
   );
 }

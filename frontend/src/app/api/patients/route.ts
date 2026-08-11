@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, requireModuleLevel } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
@@ -78,6 +78,7 @@ export function normalizeBloodGroup(value: string | null | undefined): string | 
 // POST /api/patients — register a patient (staff). Optional portal login.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "patients", "full");
   const body = (await req.json()) as CreatePatientBody;
 
   if (!body.firstName?.trim() || !body.lastName?.trim()) {

@@ -1,4 +1,4 @@
-import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
 import type { NextRequest } from "next/server";
@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 // POST /api/payments/cancel — billing staff cancels a patient's pending declaration.
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "billing", "full");
   if (!["hospital_admin", "cashier", "super_admin"].includes(ctx.role)) {
     throw new ForbiddenError("Billing access required");
   }

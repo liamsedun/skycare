@@ -1,4 +1,4 @@
-import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
@@ -70,6 +70,7 @@ export interface CreateAppointmentBody {
 // POST /api/appointments
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "appointments", "full");
   const body = (await req.json()) as CreateAppointmentBody;
 
   if (!body.patientId || !body.scheduledDate || !body.startTime) {

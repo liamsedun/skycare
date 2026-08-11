@@ -11,7 +11,8 @@ export const runtime = "nodejs";
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await ctx.svc.rpc("hr_init_profiles", { p_tenant: tenantId });
-  const { page, pageSize } = getPagination(req.nextUrl.searchParams);
+  const { from, to, pageSize } = getPagination(req.nextUrl.searchParams);
+  const page = Math.floor(Number(req.nextUrl.searchParams.get("page") ?? "1"));
   const q = req.nextUrl.searchParams.get("q")?.trim() || null;
   const department = req.nextUrl.searchParams.get("department")?.trim() || null;
   const role = req.nextUrl.searchParams.get("role")?.trim() || null;
@@ -25,7 +26,7 @@ export const GET = withStaff(async (req, ctx) => {
   if (role) query = query.eq("users.role", role);
   const { data, error, count } = await query
     .order("created_at", { ascending: false })
-    .range(page * pageSize, (page + 1) * pageSize - 1);
+    .range(from, to);
   if (error) throw new ValidationError(error.message);
   return okPaginated(data ?? [], count ?? 0, page, pageSize);
 });

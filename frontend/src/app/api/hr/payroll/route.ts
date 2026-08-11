@@ -13,7 +13,7 @@ export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const period = req.nextUrl.searchParams.get("period")?.trim() || new Date().toISOString().slice(0, 7);
   const staffId = req.nextUrl.searchParams.get("staff_id")?.trim() || null;
-  const { page, pageSize } = getPagination(req.nextUrl.searchParams);
+  const { page, from, to, pageSize } = getPagination(req.nextUrl.searchParams);
 
   const allowed = isHrAdmin(ctx.role) || (await hrHasPermission(ctx.svc, tenantId, ctx.role, "hr.payroll.view"));
   let myStaffId: string | null = null;
@@ -30,7 +30,7 @@ export const GET = withStaff(async (req, ctx) => {
     .eq("pay_period", period);
   if (myStaffId) query = query.eq("staff_id", myStaffId);
   if (staffId) query = query.eq("staff_id", staffId);
-  const { data, error, count } = await query.order("net_salary", { ascending: false }).range(page * pageSize, (page + 1) * pageSize - 1);
+  const { data, error, count } = await query.order("net_salary", { ascending: false }).range(from, to);
   if (error) throw new ValidationError(error.message);
   return okPaginated(data ?? [], count ?? 0, page, pageSize);
 });

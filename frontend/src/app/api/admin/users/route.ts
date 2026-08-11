@@ -1,4 +1,4 @@
-import { withAuth, okPaginated, ok, ValidationError, ForbiddenError, requireTenant, sanitizeLike } from "@/lib/api-utils";
+import { withAuth, okPaginated, ok, ValidationError, ForbiddenError, requireTenant, sanitizeLike, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
@@ -50,7 +50,7 @@ export const GET = withAuth(async (req, ctx) => {
   let query = ctx.svc
     .from("users")
     .select(
-      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, available_from, available_until, on_leave_until)",
+      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, module_access, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, available_from, available_until, on_leave_until)",
       { count: "exact" }
     )
     .neq("role", "patient_api")
@@ -88,6 +88,7 @@ export const POST = withAuth(async (req, ctx) => {
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
     throw new ForbiddenError("Admin access required");
   }
+  await requireModuleLevel(ctx, "staff", "full");
   const body = (await req.json()) as CreateUserBody;
 
   if (!body.fullName?.trim() || !body.email?.trim()) {

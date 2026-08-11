@@ -18,13 +18,19 @@ function resolveFamilyIds(data: Array<{ id: string; primary_account_id: string |
   return Array.from(ids);
 }
 
-// GET /api/prescriptions?patient_id=&status=&pharmacy_type=&page=&pageSize=
+// GET /api/prescriptions?patient_id=&status=&pharmacy_type=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
   const patientId = resolveParam(req.nextUrl.searchParams.get("patient_id"));
   const status = resolveParam(req.nextUrl.searchParams.get("status"));
   const pharmacyType = resolveParam(req.nextUrl.searchParams.get("pharmacy_type"));
+  const fromDate = resolveParam(req.nextUrl.searchParams.get("from"));
+  const toDate = resolveParam(req.nextUrl.searchParams.get("to"));
+
+  if (fromDate && toDate && fromDate > toDate) {
+    throw new ValidationError("from must be on or before to");
+  }
 
   let familyIds: string[] | null = null;
   if (ctx.role === "patient_api") {
@@ -47,6 +53,8 @@ export const GET = withAuth(async (req, ctx) => {
   if (patientId) query = query.eq("patient_id", patientId);
   if (status) query = query.eq("status", status);
   if (pharmacyType) query = query.eq("pharmacy_type", pharmacyType);
+  if (fromDate) query = query.gte("issued_date", fromDate);
+  if (toDate) query = query.lte("issued_date", toDate);
   if (familyIds) query = query.in("patient_id", familyIds);
 
   const { data, count } = await query;

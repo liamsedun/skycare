@@ -13,6 +13,9 @@ import {
   Trash2,
   Wallet,
 } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -172,6 +175,63 @@ export default function BankingView() {
     }
   }
 
+  const LEDGER_COLUMNS = ["account_label", "direction", "amount", "method", "source", "reference", "notes", "recorded_at"];
+
+  const ledgerRows = () =>
+    ledger.map((l) => [
+      l.account_label,
+      l.direction,
+      l.amount,
+      l.method ?? "",
+      SOURCE_LABELS[l.source] ?? l.source,
+      l.reference ?? "",
+      l.notes ?? "",
+      l.recorded_at,
+    ]);
+
+  function exportCsv() {
+    if (ledger.length === 0) { alert("Nothing to export — no ledger entries yet."); return; }
+    downloadCsv(`banking-ledger-${dateStamp()}.csv`, LEDGER_COLUMNS, ledgerRows());
+  }
+
+  function exportPdf() {
+    if (ledger.length === 0) { alert("Nothing to export — no ledger entries yet."); return; }
+    printTable("Banking Ledger", LEDGER_COLUMNS, ledgerRows());
+  }
+
+  async function importLedger(rowsIn: string[][]): Promise<ImportResult> {
+    const accountMap = new Map<string, string>(accounts.map((a) => [String(a.label).trim().toLowerCase(), a.id]));
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      const label = String(r[0] ?? "").trim();
+      const direction = String(r[1] ?? "").trim().toLowerCase();
+      const amount = Number(r[2]);
+      const accountId = accountMap.get(label.toLowerCase());
+      if (!accountId) { errors.push(`Row ${i + 1}: unknown account "${label}"`); continue; }
+      if (direction !== "in" && direction !== "out") { errors.push(`Row ${i + 1}: direction must be "in" or "out"`); continue; }
+      if (!Number.isFinite(amount) || amount <= 0) { errors.push(`Row ${i + 1}: invalid amount "${r[2] ?? ""}"`); continue; }
+      const res = await fetch("/api/banking/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          direction,
+          account: accountId,
+          amount,
+          method: String(r[3] ?? "").trim() || null,
+          reference: String(r[5] ?? "").trim() || null,
+          notes: String(r[6] ?? "").trim() || null,
+          recordedAt: String(r[7] ?? "").trim() || null,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${body.error ?? "entry failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -181,13 +241,25 @@ export default function BankingView() {
             Every receipt lands in Cash or a bank; every payment leaves from one. Banks added in Settings appear here automatically.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowEntry(true)}
-          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-3.5 py-2 text-sm font-semibold text-white"
-        >
-          <Plus size={16} /> Record entry
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportExportMenu
+            entityLabel="Banking Ledger"
+            exportCsv={exportCsv}
+            exportPdf={exportPdf}
+            importColumns={LEDGER_COLUMNS}
+            importSample={[["Cash", "in", "50000", "cash", "", "REF-9001", "Deposit", "2026-08-11"]]}
+            templateFilename="banking-ledger-import-template.csv"
+            onImport={importLedger}
+            onImported={() => { void load(); void loadLedger(); }}
+          />
+          <button
+            type="button"
+            onClick={() => setShowEntry(true)}
+            className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-3.5 py-2 text-sm font-semibold text-white"
+          >
+            <Plus size={16} /> Record entry
+          </button>
+        </div>
       </header>
 
       {error && (

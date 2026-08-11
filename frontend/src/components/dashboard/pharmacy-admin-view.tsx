@@ -7,6 +7,9 @@ import {
 } from "lucide-react";
 import { FORM_OPTIONS } from "@/lib/pharmacy-admin";
 import PharmacyStockView from "@/components/dashboard/pharmacy-stock-view";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 // ============================================================================
 // Pharmacy Admin — catalogue administration for hospital admins:
@@ -486,9 +489,70 @@ export function SuppliersTab() {
   useEffect(() => { void load(); }, [load]);
   const afterSave = () => { setModal({ open: false }); void load(); };
 
+  const SUPPLIER_COLUMNS = ["name", "code", "contactPerson", "phone", "email", "address", "nafdacLicense", "paymentTerms"];
+
+  const supplierRows = () =>
+    rows.map((s) => [
+      s.name,
+      s.code ?? "",
+      s.contactPerson ?? "",
+      s.phone ?? "",
+      s.email ?? "",
+      s.address ?? "",
+      s.nafdacLicense ?? "",
+      s.paymentTerms ?? "",
+    ]);
+
+  function exportCsv() {
+    if (rows.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
+    downloadCsv(`suppliers-${dateStamp()}.csv`, SUPPLIER_COLUMNS, supplierRows());
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
+    printTable("Suppliers & Procurement", SUPPLIER_COLUMNS, supplierRows());
+  }
+
+  async function importSuppliers(rowsIn: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      if (!String(r[0] ?? "").trim()) { errors.push(`Row ${i + 1}: supplier name is required`); continue; }
+      const res = await fetch("/api/pharmacy/admin/suppliers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: String(r[0]).trim(),
+          code: String(r[1] ?? "").trim() || undefined,
+          contactPerson: String(r[2] ?? "").trim() || undefined,
+          phone: String(r[3] ?? "").trim() || undefined,
+          email: String(r[4] ?? "").trim() || undefined,
+          address: String(r[5] ?? "").trim() || undefined,
+          nafdacLicense: String(r[6] ?? "").trim() || undefined,
+          paymentTerms: String(r[7] ?? "").trim() || undefined,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${body.error ?? "save failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <ImportExportMenu
+          entityLabel="Suppliers"
+          exportCsv={exportCsv}
+          exportPdf={exportPdf}
+          importColumns={SUPPLIER_COLUMNS}
+          importSample={[["Emzor Chemists", "EMZ-01", "Bisi Adeyemi", "0803 555 1234", "sales@emzor.example", "14 Alaba Rd, Lagos", "NAFDAC-4451", "net 30"]]}
+          templateFilename="suppliers-import-template.csv"
+          onImport={importSuppliers}
+          onImported={() => void load()}
+        />
         <button type="button" onClick={() => setModal({ open: true, supplier: null })} className={btnPrimary}>
           <Plus size={14} aria-hidden="true" /> Add supplier
         </button>

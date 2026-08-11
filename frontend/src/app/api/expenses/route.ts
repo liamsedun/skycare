@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
@@ -48,6 +48,7 @@ export interface CreateExpenseBody {
 // POST /api/expenses
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  await requireModuleLevel(ctx, "expenses", "full");
   const body = (await req.json()) as CreateExpenseBody;
 
   if (!body.description?.trim() || !body.amount || body.amount <= 0) {

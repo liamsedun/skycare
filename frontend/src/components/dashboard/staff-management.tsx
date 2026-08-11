@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, CalendarRange, Clock, Download, FileUp, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Stethoscope, Trash2, UserRoundCheck, UserRoundPlus, Users } from "lucide-react";
+import { CalendarDays, CalendarOff, CalendarRange, Clock, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Stethoscope, Trash2, UserRoundCheck, UserRoundPlus, Users } from "lucide-react";
 import { ActionDropdown } from "@/components/ui/action-dropdown";
-import CsvImportModal, { type ImportResult } from "@/components/ui/csv-import-modal";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { fmtDate, fmtTime } from "@/lib/shift-format";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
@@ -109,7 +110,6 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [busy, setBusy] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<DutyStatus>("all");
-  const [importOpen, setImportOpen] = useState(false);
   const [todayShifts, setTodayShifts] = useState<Record<string, { from_time: string; until_time: string }>>({});
   const [availTarget, setAvailTarget] = useState<StaffUser | null>(null);
   const [availForm, setAvailForm] = useState({ is_available: true, available_from: "09:00", available_until: "17:00" });
@@ -498,32 +498,19 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                 icon: <UserRoundPlus size={14} aria-hidden="true" />,
                 onClick: () => setShowCreate(true),
               },
-              {
-                label: "Import Staff (CSV)",
-                description: "Upload a CSV to add many staff at once",
-                icon: <FileUp size={14} aria-hidden="true" />,
-                onClick: () => setImportOpen(true),
-              },
             ]}
           />
-          <ActionDropdown
-            label="Export"
-            variant="outline"
-            icon={<Download size={16} aria-hidden="true" />}
-            items={[
-              {
-                label: "Staff (CSV)",
-                description: "Download the staff list as a spreadsheet",
-                icon: <Download size={14} aria-hidden="true" />,
-                onClick: exportStaffCsv,
-              },
-              {
-                label: "Staff (PDF)",
-                description: "Open a printable PDF of the staff list",
-                icon: <Download size={14} aria-hidden="true" />,
-                onClick: exportStaffPdf,
-              },
+          <ImportExportMenu
+            entityLabel="Staff"
+            exportCsv={exportStaffCsv}
+            exportPdf={exportStaffPdf}
+            importColumns={["first_name", "last_name", "email", "phone", "role", "department", "specialization", "password"]}
+            importSample={[
+              ["Ada", "Okafor", "ada.okafor@clinic.com", "0803 000 1111", "doctor", "Cardiology", "Consultant", ""],
             ]}
+            templateFilename="staff-import-template.csv"
+            onImport={importStaff}
+            onImported={() => load()}
           />
         </div>
       </div>
@@ -1387,20 +1374,6 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           </div>
         </div>
       )}
-
-      <CsvImportModal
-        open={importOpen}
-        title="Import Staff"
-        description="Add multiple staff members from a CSV file. The first row must be the header with the columns below, in this order. Leave password empty to generate a temporary one — it will be shown after import."
-        columns={["first_name", "last_name", "email", "phone", "role", "department", "specialization", "password"]}
-        sampleRows={[
-          ["Ada", "Okafor", "ada.okafor@clinic.com", "0803 000 1111", "doctor", "Cardiology", "Consultant", ""],
-        ]}
-        templateFilename="staff-import-template.csv"
-        onClose={() => setImportOpen(false)}
-        onImport={importStaff}
-        onImported={() => load()}
-      />
     </div>
   );
 }

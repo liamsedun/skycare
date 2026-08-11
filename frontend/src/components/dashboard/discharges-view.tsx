@@ -1,11 +1,31 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Download, FileText, Loader2, RefreshCw } from "lucide-react";
+import { Download, FileText, Loader2, ReceiptText, RefreshCw } from "lucide-react";
 import { generateDischargePDF } from "@/components/pdf/generateDischargePDF";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
+
+const EXPORT_COLUMNS = [
+  "patient",
+  "patient_number",
+  "discharged_at",
+  "summary",
+  "follow_up",
+  "medications",
+  "invoice_number",
+  "invoice_amount",
+  "invoice_status",
+];
+
+const IMPORT_COLUMNS = ["admission_id", "summary", "follow_up", "medications"];
+const IMPORT_SAMPLE = [
+  ["<admission UUID>", "Condition at discharge, treatment given…", "Review in 1 week", "Artemether 80mg\nParacetamol 1g"],
+];
 
 interface DischargeRow {
   id: string; admission_id: string; summary: string; discharged_at: string;
@@ -16,11 +36,12 @@ interface DischargeRow {
   } | null;
 }
 
-export default function DischargesView() {
+export default function DischargesView({ canBill }: { canBill: boolean }) {
   const [rows, setRows] = useState<DischargeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [pdfing, setPdfing] = useState<string | null>(null);
+  const [billing, setBilling] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,6 +80,97 @@ export default function DischargesView() {
     }
   };
 
+  const postBill = async (admissionId: string) => {
+    if (!confirm("Post the ward room charge (daily rate × nights) as an invoice for this admission?")) return;
+    setBilling(admissionId); setToast(null);
+    try {
+      const res = await fetch(`/api/admissions/${admissionId}/bill`, { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to post bill");
+      setToast(
+        body.data?.charge
+          ? `Posted ${body.data.charge.invoiceNumber} — ₦${Number(body.data.charge.charge ?? 0).toLocaleString()}`
+          : (body.data?.message ?? "No charge posted")
+      );
+      await load();
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "Failed to post bill");
+    } finally {
+      setBilling(null);
+    }
+  };
+
+  const rowsFor = (ds: DischargeRow[]) =>
+    ds.map((d) => {
+      const a = d.admission as any;
+      const p = Array.isArray(a?.patients) ? a.patients[0] : a?.patients;
+      const inv = Array.isArray(a?.invoices) ? a.invoices[0] : a?.invoices;
+      const meds = Array.isArray(d.medications)
+        ? d.medications.map((m: any) => (m && typeof m === "object" ? m.name : String(m))).filter(Boolean).join("; ")
+        : "";
+      return [
+        p ? `${p.first_name} ${p.last_name}` : "Unknown",
+        p?.patient_number ?? "",
+        d.discharged_at ?? "",
+        d.summary ?? "",
+        d.follow_up ?? "",
+        meds,
+        inv?.invoice_number ?? "",
+        inv ? Number(inv.total_amount ?? 0) : "",
+        inv?.status ?? "",
+      ];
+    });
+
+  function exportCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no discharges yet.");
+      return;
+    }
+    downloadCsv(`discharges-${dateStamp()}.csv`, EXPORT_COLUMNS, rowsFor(rows));
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no discharges yet.");
+      return;
+    }
+    printTable("Discharges", EXPORT_COLUMNS, rowsFor(rows));
+  }
+
+  async function importDischarges(rws: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rws.length; i++) {
+      const r = rws[i];
+      try {
+        const medications = (r[3] ?? "")
+          .split("\n")
+          .map((m) => m.trim())
+          .filter(Boolean)
+          .map((name) => ({ name }));
+        const res = await fetch("/api/discharges", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            admission_id: r[0]?.trim(),
+            summary: r[1]?.trim(),
+            follow_up: r[2]?.trim() || null,
+            medications,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          errors.push(`Row ${i + 1}: ${body.error ?? "Discharge failed"}`);
+          continue;
+        }
+        created++;
+      } catch (e) {
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : "Network error"}`);
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-sm">
@@ -71,9 +183,21 @@ export default function DischargesView() {
               Discharge summaries with one-click PDF printout.
             </p>
           </div>
-          <button onClick={() => void load()} className={btnGhost} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />} Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => void load()} className={btnGhost} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />} Refresh
+            </button>
+            <ImportExportMenu
+              entityLabel="Discharges"
+              exportCsv={exportCsv}
+              exportPdf={exportPdf}
+              importColumns={IMPORT_COLUMNS}
+              importSample={IMPORT_SAMPLE}
+              templateFilename="discharges-import-template.csv"
+              onImport={importDischarges}
+              onImported={() => void load()}
+            />
+          </div>
         </div>
         {toast && <p className="mt-3 text-xs text-rose-600">{toast}</p>}
       </div>
@@ -114,6 +238,21 @@ export default function DischargesView() {
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">
                             {inv.invoice_number} · ₦{Number(inv.total_amount ?? 0).toLocaleString()}
                           </span>
+                        ) : canBill ? (
+                          <button
+                            type="button"
+                            onClick={() => void postBill(d.admission_id)}
+                            disabled={billing === d.admission_id}
+                            className="focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-2.5 py-1.5 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+                            title="Post the ward room charge as an invoice"
+                          >
+                            {billing === d.admission_id ? (
+                              <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+                            ) : (
+                              <ReceiptText size={13} aria-hidden="true" />
+                            )}
+                            {billing === d.admission_id ? "Posting…" : "Post bill"}
+                          </button>
                         ) : (
                           <span className="text-[var(--color-muted-fg)]">—</span>
                         )}

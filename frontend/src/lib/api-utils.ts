@@ -195,6 +195,12 @@ export interface AuthedContext {
   role: AppRole;
   supabase: SupabaseClient;
   svc: SupabaseClient;
+  /**
+   * Per-user module access level for a nav key ("full" | "view_only" | "none").
+   * Lazy: loads users.module_access on first call, cached per request.
+   * No module_access record -> "full" (role defaults apply).
+   */
+  accessLevel: (key: string) => Promise<"full" | "view_only" | "none">;
 }
 
 export type ApiHandler = (
@@ -240,6 +246,22 @@ export function withAuth(
       }
 
       const svc = createServiceClient();
+
+      // Lazy per-request module access cache (users.module_access jsonb map).
+      let accessCache: Record<string, "full" | "view_only" | "none"> | null | undefined;
+      const accessLevel = async (key: string): Promise<"full" | "view_only" | "none"> => {
+        if (accessCache === undefined) {
+          const { data } = await supabase
+            .from("users")
+            .select("module_access")
+            .eq("id", user.id)
+            .maybeSingle();
+          accessCache = data?.module_access ?? null;
+        }
+        const level = accessCache?.[key];
+        return level ?? (accessCache ? "none" : "full");
+      };
+
       const ctx: AuthedContext = {
         user,
         claims,
@@ -248,6 +270,7 @@ export function withAuth(
         role,
         supabase,
         svc,
+        accessLevel,
       };
       return await handler(req, ctx);
     } catch (e) {
@@ -280,4 +303,21 @@ export const ADMIN_ROLES: AppRole[] = ["hospital_admin", "super_admin"];
 
 export function isAdminRole(role: AppRole | undefined): boolean {
   return role === "hospital_admin" || role === "super_admin";
+}
+
+// ---------------------------------------------------------------------------
+// MODULE ACCESS GUARDS
+// ---------------------------------------------------------------------------
+
+/** Require the caller to have at least the given level on a module. */
+export async function requireModuleLevel(
+  ctx: AuthedContext,
+  key: string,
+  min: "full" | "view_only" = "view_only"
+): Promise<void> {
+  const level = await ctx.accessLevel(key);
+  if (level === "none") throw new ForbiddenError("You do not have access to this module");
+  if (min === "full" && level !== "full") {
+    throw new ForbiddenError("View-only access — this action requires full access");
+  }
 }

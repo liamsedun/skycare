@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Pencil, Plus, X } from "lucide-react";
+import { Loader2, Pencil, Plus, Save, X } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -38,6 +41,9 @@ export default function HrStaffView() {
   const [role, setRole] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({ hire_date: "", salary_grade: "", bank_name: "", bank_account_name: "", bank_account_number: "" });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -70,9 +76,127 @@ export default function HrStaffView() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load profile");
       setDetail(body.data);
+      const p = (body.data?.profiles as Array<Record<string, unknown>> | undefined)?.[0];
+      setEditForm({
+        hire_date: String(p?.hire_date ?? "").slice(0, 10),
+        salary_grade: String(p?.salary_grade ?? ""),
+        bank_name: String(p?.bank_name ?? ""),
+        bank_account_name: String(p?.bank_account_name ?? ""),
+        bank_account_number: String(p?.bank_account_number ?? ""),
+      });
+      setEditMode(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load profile");
     }
+  }
+
+  async function saveProfile() {
+    if (!detail) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/hr/staff/${String(detail.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to save profile");
+      setEditMode(false);
+      await openDetail(String(detail.id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save profile");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const HR_STAFF_EXPORT_COLUMNS = [
+    "staff_number",
+    "full_name",
+    "email",
+    "phone",
+    "role",
+    "department",
+    "specialization",
+    "employment_type",
+    "base_salary",
+    "hire_date",
+    "salary_grade",
+    "credentials_status",
+  ];
+
+  function hrStaffRows() {
+    return rows.map((r) => {
+      const p = r.profiles?.[0];
+      return [
+        r.staff_number,
+        r.users?.full_name ?? "",
+        r.users?.email ?? "",
+        r.users?.phone ?? "",
+        r.users?.role ?? "",
+        r.department ?? "",
+        r.specialization ?? "",
+        r.employment_type ?? "",
+        r.base_salary ?? "",
+        p?.hire_date ?? "",
+        p?.salary_grade ?? "",
+        p?.credentials_status ?? "",
+      ];
+    });
+  }
+
+  function exportHrStaffCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no staff profiles yet.");
+      return;
+    }
+    downloadCsv(`hr-staff-${dateStamp()}.csv`, HR_STAFF_EXPORT_COLUMNS, hrStaffRows());
+  }
+
+  function exportHrStaffPdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no staff profiles yet.");
+      return;
+    }
+    printTable("HR Staff Profiles", HR_STAFF_EXPORT_COLUMNS, hrStaffRows());
+  }
+
+  const HR_STAFF_IMPORT_COLUMNS = ["staff_id", "hire_date", "salary_grade", "bank_name", "bank_account_name", "bank_account_number"];
+
+  async function importHrStaff(importRows: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < importRows.length; i++) {
+      const r = importRows[i];
+      const rowNo = i + 2;
+      const staff_id = r[0]?.trim() ?? "";
+      if (!staff_id) {
+        errors.push(`Row ${rowNo}: staff_id is required`);
+        continue;
+      }
+      try {
+        const res = await fetch("/api/hr/staff", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            staff_id,
+            hire_date: r[1]?.trim() || null,
+            salary_grade: r[2]?.trim() || undefined,
+            bank_name: r[3]?.trim() || undefined,
+            bank_account_name: r[4]?.trim() || undefined,
+            bank_account_number: r[5]?.trim() || undefined,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to create HR profile");
+        created++;
+      } catch (e) {
+        errors.push(
+          `Row ${rowNo}: ${e instanceof Error ? e.message : "Failed to create HR profile"}`
+        );
+      }
+    }
+    return { created, failed: errors.length, errors };
   }
 
   return (
@@ -90,6 +214,16 @@ export default function HrStaffView() {
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
+        <ImportExportMenu
+          entityLabel="Staff Profiles"
+          exportCsv={exportHrStaffCsv}
+          exportPdf={exportHrStaffPdf}
+          importColumns={HR_STAFF_IMPORT_COLUMNS}
+          importSample={[["<staff_id>", "2024-03-01", "GL 08", "GTBank", "Ada Okafor", "0123456789"]]}
+          templateFilename="hr-staff-import-template.csv"
+          onImport={importHrStaff}
+          onImported={() => load()}
+        />
         <span className="text-sm text-[var(--color-muted-fg)]">{rows.length} staff</span>
       </div>
 
@@ -176,6 +310,52 @@ export default function HrStaffView() {
               <div><span className="block text-xs text-[var(--color-muted-fg)]">Credentials</span>{String((detail.profiles as Array<{ credentials_status: string }> | undefined)?.[0]?.credentials_status ?? "—")}</div>
             </div>
 
+            {isAdmin && (
+              <>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]"
+                    onClick={() => (editMode ? setEditMode(false) : setEditMode(true))}
+                  >
+                    <Pencil className="h-3.5 w-3.5" /> {editMode ? "Cancel" : "Edit profile"}
+                  </button>
+                </div>
+                {editMode && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 rounded-xl border border-[var(--color-border)] p-4 text-sm sm:grid-cols-3">
+                    <div>
+                      <label className={labelCls}>Hire date</label>
+                      <input type="date" className={inputCls} value={editForm.hire_date} onChange={(e) => setEditForm({ ...editForm, hire_date: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Salary grade</label>
+                      <input className={inputCls} value={editForm.salary_grade} onChange={(e) => setEditForm({ ...editForm, salary_grade: e.target.value })} placeholder="e.g. GL 08" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Bank</label>
+                      <input className={inputCls} value={editForm.bank_name} onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Account name</label>
+                      <input className={inputCls} value={editForm.bank_account_name} onChange={(e) => setEditForm({ ...editForm, bank_account_name: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Account number</label>
+                      <input className={inputCls} value={editForm.bank_account_number} onChange={(e) => setEditForm({ ...editForm, bank_account_number: e.target.value })} />
+                    </div>
+                    <div className="flex items-end">
+                      <button
+                        className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                        onClick={saveProfile}
+                        disabled={saving}
+                      >
+                        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
             <h4 className="mb-2 mt-5 text-sm font-semibold uppercase text-[var(--color-muted-fg)]">Credentials</h4>
             <div className="space-y-2">
               {(detail.credentials as Array<Record<string, unknown>> | undefined)?.map((c) => (
@@ -206,9 +386,9 @@ export default function HrStaffView() {
             <h4 className="mb-2 mt-5 text-sm font-semibold uppercase text-[var(--color-muted-fg)]">Leave balances</h4>
             <div className="space-y-2">
               {(detail.leave_balances as Array<Record<string, unknown>> | undefined)?.map((b) => (
-                <div key={String(b.id)} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
+                <div key={String(b.id ?? `${b.leave_type}-${b.leave_year}`)} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
                   <span>{String(b.leave_type)} {String(b.leave_year)}</span>
-                  <b>{Number(b.used)}/{Number(b.entitled)}</b>
+                  <b>{Number(b.used_days)}/{Number(b.entitled_days)}</b>
                 </div>
               ))}
               {(detail.leave_balances as Array<unknown> | undefined)?.length === 0 && <p className="text-sm text-[var(--color-muted-fg)]">No balances yet.</p>}

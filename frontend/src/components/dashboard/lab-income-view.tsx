@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarRange, Loader2, ReceiptText, Wallet, Download } from "lucide-react";
+import { CalendarRange, Loader2, ReceiptText, Wallet } from "lucide-react";
 import { ngn } from "@/lib/auth";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { printTable } from "@/lib/export";
 
 // ============================================================================
 // Lab Services Income — per-service billed vs collected for a from/to window
@@ -11,8 +14,6 @@ import { ngn } from "@/lib/auth";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
-const btnGhost =
-  "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
 const inputCls =
   "h-10 rounded-lg border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 
@@ -63,6 +64,7 @@ export default function LabIncomeView() {
   );
 
   function exportCsv() {
+    if (rows.length === 0) { alert("Nothing to export — no lab income in this period."); return; }
     const head = "Service,Category,Times billed,Income (billed),Collected\n";
     const lines = rows.map((r) => [
       `"${r.serviceName?.replace(/"/g, '""') ?? ""}"`,
@@ -77,6 +79,20 @@ export default function LabIncomeView() {
     a.download = `lab-income-${from || "all"}-${to || "now"}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) { alert("Nothing to export — no lab income in this period."); return; }
+    printTable("Lab Services Income", ["Service", "Category", "Times billed", "Income (billed)", "Collected"],
+      rows.map((r) => [r.serviceName ?? "", r.category ?? "", r.qty, r.billed, r.paid]));
+  }
+
+  async function importIncome(): Promise<ImportResult> {
+    return {
+      created: 0,
+      failed: 0,
+      errors: ["Lab Services Income is a derived report from lab orders and invoices and cannot be imported."],
+    };
   }
 
   return (
@@ -104,9 +120,14 @@ export default function LabIncomeView() {
               {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ReceiptText className="h-3.5 w-3.5" />}
               Apply
             </button>
-            <button type="button" className={btnGhost} onClick={exportCsv} disabled={rows.length === 0}>
-              <Download size={13} /> CSV
-            </button>
+            <ImportExportMenu
+              entityLabel="Lab Services Income"
+              exportCsv={exportCsv}
+              exportPdf={exportPdf}
+              importColumns={["Service", "Category", "Times billed", "Income (billed)", "Collected"]}
+              templateFilename="lab-income-import-template.csv"
+              onImport={importIncome}
+            />
           </div>
         </div>
 

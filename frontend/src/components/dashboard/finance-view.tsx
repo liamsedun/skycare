@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle, Calendar, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ngn } from "@/lib/auth";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/expense-categories";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { downloadCsv, printTable } from "@/lib/export";
 
 export type FinanceKind = "expense" | "income";
 
@@ -186,6 +189,62 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
 
   const dateKey = isExpense ? "expense_date" : "income_date";
 
+  const TX_COLUMNS = ["description", "category", "amount", "date", "payment_method", "vendor_or_source", "notes"];
+
+  const txRows = () =>
+    filtered.map((r) => [
+      r.description,
+      r.category,
+      r.amount,
+      (r.expense_date ?? r.income_date ?? "").slice(0, 10),
+      r.payment_method,
+      r.vendor ?? r.source ?? "",
+      r.notes ?? "",
+    ]);
+
+  function exportCsv() {
+    if (filtered.length === 0) { alert("Nothing to export — no records for this month."); return; }
+    downloadCsv(`${isExpense ? "expenses" : "other-income"}-${month}.csv`, TX_COLUMNS, txRows());
+  }
+
+  function exportPdf() {
+    if (filtered.length === 0) { alert("Nothing to export — no records for this month."); return; }
+    printTable(isExpense ? "Expenses" : "Other Income", TX_COLUMNS, txRows());
+  }
+
+  async function importTx(rowsIn: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rowsIn.length; i++) {
+      const r = rowsIn[i]!;
+      const description = String(r[0] ?? "").trim();
+      const category = String(r[1] ?? "").trim();
+      const amount = Number(r[2]);
+      if (!description) { errors.push(`Row ${i + 1}: description is required`); continue; }
+      if (!Number.isFinite(amount) || amount <= 0) { errors.push(`Row ${i + 1}: invalid amount "${r[2] ?? ""}"`); continue; }
+      if (!(categories as readonly string[]).includes(category)) { errors.push(`Row ${i + 1}: unknown category "${category}"`); continue; }
+      const base = {
+        description,
+        category,
+        amount,
+        paymentMethod: String(r[4] ?? "").trim() || "cash",
+        notes: String(r[6] ?? "").trim() || null,
+      };
+      const body = isExpense
+        ? { ...base, expenseDate: String(r[3] ?? "").trim() || undefined, vendor: String(r[5] ?? "").trim() || null }
+        : { ...base, incomeDate: String(r[3] ?? "").trim() || undefined, source: String(r[5] ?? "").trim() || null };
+      const res = await fetch(`/api/${isExpense ? "expenses" : "other-income"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const resBody = await res.json();
+      if (!res.ok) errors.push(`Row ${i + 1}: ${resBody.error ?? "save failed"}`);
+      else created++;
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -208,6 +267,16 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
               aria-label="Reporting period"
             />
           </div>
+          <ImportExportMenu
+            entityLabel={isExpense ? "Expenses" : "Other Income"}
+            exportCsv={exportCsv}
+            exportPdf={exportPdf}
+            importColumns={TX_COLUMNS}
+            importSample={[["Generator fuel", "utilities", "25000", "2026-08-11", "cash", "Total Filling Station", ""]]}
+            templateFilename={`${isExpense ? "expenses" : "other-income"}-import-template.csv`}
+            onImport={importTx}
+            onImported={() => void load()}
+          />
           <button
             type="button"
             onClick={() => openEditor(null)}

@@ -4,6 +4,25 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRightLeft, DoorOpen, Loader2, Plus, RefreshCw, Search, Stethoscope, UserPlus, X,
 } from "lucide-react";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+
+const EXPORT_COLUMNS = [
+  "patient",
+  "patient_number",
+  "ward",
+  "bed_number",
+  "diagnosis",
+  "admitted_at",
+  "expected_discharge",
+  "status",
+];
+
+const IMPORT_COLUMNS = ["patient_id", "bed_id", "diagnosis", "expected_discharge", "notes"];
+const IMPORT_SAMPLE = [
+  ["<patient UUID>", "<bed UUID>", "Malaria", "2026-08-20", ""],
+];
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -154,6 +173,67 @@ export default function AdmissionsView() {
     return !q || patientName(a).toLowerCase().includes(q) || patientNo(a).toLowerCase().includes(q);
   });
 
+  const rowsFor = (rs: AdmissionRow[]) =>
+    rs.map((a) => {
+      const p = Array.isArray(a.patients) ? a.patients[0] : a.patients;
+      return [
+        p ? `${p.first_name} ${p.last_name}` : "Unknown",
+        p?.patient_number ?? "",
+        a.beds?.ward?.name ?? "",
+        a.beds?.bed_number ?? "",
+        a.diagnosis_at_admission ?? "",
+        a.admitted_at ?? "",
+        a.expected_discharge ?? "",
+        a.status,
+      ];
+    });
+
+  function exportCsv() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no admissions yet.");
+      return;
+    }
+    downloadCsv(`admissions-${dateStamp()}.csv`, EXPORT_COLUMNS, rowsFor(rows));
+  }
+
+  function exportPdf() {
+    if (rows.length === 0) {
+      alert("Nothing to export — there are no admissions yet.");
+      return;
+    }
+    printTable("Ward Admissions", EXPORT_COLUMNS, rowsFor(rows));
+  }
+
+  async function importAdmissions(rws: string[][]): Promise<ImportResult> {
+    const errors: string[] = [];
+    let created = 0;
+    for (let i = 0; i < rws.length; i++) {
+      const r = rws[i];
+      try {
+        const res = await fetch("/api/admissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            patientId: r[0]?.trim(),
+            bed_id: r[1]?.trim(),
+            diagnosis: r[2]?.trim() || undefined,
+            expected_discharge: r[3]?.trim() || null,
+            notes: r[4]?.trim() || undefined,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          errors.push(`Row ${i + 1}: ${body.error ?? "Admission failed"}`);
+          continue;
+        }
+        created++;
+      } catch (e) {
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : "Network error"}`);
+      }
+    }
+    return { created, failed: errors.length, errors };
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-sm">
@@ -174,6 +254,16 @@ export default function AdmissionsView() {
             <button onClick={openAdmit} className={btnPrimary}>
               <UserPlus size={14} /> Admit patient
             </button>
+            <ImportExportMenu
+              entityLabel="Admissions"
+              exportCsv={exportCsv}
+              exportPdf={exportPdf}
+              importColumns={IMPORT_COLUMNS}
+              importSample={IMPORT_SAMPLE}
+              templateFilename="admissions-import-template.csv"
+              onImport={importAdmissions}
+              onImported={() => void load()}
+            />
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">

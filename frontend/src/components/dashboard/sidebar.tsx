@@ -4,22 +4,24 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
-import { navForRole, type NavItem } from "@/lib/nav";
+import { navForRole, type NavItem, type ModuleAccess } from "@/lib/nav";
 import type { StaffRole } from "@/lib/auth";
 import UnreadMailBadge from "@/components/dashboard/unread-mail-badge";
 import { SkyCareMark } from "@/components/landing/skycare-logo";
 
 export default function Sidebar({
   role,
+  moduleAccess,
   tenantName,
   onClose,
 }: {
   role: StaffRole;
+  moduleAccess?: ModuleAccess;
   tenantName: string | null;
   onClose?: () => void;
 }) {
   const pathname = usePathname();
-  const items = navForRole(role);
+  const items = navForRole(role, moduleAccess);
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-[var(--color-border)] bg-white">
