@@ -1035,10 +1035,10 @@ export function PatientViewButton({
                   <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-foreground)]">
                     <Users size={15} aria-hidden="true" /> Dependants
                     <span className="text-xs font-normal text-[var(--color-muted-fg)]">
-                      {detail.dependants.length} of 5 family members
+                      {detail.dependants.length} family {detail.dependants.length === 1 ? "member" : "members"}
                     </span>
                   </h3>
-                  {detail.dependants.length < 5 && !editDependant && (
+                  {!editDependant && (
                     <button
                       type="button"
                       onClick={() => setShowAddDependant((v) => !v)}

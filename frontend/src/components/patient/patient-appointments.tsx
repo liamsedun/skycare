@@ -78,6 +78,25 @@ export default function PatientAppointments() {
     })();
   }, [load]);
 
+  async function confirmAppointment(id: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "confirmed" }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to confirm appointment");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to confirm appointment");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function cancelAppointment(id: string) {
     if (!confirm("Cancel this appointment?")) return;
     setBusy(true);
@@ -126,7 +145,12 @@ export default function PatientAppointments() {
     }
   }
 
+  function statusLabel(status: string): string {
+    return status.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+  }
+
   const cancellable = (a: Appointment) => ["scheduled", "confirmed"].includes(a.status);
+  const confirmable = (a: Appointment) => a.status === "scheduled";
 
   return (
     <div className="space-y-6">
@@ -185,8 +209,18 @@ export default function PatientAppointments() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass(a.status)}`}>
-                    {a.status.replace(/_/g, " ")}
+                    {statusLabel(a.status)}
                   </span>
+                  {confirmable(a) && (
+                    <button
+                      type="button"
+                      onClick={() => confirmAppointment(a.id)}
+                      disabled={busy}
+                      className="focus-ring rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-medium text-sky-700 transition-colors duration-200 hover:bg-sky-100 disabled:opacity-60"
+                    >
+                      Confirm
+                    </button>
+                  )}
                   {cancellable(a) && (
                     <button
                       type="button"

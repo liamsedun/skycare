@@ -139,11 +139,11 @@ export default function PatientFamily() {
           <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Family</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
             {isMainAccount
-              ? `Manage your family account${dependants.length > 0 ? ` — ${dependants.length} of 5 members added` : ""}.`
+              ? `Manage your family account${dependants.length > 0 ? ` — ${dependants.length} ${dependants.length === 1 ? "member" : "members"} added` : ""}.`
               : "You are a family member on this account. Only the main account holder can add or remove members."}
           </p>
         </div>
-        {isMainAccount && rootId && dependants.length < 5 && (
+        {isMainAccount && rootId && (
           <button
             type="button"
             onClick={() => setShowAdd(true)}

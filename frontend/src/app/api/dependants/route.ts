@@ -102,16 +102,6 @@ export const POST = withAuth(async (req, ctx) => {
     }
   }
 
-  // Family size cap (5 dependants per family)
-  const { count } = await ctx.svc
-    .from("patients")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", tenantId)
-    .eq("primary_account_id", body.primaryPatientId);
-  if ((count ?? 0) >= 5) {
-    throw new ValidationError("A family account can have at most 5 dependants");
-  }
-
   const settings = await getTenantSettings(ctx.svc, tenantId);
   const dependantNumber = await generatePatientNumber(ctx.svc, tenantId, settings.dependantPrefix);
 

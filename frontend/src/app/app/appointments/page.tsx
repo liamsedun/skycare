@@ -5,16 +5,28 @@ import { Calendar, CheckCircle2, Clock, Loader2, Search, Stethoscope, User, X, X
 import { NewAppointmentButton } from "@/components/dashboard/appointment-actions";
 import { formatDate } from "@/lib/auth";
 
-type DisplayStatus = "Upcoming" | "Completed" | "Cancelled";
+type DisplayStatus = "Scheduled" | "Confirmed" | "In Progress" | "Completed" | "Cancelled";
 
-const TABS = ["all", "upcoming", "completed", "cancelled"] as const;
+const TABS = ["all", "scheduled", "confirmed", "in progress", "completed", "cancelled"] as const;
 
 const STATUS_STYLES: Record<DisplayStatus, { icon: typeof Clock; circle: string; badge: string; label: string }> = {
-  Upcoming: {
+  Scheduled: {
     icon: Clock,
     circle: "bg-amber-500/10 text-amber-600",
     badge: "bg-amber-500/10 text-amber-700 border-amber-500/30",
-    label: "Upcoming",
+    label: "Scheduled",
+  },
+  Confirmed: {
+    icon: CheckCircle2,
+    circle: "bg-sky-500/10 text-sky-600",
+    badge: "bg-sky-500/10 text-sky-700 border-sky-500/30",
+    label: "Confirmed",
+  },
+  "In Progress": {
+    icon: Clock,
+    circle: "bg-indigo-500/10 text-indigo-600",
+    badge: "bg-indigo-500/10 text-indigo-700 border-indigo-500/30",
+    label: "In Progress",
   },
   Completed: {
     icon: CheckCircle2,
@@ -40,18 +52,28 @@ const TYPE_LABELS: Record<string, string> = {
 function mapStatus(apiStatus: string): DisplayStatus {
   switch (apiStatus) {
     case "scheduled":
+      return "Scheduled";
     case "confirmed":
+      return "Confirmed";
     case "in_progress":
-      return "Upcoming";
+      return "In Progress";
     case "completed":
       return "Completed";
     case "cancelled":
     case "no_show":
       return "Cancelled";
     default:
-      return "Upcoming";
+      return "Scheduled";
   }
 }
+
+const ACTION_SETS: Record<DisplayStatus, string[]> = {
+  Scheduled: ["confirmed", "cancelled"],
+  Confirmed: ["completed", "cancelled"],
+  "In Progress": ["completed"],
+  Completed: [],
+  Cancelled: [],
+};
 
 function fmtTime(t: string | null): string {
   if (!t) return "—";
@@ -317,38 +339,44 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  {display === "Upcoming" ? (
+                  {ACTION_SETS[display].length > 0 ? (
                     <div className="flex shrink-0 items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => updateStatus(apt, "confirmed")}
-                        className="focus-ring h-8 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-700 transition-colors duration-200 hover:bg-emerald-500/20 disabled:opacity-60"
-                      >
-                        Confirm
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => updateStatus(apt, "completed")}
-                        className="focus-ring h-8 rounded-lg border border-[var(--color-primary)] bg-[var(--color-primary-soft)] px-3 text-xs font-medium text-[var(--color-primary-dark)] transition-colors duration-200 hover:bg-[var(--color-primary)] hover:text-white disabled:opacity-60"
-                      >
-                        Complete
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => updateStatus(apt, "cancelled")}
-                        className="focus-ring h-8 rounded-lg px-3 text-xs font-medium text-rose-600 transition-colors duration-200 hover:bg-rose-50 disabled:opacity-60"
-                      >
-                        Cancel
-                      </button>
+                      {ACTION_SETS[display].includes("confirmed") && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => updateStatus(apt, "confirmed")}
+                          className="focus-ring h-8 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 text-xs font-medium text-sky-700 transition-colors duration-200 hover:bg-sky-500/20 disabled:opacity-60"
+                        >
+                          Confirm
+                        </button>
+                      )}
+                      {ACTION_SETS[display].includes("completed") && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => updateStatus(apt, "completed")}
+                          className="focus-ring h-8 rounded-lg border border-[var(--color-primary)] bg-[var(--color-primary-soft)] px-3 text-xs font-medium text-[var(--color-primary-dark)] transition-colors duration-200 hover:bg-[var(--color-primary)] hover:text-white disabled:opacity-60"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {ACTION_SETS[display].includes("cancelled") && (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => updateStatus(apt, "cancelled")}
+                          className="focus-ring h-8 rounded-lg px-3 text-xs font-medium text-rose-600 transition-colors duration-200 hover:bg-rose-50 disabled:opacity-60"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <span
                       className={`w-fit shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium ${style.badge}`}
                     >
-                      {display === "Completed" ? "Done" : "Cancelled"}
+                      {style.label}
                     </span>
                   )}
                 </div>

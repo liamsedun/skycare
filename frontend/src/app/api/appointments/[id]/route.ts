@@ -57,10 +57,20 @@ export const PUT = withAuth(async (req, ctx) => {
     if (key in body) patch[key] = body[key];
   }
 
-  // Patients may only cancel their own appointments
+  // Patients may only confirm or cancel their own appointments
   if (ctx.role === "patient_api") {
-    const onlyCancel = Object.keys(patch).every((k) => k === "status") && patch.status === "cancelled";
-    if (!onlyCancel) throw new ValidationError("You may only cancel an appointment");
+    const onlyStatus = Object.keys(patch).every((k) => k === "status");
+    if (!onlyStatus || typeof patch.status !== "string") {
+      throw new ValidationError("You may only confirm or cancel an appointment");
+    }
+    const allowed: Record<string, string[]> = {
+      scheduled: ["confirmed", "cancelled"],
+      confirmed: ["cancelled"],
+    };
+    const allowedNext = allowed[existing.status] ?? [];
+    if (!allowedNext.includes(patch.status)) {
+      throw new ValidationError(`Cannot change an appointment from ${existing.status} to ${patch.status}`);
+    }
   }
 
   const { data, error } = await ctx.svc
