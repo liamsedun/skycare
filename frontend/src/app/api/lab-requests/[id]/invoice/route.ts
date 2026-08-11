@@ -5,9 +5,11 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// POST /api/lab-requests/[id]/invoice — generate an invoice from a completed
-// lab request. One invoice per request (lab_requests.invoice_id), priced from
-// the lab_services catalogue. Services without a catalogue price bill at 0.
+// POST /api/lab-requests/[id]/invoice — generate an invoice from a lab
+// request (billable at request time or any later stage). One invoice per
+// request (lab_requests.invoice_id), priced from the lab_services catalogue.
+// Services without a catalogue price bill at 0. A pending invoice is the
+// patient's "credit" — it shows in their portal as an outstanding payment.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "billing", "full");
@@ -18,14 +20,17 @@ export const POST = withStaff(async (req, ctx) => {
   const { data: labRequest, error: reqError } = await ctx.svc
     .from("lab_requests")
     .select(
-      "id, tenant_id, branch_id, patient_id, doctor_id, status, invoice_id, notes, created_at, patients(id, patient_number, first_name, last_name), lab_request_items(id, service_id, service_name)"
+      "id, tenant_id, branch_id, patient_id, doctor_id, status, invoice_id, payment_id, notes, created_at, patients(id, patient_number, first_name, last_name), lab_request_items(id, service_id, service_name)"
     )
     .eq("id", requestId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
   if (reqError || !labRequest) throw new NotFoundError("Lab request not found");
-  if (labRequest.status !== "completed") {
-    throw new ValidationError("Only completed lab requests can be billed");
+  if (labRequest.status === "cancelled") {
+    throw new ValidationError("Cancelled lab requests cannot be billed");
+  }
+  if (labRequest.payment_id) {
+    throw new ValidationError("Walk-in requests are paid up-front and do not get an invoice");
   }
   if (labRequest.invoice_id) {
     const { data: existing } = await ctx.svc

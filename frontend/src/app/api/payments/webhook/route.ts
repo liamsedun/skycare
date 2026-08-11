@@ -73,20 +73,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Missing reference" }, { status: 400 });
     }
 
-    // Idempotency — unique partial index on payments.reference guards the insert.
+    // Idempotency — unique partial index on payments.reference guards the
+    // insert. Walk-in lab payments are pre-recorded as "pending" by
+    // POST /api/lab-requests/walk-in; a charge.success completes them here.
     const { data: existing } = await svc
       .from("payments")
-      .select("id")
+      .select("id, invoice_id, status")
       .eq("reference", reference)
       .maybeSingle();
-    if (existing) {
-      return NextResponse.json({ success: true, data: { handled: true, existing: true } });
-    }
 
-    const invoiceId = data.metadata.invoice_id;
+    const invoiceId = data.metadata.invoice_id ?? null;
+    const labRequestId = data.metadata.lab_request_id ?? null;
     const patientId = data.metadata.patient_id;
     const amountNaira = Number((data.amount / 100).toFixed(2)); // kobo → Naira
-    if (!invoiceId || !patientId || !tenantId) {
+    if (!patientId || !tenantId || (!invoiceId && !labRequestId)) {
       console.error("[Paystack Webhook] Missing metadata", { reference, metadata: data.metadata });
       return NextResponse.json({ success: false, error: "Missing metadata" }, { status: 400 });
     }
@@ -97,57 +97,101 @@ export async function POST(req: NextRequest) {
     }
 
     const paymentMethod = data.channel === "card" ? "card" : data.channel === "bank_transfer" ? "transfer" : "transfer";
+    const paymentMeta = {
+      channel: data.channel,
+      card_type: data.authorization?.card_type ?? null,
+      last4: data.authorization?.last4 ?? null,
+      bank: data.authorization?.bank ?? null,
+      fees: data.fees ?? null,
+      paid_at: data.paid_at ?? null,
+    };
 
-    const { data: payment, error: payError } = await svc
-      .from("payments")
-      .insert({
-        tenant_id: tenantId,
-        invoice_id: invoiceId,
-        patient_id: patientId,
-        amount: amountNaira,
-        payment_method: paymentMethod,
-        status: "completed",
-        reference,
-        gateway: "paystack",
-        metadata: {
-          channel: data.channel,
-          card_type: data.authorization?.card_type ?? null,
-          last4: data.authorization?.last4 ?? null,
-          bank: data.authorization?.bank ?? null,
-          fees: data.fees ?? null,
-          paid_at: data.paid_at ?? null,
-        },
-        paid_by: null,
-        paid_at: data.paid_at || new Date().toISOString(),
-      })
-      .select("id")
-      .single();
+    let payment: { id: string; invoice_id: string | null } | null = null;
 
-    if (payError) {
-      // Unique-index race: another webhook/callback already recorded it.
-      if (payError.code === "23505") {
-        return NextResponse.json({ success: true, data: { handled: true, duplicate: true } });
+    if (existing && existing.status === "pending") {
+      // Walk-in lab payment: complete the pending row (its invoice_id is null).
+      const { data: completed, error: updError } = await svc
+        .from("payments")
+        .update({
+          amount: amountNaira,
+          payment_method: paymentMethod,
+          status: "completed",
+          metadata: paymentMeta,
+          paid_at: data.paid_at || new Date().toISOString(),
+        })
+        .eq("id", existing.id)
+        .select("id, invoice_id")
+        .single();
+      if (updError) {
+        console.error("[Paystack Webhook] Complete pending payment failed:", updError);
+        return NextResponse.json({ success: false, error: updError.message }, { status: 500 });
       }
-      console.error("[Paystack Webhook] Insert payment failed:", payError);
-      return NextResponse.json({ success: false, error: payError.message }, { status: 500 });
+      payment = completed;
+    } else if (existing) {
+      return NextResponse.json({ success: true, data: { handled: true, existing: true } });
+    } else {
+      const { data: inserted, error: payError } = await svc
+        .from("payments")
+        .insert({
+          tenant_id: tenantId,
+          invoice_id: invoiceId,
+          patient_id: patientId,
+          amount: amountNaira,
+          payment_method: paymentMethod,
+          status: "completed",
+          reference,
+          gateway: "paystack",
+          metadata: paymentMeta,
+          paid_by: null,
+          paid_at: data.paid_at || new Date().toISOString(),
+        })
+        .select("id, invoice_id")
+        .single();
+
+      if (payError) {
+        // Unique-index race: another webhook/callback already recorded it.
+        if (payError.code === "23505") {
+          return NextResponse.json({ success: true, data: { handled: true, duplicate: true } });
+        }
+        console.error("[Paystack Webhook] Insert payment failed:", payError);
+        return NextResponse.json({ success: false, error: payError.message }, { status: 500 });
+      }
+      payment = inserted;
     }
 
-    // Update invoice paid_amount and status
-    const { data: invoice } = await svc
-      .from("invoices")
-      .select("invoice_number, paid_amount, total_amount")
-      .eq("id", invoiceId)
-      .single();
-
-    let invoiceStatus: string | null = null;
-    if (invoice) {
-      const newPaid = Number(invoice.paid_amount) + amountNaira;
-      invoiceStatus = newPaid >= Number(invoice.total_amount) - 0.01 ? "paid" : "partially_paid";
-      const { error: invError } = await svc
+    // Update the invoice paid_amount/status (invoice-backed payments).
+    let invoice: { invoice_number: string | null } | null = null;
+    if (invoiceId) {
+      const { data: inv } = await svc
         .from("invoices")
-        .update({ paid_amount: newPaid, status: invoiceStatus })
-        .eq("id", invoiceId);
-      if (invError) console.error("[Paystack Webhook] Invoice update failed:", invError);
+        .select("invoice_number, paid_amount, total_amount")
+        .eq("id", invoiceId)
+        .single();
+      invoice = inv ?? null;
+      if (inv) {
+        const newPaid = Number(inv.paid_amount) + amountNaira;
+        const invStatus = newPaid >= Number(inv.total_amount) - 0.01 ? "paid" : "partially_paid";
+        const { error: invError } = await svc
+          .from("invoices")
+          .update({ paid_amount: newPaid, status: invStatus })
+          .eq("id", invoiceId);
+        if (invError) console.error("[Paystack Webhook] Invoice update failed:", invError);
+      }
+    }
+
+    // Link walk-in lab payments to their request (no invoice involved).
+    let labRef = "";
+    if (labRequestId) {
+      const { data: lab } = await svc
+        .from("lab_requests")
+        .select("id, referrer")
+        .eq("id", labRequestId)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+      if (lab) {
+        await svc.from("lab_requests").update({ payment_id: payment.id }).eq("id", lab.id);
+        labRef = lab.referrer ? ` (ref: ${lab.referrer})` : "";
+      }
     }
 
     // Banking ledger auto-post: gateway receipts always credit a bank account
@@ -160,11 +204,11 @@ export async function POST(req: NextRequest) {
         direction: "in",
         amount: amountNaira,
         source: "payment",
-        sourceRef: invoice?.invoice_number ?? null,
+        sourceRef: invoice?.invoice_number ?? labRequestId ?? null,
         paymentId: payment.id,
         method: paymentMethod,
         reference,
-        notes: `Online payment via Paystack (${data.channel})`,
+        notes: `Online payment via Paystack (${data.channel})${labRef}`,
         recordedAt: data.paid_at || new Date().toISOString(),
         createdBy: null,
       });
@@ -186,7 +230,7 @@ export async function POST(req: NextRequest) {
         userIds: staffIds,
         type: "payment_confirmed",
         title: "Online payment received",
-        message: `${reference} — ₦${amountNaira.toLocaleString()} for invoice ${invoice?.invoice_number ?? ""} (Paystack)`,
+        message: `${reference} — ₦${amountNaira.toLocaleString()}${labRef ? " for walk-in lab" : ` for invoice ${invoice?.invoice_number ?? ""}`} (Paystack)`,
         referenceType: "payments",
         referenceId: payment.id,
       });
@@ -201,8 +245,8 @@ export async function POST(req: NextRequest) {
         action: "create",
         entity_type: "payments",
         entity_id: payment.id,
-        changes: { reference, amount: amountNaira, channel: data.channel, invoice_status: invoiceStatus },
-        description: `Paystack webhook recorded payment ${reference} (₦${amountNaira.toLocaleString()}) for invoice ${invoice?.invoice_number ?? ""}`,
+        changes: { reference, amount: amountNaira, channel: data.channel, invoice_id: invoiceId, lab_request_id: labRequestId },
+        description: `Paystack webhook recorded payment ${reference} (₦${amountNaira.toLocaleString()})${labRef ? ` for walk-in lab request ${labRequestId}` : ` for invoice ${invoice?.invoice_number ?? ""}`}`,
       });
     } catch {
       /* audit must not break the webhook */

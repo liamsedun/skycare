@@ -7,7 +7,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const REQUEST_SELECT =
-  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, invoice_id, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, user_id), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes, result, result_unit, is_abnormal, reported_at), lab_request_assignments(user_id, users(id, full_name, role)), invoices!fk_lab_requests_invoice(id, invoice_number, status, total_amount)";
+  "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, invoice_id, payment_id, referrer, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, user_id, is_walk_in), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes, result, result_unit, is_abnormal, reported_at), lab_request_assignments(user_id, users(id, full_name, role)), invoices!fk_lab_requests_invoice(id, invoice_number, status, total_amount), payments!fk_lab_requests_payment(id, reference, payment_method, amount, status, paid_at)";
 
 // GET /api/lab-requests?patient_id=&status=&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {

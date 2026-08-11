@@ -14,12 +14,16 @@ export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const reference = searchParams.get("reference") || searchParams.get("trxref");
+  const source = searchParams.get("source") || "";
   const appUrl = req.nextUrl.origin || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  // Walk-in lab payments return to the lab module; invoice payments return to
+  // the patient's billing page.
+  const destination = source === "lab" ? "/app/lab/requests" : "/patient/billing";
   const redirect = (status: string, message?: string) => {
     const q = new URLSearchParams({ paystack: status });
     if (message) q.set("message", message);
     if (reference) q.set("reference", reference);
-    return NextResponse.redirect(`${appUrl}/patient/billing?${q.toString()}`);
+    return NextResponse.redirect(`${appUrl}${destination}?${q.toString()}`);
   };
 
   if (!reference) return redirect("error", "Missing reference");

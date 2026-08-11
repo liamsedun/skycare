@@ -77,7 +77,6 @@ export const POST = withAuth(async (req, ctx) => {
     .from("payments")
     .insert({
       tenant_id: tenantId,
-      branch_id: ctx.branchId ?? null,
       invoice_id: invoice.id,
       patient_id: invoice.patient_id,
       amount: body.amount,

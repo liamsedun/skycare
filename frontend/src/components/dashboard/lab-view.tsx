@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CalendarPlus, FileDown, FlaskConical, ListChecks, Loader2, Plus, ReceiptText, Search, TestTube, Wrench } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import ImportExportMenu from "@/components/ui/import-export-menu";
@@ -30,7 +31,9 @@ interface LabRequest {
   requested_at: string;
   notes: string | null;
   invoice_id: string | null;
-  patients: { id: string; patient_number: string; first_name: string; last_name: string; user_id: string | null } | null;
+  payment_id: string | null;
+  referrer: string | null;
+  patients: { id: string; patient_number: string; first_name: string; last_name: string; user_id: string | null; is_walk_in: boolean | null } | null;
   users: { id: string; full_name: string } | null;
   lab_request_items: Array<{
     id: string;
@@ -49,6 +52,7 @@ interface LabRequest {
     users: { id: string; full_name: string; role: string } | null;
   }>;
   invoices?: { id: string; invoice_number: string; status: string; total_amount: number } | null;
+  payments?: { id: string; reference: string | null; payment_method: string | null; amount: number; status: string; paid_at: string | null } | null;
 }
 
 const STATUS_FILTERS = ["all", "requested", "sample_collected", "in_progress", "completed", "cancelled"];
@@ -1216,6 +1220,9 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [labStaff, setLabStaff] = useState<{ id: string; label: string }[]>([]);
   const [assigned, setAssigned] = useState<Set<string>>(new Set());
   const [isExternal, setIsExternal] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [payMethod, setPayMethod] = useState("cash");
+  const [createdReceipt, setCreatedReceipt] = useState<string | null>(null);
   const [services, setServices] = useState<LabService[]>([]);
   const [selected, setSelected] = useState<Record<string, { sampleType: string; priority: string }>>({});
 
@@ -1273,6 +1280,11 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [services]);
 
+  const selectedTotal = useMemo(() => {
+    const priceById = new Map(services.map((s) => [s.id, Number(s.price) || 0]));
+    return Object.keys(selected).reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0);
+  }, [services, selected]);
+
   async function handleSubmit(form: FormData) {
     setBusy(true);
     setError(null);
@@ -1282,6 +1294,33 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
         priority: opts.priority || "routine",
         sampleType: opts.sampleType || undefined,
       }));
+      if (form.get("walkIn") === "on") {
+        const res = await fetch("/api/lab-requests/walk-in", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: form.get("wiFirstName"),
+            lastName: form.get("wiLastName"),
+            phone: (form.get("wiPhone") as string) || undefined,
+            email: (form.get("wiEmail") as string) || undefined,
+            referrer: (form.get("wiReferrer") as string) || undefined,
+            doctorId: (form.get("doctorId") as string) || undefined,
+            notes: (form.get("notes") as string) || undefined,
+            assignedToIds: assigned.size ? Array.from(assigned) : undefined,
+            paymentMethod: form.get("payMethod"),
+            transactionRef: (form.get("transactionRef") as string) || undefined,
+            items,
+          }),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to create walk-in lab request");
+        if (body.data?.authorization_url) {
+          window.open(body.data.authorization_url, "_blank", "noopener,noreferrer");
+        }
+        if (body.data?.receipt_url) setCreatedReceipt(body.data.receipt_url as string);
+        else onCreated();
+        return;
+      }
       const res = await fetch("/api/lab-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1314,42 +1353,85 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
           handleSubmit(new FormData(e.currentTarget));
         }}
       >
-        <div>
-          <label className={labelCls} htmlFor="lr-patient">Patient</label>
-          <select id="lr-patient" name="patientId" required className={inputCls}>
-            <option value="">Select patient…</option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>{p.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className={labelCls} htmlFor="lr-doctor">Doctor (optional)</label>
-          <select id="lr-doctor" name="doctorId" className={inputCls}>
-            <option value="">No doctor assigned</option>
-            {doctors.map((d) => (
-              <option key={d.id} value={d.id}>{d.label}</option>
-            ))}
-          </select>
-        </div>
-
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
             <input
               type="checkbox"
-              name="isExternal"
-              checked={isExternal}
+              name="walkIn"
+              checked={isWalkIn}
               onChange={(e) => {
-                setIsExternal(e.target.checked);
-                if (e.target.checked) setAssigned(new Set());
+                setIsWalkIn(e.target.checked);
+                if (e.target.checked) setIsExternal(false);
               }}
               className="h-4 w-4 accent-[var(--color-primary)]"
             />
-            Send to an external lab
+            Walk-in / external customer (no patient record)
           </label>
-          <input name="externalLabId" className={`${inputCls} !py-2 max-w-xs flex-1 text-sm`} placeholder="External lab ID (optional)" />
         </div>
+
+        {isWalkIn ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label className={labelCls} htmlFor="wi-first">First name</label>
+              <input id="wi-first" name="wiFirstName" required className={inputCls} placeholder="Customer first name" />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="wi-last">Last name</label>
+              <input id="wi-last" name="wiLastName" required className={inputCls} placeholder="Customer last name" />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="wi-phone">Phone</label>
+              <input id="wi-phone" name="wiPhone" className={inputCls} placeholder="e.g. 0803 000 0000" />
+            </div>
+            <div>
+              <label className={labelCls} htmlFor="wi-email">Email {payMethod === "paystack" && <span className="text-[var(--color-muted-fg)]">(required for Paystack)</span>}</label>
+              <input id="wi-email" name="wiEmail" type="email" required={payMethod === "paystack"} className={inputCls} placeholder="customer@example.com" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className={labelCls} htmlFor="wi-referrer">Referring clinic / source (optional)</label>
+              <input id="wi-referrer" name="wiReferrer" className={inputCls} placeholder="e.g. Harmony Clinic, Ikeja" />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div>
+              <label className={labelCls} htmlFor="lr-patient">Patient</label>
+              <select id="lr-patient" name="patientId" required className={inputCls}>
+                <option value="">Select patient…</option>
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelCls} htmlFor="lr-doctor">Doctor (optional)</label>
+              <select id="lr-doctor" name="doctorId" className={inputCls}>
+                <option value="">No doctor assigned</option>
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>{d.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
+                <input
+                  type="checkbox"
+                  name="isExternal"
+                  checked={isExternal}
+                  onChange={(e) => {
+                    setIsExternal(e.target.checked);
+                    if (e.target.checked) setAssigned(new Set());
+                  }}
+                  className="h-4 w-4 accent-[var(--color-primary)]"
+                />
+                Send to an external lab
+              </label>
+              <input name="externalLabId" className={`${inputCls} !py-2 max-w-xs flex-1 text-sm`} placeholder="External lab ID (optional)" />
+            </div>
+          </>
+        )}
 
         {!isExternal && (
           <div>
@@ -1463,6 +1545,39 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
           )}
         </div>
 
+        {isWalkIn && (
+          <div className="rounded-xl border border-[var(--color-border)] p-3">
+            <p className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">
+              Instant payment — ₦{selectedTotal.toLocaleString()}
+              <span className="ml-1 text-xs font-normal text-[var(--color-muted-fg)]">
+                (walk-in customers pay up-front; credit is not available)
+              </span>
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              {[
+                { value: "cash", label: "Cash" },
+                { value: "bank_transfer", label: "Bank transfer" },
+                { value: "paystack", label: "Paystack (card)" },
+              ].map((m) => (
+                <label key={m.value} className="flex cursor-pointer items-center gap-1.5 text-sm font-medium text-[var(--color-foreground)]">
+                  <input
+                    type="radio"
+                    name="payMethod"
+                    value={m.value}
+                    checked={payMethod === m.value}
+                    onChange={() => setPayMethod(m.value)}
+                    className="h-4 w-4 accent-[var(--color-primary)]"
+                  />
+                  {m.label}
+                </label>
+              ))}
+            </div>
+            {payMethod === "bank_transfer" && (
+              <input name="transactionRef" className={`${inputCls} !py-2 mt-2 max-w-sm text-sm`} placeholder="Transfer reference (optional)" />
+            )}
+          </div>
+        )}
+
         <div>
           <label className={labelCls} htmlFor="lr-notes">Notes (optional)</label>
           <textarea id="lr-notes" name="notes" rows={2} className={inputCls} />
@@ -1473,13 +1588,31 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
             {error}
           </p>
         )}
+        {createdReceipt && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm">
+            <p className="font-medium text-emerald-700">Payment received — lab request created.</p>
+            <a href={createdReceipt} className="mt-1 inline-block text-sm font-semibold text-emerald-700 underline">
+              Open payment receipt
+            </a>
+          </div>
+        )}
         <div className="flex gap-3 pt-1">
           <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">
-            Cancel
+            {createdReceipt ? "Done" : "Cancel"}
           </button>
-          <button type="submit" disabled={busy || Object.keys(selected).length === 0} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
-            {busy ? "Creating…" : "Create lab request"}
-          </button>
+          {!createdReceipt && (
+            <button
+              type="submit"
+              disabled={busy || Object.keys(selected).length === 0}
+              className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+            >
+              {busy
+                ? "Creating…"
+                : isWalkIn
+                  ? `Collect ₦${selectedTotal.toLocaleString()} & create request`
+                  : "Create lab request"}
+            </button>
+          )}
         </div>
       </form>
     </ModalShell>
@@ -1552,7 +1685,7 @@ function RequestDetailModal({
   }
 
   async function generateInvoice() {
-    if (!confirm("Generate an invoice from this lab request using the catalogue service prices?")) return;
+    if (!confirm("Raise an invoice from this lab request now? It will appear in the patient's portal as an outstanding payment until paid (bank transfer, cash, Paystack, or credit).")) return;
     setBilling(true);
     setError(null);
     try {
@@ -1619,6 +1752,11 @@ function RequestDetailModal({
               External{request.external_lab_id ? ` · ${request.external_lab_id}` : ""}
             </span>
           )}
+          {request.patients?.is_walk_in && (
+            <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+              Walk-in{request.referrer ? ` · ${request.referrer}` : ""}
+            </span>
+          )}
           <span className="text-sm text-[var(--color-muted-fg)]">
             Requested {new Date(request.requested_at).toLocaleString()}
             {request.users ? ` · by ${request.users.full_name}` : ""}
@@ -1653,7 +1791,22 @@ function RequestDetailModal({
               <FileDown size={14} aria-hidden="true" /> {downloading ? "Preparing…" : "Download PDF"}
             </button>
           )}
-          {request.status === "completed" &&
+          {request.payments ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700" title="Walk-in payment received up-front">
+              <ReceiptText size={13} aria-hidden="true" />
+              Paid · {request.payments.reference ?? "—"} · {request.payments.payment_method?.replace(/_/g, " ") ?? "—"} · ₦
+              {Number(request.payments.amount).toLocaleString()}
+            </span>
+          ) : null}
+          {request.payments && (
+            <Link
+              href={`/app/lab/receipt/${request.id}`}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+            >
+              <ReceiptText size={13} aria-hidden="true" /> Receipt
+            </Link>
+          )}
+          {!request.payments &&
             (request.invoices ? (
               <span
                 className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700"
@@ -1663,7 +1816,7 @@ function RequestDetailModal({
                 {request.invoices.invoice_number} · {request.invoices.status.replace(/_/g, " ")} · ₦
                 {Number(request.invoices.total_amount).toLocaleString()}
               </span>
-            ) : canBill ? (
+            ) : canBill && request.status !== "cancelled" ? (
               <button
                 type="button"
                 onClick={generateInvoice}
@@ -1675,7 +1828,7 @@ function RequestDetailModal({
                 ) : (
                   <ReceiptText size={14} aria-hidden="true" />
                 )}
-                {billing ? "Generating…" : "Generate invoice"}
+                {billing ? "Generating…" : "Generate invoice & bill"}
               </button>
             ) : null)}
           {canWork && canEnterResults && request.status === "sample_collected" && (
