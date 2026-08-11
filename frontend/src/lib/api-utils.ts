@@ -144,11 +144,12 @@ export interface PostBankLedgerInput {
   accountId?: string | null;
   direction: "in" | "out";
   amount: number;
-  source: "payment" | "other_income" | "expense" | "adjustment";
+  source: "payment" | "other_income" | "expense" | "adjustment" | "supplier_payment";
   sourceRef?: string | null;
   paymentId?: string | null;
   incomeId?: string | null;
   expenseId?: string | null;
+  supplierPaymentId?: string | null;
   method?: string | null;
   reference?: string | null;
   notes?: string | null;
@@ -176,6 +177,7 @@ export async function postBankLedger(
     payment_id: input.paymentId ?? null,
     income_id: input.incomeId ?? null,
     expense_id: input.expenseId ?? null,
+    supplier_payment_id: input.supplierPaymentId ?? null,
     method: input.method ?? null,
     reference: input.reference ?? null,
     notes: input.notes ?? null,

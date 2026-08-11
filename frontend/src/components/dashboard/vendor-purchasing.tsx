@@ -1,0 +1,1308 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle, ArrowDownToLine, Banknote, Building2, CheckCircle2, CreditCard,
+  Download, FileText, Landmark, Loader2, Package, Plus, ReceiptText, Search, Send, Wallet, X,
+} from "lucide-react";
+import { ngn, formatDate } from "@/lib/auth";
+import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import ImportExportMenu from "@/components/ui/import-export-menu";
+import type { ImportResult } from "@/components/ui/csv-import-modal";
+
+// ============================================================================
+// Vendor Purchasing — the money side of Suppliers & Procurement.
+//   BalancesTab      bought vs paid vs outstanding per supplier
+//   PurchaseOrdersTab  PO lifecycle: draft → sent → approved → received
+//   PaymentsTab      instant bank transfer / cash / POS or credit-on-account
+// ============================================================================
+
+const btnPrimary =
+  "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
+const btnGhost =
+  "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
+const btnDanger =
+  "focus-ring rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 transition-colors duration-200 hover:bg-rose-50 disabled:opacity-60";
+const inputCls =
+  "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
+const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
+
+const PO_STATUS_STYLES: Record<string, string> = {
+  draft: "bg-amber-100 text-amber-700",
+  sent: "bg-sky-100 text-sky-700",
+  approved: "bg-indigo-100 text-indigo-700",
+  received: "bg-emerald-100 text-emerald-700",
+  cancelled: "bg-slate-100 text-slate-500",
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  bank_transfer: "Bank transfer",
+  cash: "Cash",
+  pos: "POS",
+  credit_note: "Credit note",
+};
+
+const METHOD_ICONS: Record<string, typeof Landmark> = {
+  bank_transfer: Landmark,
+  cash: Wallet,
+  pos: CreditCard,
+  credit_note: ReceiptText,
+};
+
+// ---------------------------------------------------------------------------
+// BALANCES
+// ---------------------------------------------------------------------------
+
+interface SupplierBalance {
+  supplierId: string;
+  supplierName: string;
+  code: string | null;
+  totalOrdered: number;
+  totalBought: number;
+  totalPaid: number;
+  outstanding: number;
+  poCount: number;
+  paymentCount: number;
+  lastBoughtAt: string | null;
+  lastPaidAt: string | null;
+}
+
+export function BalancesTab() {
+  const [rows, setRows] = useState<SupplierBalance[]>([]);
+  const [totals, setTotals] = useState({ total_bought: 0, total_paid: 0, total_outstanding: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/pharmacy/procurement/summary", { cache: "no-store" });
+      const body = await res.json();
+      if (res.ok) {
+        setRows(body.suppliers ?? []);
+        setTotals(body.totals ?? {});
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const exportRows = () =>
+    rows.map((r) => [
+      r.supplierName,
+      r.code ?? "",
+      r.totalOrdered,
+      r.totalBought,
+      r.totalPaid,
+      r.outstanding,
+      r.poCount,
+      r.paymentCount,
+    ]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+          <p className="text-xs font-medium text-[var(--color-muted-fg)]">Total bought from suppliers</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--color-foreground)]">{ngn(totals.total_bought)}</p>
+        </div>
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+          <p className="text-xs font-medium text-[var(--color-muted-fg)]">Total paid</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-600">{ngn(totals.total_paid)}</p>
+        </div>
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+          <p className="text-xs font-medium text-[var(--color-muted-fg)]">Outstanding owing</p>
+          <p className={`mt-1 text-2xl font-bold ${totals.total_outstanding > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+            {ngn(totals.total_outstanding)}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-[var(--color-foreground)]">Supplier balances</h3>
+        <ImportExportMenu
+          entityLabel="supplier balances"
+          exportCsv={() => {
+            if (rows.length === 0) { alert("Nothing to export yet."); return; }
+            downloadCsv(`supplier-balances-${dateStamp()}.csv`,
+              ["Supplier", "Code", "Total ordered", "Total bought", "Total paid", "Outstanding", "POs", "Payments"],
+              exportRows());
+          }}
+          exportPdf={() => {
+            if (rows.length === 0) { alert("Nothing to export yet."); return; }
+            printTable("Supplier Balances",
+              ["Supplier", "Code", "Total ordered", "Total bought", "Total paid", "Outstanding", "POs", "Payments"],
+              exportRows());
+          }}
+          importTitle="Import supplier balances"
+          importDescription="Balances are calculated from purchase orders, goods received notes and payments — they cannot be imported."
+          importColumns={["supplier"]}
+          templateFilename="supplier-balances-template.csv"
+          onImport={async () => ({ created: 0, failed: 0, errors: ["Balances are calculated from purchase orders and payments — import is not available."] })}
+        />
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 size={22} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
+          <Building2 size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No supplier activity yet.</p>
+          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+            Balances appear once goods are received from suppliers or payments are recorded.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)]/50 text-[10px] uppercase tracking-wider text-[var(--color-muted-fg)]">
+                <th className="px-4 py-2.5 font-semibold">Supplier</th>
+                <th className="px-4 py-2.5 font-semibold">Total bought</th>
+                <th className="px-4 py-2.5 font-semibold">Total paid</th>
+                <th className="px-4 py-2.5 font-semibold">Outstanding</th>
+                <th className="px-4 py-2.5 font-semibold">POs</th>
+                <th className="px-4 py-2.5 font-semibold">Payments</th>
+                <th className="px-4 py-2.5 font-semibold">Last activity</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.supplierId} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-muted)]/30">
+                  <td className="px-4 py-3 font-medium text-[var(--color-foreground)]">{r.supplierName}</td>
+                  <td className="px-4 py-3">{ngn(r.totalBought)}</td>
+                  <td className="px-4 py-3 text-emerald-700">{ngn(r.totalPaid)}</td>
+                  <td className={`px-4 py-3 font-semibold ${r.outstanding > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                    {ngn(r.outstanding)}{r.outstanding < 0 ? " (credit)" : ""}
+                  </td>
+                  <td className="px-4 py-3">{r.poCount}</td>
+                  <td className="px-4 py-3">{r.paymentCount}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--color-muted-fg)]">
+                    {r.lastBoughtAt ? `Bought ${formatDate(r.lastBoughtAt)}` : ""}
+                    {r.lastPaidAt ? `${r.lastBoughtAt ? " · " : ""}Paid ${formatDate(r.lastPaidAt)}` : ""}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PURCHASE ORDERS
+// ---------------------------------------------------------------------------
+
+interface PoItem {
+  id: string;
+  drugId: string;
+  quantityOrdered: number;
+  quantityReceived: number;
+  unitCost: number;
+  receivedCost: number;
+}
+
+interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  supplierId: string;
+  supplierName: string;
+  status: string;
+  totalCost: number;
+  notes: string | null;
+  expectedBy: string | null;
+  approvedAt: string | null;
+  receivedAt: string | null;
+  createdAt: string;
+  items: PoItem[];
+}
+
+interface SupplierOption { id: string; name: string }
+
+interface OfferOption {
+  drugId: string;
+  drugName: string;
+  unit: string | null;
+  unitCost: number;
+  minOrderQuantity: number;
+  isPreferred: boolean;
+}
+
+interface OrderLine { key: number; drugId: string; quantity: string; unitCost: string }
+
+interface PoDetailItem {
+  id: string;
+  drugName: string;
+  unit: string | null;
+  quantityOrdered: number;
+  quantityReceived: number;
+  unitCost: number;
+  receivedCost: number;
+}
+
+interface GrnSummary {
+  grnNumber: string;
+  receivedAt: string;
+  items: Array<{ drugName: string; quantityReceived: number; unitCost: number; batchNumber: string; expiryDate: string | null }>;
+}
+
+interface PoDetail {
+  id: string;
+  poNumber: string;
+  supplier: { name: string } | null;
+  status: string;
+  totalCost: number;
+  notes: string | null;
+  expectedBy: string | null;
+  items: PoDetailItem[];
+  grns: GrnSummary[];
+}
+
+const blockedImport = (msg: string) => async (): Promise<ImportResult> => ({
+  created: 0,
+  failed: 0,
+  errors: [msg],
+});
+
+export function PurchaseOrdersTab() {
+  const [rows, setRows] = useState<PurchaseOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [receivePo, setReceivePo] = useState<PurchaseOrder | null>(null);
+  const [detailPo, setDetailPo] = useState<PoDetail | null>(null);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ pageSize: "100" });
+      if (statusFilter) params.set("status", statusFilter);
+      const res = await fetch(`/api/pharmacy/procurement/purchase-orders?${params.toString()}`, { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to load purchase orders");
+      setRows((body.data ?? []) as PurchaseOrder[]);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load purchase orders");
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const loadSuppliers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pharmacy/admin/suppliers", { cache: "no-store" });
+      const body = await res.json();
+      setSuppliers(((body.data ?? []) as Array<{ id: string; name: string }>).map((s) => ({ id: s.id, name: s.name })));
+    } catch { /* non-critical */ }
+  }, []);
+
+  useEffect(() => { void loadSuppliers(); }, [loadSuppliers]);
+
+  function showToast(type: "success" | "error", message: string) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  async function transition(po: PurchaseOrder, status: string) {
+    if (status === "cancelled" && !confirm(`Cancel ${po.poNumber}?`)) return;
+    setBusyId(po.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/pharmacy/procurement/purchase-orders/${po.id}/transition`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update purchase order");
+      await load();
+      showToast("success", `${po.poNumber} marked ${status}`);
+    } catch (e) {
+      showToast("error", e instanceof Error ? e.message : "Failed to update purchase order");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function openDetail(po: PurchaseOrder) {
+    setError(null);
+    try {
+      const res = await fetch(`/api/pharmacy/procurement/purchase-orders/${po.id}`, { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to load purchase order");
+      setDetailPo(body.data ?? null);
+    } catch (e) {
+      showToast("error", e instanceof Error ? e.message : "Failed to load purchase order");
+    }
+  }
+
+  const exportRows = () =>
+    rows.map((po) => [
+      po.poNumber,
+      po.supplierName,
+      po.status,
+      po.totalCost,
+      po.items.reduce((a, i) => a + i.quantityOrdered, 0),
+      po.items.reduce((a, i) => a + i.quantityReceived, 0),
+      po.expectedBy ?? "",
+      po.createdAt.slice(0, 10),
+    ]);
+
+  const remaining = (po: PurchaseOrder) =>
+    po.items.some((i) => i.quantityReceived < i.quantityOrdered);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-sm outline-none"
+            aria-label="Filter by status"
+          >
+            <option value="">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="sent">Sent</option>
+            <option value="approved">Approved</option>
+            <option value="received">Received</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <ImportExportMenu
+            entityLabel="purchase orders"
+            exportCsv={() => {
+              if (rows.length === 0) { alert("Nothing to export yet."); return; }
+              downloadCsv(`purchase-orders-${dateStamp()}.csv`,
+                ["PO number", "Supplier", "Status", "Total cost", "Units ordered", "Units received", "Expected by", "Created"],
+                exportRows());
+            }}
+            exportPdf={() => {
+              if (rows.length === 0) { alert("Nothing to export yet."); return; }
+              printTable("Purchase Orders",
+                ["PO number", "Supplier", "Status", "Total cost", "Units ordered", "Units received", "Expected by", "Created"],
+                exportRows());
+            }}
+            importTitle="Import purchase orders"
+            importDescription="Purchase orders are created through the New order flow so stock and supplier costs stay in sync."
+            importColumns={["po_number"]}
+            templateFilename="purchase-orders-template.csv"
+            onImport={blockedImport("Purchase orders must be created through the New order flow — import is not available.")}
+          />
+        </div>
+        <button type="button" onClick={() => setCreateOpen(true)} className={btnPrimary}>
+          <Plus size={14} aria-hidden="true" /> New order
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          {error}
+        </p>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 size={22} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
+          <Package size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No purchase orders found.</p>
+          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Order drugs from your suppliers — choose instant payment or credit.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((po) => {
+            const busy = busyId === po.id;
+            const statusStyle = PO_STATUS_STYLES[po.status] ?? "bg-slate-100 text-slate-600";
+            return (
+              <div key={po.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-[var(--color-foreground)]">{po.poNumber}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusStyle}`}>
+                        {po.status}
+                      </span>
+                      {remaining(po) && po.status === "approved" && (
+                        <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          <AlertTriangle size={11} aria-hidden="true" /> Partially received
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-muted-fg)]">
+                      <span className="flex items-center gap-1"><Building2 size={13} aria-hidden="true" /> {po.supplierName}</span>
+                      <span>{po.items.length} drug line(s) · {po.items.reduce((a, i) => a + i.quantityOrdered, 0)} units</span>
+                      {po.expectedBy && <span>Expected {formatDate(po.expectedBy)}</span>}
+                      <span className="font-semibold text-[var(--color-foreground)]">{ngn(po.totalCost)}</span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    {po.status === "draft" && (
+                      <>
+                        <button type="button" disabled={busy} onClick={() => transition(po, "sent")} className={btnGhost}>
+                          <Send size={13} aria-hidden="true" /> Send to supplier
+                        </button>
+                        <button type="button" disabled={busy} onClick={() => transition(po, "cancelled")} className={btnDanger}>Cancel</button>
+                      </>
+                    )}
+                    {po.status === "sent" && (
+                      <>
+                        <button type="button" disabled={busy} onClick={() => transition(po, "approved")} className={btnPrimary}>
+                          <CheckCircle2 size={13} aria-hidden="true" /> Approve
+                        </button>
+                        <button type="button" disabled={busy} onClick={() => transition(po, "cancelled")} className={btnDanger}>Cancel</button>
+                      </>
+                    )}
+                    {po.status === "approved" && (
+                      <button type="button" disabled={busy} onClick={() => setReceivePo(po)} className={btnPrimary}>
+                        <ArrowDownToLine size={13} aria-hidden="true" /> Receive goods
+                      </button>
+                    )}
+                    <button type="button" disabled={busy} onClick={() => openDetail(po)} className={btnGhost}>
+                      <FileText size={13} aria-hidden="true" /> View
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {createOpen && (
+        <CreateOrderModal
+          suppliers={suppliers}
+          onClose={() => setCreateOpen(false)}
+          onCreated={async () => { setCreateOpen(false); await load(); showToast("success", "Purchase order created (draft)"); }}
+        />
+      )}
+
+      {receivePo && (
+        <ReceiveGoodsModal
+          po={receivePo}
+          onClose={() => setReceivePo(null)}
+          onReceived={async () => { setReceivePo(null); await load(); showToast("success", "Goods received — stock updated"); }}
+        />
+      )}
+
+      {detailPo && <PoDetailModal detail={detailPo} onClose={() => setDetailPo(null)} />}
+
+      {toast && (
+        <div
+          role="status"
+          className={`fixed bottom-6 right-6 z-50 rounded-xl border px-4 py-3 text-sm font-medium shadow-2xl ${
+            toast.type === "success" ? "border-emerald-500/30 bg-emerald-50 text-emerald-700" : "border-rose-500/30 bg-rose-50 text-rose-700"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CreateOrderModal({
+  suppliers,
+  onClose,
+  onCreated,
+}: {
+  suppliers: SupplierOption[];
+  onClose: () => void;
+  onCreated: () => Promise<void>;
+}) {
+  const [supplierId, setSupplierId] = useState("");
+  const [offers, setOffers] = useState<OfferOption[]>([]);
+  const [lines, setLines] = useState<OrderLine[]>([{ key: 1, drugId: "", quantity: "", unitCost: "" }]);
+  const [notes, setNotes] = useState("");
+  const [expectedBy, setExpectedBy] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const nextKey = useMemo(() => Math.max(0, ...lines.map((l) => l.key)) + 1, [lines]);
+
+  const loadOffers = useCallback(async (sid: string) => {
+    if (!sid) { setOffers([]); return; }
+    try {
+      const res = await fetch(`/api/pharmacy/procurement/supplier-offers?supplier_id=${sid}`, { cache: "no-store" });
+      const body = await res.json();
+      setOffers(res.ok ? (body.data ?? []) : []);
+    } catch {
+      setOffers([]);
+    }
+  }, []);
+
+  function pickSupplier(sid: string) {
+    setSupplierId(sid);
+    setLines((prev) => prev.map((l) => ({ ...l, drugId: "", unitCost: "" })));
+    void loadOffers(sid);
+  }
+
+  function pickDrug(line: OrderLine, drugId: string) {
+    const offer = offers.find((o) => o.drugId === drugId);
+    setLines((prev) =>
+      prev.map((l) =>
+        l.key === line.key ? { ...l, drugId, unitCost: offer ? String(offer.unitCost) : l.unitCost } : l
+      )
+    );
+  }
+
+  const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unitCost) || 0), 0);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const items = lines
+        .filter((l) => l.drugId && Number(l.quantity) > 0)
+        .map((l) => ({
+          drugId: l.drugId,
+          quantity: Number(l.quantity),
+          unitCost: Number(l.unitCost) || 0,
+        }));
+      if (items.length === 0) throw new Error("Add at least one drug line");
+      const res = await fetch("/api/pharmacy/procurement/purchase-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId, items, notes: notes || undefined, expectedBy: expectedBy || undefined }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to create purchase order");
+      await onCreated();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create purchase order");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalShell title="New purchase order" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <div>
+          <label className={labelCls} htmlFor="po-supplier">Supplier</label>
+          <select id="po-supplier" required value={supplierId} onChange={(e) => pickSupplier(e.target.value)} className={inputCls}>
+            <option value="">Select supplier…</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          {supplierId && offers.length === 0 && (
+            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+              No pricing offers on file for this supplier — enter unit costs manually.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <p className={labelCls}>Drug lines</p>
+          {lines.map((line) => (
+            <div key={line.key} className="grid grid-cols-12 gap-2">
+              <select
+                className={`${inputCls} col-span-6`}
+                value={line.drugId}
+                onChange={(e) => pickDrug(line, e.target.value)}
+                aria-label="Drug"
+              >
+                <option value="">Select drug…</option>
+                {offers.map((o) => (
+                  <option key={o.drugId} value={o.drugId}>
+                    {o.drugName}{o.unit ? ` (${o.unit})` : ""}{o.isPreferred ? " ★" : ""}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number" min={1} step={1} placeholder="Qty"
+                value={line.quantity}
+                onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, quantity: e.target.value } : l))}
+                className={`${inputCls} col-span-2`}
+                aria-label="Quantity"
+              />
+              <input
+                type="number" min={0} step="0.01" placeholder="Unit cost"
+                value={line.unitCost}
+                onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, unitCost: e.target.value } : l))}
+                className={`${inputCls} col-span-3`}
+                aria-label="Unit cost"
+              />
+              <button
+                type="button"
+                onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
+                disabled={lines.length === 1}
+                className="focus-ring col-span-1 rounded-lg p-2 text-rose-500 hover:bg-rose-50 disabled:opacity-40"
+                aria-label="Remove line"
+              >
+                <X size={15} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setLines((prev) => [...prev, { key: nextKey, drugId: "", quantity: "", unitCost: "" }])}
+            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
+          >
+            <Plus size={13} aria-hidden="true" /> Add line
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls} htmlFor="po-expected">Expected by (optional)</label>
+            <input id="po-expected" type="date" value={expectedBy} onChange={(e) => setExpectedBy(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Order total</label>
+            <p className="rounded-lg bg-[var(--color-muted)]/60 px-3 py-2 text-base font-bold text-[var(--color-foreground)]">
+              {ngn(total)}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label className={labelCls} htmlFor="po-notes">Notes</label>
+          <textarea id="po-notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder="Delivery instructions, payment terms…" />
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="submit" disabled={busy || !supplierId} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+            {busy ? "Creating…" : "Create order (draft)"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+function ReceiveGoodsModal({
+  po,
+  onClose,
+  onReceived,
+}: {
+  po: PurchaseOrder;
+  onClose: () => void;
+  onReceived: () => Promise<void>;
+}) {
+  const [lines, setLines] = useState(
+    po.items.map((i) => ({
+      key: i.id,
+      poItemId: i.id,
+      quantityReceived: String(Math.max(0, i.quantityOrdered - i.quantityReceived)),
+      batchNumber: "",
+      expiryDate: "",
+      actualCost: String(i.unitCost),
+      drugName: i.drugId,
+    }))
+  );
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const items = lines
+        .filter((l) => Number(l.quantityReceived) > 0)
+        .map((l) => ({
+          poItemId: l.poItemId,
+          quantityReceived: Number(l.quantityReceived),
+          batchNumber: l.batchNumber,
+          expiryDate: l.expiryDate || undefined,
+          actualCost: l.actualCost ? Number(l.actualCost) : undefined,
+        }));
+      if (items.length === 0) throw new Error("At least one line must have a received quantity");
+      const res = await fetch(`/api/pharmacy/procurement/purchase-orders/${po.id}/receive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items, notes: notes || undefined }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to receive goods");
+      await onReceived();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to receive goods");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalShell title={`Receive goods — ${po.poNumber}`} onClose={onClose}>
+      <p className="mb-4 text-xs text-[var(--color-muted-fg)]">
+        Receiving creates a goods received note (GRN), adds stock batches and updates inventory.
+      </p>
+      <form onSubmit={submit} className="space-y-4">
+        {lines.map((line) => {
+          const item = po.items.find((i) => i.id === line.poItemId);
+          const shortfall = (item?.quantityOrdered ?? 0) - (item?.quantityReceived ?? 0);
+          return (
+            <div key={line.key} className="rounded-lg border border-[var(--color-border)] p-3">
+              <p className="text-sm font-medium text-[var(--color-foreground)]">
+                Line · up to {shortfall} remaining
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div>
+                  <label className={labelCls}>Qty received</label>
+                  <input type="number" min={0} max={shortfall} step={1} required value={line.quantityReceived}
+                    onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, quantityReceived: e.target.value } : l))}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Batch number</label>
+                  <input type="text" required value={line.batchNumber} placeholder="e.g. LOT-2026-01"
+                    onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, batchNumber: e.target.value } : l))}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Expiry date</label>
+                  <input type="date" value={line.expiryDate}
+                    onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, expiryDate: e.target.value } : l))}
+                    className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Actual unit cost</label>
+                  <input type="number" min={0} step="0.01" value={line.actualCost}
+                    onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, actualCost: e.target.value } : l))}
+                    className={inputCls} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <div>
+          <label className={labelCls} htmlFor="grn-notes">Notes</label>
+          <textarea id="grn-notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder="Delivery note reference…" />
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="submit" disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+            {busy ? "Receiving…" : "Receive goods"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+function PoDetailModal({ detail, onClose }: { detail: PoDetail; onClose: () => void }) {
+  return (
+    <ModalShell title={`${detail.poNumber} — ${detail.supplier?.name ?? "Supplier"}`} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--color-muted-fg)]">
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${PO_STATUS_STYLES[detail.status] ?? ""}`}>
+            {detail.status}
+          </span>
+          <span>Total: <strong className="text-[var(--color-foreground)]">{ngn(detail.totalCost)}</strong></span>
+          {detail.expectedBy && <span>Expected {formatDate(detail.expectedBy)}</span>}
+        </div>
+
+        <div>
+          <p className={labelCls}>Items</p>
+          <div className="overflow-x-auto rounded-lg border border-[var(--color-border)]">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)]/50 uppercase tracking-wider text-[var(--color-muted-fg)]">
+                  <th className="px-3 py-2">Drug</th>
+                  <th className="px-3 py-2">Ordered</th>
+                  <th className="px-3 py-2">Received</th>
+                  <th className="px-3 py-2">Unit cost</th>
+                  <th className="px-3 py-2">Line total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detail.items.map((i) => (
+                  <tr key={i.id} className="border-b border-[var(--color-border)] last:border-0">
+                    <td className="px-3 py-2 font-medium text-[var(--color-foreground)]">{i.drugName}</td>
+                    <td className="px-3 py-2">{i.quantityOrdered}</td>
+                    <td className="px-3 py-2">{i.quantityReceived}</td>
+                    <td className="px-3 py-2">{ngn(i.unitCost)}</td>
+                    <td className="px-3 py-2">{ngn(i.quantityReceived * i.unitCost)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {detail.grns.length > 0 && (
+          <div>
+            <p className={labelCls}>Goods received ({detail.grns.length})</p>
+            <div className="space-y-2">
+              {detail.grns.map((g) => (
+                <div key={g.grnNumber} className="rounded-lg border border-[var(--color-border)] p-3">
+                  <p className="text-xs font-semibold text-[var(--color-foreground)]">
+                    {g.grnNumber} · {formatDate(g.receivedAt)}
+                  </p>
+                  <ul className="mt-1 space-y-0.5 text-xs text-[var(--color-muted-fg)]">
+                    {g.items.map((gi, idx) => (
+                      <li key={idx}>
+                        {gi.drugName} × {gi.quantityReceived} @ {ngn(gi.unitCost)} — batch {gi.batchNumber}
+                        {gi.expiryDate ? ` (exp ${gi.expiryDate})` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </ModalShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PAYMENTS
+// ---------------------------------------------------------------------------
+
+interface PaymentRow {
+  id: string;
+  supplierId: string;
+  supplierName: string;
+  poId: string | null;
+  poNumber: string | null;
+  amount: number;
+  method: string;
+  bankLabel: string | null;
+  reference: string | null;
+  notes: string | null;
+  paidAt: string;
+  createdByName: string | null;
+}
+
+export function PaymentsTab() {
+  const [rows, setRows] = useState<PaymentRow[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const [balances, setBalances] = useState<SupplierBalance[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [supplierFilter, setSupplierFilter] = useState("");
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ pageSize: "100" });
+      if (supplierFilter) params.set("supplier_id", supplierFilter);
+      const res = await fetch(`/api/pharmacy/procurement/supplier-payments?${params.toString()}`, { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to load payments");
+      setRows((body.data ?? []) as PaymentRow[]);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load payments");
+    } finally {
+      setLoading(false);
+    }
+  }, [supplierFilter]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const loadOptions = useCallback(async () => {
+    try {
+      const [suppliersRes, summaryRes] = await Promise.all([
+        fetch("/api/pharmacy/admin/suppliers", { cache: "no-store" }),
+        fetch("/api/pharmacy/procurement/summary", { cache: "no-store" }),
+      ]);
+      const suppliersBody = await suppliersRes.json();
+      const summaryBody = await summaryRes.json();
+      setSuppliers(((suppliersBody.data ?? []) as Array<{ id: string; name: string }>).map((s) => ({ id: s.id, name: s.name })));
+      setBalances((summaryBody.suppliers ?? []) as SupplierBalance[]);
+    } catch { /* non-critical */ }
+  }, []);
+
+  useEffect(() => { void loadOptions(); }, [loadOptions]);
+
+  function showToast(type: "success" | "error", message: string) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  }
+
+  const outstandingFor = (supplierId: string) => {
+    const b = balances.find((x) => x.supplierId === supplierId);
+    return b ? b.outstanding : null;
+  };
+
+  const exportRows = () =>
+    rows.map((p) => [
+      p.paidAt,
+      p.supplierName,
+      p.poNumber ?? "",
+      METHOD_LABELS[p.method] ?? p.method,
+      p.amount,
+      p.bankLabel ?? "",
+      p.reference ?? "",
+      p.createdByName ?? "",
+    ]);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={supplierFilter}
+            onChange={(e) => setSupplierFilter(e.target.value)}
+            className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-sm outline-none"
+            aria-label="Filter by supplier"
+          >
+            <option value="">All suppliers</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <ImportExportMenu
+            entityLabel="supplier payments"
+            exportCsv={() => {
+              if (rows.length === 0) { alert("Nothing to export yet."); return; }
+              downloadCsv(`supplier-payments-${dateStamp()}.csv`,
+                ["Date", "Supplier", "PO", "Method", "Amount", "Bank account", "Reference", "Recorded by"],
+                exportRows());
+            }}
+            exportPdf={() => {
+              if (rows.length === 0) { alert("Nothing to export yet."); return; }
+              printTable("Supplier Payments",
+                ["Date", "Supplier", "PO", "Method", "Amount", "Bank account", "Reference", "Recorded by"],
+                exportRows());
+            }}
+            importTitle="Import supplier payments"
+            importDescription="Payments are recorded through the Record payment flow so the bank ledger stays in sync."
+            importColumns={["supplier"]}
+            templateFilename="supplier-payments-template.csv"
+            onImport={blockedImport("Payments must be recorded through the Record payment flow — import is not available.")}
+          />
+        </div>
+        <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
+          <Plus size={14} aria-hidden="true" /> Record payment
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          {error}
+        </p>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 size={22} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
+          <Wallet size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No payments recorded.</p>
+          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Pay by instant bank transfer, cash or POS — or buy on credit and settle later.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)]/50 text-[10px] uppercase tracking-wider text-[var(--color-muted-fg)]">
+                <th className="px-4 py-2.5 font-semibold">Date</th>
+                <th className="px-4 py-2.5 font-semibold">Supplier</th>
+                <th className="px-4 py-2.5 font-semibold">PO</th>
+                <th className="px-4 py-2.5 font-semibold">Method</th>
+                <th className="px-4 py-2.5 font-semibold">Amount</th>
+                <th className="px-4 py-2.5 font-semibold">Reference</th>
+                <th className="px-4 py-2.5 font-semibold">Recorded by</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p) => {
+                const Icon = METHOD_ICONS[p.method] ?? Wallet;
+                return (
+                  <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-muted)]/30">
+                    <td className="px-4 py-3 whitespace-nowrap">{p.paidAt}</td>
+                    <td className="px-4 py-3 font-medium text-[var(--color-foreground)]">{p.supplierName}</td>
+                    <td className="px-4 py-3 text-xs">{p.poNumber ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-muted)]/60 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-fg)]">
+                        <Icon size={11} aria-hidden="true" /> {METHOD_LABELS[p.method] ?? p.method}
+                      </span>
+                      {p.bankLabel && <span className="ml-1.5 block text-[10px] text-[var(--color-muted-fg)]">{p.bankLabel}</span>}
+                    </td>
+                    <td className={`px-4 py-3 font-semibold ${p.method === "credit_note" ? "text-sky-700" : "text-rose-600"}`}>
+                      {p.method === "credit_note" ? "−" : ""}{ngn(p.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-xs">{p.reference ?? "—"}</td>
+                    <td className="px-4 py-3 text-xs text-[var(--color-muted-fg)]">{p.createdByName ?? "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {open && (
+        <RecordPaymentModal
+          suppliers={suppliers}
+          outstandingFor={outstandingFor}
+          onClose={() => setOpen(false)}
+          onRecorded={async () => { setOpen(false); await Promise.all([load(), loadOptions()]); showToast("success", "Payment recorded"); }}
+        />
+      )}
+
+      {toast && (
+        <div
+          role="status"
+          className={`fixed bottom-6 right-6 z-50 rounded-xl border px-4 py-3 text-sm font-medium shadow-2xl ${
+            toast.type === "success" ? "border-emerald-500/30 bg-emerald-50 text-emerald-700" : "border-rose-500/30 bg-rose-50 text-rose-700"
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecordPaymentModal({
+  suppliers,
+  outstandingFor,
+  onClose,
+  onRecorded,
+}: {
+  suppliers: SupplierOption[];
+  outstandingFor: (supplierId: string) => number | null;
+  onClose: () => void;
+  onRecorded: () => Promise<void>;
+}) {
+  const [supplierId, setSupplierId] = useState("");
+  const [poId, setPoId] = useState("");
+  const [pos, setPos] = useState<Array<{ id: string; poNumber: string; status: string; totalCost: number }>>([]);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("bank_transfer");
+  const [bankAccountId, setBankAccountId] = useState("");
+  const [bankAccounts, setBankAccounts] = useState<Array<{ account_id: string | null; label: string; bank_name: string | null }>>([]);
+  const [reference, setReference] = useState("");
+  const [notes, setNotes] = useState("");
+  const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function pickSupplier(sid: string) {
+    setSupplierId(sid);
+    setPoId("");
+    try {
+      const res = await fetch(`/api/pharmacy/procurement/purchase-orders?pageSize=100&supplier_id=${sid}`, { cache: "no-store" });
+      const body = await res.json();
+      const all = ((body.data ?? []) as Array<{ id: string; poNumber: string; status: string; totalCost: number }>);
+      setPos(all.filter((p) => p.status === "sent" || p.status === "approved" || p.status === "received"));
+    } catch {
+      setPos([]);
+    }
+  }
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/banking", { cache: "no-store" });
+        const body = await res.json();
+        if (res.ok) {
+          setBankAccounts(((body.accounts ?? []) as Array<{ account_id: string | null; label: string; bank_name: string | null }>)
+            .filter((a) => a.bank_name));
+        }
+      } catch { /* non-critical */ }
+    })();
+  }, []);
+
+  const outstanding = supplierId ? outstandingFor(supplierId) : null;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const body: Record<string, unknown> = {
+        supplierId,
+        poId: poId || undefined,
+        amount: Number(amount),
+        method,
+        bankAccountId: bankAccountId || undefined,
+        reference: reference || undefined,
+        notes: notes || undefined,
+        paidAt: paidAt || undefined,
+      };
+      const res = await fetch("/api/pharmacy/procurement/supplier-payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const resBody = await res.json();
+      if (!res.ok) throw new Error(resBody.error ?? "Failed to record payment");
+      await onRecorded();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to record payment");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const showBankPicker = method === "bank_transfer" || method === "pos";
+
+  return (
+    <ModalShell title="Record supplier payment" onClose={onClose}>
+      <form onSubmit={submit} className="space-y-4">
+        <div>
+          <label className={labelCls} htmlFor="pay-supplier">Supplier</label>
+          <select id="pay-supplier" required value={supplierId} onChange={(e) => pickSupplier(e.target.value)} className={inputCls}>
+            <option value="">Select supplier…</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          {outstanding !== null && (
+            <p className={`mt-1 text-xs font-medium ${outstanding > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+              {outstanding > 0 ? `Owing: ${ngn(outstanding)}` : outstanding < 0 ? `In credit: ${ngn(-outstanding)}` : "Balance settled"}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className={labelCls} htmlFor="pay-po">Against order (optional)</label>
+          <select id="pay-po" value={poId} onChange={(e) => setPoId(e.target.value)} className={inputCls} disabled={!supplierId}>
+            <option value="">Supplier balance (no specific order)</option>
+            {pos.map((p) => (
+              <option key={p.id} value={p.id}>{p.poNumber} — {p.status} · {ngn(p.totalCost)}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls} htmlFor="pay-amount">Amount (₦)</label>
+            <input id="pay-amount" type="number" min={0.01} step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="pay-date">Payment date</label>
+            <input id="pay-date" type="date" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+
+        <div>
+          <span className={labelCls}>Method</span>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(["bank_transfer", "cash", "pos", "credit_note"] as const).map((m) => {
+              const Icon = METHOD_ICONS[m];
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMethod(m)}
+                  aria-pressed={method === m}
+                  className={`focus-ring flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-xs font-medium transition-colors duration-200 ${
+                    method === m
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]"
+                      : "border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]/50"
+                  }`}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  {METHOD_LABELS[m]}
+                </button>
+              );
+            })}
+          </div>
+          {method === "credit_note" && (
+            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+              A credit note reduces what you owe the supplier — no money leaves the hospital.
+            </p>
+          )}
+        </div>
+
+        {showBankPicker && (
+          <div>
+            <label className={labelCls} htmlFor="pay-bank">Bank account</label>
+            <select id="pay-bank" value={bankAccountId} onChange={(e) => setBankAccountId(e.target.value)} className={inputCls}>
+              <option value="">Default bank account</option>
+              {bankAccounts.map((a) => (
+                <option key={a.account_id} value={a.account_id ?? ""}>{a.label}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+              The payment posts to the Banking ledger as money leaving the hospital.
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelCls} htmlFor="pay-ref">Reference (optional)</label>
+            <input id="pay-ref" value={reference} onChange={(e) => setReference(e.target.value)} className={inputCls} placeholder="Teller / transfer ref…" />
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="pay-notes">Notes</label>
+            <input id="pay-notes" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder="Optional note" />
+          </div>
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="submit" disabled={busy || !supplierId} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+            {busy ? "Recording…" : "Record payment"}
+          </button>
+        </div>
+      </form>
+    </ModalShell>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SHARED
+// ---------------------------------------------------------------------------
+
+function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">{title}</h2>
+          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+        <div className="mt-5">{children}</div>
+      </div>
+    </div>
+  );
+}
