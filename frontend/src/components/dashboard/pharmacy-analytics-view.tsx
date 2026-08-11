@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BarChart3, PackageX, PiggyBank, ReceiptText, TrendingUp, Wallet, Loader2,
+  AlertTriangle, ArrowDownToLine, BarChart3, Package, PackageX, PiggyBank, ReceiptText, TrendingUp, Wallet, Loader2,
 } from "lucide-react";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis,
@@ -26,6 +26,7 @@ interface DashboardPayload {
   as_of?: string;
   kpi?: { total_revenue: number; total_invoices: number; cancelled: number };
   total_wastage_value?: number;
+  vendor_today?: { purchased: number; paid: number; outstanding: number };
   top_drugs?: Array<{ drug_id: string; drug_name: string; category: string; qty: number; revenue: number }>;
   monthly?: { months?: Array<{ month: string; revenue: number; cost: number; profit: number; invoice_count: number; cash: number; pos: number; transfer: number; card: number; insurance: number; refunds: number }> };
   wastage_now?: Array<{ drug_name: string; reason: string; qty: number; cost_impact: number; recorded_at: string }>;
@@ -111,6 +112,9 @@ export default function PharmacyAnalyticsView() {
     { icon: ReceiptText, label: "Invoices", value: String(kpi.total_invoices ?? 0), tint: "text-indigo-600 bg-indigo-50" },
     { icon: TrendingUp, label: "Cancelled", value: String(kpi.cancelled ?? 0), tint: "text-amber-600 bg-amber-50" },
     { icon: PackageX, label: "Wastage Value", value: ngn(data?.total_wastage_value ?? 0), tint: "text-red-600 bg-red-50" },
+    { icon: Package, label: "Purchases Today", value: ngn(data?.vendor_today?.purchased ?? 0), tint: "text-emerald-600 bg-emerald-50" },
+    { icon: ArrowDownToLine, label: "Amount Paid Today", value: ngn(data?.vendor_today?.paid ?? 0), tint: "text-sky-600 bg-sky-50" },
+    { icon: AlertTriangle, label: "Amount Outstanding Today", value: ngn(data?.vendor_today?.outstanding ?? 0), tint: (data?.vendor_today?.outstanding ?? 0) > 0 ? "text-rose-600 bg-rose-50" : "text-emerald-600 bg-emerald-50" },
   ];
 
   return (
@@ -164,7 +168,7 @@ export default function PharmacyAnalyticsView() {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
           {kpiCards.map((c) => (
             <div key={c.label} className="rounded-xl border border-[var(--color-border)] bg-white p-3">
               <div className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${c.tint}`}>

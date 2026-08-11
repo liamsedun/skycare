@@ -30,7 +30,45 @@ export const GET = withStaff(async (req, ctx) => {
   });
   if (error) throw new ValidationError(error.message);
 
-  return ok(data ?? null);
+  // Today's supplier-side figures: drugs received today (GRN cost), supplier
+  // payments made today, and the resulting outstanding balance.
+  const now = new Date();
+  const todayDate = now.toISOString().slice(0, 10);
+  const todayStart = `${todayDate}T00:00:00`;
+
+  const { data: grns } = await ctx.svc
+    .from("pharmacy_goods_received_notes")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .gte("received_at", todayStart);
+  const grnIds = (grns ?? []).map((g) => g.id);
+
+  let purchased = 0;
+  if (grnIds.length > 0) {
+    const { data: items } = await ctx.svc
+      .from("pharmacy_grn_items")
+      .select("quantity_received, unit_cost")
+      .in("grn_id", grnIds);
+    purchased = (items ?? []).reduce(
+      (acc, i) => acc + Number(i.quantity_received ?? 0) * Number(i.unit_cost ?? 0),
+      0
+    );
+  }
+
+  const { data: pays } = await ctx.svc
+    .from("supplier_payments")
+    .select("amount")
+    .eq("tenant_id", tenantId)
+    .eq("paid_at", todayDate);
+  const paid = (pays ?? []).reduce((acc, p) => acc + Number(p.amount ?? 0), 0);
+
+  const vendorToday = {
+    purchased: Math.round(purchased * 100) / 100,
+    paid: Math.round(paid * 100) / 100,
+    outstanding: Math.round((purchased - paid) * 100) / 100,
+  };
+
+  return ok({ ...data, vendor_today: vendorToday });
 });
 
 export const runtime = "nodejs";

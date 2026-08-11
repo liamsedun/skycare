@@ -16,17 +16,17 @@ import {
 // ============================================================================
 
 const TABS = [
-  { id: "suppliers", label: "Suppliers", icon: Building2 },
   { id: "balances", label: "Balances", icon: Landmark },
   { id: "orders", label: "Purchase orders", icon: Package },
   { id: "payments", label: "Payments", icon: ReceiptText },
+  { id: "suppliers", label: "Suppliers", icon: Building2 },
   { id: "auto", label: "Auto-reorder", icon: Zap },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
 export default function PharmacySuppliersProcurement() {
-  const [tab, setTab] = useState<TabId>("suppliers");
+  const [tab, setTab] = useState<TabId>("balances");
 
   return (
     <div className="space-y-6">
