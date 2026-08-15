@@ -5,6 +5,8 @@ import { CalendarDays, Loader2, Plus, X } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -16,6 +18,8 @@ const LEAVE_LABELS: Record<string, string> = {
   study: "Study",
   unpaid: "Unpaid",
   maternity: "Maternity",
+  emergency: "Emergency",
+  paternity: "Paternity",
 };
 
 const STATUS_CLASS: Record<string, string> = {
@@ -37,12 +41,21 @@ interface LeaveRow {
   users: { id: string; full_name: string; role: string } | null;
 }
 
+interface BalanceRow {
+  id: string;
+  leave_type: string;
+  leave_year: number;
+  entitled_days: number;
+  used_days: number;
+}
+
 function fmtDate(d: string): string {
   return new Date(`${d}T00:00:00`).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
 }
 
 export default function LeaveView() {
   const [rows, setRows] = useState<LeaveRow[]>([]);
+  const [balances, setBalances] = useState<BalanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"mine" | "all">("mine");
@@ -52,6 +65,8 @@ export default function LeaveView() {
   const [leaveType, setLeaveType] = useState("annual");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -68,6 +83,9 @@ export default function LeaveView() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load leave requests");
       setRows(body.data ?? []);
+      const balRes = await fetch(`/api/hr/leave-balances?year=${new Date().getFullYear()}&staff_id=me`, { cache: "no-store" });
+      const balBody = await balRes.json();
+      if (balRes.ok) setBalances(balBody.data ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load leave requests");
     } finally {
@@ -132,6 +150,8 @@ export default function LeaveView() {
       setBusy(false);
     }
   }
+
+  const visibleRows = rows.filter((r) => inDateRange(r.start_date, from, to));
 
   const LEAVE_EXPORT_COLUMNS = [
     "staff",
@@ -216,6 +236,13 @@ export default function LeaveView() {
           <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Leave</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Request and manage staff leave.</p>
         </div>
+        <DateRangeBar
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setFrom(""); setTo(""); }}
+        />
         <button
           type="button"
           onClick={() => setShowNew(true)}
@@ -234,6 +261,39 @@ export default function LeaveView() {
           onImported={() => load()}
         />
       </div>
+
+      {!loading && (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold uppercase text-[var(--color-muted-fg)]">My leave balances · {new Date().getFullYear()}</h2>
+            {balances.length > 0 && (
+              <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-800">
+                {balances.reduce((acc, b) => acc + Math.max(0, Number(b.entitled_days ?? 0) - Number(b.used_days ?? 0)), 0)} day(s) remaining
+              </span>
+            )}
+          </div>
+          {balances.length === 0 ? (
+            <p className="text-sm text-[var(--color-muted-fg)]">No leave balances yet — they appear here once HR sets your entitlements.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+              {balances.map((b) => {
+                const ent = Number(b.entitled_days ?? 0);
+                const used = Number(b.used_days ?? 0);
+                const rem = Math.max(0, ent - used);
+                const tile = rem > 0 ? "border-emerald-200 bg-emerald-50" : ent > 0 ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50";
+                const num = rem > 0 ? "text-emerald-700" : ent > 0 ? "text-amber-700" : "text-slate-500";
+                return (
+                  <div key={b.id} className={`rounded-xl border p-3 ${tile}`}>
+                    <div className="text-xs font-medium text-[var(--color-muted-fg)]">{LEAVE_LABELS[b.leave_type] ?? b.leave_type}</div>
+                    <div className={`mt-1 text-2xl font-bold ${num}`}>{rem}</div>
+                    <div className="mt-0.5 text-[11px] text-[var(--color-muted-fg)]">{used} used · {ent} entitled</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && (
         <div className="flex gap-2 border-b border-[var(--color-border)]">
@@ -265,9 +325,15 @@ export default function LeaveView() {
           <CalendarDays size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No leave requests.</p>
         </div>
+      ) : visibleRows.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
+          <p className="text-sm font-medium text-[var(--color-foreground)]">
+            No leave requests match the current date range.
+          </p>
+        </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((row) => (
+          {visibleRows.map((row) => (
             <div key={row.id} className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 shadow-[var(--shadow-sm)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>

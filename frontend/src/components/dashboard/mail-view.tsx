@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Inbox, Loader2, MailPlus, Paperclip, Send, Trash2 } from "lucide-react";
 import { initials, ROLE_LABELS } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -28,9 +30,22 @@ interface RecipientOption {
   full_name: string;
   email: string;
   role: AppRole;
+  has_account?: boolean;
+  delivered_via?: string | null;
+  no_path?: boolean;
+}
+
+interface RecipientGroups {
+  staff: RecipientOption[];
+  patients: RecipientOption[];
 }
 
 type Tab = "inbox" | "sent" | "compose";
+
+const recipientLabel = (r: RecipientOption) =>
+  r.no_path
+    ? `${r.full_name} (no portal account — cannot receive mail)`
+    : `${r.full_name}${r.has_account === false && r.delivered_via ? ` (via ${r.delivered_via})` : ""}`;
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -48,13 +63,16 @@ export default function MailView() {
   const [tab, setTab] = useState<Tab>("inbox");
   const [inbox, setInbox] = useState<MailMessage[]>([]);
   const [sent, setSent] = useState<MailMessage[]>([]);
-  const [recipients, setRecipients] = useState<RecipientOption[]>([]);
+  const [recipients, setRecipients] = useState<RecipientGroups>({ staff: [], patients: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
 
   const [to, setTo] = useState<string[]>([]);
   const [broadcast, setBroadcast] = useState(false);
+  const [broadcastPatients, setBroadcastPatients] = useState(false);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -78,7 +96,7 @@ export default function MailView() {
         const res = await fetch("/api/mail/recipients", { cache: "no-store" });
         const b = await res.json();
         if (!res.ok) throw new Error(b.error ?? "Failed to load recipients");
-        setRecipients(b.data?.staff ?? []);
+        setRecipients({ staff: b.data?.staff ?? [], patients: b.data?.patients ?? [] });
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load mail");
@@ -97,6 +115,10 @@ export default function MailView() {
   }
 
   function openMessage(msg: MailMessage) {
+    if (openId === msg.id) {
+      setOpenId(null);
+      return;
+    }
     setOpenId(msg.id);
     if (msg.recipientRowId && !msg.isRead) markRead(msg.recipientRowId);
   }
@@ -123,10 +145,12 @@ export default function MailView() {
     setError(null);
     setSentOk(false);
     try {
+      const isBroadcast = broadcast || broadcastPatients;
+      const scope = broadcast && broadcastPatients ? "all" : broadcast ? "staff" : broadcastPatients ? "patients" : "staff";
       const res = await fetch("/api/mail/inbox", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(broadcast ? { subject, body, broadcast: true, broadcastScope: "staff" } : { recipientIds: to, subject, body }),
+        body: JSON.stringify(isBroadcast ? { subject, body, broadcast: true, broadcastScope: scope } : { recipientIds: to, subject, body }),
       });
       const b = await res.json();
       if (!res.ok) throw new Error(b.error ?? "Failed to send");
@@ -134,6 +158,7 @@ export default function MailView() {
       setSubject("");
       setBody("");
       setBroadcast(false);
+      setBroadcastPatients(false);
       setSentOk(true);
     } catch (e2) {
       setError(e2 instanceof Error ? e2.message : "Failed to send");
@@ -143,6 +168,15 @@ export default function MailView() {
   }
 
   const inboxUnread = useMemo(() => inbox.filter((m) => !m.isRead).length, [inbox]);
+
+  const visibleInbox = useMemo(
+    () => inbox.filter((m) => inDateRange(m.created_at, filterFrom, filterTo)),
+    [inbox, filterFrom, filterTo]
+  );
+  const visibleSent = useMemo(
+    () => sent.filter((m) => inDateRange(m.created_at, filterFrom, filterTo)),
+    [sent, filterFrom, filterTo]
+  );
 
   const tabs: Array<{ key: Tab; label: string; icon: typeof Inbox }> = [
     { key: "inbox", label: "Inbox", icon: Inbox },
@@ -157,7 +191,8 @@ export default function MailView() {
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Messaging between hospital staff.</p>
       </div>
 
-      <div className="flex gap-1 rounded-lg border border-[var(--color-border)] bg-white p-1 shadow-[var(--shadow-sm)]">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-1 gap-1 rounded-lg border border-[var(--color-border)] bg-white p-1 shadow-[var(--shadow-sm)]">
         {tabs.map((t) => {
           const Icon = t.icon;
           return (
@@ -177,6 +212,14 @@ export default function MailView() {
             </button>
           );
         })}
+        </div>
+        <DateRangeBar
+          from={filterFrom}
+          to={filterTo}
+          onFromChange={setFilterFrom}
+          onToChange={setFilterTo}
+          onClear={() => { setFilterFrom(""); setFilterTo(""); }}
+        />
       </div>
 
       {error && (
@@ -193,6 +236,7 @@ export default function MailView() {
       {tab === "compose" ? (
         <form onSubmit={send} className="mx-auto max-w-2xl rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
           <div className="space-y-4">
+            <div className="grid gap-2 sm:grid-cols-2">
             <label className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3">
               <input
                 type="checkbox"
@@ -205,17 +249,30 @@ export default function MailView() {
                 <span className="block text-xs text-[var(--color-muted-fg)]">Every staff member in this hospital receives the message.</span>
               </span>
             </label>
+            <label className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] p-3">
+              <input
+                type="checkbox"
+                checked={broadcastPatients}
+                onChange={(e) => setBroadcastPatients(e.target.checked)}
+                className="h-4 w-4 accent-[var(--color-primary)]"
+              />
+              <span className="text-sm">
+                <span className="font-medium text-[var(--color-foreground)]">Broadcast to all patients</span>
+                <span className="block text-xs text-[var(--color-muted-fg)]">Every patient (and their dependants with portal access) receives the message.</span>
+              </span>
+            </label>
+            </div>
 
-            {!broadcast && (
+            {!broadcast && !broadcastPatients && (
               <div>
                 <label className={labelCls} htmlFor="mail-to">To *</label>
                 <div className="flex flex-wrap gap-1.5 rounded-lg border border-[var(--color-border)] bg-white p-2">
                   {to.map((id) => {
-                    const opt = recipients.find((r) => r.id === id);
+                    const opt = [...recipients.staff, ...recipients.patients].find((r) => r.id === id);
                     return (
                       <span key={id} className="inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-soft)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary-dark)]">
-                        {opt?.full_name ?? "?"}
-                        <button type="button" onClick={() => setTo((t) => t.filter((x) => x !== id))} className="hover:text-[var(--color-destructive)]" aria-label={`Remove ${opt?.full_name}`}>×</button>
+                        {opt ? recipientLabel(opt) : "?"}
+                        <button type="button" onClick={() => setTo((t) => t.filter((x) => x !== id))} className="hover:text-[var(--color-destructive)]" aria-label={`Remove ${opt?.full_name ?? ""}`}>×</button>
                       </span>
                     );
                   })}
@@ -228,11 +285,24 @@ export default function MailView() {
                     className="min-w-32 flex-1 bg-transparent px-1 text-sm outline-none"
                   >
                     <option value="">Add recipient…</option>
-                    {recipients.map((r) => (
-                      <option key={r.id} value={r.id} disabled={to.includes(r.id)}>
-                        {r.full_name} ({ROLE_LABELS[r.role] ?? r.role})
-                      </option>
-                    ))}
+                    {recipients.staff.length > 0 && (
+                      <optgroup label="Staff">
+                        {recipients.staff.map((r) => (
+                          <option key={r.id} value={r.id} disabled={to.includes(r.id)}>
+                            {r.full_name} ({ROLE_LABELS[r.role] ?? r.role})
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {recipients.patients.length > 0 && (
+                      <optgroup label="Patients & dependants">
+                        {recipients.patients.map((r) => (
+                          <option key={r.id} value={r.id} disabled={to.includes(r.id) || r.no_path} title={r.no_path ? "No portal account — mail cannot be delivered" : undefined}>
+                            {recipientLabel(r)}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               </div>
@@ -250,7 +320,7 @@ export default function MailView() {
           <div className="mt-5 flex justify-end">
             <button
               type="submit"
-              disabled={sending || (!broadcast && to.length === 0)}
+              disabled={sending || (!broadcast && !broadcastPatients && to.length === 0)}
               className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
             >
               <Send size={15} aria-hidden="true" /> {sending ? "Sending…" : "Send message"}
@@ -264,12 +334,14 @@ export default function MailView() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
           <ul className="divide-y divide-[var(--color-border)]">
-            {(tab === "inbox" ? inbox : sent).length === 0 && (
+            {(tab === "inbox" ? visibleInbox : visibleSent).length === 0 && (
               <li className="px-4 py-12 text-center text-sm text-[var(--color-muted-fg)]">
-                {tab === "inbox" ? "No messages yet." : "Nothing sent yet."}
+                {(tab === "inbox" ? inbox : sent).length === 0
+                  ? tab === "inbox" ? "No messages yet." : "Nothing sent yet."
+                  : "No messages match the current date range."}
               </li>
             )}
-            {(tab === "inbox" ? inbox : sent).map((m) => {
+            {(tab === "inbox" ? visibleInbox : visibleSent).map((m) => {
               const open = openId === m.id;
               const person = tab === "inbox" ? m.sender : null;
               return (
@@ -288,7 +360,12 @@ export default function MailView() {
                           <span className={`truncate text-sm ${m.isRead ? "font-medium text-[var(--color-foreground)]" : "font-bold text-[var(--color-foreground)]"}`}>
                             {m.subject}
                           </span>
-                          <span className="shrink-0 text-xs text-[var(--color-muted-fg)]">{timeAgo(m.created_at)}</span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span className="text-xs text-[var(--color-muted-fg)]">{timeAgo(m.created_at)}</span>
+                            {tab === "sent" && (
+                              <span className={`text-xs text-[var(--color-muted-fg)] transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true">▾</span>
+                            )}
+                          </span>
                         </span>
                         <span className="block truncate text-xs text-[var(--color-muted-fg)]">
                           {tab === "inbox" ? (person?.full_name ?? "Unknown") + (m.is_broadcast ? " · Broadcast" : "") : `${m.recipients?.length ?? 0} recipient(s)`}
@@ -323,9 +400,15 @@ export default function MailView() {
                           ))}
                         </div>
                       )}
-                      {tab === "sent" && m.recipients && m.recipients.length > 0 && (
+                      {tab === "sent" && (
                         <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
-                          To: {m.recipients.map((r) => r.full_name || r.email).join(", ")}
+                          {m.is_broadcast && m.broadcast_scope === "patients"
+                            ? `Broadcast to all patients · ${m.recipients?.length ?? 0} recipient(s)`
+                            : m.is_broadcast && m.broadcast_scope === "all"
+                            ? `Broadcast to all staff & patients · ${m.recipients?.length ?? 0} recipient(s)`
+                            : m.is_broadcast
+                            ? `Broadcast to all staff · ${m.recipients?.length ?? 0} recipient(s)`
+                            : `To: ${m.recipients?.map((r) => r.full_name || r.email).join(", ") ?? ""}`}
                         </p>
                       )}
                     </div>

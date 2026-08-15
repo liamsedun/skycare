@@ -22,6 +22,7 @@ export const POST = withAuth(async (req, ctx) => {
     reference?: string;
     notes?: string;
     recordedAt?: string;
+    source?: string;
   };
 
   if (body.direction !== "in" && body.direction !== "out") {
@@ -29,6 +30,10 @@ export const POST = withAuth(async (req, ctx) => {
   }
   if (!Number.isFinite(Number(body.amount)) || Number(body.amount) <= 0) {
     throw new ValidationError("A positive amount is required");
+  }
+  const source = body.source === "opening" ? "opening" : "adjustment";
+  if (source === "opening" && body.direction !== "in") {
+    throw new ValidationError("An opening balance must be a receipt ('in')");
   }
 
   let accountId: string | null = null;
@@ -44,6 +49,18 @@ export const POST = withAuth(async (req, ctx) => {
     accountId = bank.id;
   }
 
+  if (source === "opening") {
+    const { count } = await ctx.svc
+      .from("hospital_bank_ledger")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("source", "opening")
+      .is("account_id", accountId);
+    if ((count ?? 0) > 0) {
+      throw new ValidationError("An opening balance is already set for this account — delete it first to change it");
+    }
+  }
+
   const { data: entry, error } = await ctx.svc
     .from("hospital_bank_ledger")
     .insert({
@@ -52,9 +69,9 @@ export const POST = withAuth(async (req, ctx) => {
       account_id: accountId,
       direction: body.direction,
       amount: Number(body.amount),
-      source: "adjustment",
-      source_ref: body.direction === "in" ? "Manual receipt" : "Manual payment",
-      method: body.method?.trim() || null,
+      source,
+      source_ref: source === "opening" ? "Opening balance" : body.direction === "in" ? "Manual receipt" : "Manual payment",
+      method: source === "opening" ? null : (body.method?.trim() || null),
       reference: body.reference?.trim() || null,
       notes: body.notes?.trim() || null,
       recorded_at: body.recordedAt ? new Date(body.recordedAt).toISOString() : new Date().toISOString(),
@@ -68,9 +85,12 @@ export const POST = withAuth(async (req, ctx) => {
     action: "create",
     entityType: "hospital_bank_ledger",
     entityId: entry.id,
-    description: `Manual ${body.direction === "in" ? "receipt" : "payment"} of ₦${Number(body.amount).toLocaleString()} → ${
-      accountId ? "bank" : "Cash"
-    }${body.notes ? ` — ${body.notes}` : ""}`,
+    description:
+      source === "opening"
+        ? `Opening balance of ₦${Number(body.amount).toLocaleString()} for ${accountId ? "bank" : "Cash"}`
+        : `Manual ${body.direction === "in" ? "receipt" : "payment"} of ₦${Number(body.amount).toLocaleString()} → ${
+            accountId ? "bank" : "Cash"
+          }${body.notes ? ` — ${body.notes}` : ""}`,
   });
 
   return ok(entry, 201);

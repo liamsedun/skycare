@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const LEAVE_TYPES = ["annual", "sick", "study", "unpaid", "maternity"];
+const LEAVE_TYPES = ["annual", "sick", "study", "unpaid", "maternity", "emergency", "paternity"];
 const ADMIN_ROLES = ["hospital_admin", "super_admin"];
 
 function isAdmin(ctx: any): boolean {

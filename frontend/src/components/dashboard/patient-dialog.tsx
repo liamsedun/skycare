@@ -405,6 +405,7 @@ export function PatientViewButton({
   const [editMode, setEditMode] = useState(false);
   const [editDependant, setEditDependant] = useState<DependantRow | null>(null);
   const [showAddDependant, setShowAddDependant] = useState(false);
+  const [depInfo, setDepInfo] = useState<string | null>(null);
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [tab, setTab] = useState<"info" | "records" | "notes" | "reports">("info");
   const [showSchedule, setShowSchedule] = useState(false);
@@ -647,6 +648,7 @@ export function PatientViewButton({
   async function addDependant(form: FormData) {
     setBusy(true);
     setError(null);
+    setDepInfo(null);
     try {
       const res = await fetch("/api/dependants", {
         method: "POST",
@@ -658,6 +660,7 @@ export function PatientViewButton({
           gender: form.get("gender") || undefined,
           dateOfBirth: form.get("dateOfBirth") || undefined,
           phone: form.get("phone") || undefined,
+          email: form.get("email") || undefined,
           relationship: form.get("relationship"),
           address: form.get("address") || undefined,
           city: form.get("city") || undefined,
@@ -668,7 +671,14 @@ export function PatientViewButton({
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to add dependant");
+      const added = body.data as { tempPassword?: string } | null;
+      if (added?.tempPassword) {
+        setDepInfo(
+          `A portal login was created automatically from this dependant's email. Share these credentials with them: temporary password ${added.tempPassword}`
+        );
+      }
       await load();
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to add dependant");
     } finally {
@@ -679,6 +689,7 @@ export function PatientViewButton({
   async function updateDependant(id: string, form: FormData) {
     setBusy(true);
     setError(null);
+    setDepInfo(null);
     try {
       const res = await fetch(`/api/dependants/${id}`, {
         method: "PUT",
@@ -689,6 +700,7 @@ export function PatientViewButton({
           gender: form.get("gender") || null,
           date_of_birth: form.get("dateOfBirth") || null,
           phone: form.get("phone") || null,
+          email: form.get("email") || null,
           dependant_relationship: form.get("relationship"),
           address: form.get("address") || null,
           city: form.get("city") || null,
@@ -701,8 +713,41 @@ export function PatientViewButton({
       if (!res.ok) throw new Error(body.error ?? "Failed to update dependant");
       setEditDependant(null);
       await load();
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update dependant");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function provisionDependantLogin(d: DependantRow, forceReset = false) {
+    const who = `${d.first_name} ${d.last_name}`;
+    if (!forceReset && !confirm(`Create a portal login for ${who}? A temporary password will be generated — you'll see it once, so copy it and share it with them.`)) return;
+    if (forceReset && !confirm(`Reset the portal password for ${who}? A new temporary password will be generated — you'll see it once, so copy it and share it with them; the old one stops working immediately.`)) return;
+    setBusy(true);
+    setError(null);
+    setDepInfo(null);
+    try {
+      const res = await fetch("/api/dependants/provision-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patientIds: [d.id], forceReset }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to create portal login");
+      const p = body.data?.provisioned?.[0] as { firstName?: string; lastName?: string; email?: string; tempPassword?: string } | undefined;
+      if (p?.tempPassword) {
+        setDepInfo(forceReset
+          ? `Portal password reset for ${p.firstName ?? ""} ${p.lastName ?? ""}. Share these credentials: email ${p.email}, temporary password ${p.tempPassword}`
+          : `Portal login created for ${p.firstName ?? ""} ${p.lastName ?? ""}. Share these credentials: email ${p.email}, temporary password ${p.tempPassword}`);
+      } else {
+        setDepInfo(`No login created — ${body.data?.skipped?.[0]?.reason ?? "see the message"}.`);
+      }
+      await load();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create portal login");
     } finally {
       setBusy(false);
     }
@@ -717,8 +762,42 @@ export function PatientViewButton({
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to remove dependant");
       await load();
+      router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to remove dependant");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function provisionPrimaryLogin(forceReset = false) {
+    if (!detail) return;
+    const who = `${detail.first_name} ${detail.last_name}`;
+    if (!forceReset && !confirm(`Create a portal login for ${who}? A temporary password will be generated — you'll see it once, so copy it and share it with them.`)) return;
+    if (forceReset && !confirm(`Reset the portal password for ${who}? A new temporary password will be generated — you'll see it once, so copy it and share it with them; the old one stops working immediately.`)) return;
+    setBusy(true);
+    setError(null);
+    setDepInfo(null);
+    try {
+      const res = await fetch(`/api/patients/${patient.id}/provision-portal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceReset }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to create portal login");
+      const p = body.data?.provisioned?.[0] as { firstName?: string; lastName?: string; email?: string; tempPassword?: string } | undefined;
+      if (p?.tempPassword) {
+        setDepInfo(forceReset
+          ? `Portal password reset for ${p.firstName ?? ""} ${p.lastName ?? ""}. Share these credentials: email ${p.email}, temporary password ${p.tempPassword}`
+          : `Portal login created for ${p.firstName ?? ""} ${p.lastName ?? ""}. Share these credentials: email ${p.email}, temporary password ${p.tempPassword}`);
+      } else {
+        setDepInfo(`No login created — ${body.data?.skipped?.[0]?.reason ?? "see the message"}.`);
+      }
+      await load();
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to create portal login");
     } finally {
       setBusy(false);
     }
@@ -830,6 +909,16 @@ export function PatientViewButton({
                     >
                       {detail.status === "transferred" ? "Transferred" : "Transfer"}
                     </button>
+                    {canDelete && detail.status === "active" && (
+                      <button
+                        type="button"
+                        onClick={() => provisionPrimaryLogin(!!detail.user_id)}
+                        disabled={busy}
+                        className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors duration-200 hover:border-amber-300 hover:bg-amber-50"
+                      >
+                        <KeyRound size={13} aria-hidden="true" /> {detail.user_id ? "Reset password" : "Create portal login"}
+                      </button>
+                    )}
                     {canDelete && (
                       <button
                         type="button"
@@ -878,7 +967,12 @@ export function PatientViewButton({
                     saveEdit(new FormData(e.currentTarget));
                   }}
                 >
-                  {error && <ErrorNote error={error} />}
+{error && <ErrorNote error={error} />}
+                {depInfo && (
+                  <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+                    {depInfo}
+                  </p>
+                )}
                   <div>
                     <label className={labelCls} htmlFor="e-dob">Date of Birth</label>
                     <input id="e-dob" name="dateOfBirth" type="date" defaultValue={detail.date_of_birth?.slice(0, 10) ?? ""} className={inputCls} />
@@ -975,7 +1069,12 @@ export function PatientViewButton({
                 </form>
               ) : (
                 <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 shadow-[var(--shadow-sm)]">
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
+                {depInfo && (
+                  <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800">
+                    {depInfo}
+                  </p>
+                )}
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:grid-cols-3">
                   {[
                     ["Date of Birth", detail.date_of_birth ? formatDateOnly(detail.date_of_birth) : "—"],
                     ["Age", detail.date_of_birth ? calculateAge(detail.date_of_birth) : "—"],
@@ -988,39 +1087,39 @@ export function PatientViewButton({
                     ["Allergies", detail.allergies],
                   ].map(([k, v]) => (
                     <div key={k as string}>
-                      <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{k}</dt>
+                      <dt className="text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">{k}</dt>
                       <dd className="mt-0.5 font-medium text-[var(--color-foreground)]">{v ?? "—"}</dd>
                     </div>
                   ))}
                   <div className="col-span-2 sm:col-span-3">
-                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Address</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">Address</dt>
                     <dd className="mt-0.5 flex items-start gap-1.5 font-medium text-[var(--color-foreground)]">
-                      <MapPin size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
+                      <MapPin size={12} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
                       {[detail.address, detail.city, detail.state].filter(Boolean).join(", ") || "—"}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Phone</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">Phone</dt>
                     <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-[var(--color-foreground)]">
-                      <Phone size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                      <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                       {detail.phone ? (
                         <a className="focus-ring font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline" href={`tel:${detail.phone}`}>{detail.phone}</a>
                       ) : "—"}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Email</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">Email</dt>
                     <dd className="mt-0.5 flex min-w-0 items-center gap-1.5 font-medium text-[var(--color-foreground)]">
-                      <Mail size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                      <Mail size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                       {detail.email ? (
                         <a className="focus-ring truncate font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline" href={`mailto:${detail.email}`}>{detail.email}</a>
                       ) : "—"}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Emergency Phone</dt>
+                    <dt className="text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">Emergency Phone</dt>
                     <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-[var(--color-foreground)]">
-                      <Phone size={14} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+                      <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                       {detail.emergency_contact_phone ? (
                         <a className="focus-ring font-semibold text-blue-600 transition-colors duration-200 hover:text-blue-700 hover:underline" href={`tel:${detail.emergency_contact_phone}`}>{detail.emergency_contact_phone}</a>
                       ) : "—"}
@@ -1091,6 +1190,10 @@ export function PatientViewButton({
                           <div>
                             <label className={labelCls} htmlFor={`dep-ph-${d.id}`}>Phone</label>
                             <input id={`dep-ph-${d.id}`} name="phone" defaultValue={d.phone ?? ""} className={inputCls} />
+                          </div>
+                          <div>
+                            <label className={labelCls} htmlFor={`dep-e-${d.id}`}>Email</label>
+                            <input id={`dep-e-${d.id}`} name="email" type="email" defaultValue={d.email ?? ""} className={inputCls} placeholder="Used for their portal login" />
                           </div>
                           <div>
                             <label className={labelCls} htmlFor={`dep-r-${d.id}`}>Relationship</label>
@@ -1209,6 +1312,25 @@ export function PatientViewButton({
                                   </div>
                                 </dl>
                                 <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-[var(--color-border)] pt-2.5">
+                                  {!d.user_id ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => provisionDependantLogin(d, false)}
+                                      disabled={busy}
+                                      className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-amber-700 transition-colors duration-200 hover:border-amber-300 hover:bg-amber-50"
+                                    >
+                                      <KeyRound size={12} aria-hidden="true" /> Create portal login
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => provisionDependantLogin(d, true)}
+                                      disabled={busy}
+                                      className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-amber-700 transition-colors duration-200 hover:border-amber-300 hover:bg-amber-50"
+                                    >
+                                      <KeyRound size={12} aria-hidden="true" /> Reset password
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => setEditDependant(d)}
@@ -1271,6 +1393,10 @@ export function PatientViewButton({
                     <div>
                       <label className={labelCls} htmlFor="d-phone">Phone</label>
                       <input id="d-phone" name="phone" className={inputCls} />
+                    </div>
+                    <div>
+                      <label className={labelCls} htmlFor="d-email">Email</label>
+                      <input id="d-email" name="email" type="email" className={inputCls} placeholder="Used to create their portal login automatically" />
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="d-rel">Relationship</label>

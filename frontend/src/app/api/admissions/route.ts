@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/admissions?status=&branch=&search= — current census (staff).
+// GET /api/admissions?status=&branch=&search=&from=YYYY-MM-DD&to=YYYY-MM-DD — current census (staff).
 // POST /api/admissions — admit a patient to a bed via ward_admit RPC
 // (hospital_admin / doctor / nurse / super_admin).
 export const GET = withStaff(async (req, ctx) => {
@@ -13,6 +13,9 @@ export const GET = withStaff(async (req, ctx) => {
   const status = sp.get("status")?.trim() || null;
   const branch = sp.get("branch")?.trim() || null;
   const search = sp.get("search")?.trim() || null;
+  const from = sp.get("from")?.trim() || null;
+  const to = sp.get("to")?.trim() || null;
+  if (from && to && from > to) throw new ValidationError("from must be on or before to");
 
   let query = ctx.svc
     .from("admissions")
@@ -26,6 +29,8 @@ export const GET = withStaff(async (req, ctx) => {
   if (branch) query = query.eq("branch_id", branch);
   if (status === "active") query = query.in("status", ["admitted", "transferred"]);
   else if (status) query = query.eq("status", status);
+  if (from) query = query.gte("admitted_at", `${from}T00:00:00`);
+  if (to) query = query.lte("admitted_at", `${to}T23:59:59.999`);
   const { data, error } = await query.order("admitted_at", { ascending: false }).limit(500);
   if (error) throw new Error(error.message);
 

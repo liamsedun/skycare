@@ -138,18 +138,46 @@ export function bankLedgerAccountForMethod(
   return m === "cash" ? null : bankAccountId;
 }
 
+/**
+ * Resolve which ledger account a transaction is paid from: an explicit
+ * "cash" selection → null; a tenant bank uuid (validated active) → that bank;
+ * absent/blank → the method-derived default (first active bank for non-cash).
+ */
+export async function resolvePayingAccountId(
+  svc: SupabaseClient,
+  tenantId: string,
+  accountId: string | null | undefined,
+  fallbackMethod: string | null | undefined
+): Promise<string | null> {
+  if (accountId == null || accountId === "") {
+    const defaultBankId = await resolveBankAccountId(svc, tenantId);
+    return bankLedgerAccountForMethod(fallbackMethod, defaultBankId);
+  }
+  if (accountId === "cash") return null;
+  const { data } = await svc
+    .from("hospital_bank_accounts")
+    .select("id")
+    .eq("id", accountId)
+    .eq("tenant_id", tenantId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!data) throw new ValidationError("Invalid or inactive bank account");
+  return accountId;
+}
+
 export interface PostBankLedgerInput {
   tenantId: string;
   branchId?: string | null;
   accountId?: string | null;
   direction: "in" | "out";
   amount: number;
-  source: "payment" | "other_income" | "expense" | "adjustment" | "supplier_payment";
+  source: "payment" | "other_income" | "expense" | "adjustment" | "supplier_payment" | "transfer" | "opening" | "payroll";
   sourceRef?: string | null;
   paymentId?: string | null;
   incomeId?: string | null;
   expenseId?: string | null;
   supplierPaymentId?: string | null;
+  payrollId?: string | null;
   method?: string | null;
   reference?: string | null;
   notes?: string | null;
@@ -178,6 +206,7 @@ export async function postBankLedger(
     income_id: input.incomeId ?? null,
     expense_id: input.expenseId ?? null,
     supplier_payment_id: input.supplierPaymentId ?? null,
+    payroll_id: input.payrollId ?? null,
     method: input.method ?? null,
     reference: input.reference ?? null,
     notes: input.notes ?? null,

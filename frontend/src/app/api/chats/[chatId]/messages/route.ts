@@ -37,7 +37,9 @@ async function getChat(ctx: any, tenantId: string, chatId: string) {
     if (ctx.role === "super_admin") {
       query = query.not("patient_id", "is", null);
     } else {
-      query = query.eq("staff_user_id", ctx.user.id);
+      // A staff member participates in patient chats (staff_user_id) and
+      // staff-to-staff chats (either staff_user_id or other_staff_user_id).
+      query = query.or(`staff_user_id.eq.${ctx.user.id},other_staff_user_id.eq.${ctx.user.id}`);
     }
   }
 
@@ -113,6 +115,21 @@ export const POST = withAuth(async (req, ctx) => {
         userIds: [staff.id],
         type: "chat_message",
         title: "New message from a patient",
+        message: body.message.trim().slice(0, 150),
+        referenceType: "chat",
+        referenceId: chatId,
+      });
+    }
+  } else if (chat.other_staff_user_id != null) {
+    // Staff-to-staff chat: notify the peer staff member (never the sender).
+    const peerId =
+      chat.staff_user_id === ctx.user.id ? chat.other_staff_user_id : chat.staff_user_id;
+    if (peerId) {
+      await notifyUsers(ctx.svc, {
+        orgId: tenantId,
+        userIds: [peerId],
+        type: "chat_message",
+        title: "New message from a colleague",
         message: body.message.trim().slice(0, 150),
         referenceType: "chat",
         referenceId: chatId,

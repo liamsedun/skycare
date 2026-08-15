@@ -1,5 +1,5 @@
 import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
-import { getPagination, resolveParam } from "@/lib/api-utils";
+import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
@@ -18,7 +18,7 @@ function resolveFamilyIds(data: Array<{ id: string; primary_account_id: string |
   return Array.from(ids);
 }
 
-// GET /api/prescriptions?patient_id=&status=&pharmacy_type=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=&pageSize=
+// GET /api/prescriptions?q=&patient_id=&status=&pharmacy_type=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
@@ -27,6 +27,7 @@ export const GET = withAuth(async (req, ctx) => {
   const pharmacyType = resolveParam(req.nextUrl.searchParams.get("pharmacy_type"));
   const fromDate = resolveParam(req.nextUrl.searchParams.get("from"));
   const toDate = resolveParam(req.nextUrl.searchParams.get("to"));
+  const q = resolveParam(req.nextUrl.searchParams.get("q"))?.trim() || null;
 
   if (fromDate && toDate && fromDate > toDate) {
     throw new ValidationError("from must be on or before to");
@@ -40,6 +41,26 @@ export const GET = withAuth(async (req, ctx) => {
       .eq("user_id", ctx.user.id);
     familyIds = resolveFamilyIds(data ?? []);
     if (familyIds.length === 0) return okPaginated([], 0, page, pageSize);
+  }
+
+  let qIds: { patientIds: string[]; doctorIds: string[]; rxIds: string[] } | null = null;
+  if (q) {
+    const like = `%${sanitizeLike(q)}%`;
+    const [patRes, docRes, itRes] = await Promise.all([
+      ctx.svc
+        .from("patients")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .or(`first_name.ilike.${like},last_name.ilike.${like},patient_number.ilike.${like}`),
+      ctx.svc.from("users").select("id").eq("tenant_id", tenantId).ilike("full_name", like).limit(300),
+      ctx.svc.from("prescription_items").select("prescription_id").ilike("medication_name", like).limit(800),
+    ]);
+    if (patRes.error || docRes.error || itRes.error) throw new ValidationError("Failed to search prescriptions");
+    qIds = {
+      patientIds: (patRes.data ?? []).map((r) => r.id),
+      doctorIds: (docRes.data ?? []).map((r) => r.id),
+      rxIds: (itRes.data ?? []).map((r) => r.prescription_id),
+    };
   }
 
   let query = ctx.svc
@@ -56,6 +77,14 @@ export const GET = withAuth(async (req, ctx) => {
   if (fromDate) query = query.gte("issued_date", fromDate);
   if (toDate) query = query.lte("issued_date", toDate);
   if (familyIds) query = query.in("patient_id", familyIds);
+  if (qIds) {
+    const ors: string[] = [];
+    if (qIds.rxIds.length > 0) ors.push(`id.in.(${qIds.rxIds.join(",")})`);
+    if (qIds.patientIds.length > 0) ors.push(`patient_id.in.(${qIds.patientIds.join(",")})`);
+    if (qIds.doctorIds.length > 0) ors.push(`doctor_id.in.(${qIds.doctorIds.join(",")})`);
+    if (ors.length === 0) return okPaginated([], 0, page, pageSize);
+    query = query.or(ors.join(","));
+  }
 
   const { data, count } = await query;
   return okPaginated(data ?? [], count ?? 0, page, pageSize);
@@ -113,7 +142,7 @@ export const POST = withStaff(async (req, ctx) => {
     .eq("tenant_id", tenantId)
     .eq("is_active", true)
     .maybeSingle();
-  if (!doctor || !["hospital_admin", ...CLINICIAN_ROLES].includes(doctor.role)) {
+  if (!doctor || !["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(doctor.role)) {
     throw new ValidationError("Invalid doctor selected");
   }
 

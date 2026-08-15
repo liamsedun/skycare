@@ -1,5 +1,5 @@
 import { withStaff, ok, okPaginated, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
-import { getPagination, resolveParam } from "@/lib/api-utils";
+import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { mirrorPharmacyInvoiceToCentral } from "@/lib/pharmacy-billing";
 import type { NextRequest } from "next/server";
@@ -22,24 +22,53 @@ export interface CreatePharmacyInvoiceBody {
   notes?: string;
 }
 
-// GET /api/pharmacy/invoices?patient_id=&status=&source=&page=&pageSize=
+// GET /api/pharmacy/invoices?q=&patient_id=&status=&source=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=&pageSize=
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
+  const { page, pageSize, from: rangeFrom, to: rangeTo } = getPagination(req.nextUrl.searchParams);
   const patientId = resolveParam(req.nextUrl.searchParams.get("patient_id"));
   const status = resolveParam(req.nextUrl.searchParams.get("status"));
   const source = resolveParam(req.nextUrl.searchParams.get("source"));
+  const q = resolveParam(req.nextUrl.searchParams.get("q"))?.trim() || null;
+  const from = resolveParam(req.nextUrl.searchParams.get("from"))?.trim() || null;
+  const to = resolveParam(req.nextUrl.searchParams.get("to"))?.trim() || null;
+  if (from && to && from > to) throw new ValidationError("from must be on or before to");
+
+  let patientIds: string[] | null = null;
+  let itemInvIds: string[] | null = null;
+  if (q) {
+    const like = `%${sanitizeLike(q)}%`;
+    const [patRes, itRes] = await Promise.all([
+      ctx.svc
+        .from("patients")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .or(`first_name.ilike.${like},last_name.ilike.${like},patient_number.ilike.${like}`),
+      ctx.svc.from("pharmacy_invoice_items").select("invoice_id").ilike("drug_name", like).limit(800),
+    ]);
+    if (patRes.error || itRes.error) throw new ValidationError("Failed to search invoices");
+    patientIds = (patRes.data ?? []).map((r) => r.id);
+    itemInvIds = (itRes.data ?? []).map((r) => r.invoice_id);
+  }
 
   let query = ctx.svc
     .from("pharmacy_invoices")
     .select(INVOICE_SELECT, { count: "exact" })
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false })
-    .range(from, to);
+    .range(rangeFrom, rangeTo);
 
   if (status) query = query.eq("status", status);
   if (patientId) query = query.eq("patient_id", patientId);
   if (source) query = query.eq("source", source);
+  if (from) query = query.gte("created_at", `${from}T00:00:00`);
+  if (to) query = query.lte("created_at", `${to}T23:59:59.999`);
+  if (q) {
+    const ors = [`invoice_number.ilike.%${sanitizeLike(q)}%`];
+    if (patientIds && patientIds.length > 0) ors.push(`patient_id.in.(${patientIds.join(",")})`);
+    if (itemInvIds && itemInvIds.length > 0) ors.push(`id.in.(${itemInvIds.join(",")})`);
+    query = query.or(ors.join(","));
+  }
 
   const { data, count, error } = await query;
   if (error) throw new ValidationError(error.message);
@@ -78,7 +107,7 @@ export const POST = withStaff(async (req, ctx) => {
 
   const { data: invoiceId, error } = await ctx.svc.rpc("pharmacy_invoice_create", {
     p_tenant_id: tenantId,
-    p_branch_id: body.branchId ?? null,
+    p_branch_id: body.branchId ?? ctx.branchId ?? null,
     p_patient_id: body.patientId ?? null,
     p_visit_id: body.visitId ?? null,
     p_source: body.source,

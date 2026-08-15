@@ -42,26 +42,17 @@ export default function NotificationsBell({ basePath }: { basePath: string }) {
     }
   }, []);
 
-  const loadItems = useCallback(async () => {
-    setBusy(true);
-    try {
-      const res = await fetch("/api/notifications?pageSize=8", { cache: "no-store" });
-      const body = await res.json();
-      if (res.ok) {
-        setItems(body.data ?? []);
-        setUnread((body.data ?? []).filter((n: NotifRow) => !n.is_read).length);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
   useEffect(() => {
     loadCount();
     const t = setInterval(loadCount, 30000);
-    return () => clearInterval(t);
+    // Refresh the badge instantly when notifications are read/deleted from the
+    // full Notifications pages (staff + patient) which dispatch this event.
+    const onChanged = () => loadCount();
+    window.addEventListener("skycare:notifs-changed", onChanged);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("skycare:notifs-changed", onChanged);
+    };
   }, [loadCount]);
 
   useEffect(() => {
@@ -72,18 +63,54 @@ export default function NotificationsBell({ basePath }: { basePath: string }) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  // Opening the bell = the user has seen the newest items, so mark them read.
+  // Also used by Mark All Read; every successful PUT decrements the badge
+  // immediately (and re-syncs from the DB).
+  const markRead = useCallback(async (id: string) => {
+    const res = await fetch(`/api/notifications/${id}`, { method: "PUT" });
+    if (res.ok) {
+      setItems((rows) => rows.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+      setUnread((u) => Math.max(0, u - 1));
+      loadCount();
+    }
+  }, [loadCount]);
+
+  const markReadMany = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    await Promise.all(ids.map((id) => fetch(`/api/notifications/${id}`, { method: "PUT" }).catch(() => {})));
+    setItems((rows) => rows.map((n) => (ids.includes(n.id) ? { ...n, is_read: true } : n)));
+    setUnread((u) => Math.max(0, u - ids.length));
+    loadCount();
+  }, [loadCount]);
+
   async function markAllRead() {
     const unreadIds = items.filter((n) => !n.is_read).map((n) => n.id);
     if (unreadIds.length === 0) return;
-    await Promise.all(unreadIds.map((id) => fetch(`/api/notifications/${id}`, { method: "PUT" }).catch(() => {})));
-    setUnread(0);
-    setItems((rows) => rows.map((n) => ({ ...n, is_read: true })));
+    await markReadMany(unreadIds);
   }
 
   function toggle() {
     const next = !open;
     setOpen(next);
-    if (next) loadItems();
+    if (next) {
+      (async () => {
+        setBusy(true);
+        try {
+          const res = await fetch("/api/notifications?pageSize=8", { cache: "no-store" });
+          const body = await res.json();
+          if (!res.ok) return;
+          const rows = (body.data ?? []) as NotifRow[];
+          setItems(rows);
+          // The items now on screen have been seen — clear them from unread.
+          const seenUnread = rows.filter((n) => !n.is_read).map((n) => n.id);
+          if (seenUnread.length > 0) await markReadMany(seenUnread);
+        } catch {
+          /* ignore */
+        } finally {
+          setBusy(false);
+        }
+      })();
+    }
   }
 
   return (
@@ -123,7 +150,13 @@ export default function NotificationsBell({ basePath }: { basePath: string }) {
               <p className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">No notifications yet.</p>
             ) : (
               items.map((n) => (
-                <div key={n.id} className={`border-b border-[var(--color-border)] px-4 py-3 last:border-b-0 ${!n.is_read ? "bg-[var(--color-primary-soft)]/40" : ""}`}>
+                <div
+                  key={n.id}
+                  onClick={() => {
+                    if (!n.is_read) markRead(n.id);
+                  }}
+                  className={`border-b border-[var(--color-border)] px-4 py-3 last:border-b-0 ${!n.is_read ? "cursor-pointer bg-[var(--color-primary-soft)]/40 hover:bg-[var(--color-primary-soft)]/60" : ""}`}
+                >
                   <p className={`text-sm ${n.is_read ? "font-medium text-[var(--color-foreground)]" : "font-semibold text-[var(--color-foreground)]"}`}>
                     {n.title ?? "Notification"}
                   </p>

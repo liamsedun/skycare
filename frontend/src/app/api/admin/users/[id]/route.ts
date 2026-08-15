@@ -10,10 +10,22 @@ export const dynamic = "force-dynamic";
 async function loadUser(ctx: Parameters<typeof withAuth>[0] extends never ? never : any, id: string) {
   const { data } = await ctx.svc
     .from("users")
-    .select("id, tenant_id, email, full_name, role, phone, is_active, module_access, created_at")
+    .select("id, tenant_id, branch_id, email, full_name, role, phone, is_active, module_access, created_at")
     .eq("id", id)
     .maybeSingle();
   return data;
+}
+
+async function resolveBranch(ctx: any, tenantId: string, branchId: unknown): Promise<string | null> {
+  if (branchId === null || branchId === undefined || branchId === "") return null;
+  const { data } = await ctx.svc
+    .from("branches")
+    .select("id, name")
+    .eq("id", branchId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (!data) throw new ValidationError("Branch not found in this hospital");
+  return data.id;
 }
 
 // GET /api/admin/users/[id]
@@ -28,13 +40,23 @@ export const GET = withAuth(async (req, ctx) => {
   return ok(user);
 });
 
-// PATCH /api/admin/users/[id] — update role / is_active / module_access (tenant-scoped)
+// PATCH /api/admin/users/[id] — update role / is_active / module_access /
+// full_name / email / phone (tenant-scoped). Email changes are pushed to the
+// auth account first (duplicates rejected there), then the users mirror.
 export const PATCH = withAuth(async (req, ctx) => {
   if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
   if (ctx.role !== "super_admin") requireTenant(ctx);
   await requireModuleLevel(ctx, "staff", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
-  const body = (await req.json()) as { role?: string; is_active?: boolean; module_access?: ModuleAccess };
+  const body = (await req.json()) as {
+    role?: string;
+    is_active?: boolean;
+    module_access?: ModuleAccess;
+    full_name?: string;
+    email?: string;
+    phone?: string | null;
+    branchId?: string | null;
+  };
 
   const user = await loadUser(ctx, id);
   if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
@@ -53,6 +75,24 @@ export const PATCH = withAuth(async (req, ctx) => {
       throw new ValidationError("Cannot assign that role");
     }
     patch.role = body.role;
+  }
+  if (typeof body.full_name === "string") {
+    const n = body.full_name.trim();
+    if (!n) throw new ValidationError("Full name cannot be empty");
+    patch.full_name = n;
+  }
+  if (typeof body.email === "string") {
+    const em = body.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) throw new ValidationError("Invalid email address");
+    patch.email = em;
+  }
+  if ("phone" in body) patch.phone = body.phone ? String(body.phone).trim() : null;
+  if ("branchId" in body) {
+    // Only an explicit branchId key changes the branch — absent means "leave
+    // it alone" (never overwrite with the editor's own branch claim).
+    const scopeTenant = ctx.tenantId ?? user.tenant_id;
+    if (!scopeTenant) throw new ValidationError("Platform users cannot be assigned a branch");
+    patch.branch_id = await resolveBranch(ctx, scopeTenant, body.branchId);
   }
   if ("module_access" in body) {
     const access = body.module_access;
@@ -76,6 +116,16 @@ export const PATCH = withAuth(async (req, ctx) => {
   }
   if (Object.keys(patch).length === 0) return ok(user);
 
+  // Email is authoritative in auth: update it there FIRST so a duplicate
+  // email fails before the mirror is touched.
+  if (patch.email) {
+    const auth = await ctx.svc.auth.admin.updateUserById(id, {
+      email: patch.email as string,
+      email_confirm: true,
+    });
+    if (auth.error) throw new ValidationError(auth.error.message);
+  }
+
   const { data, error } = await ctx.svc
     .from("users")
     .update(patch)
@@ -85,19 +135,33 @@ export const PATCH = withAuth(async (req, ctx) => {
   if (error) throw new ValidationError(error.message);
 
   // Keep auth app_metadata in sync so the JWT carries the right role on next login.
+  // branch_id keeps the target's own branch (patched value, else current) — never the editor's.
   await ctx.svc.auth.admin.updateUserById(id, {
     app_metadata: {
       role: patch.role ?? user.role,
-      tenant_id: ctx.tenantId,
-      branch_id: ctx.branchId ?? null,
+      tenant_id: user.tenant_id,
+      branch_id: patch.branch_id !== undefined ? patch.branch_id : user.branch_id,
     },
   });
+
+  const changes: string[] = [];
+  if (patch.role) changes.push(`role → ${patch.role}`);
+  if (typeof body.is_active === "boolean") changes.push(`active: ${body.is_active}`);
+  if (patch.full_name) changes.push(`name → ${patch.full_name}`);
+  if (patch.email) changes.push(`email → ${patch.email}`);
+  if ("phone" in body) changes.push(`phone → ${patch.phone ?? "—"}`);
+  if ("branchId" in body) changes.push(`branch → ${patch.branch_id ?? "none"}`);
+  if (patch.module_access !== undefined) {
+    changes.push(
+      `module access: ${patch.module_access && Object.keys(patch.module_access as Record<string, unknown>).length > 0 ? Object.entries(patch.module_access as Record<string, string>).map(([k, v]) => `${k}=${v}`).join(", ") : "role default"}`
+    );
+  }
 
   await logAudit(req, ctx, {
     action: "update",
     entityType: "users",
     entityId: id,
-    description: `Updated ${user.email}${patch.role ? ` — role → ${patch.role}` : ""}${typeof body.is_active === "boolean" ? ` — active: ${body.is_active}` : ""}${"module_access" in body ? ` — module access: ${body.module_access && Object.keys(body.module_access).length > 0 ? Object.entries(body.module_access).map(([k, v]) => `${k}=${v}`).join(", ") : "role default"}` : ""}`,
+    description: `Updated ${user.email}${changes.length ? ` — ${changes.join("; ")}` : ""}`,
   });
   return ok(data);
 });

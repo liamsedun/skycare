@@ -36,10 +36,12 @@ interface PatientRowRaw {
 export default async function PatientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; from?: string; to?: string }>;
 }) {
-  const { q, category } = await searchParams;
+  const { q, category, from, to } = await searchParams;
   const query = q?.trim() ?? "";
+  const fromDate = from?.trim() ?? "";
+  const toDate = to?.trim() ?? "";
   const cat = (PATIENT_CATEGORIES.find((c) => c.key === category)?.key ?? "") as "" | PatientCategory;
 
   const supabase = await createClient();
@@ -68,6 +70,9 @@ export default async function PatientsPage({
       );
     }
 
+    if (fromDate) builder = builder.gte("created_at", `${fromDate}T00:00:00`);
+    if (toDate) builder = builder.lte("created_at", `${toDate}T23:59:59.999`);
+
     const { data } = await builder;
     patients = (data ?? []) as PatientRowRaw[];
   } catch {
@@ -80,6 +85,8 @@ export default async function PatientsPage({
     const params = new URLSearchParams();
     if (key) params.set("category", key);
     if (query) params.set("q", query);
+    if (fromDate) params.set("from", fromDate);
+    if (toDate) params.set("to", toDate);
     const qs = params.toString();
     return `/app/patients${qs ? `?${qs}` : ""}`;
   };
@@ -133,6 +140,28 @@ export default async function PatientsPage({
             placeholder="Search by name, number or phone…"
             className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-10 pr-3 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
           />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <label className="text-xs text-[var(--color-muted-fg)]" htmlFor="patient-from">From</label>
+          <input
+            id="patient-from"
+            type="date"
+            name="from"
+            defaultValue={fromDate}
+            className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs outline-none"
+          />
+          <label className="text-xs text-[var(--color-muted-fg)]" htmlFor="patient-to">To</label>
+          <input
+            id="patient-to"
+            type="date"
+            name="to"
+            min={fromDate || undefined}
+            defaultValue={toDate}
+            className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs outline-none"
+          />
+          <button type="submit" className="focus-ring h-9 rounded-lg bg-[var(--color-primary)] px-3 text-xs font-medium text-white transition-opacity duration-200 hover:opacity-90">
+            Apply dates
+          </button>
         </div>
       </form>
 

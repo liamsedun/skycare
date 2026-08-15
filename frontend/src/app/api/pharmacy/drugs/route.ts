@@ -1,5 +1,6 @@
 import { withStaff, ok, requireTenant } from "@/lib/api-utils";
 import { resolveParam } from "@/lib/api-utils";
+import { resolveEffectivePrices } from "@/lib/pharmacy-pricing";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -9,12 +10,14 @@ export const dynamic = "force-dynamic";
 // trigram-prefixed substring matching; we re-rank here for typing-ahead —
 // exact name prefix of the query first, then generic-name prefix, then
 // fuzzy bits so "amg" surfaces "Amoxicillin" before alphabetically earlier
-// rows.
+// rows. unitPrice is the branch-aware effective price (branch override ->
+// "All branches" override -> catalogue unit_price); priceSource says which
+// rule produced it.
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const query = (resolveParam(req.nextUrl.searchParams.get("query")) ?? "").trim();
   const category = resolveParam(req.nextUrl.searchParams.get("category"));
-  const branchId = resolveParam(req.nextUrl.searchParams.get("branch_id"));
+  const branchId = resolveParam(req.nextUrl.searchParams.get("branch_id")) ?? ctx.branchId ?? null;
 
   const { data: drugs, error } = await ctx.svc.rpc("search_pharmacy_drugs", {
     p_tenant: tenantId,
@@ -29,33 +32,23 @@ export const GET = withStaff(async (req, ctx) => {
   const ids = rows.map((d: { id: string }) => d.id);
   const stockMap = new Map<string, number>();
   const effectiveByDrug = new Map<string, number>();
+  const sourceByDrug = new Map<string, string>();
   if (ids.length > 0) {
-    const [batchRes, overrideRes] = await Promise.all([
+    const [batchRes, priceRes] = await Promise.all([
       ctx.svc
         .from("pharmacy_stock_batches")
         .select("drug_id, quantity_on_hand")
         .in("drug_id", ids)
         .gte("expiry_date", new Date().toISOString().slice(0, 10)),
-      ctx.svc
-        .from("pharmacy_price_overrides")
-        .select("drug_id, branch_id, unit_price")
-        .eq("tenant_id", tenantId)
-        .in("drug_id", ids),
+      resolveEffectivePrices(ctx.svc, tenantId, branchId, ids).catch(() => new Map<string, never>()),
     ]);
     for (const b of batchRes.data ?? []) {
       stockMap.set(b.drug_id, (stockMap.get(b.drug_id) ?? 0) + (b.quantity_on_hand ?? 0));
     }
-    // effective price: exact branch override beats base (branch NULL) override
-    const exactOverride = new Map<string, number>();
-    const baseOverride = new Map<string, number>();
-    for (const o of overrideRes.data ?? []) {
-      if (o.branch_id === null) baseOverride.set(o.drug_id, o.unit_price);
-      else exactOverride.set(o.drug_id, o.unit_price);
-    }
-    const effective = (drugId: string, fallback: number) =>
-      (ctx.branchId && exactOverride.has(drugId) ? exactOverride.get(drugId) : baseOverride.get(drugId)) ?? fallback;
     for (const d of rows as Array<{ id: string; unit_price: number }>) {
-      effectiveByDrug.set(d.id, effective(d.id, Number(d.unit_price ?? 0)));
+      const eff = priceRes.get(d.id);
+      effectiveByDrug.set(d.id, eff?.price ?? Number(d.unit_price ?? 0));
+      sourceByDrug.set(d.id, eff?.source ?? "catalog");
     }
   }
 
@@ -68,8 +61,10 @@ export const GET = withStaff(async (req, ctx) => {
     form: d.form,
     dosage: d.dosage,
     unitPrice: effectiveByDrug.get(d.id) ?? d.unit_price,
+    priceSource: sourceByDrug.get(d.id) ?? "catalog",
     requiresRx: d.requires_rx,
     isControlled: d.is_controlled,
+    supplierId: d.supplier_id ?? null,
     inStock: stockMap.get(d.id) ?? 0,
   });
 

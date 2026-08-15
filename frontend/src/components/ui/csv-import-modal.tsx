@@ -22,6 +22,7 @@ interface CsvImportModalProps {
   onImport: (rows: string[][]) => Promise<ImportResult>;
   onImported?: () => void;
   acceptPdf?: boolean;
+  extraContent?: React.ReactNode;
 }
 
 export default function CsvImportModal({
@@ -35,6 +36,7 @@ export default function CsvImportModal({
   onImport,
   onImported,
   acceptPdf = true,
+  extraContent,
 }: CsvImportModalProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -161,6 +163,8 @@ export default function CsvImportModal({
             <p className="mt-2 truncate text-xs text-[var(--color-muted-fg)]">Selected: {fileName}</p>
           )}
         </div>
+
+        {extraContent && <div className="mt-4">{extraContent}</div>}
 
         {error && (
           <p

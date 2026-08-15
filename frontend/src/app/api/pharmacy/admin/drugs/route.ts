@@ -21,7 +21,7 @@ export const GET = withStaff(async (req, ctx) => {
 
   let q = ctx.svc
     .from("pharmacy_drugs")
-    .select("id, tenant_id, branch_id, name, generic_name, brand, category, form, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, is_controlled, nafdac_number, is_active, created_at, updated_at", { count: "exact" })
+    .select("id, tenant_id, branch_id, name, generic_name, brand, category, form, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, is_controlled, nafdac_number, supplier_id, is_active, created_at, updated_at", { count: "exact" })
     .eq("tenant_id", tenantId);
   if (!includeInactive) q = q.eq("is_active", true);
   if (category) q = q.eq("category", category);
@@ -76,6 +76,7 @@ export const GET = withStaff(async (req, ctx) => {
     nafdacNumber: d.nafdac_number,
     isActive: d.is_active,
     branchId: d.branch_id,
+    supplierId: d.supplier_id,
     stock: stockByDrug.get(d.id) ?? 0,
   }));
 
@@ -95,6 +96,12 @@ export const POST = withAuth(
     if (!check.ok) throw new ValidationError(check.errors.join("; "));
 
     const v = check.value;
+
+    if (v.supplierId) {
+      const { data: supp } = await ctx.svc.from("pharmacy_suppliers").select("id").eq("tenant_id", tenantId).eq("id", v.supplierId).maybeSingle();
+      if (!supp) throw new ValidationError("Supplier not found in this hospital");
+    }
+
     const { data: dup } = await ctx.svc
       .from("pharmacy_drugs")
       .select("id, name")
@@ -122,6 +129,7 @@ export const POST = withAuth(
         requires_rx: v.requiresRx ?? true,
         is_controlled: v.isControlled ?? false,
         nafdac_number: v.nafdacNumber,
+        supplier_id: v.supplierId,
       })
       .select()
       .single();

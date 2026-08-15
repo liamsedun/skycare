@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pill, Building2, Tag, Upload, Search, Plus, Trash2, X, Pencil, CheckCircle2,
-  AlertTriangle, Download, Archive, Package,
+  AlertTriangle, Download, Archive, Package, Store, MapPin, Phone as PhoneIcon, Mail,
 } from "lucide-react";
 import { FORM_OPTIONS } from "@/lib/pharmacy-admin";
 import PharmacyStockView from "@/components/dashboard/pharmacy-stock-view";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import FilterBar from "@/components/filters/filter-bar";
 
 // ============================================================================
 // Pharmacy Admin — catalogue administration for hospital admins:
@@ -27,12 +29,13 @@ const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
 const ngn = (v: number | null | undefined) => `₦${Number(v ?? 0).toLocaleString()}`;
 
-type Tab = "stock" | "drugs" | "suppliers" | "prices" | "import";
+type Tab = "stock" | "drugs" | "suppliers" | "branches" | "prices" | "import";
 
 const TABS: Array<{ id: Tab; label: string; icon: typeof Pill }> = [
   { id: "stock", label: "Stock", icon: Package },
   { id: "drugs", label: "Drugs", icon: Pill },
   { id: "suppliers", label: "Suppliers", icon: Building2 },
+  { id: "branches", label: "Branches", icon: Store },
   { id: "prices", label: "Branch prices", icon: Tag },
   { id: "import", label: "Bulk import", icon: Upload },
 ];
@@ -68,6 +71,7 @@ export default function PharmacyAdminView() {
       {tab === "stock" && <PharmacyStockView />}
       {tab === "drugs" && <DrugsTab />}
       {tab === "suppliers" && <SuppliersTab />}
+      {tab === "branches" && <BranchesTab />}
       {tab === "prices" && <PricesTab />}
       {tab === "import" && <ImportTab />}
     </div>
@@ -104,6 +108,7 @@ export interface DrugRow {
   isControlled: boolean;
   nafdacNumber: string | null;
   isActive: boolean;
+  supplierId: string | null;
   stock: number;
 }
 
@@ -299,6 +304,7 @@ interface DrugFormState {
   requiresRx: boolean;
   isControlled: boolean;
   nafdacNumber: string;
+  supplierId: string;
 }
 
 export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: DrugRow | null; categories: CategoryRow[]; onClose: () => void; onSaved: () => void }) {
@@ -321,9 +327,19 @@ export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: Dr
           requiresRx: drug.requiresRx,
           isControlled: drug.isControlled,
           nafdacNumber: drug.nafdacNumber ?? "",
+          supplierId: drug.supplierId ?? "",
         }
-      : { name: "", genericName: "", brand: "", category: categories.find((c) => c.isPlatform)?.name ?? "", form: "tablet", dosage: "", sku: "", wholesalePrice: "", unitPrice: "", reorderLevel: "10", reorderQty: "100", requiresRx: true, isControlled: false, nafdacNumber: "" }
+      : { name: "", genericName: "", brand: "", category: categories.find((c) => c.isPlatform)?.name ?? "", form: "tablet", dosage: "", sku: "", wholesalePrice: "", unitPrice: "", reorderLevel: "10", reorderQty: "100", requiresRx: true, isControlled: false, nafdacNumber: "", supplierId: "" }
   );
+
+  const [suppliers, setSuppliers] = useState<SupplierRow[]>([]);
+
+  useEffect(() => {
+    fetch("/api/pharmacy/admin/suppliers", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((b) => setSuppliers((b.data ?? []) as SupplierRow[]))
+      .catch(() => setSuppliers([]));
+  }, []);
 
   const set = (k: keyof DrugFormState, v: unknown) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -346,6 +362,7 @@ export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: Dr
         requiresRx: form.requiresRx,
         isControlled: form.isControlled,
         nafdacNumber: form.nafdacNumber.trim() || null,
+        supplierId: form.supplierId.trim() || null,
       };
       const res = await fetch(drug ? `/api/pharmacy/admin/drugs/${drug.id}` : "/api/pharmacy/admin/drugs", {
         method: drug ? "PATCH" : "POST",
@@ -415,6 +432,18 @@ export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: Dr
             <input id="ad-naf" value={form.nafdacNumber} onChange={(e) => set("nafdacNumber", e.target.value)} className={inputCls} />
           </div>
           <div className={field}>
+            <label className={lbl} htmlFor="ad-supplier">Primary supplier</label>
+            <select id="ad-supplier" value={form.supplierId} onChange={(e) => set("supplierId", e.target.value)} className={inputCls}>
+              <option value="">— None —</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-[10px] text-[var(--color-muted-fg)]">
+              Tags this drug to a supplier — it then pins to the top of the New purchase order list and appears in the import template.
+            </p>
+          </div>
+          <div className={field}>
             <label className={lbl} htmlFor="ad-wholesale">Wholesale (₦)</label>
             <input id="ad-wholesale" type="number" min={0} value={form.wholesalePrice} onChange={(e) => set("wholesalePrice", e.target.value)} className={inputCls} />
           </div>
@@ -469,11 +498,15 @@ interface SupplierRow {
   nafdacLicense: string | null;
   paymentTerms: string | null;
   isActive: boolean;
+  createdAt: string | null;
 }
 
 export function SuppliersTab() {
   const [rows, setRows] = useState<SupplierRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [modal, setModal] = useState<{ open: true; supplier: SupplierRow | null } | { open: false }>({ open: false });
 
   const load = useCallback(async () => {
@@ -489,10 +522,22 @@ export function SuppliersTab() {
   useEffect(() => { void load(); }, [load]);
   const afterSave = () => { setModal({ open: false }); void load(); };
 
+  const visible = rows.filter((s) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      s.name.toLowerCase().includes(q) ||
+      (s.code ?? "").toLowerCase().includes(q) ||
+      (s.contactPerson ?? "").toLowerCase().includes(q) ||
+      (s.email ?? "").toLowerCase().includes(q) ||
+      (s.nafdacLicense ?? "").toLowerCase().includes(q);
+    return matchesSearch && inDateRange(s.createdAt, from, to);
+  });
+
   const SUPPLIER_COLUMNS = ["name", "code", "contactPerson", "phone", "email", "address", "nafdacLicense", "paymentTerms"];
 
   const supplierRows = () =>
-    rows.map((s) => [
+    visible.map((s) => [
       s.name,
       s.code ?? "",
       s.contactPerson ?? "",
@@ -504,12 +549,12 @@ export function SuppliersTab() {
     ]);
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
     downloadCsv(`suppliers-${dateStamp()}.csv`, SUPPLIER_COLUMNS, supplierRows());
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
     printTable("Suppliers & Procurement", SUPPLIER_COLUMNS, supplierRows());
   }
 
@@ -542,20 +587,33 @@ export function SuppliersTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <ImportExportMenu
-          entityLabel="Suppliers"
-          exportCsv={exportCsv}
-          exportPdf={exportPdf}
-          importColumns={SUPPLIER_COLUMNS}
-          importSample={[["Emzor Chemists", "EMZ-01", "Bisi Adeyemi", "0803 555 1234", "sales@emzor.example", "14 Alaba Rd, Lagos", "NAFDAC-4451", "net 30"]]}
-          templateFilename="suppliers-import-template.csv"
-          onImport={importSuppliers}
-          onImported={() => void load()}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+          searchPlaceholder="Search name, code, contact…"
+          searchWidth={240}
         />
-        <button type="button" onClick={() => setModal({ open: true, supplier: null })} className={btnPrimary}>
-          <Plus size={14} aria-hidden="true" /> Add supplier
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ImportExportMenu
+            entityLabel="Suppliers"
+            exportCsv={exportCsv}
+            exportPdf={exportPdf}
+            importColumns={SUPPLIER_COLUMNS}
+            importSample={[["Emzor Chemists", "EMZ-01", "Bisi Adeyemi", "0803 555 1234", "sales@emzor.example", "14 Alaba Rd, Lagos", "NAFDAC-4451", "net 30"]]}
+            templateFilename="suppliers-import-template.csv"
+            onImport={importSuppliers}
+            onImported={() => void load()}
+          />
+          <button type="button" onClick={() => setModal({ open: true, supplier: null })} className={btnPrimary}>
+            <Plus size={14} aria-hidden="true" /> Add supplier
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
@@ -573,10 +631,10 @@ export function SuppliersTab() {
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
-            ) : rows.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No suppliers yet — add your local drug vendors.</td></tr>
+            ) : visible.length === 0 ? (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No suppliers match these filters.</td></tr>
             ) : (
-              rows.map((s) => (
+              visible.map((s) => (
                 <tr key={s.id} className={s.isActive ? "" : "opacity-50"}>
                   <td className="px-4 py-2.5">
                     <p className="font-medium text-[var(--color-foreground)]">{s.name}</p>
@@ -904,16 +962,17 @@ interface ImportReport {
 
 export function ImportTab() {
   const [csv, setCsv] = useState("");
-  const [skipExisting, setSkipExisting] = useState(false);
   const [defaultCategory, setDefaultCategory] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState<"replace" | "keep" | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const TEMPLATE = `name,category,form,generic_name,brand,dosage,sku,wholesale_price,unit_price,reorder_level,reorder_qty,requires_rx,nafdac_number
-"Vitamin C 500mg Tablets x30","Vitamins & Supplements",tablet,"Vitamin C",Generic,"500mg","VC30",1200,1800,20,100,false,
-"Amoxiclav 400mg Syrup 60ml","Antibiotics",syrup,"Amoxicillin/Clavulanic Acid",Generic,"400mg/5ml",,2500,3800,15,50,true,`;
+  const TEMPLATE = `name,category,form,generic_name,brand,dosage,sku,wholesale_price,unit_price,reorder_level,reorder_qty,requires_rx,nafdac_number,supplier
+"Vitamin C 500mg Tablets x30","Vitamins & Supplements",tablet,"Vitamin C",Generic,"500mg","VC30",1200,1800,20,100,false,,"Emzor Pharmaceutical Industries Limited"
+"Amoxiclav 400mg Syrup 60ml","Antibiotics",syrup,"Amoxicillin/Clavulanic Acid",Generic,"400mg/5ml",,2500,3800,15,50,true,,"Fidson Healthcare Plc"`;
 
   function downloadTemplate() {
     const blob = new Blob([TEMPLATE], { type: "text/csv;charset=utf-8" });
@@ -933,20 +992,30 @@ export function ImportTab() {
     reader.readAsText(file);
   }
 
+  async function postImport(payload: Record<string, unknown>) {
+    const res = await fetch("/api/pharmacy/admin/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error ?? "Import failed");
+    return body.data;
+  }
+
+  // 1) dry-run: count drugs that already exist so we can ask before replacing
   async function run() {
     setBusy(true);
     setError(null);
-    setReport(null);
     try {
       if (!csv.trim()) throw new Error("Paste your CSV or choose a file");
-      const res = await fetch("/api/pharmacy/admin/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csv, skipExisting, defaultCategory: defaultCategory.trim() || undefined }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Import failed");
-      setReport(body.data);
+      const pre = await postImport({ csv, dryRun: true, defaultCategory: defaultCategory.trim() || undefined });
+      if (pre.existing > 0) {
+        setPendingConfirm(pre.existing);
+        return;
+      }
+      const data = await postImport({ csv, conflictAction: "replace", defaultCategory: defaultCategory.trim() || undefined });
+      setReport(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Import failed");
     } finally {
@@ -954,9 +1023,28 @@ export function ImportTab() {
     }
   }
 
+  // 2) the user chose how to handle existing drugs — perform the real import
+  async function doImport(action: "replace" | "keep") {
+    setPendingConfirm(null);
+    setConfirming(action);
+    setBusy(true);
+    setError(null);
+    setReport(null);
+    try {
+      const data = await postImport({ csv, conflictAction: action, defaultCategory: defaultCategory.trim() || undefined });
+      setReport(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setBusy(false);
+      setConfirming(null);
+    }
+  }
+
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
   return (
+    <>
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <div className="flex items-center justify-between">
@@ -966,7 +1054,7 @@ export function ImportTab() {
           </button>
         </div>
         <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
-          Columns: <code className="rounded bg-slate-100 px-1">name*, category*, form*</code>, generic_name, brand, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, nafdac_number. Max 1000 rows.
+          Columns: <code className="rounded bg-slate-100 px-1">name*, category*, form*</code>, generic_name, brand, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, nafdac_number, <code className="rounded bg-slate-100 px-1">supplier</code> (optional — the supplier&apos;s exact name; it must already exist on the Suppliers tab). Max 1000 rows.
         </p>
 
         <div className="mt-4">
@@ -985,10 +1073,9 @@ export function ImportTab() {
             <button type="button" onClick={() => fileRef.current?.click()} className={btnGhost}>
               <Upload size={13} aria-hidden="true" /> Choose .csv file
             </button>
-            <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
-              <input type="checkbox" checked={skipExisting} onChange={(e) => setSkipExisting(e.target.checked)} className="accent-[var(--color-primary)]" />
-              Skip rows that already exist (else update them)
-            </label>
+            <span className="text-xs text-[var(--color-muted-fg)]">
+              If some drugs already exist you&apos;ll be asked whether to replace them.
+            </span>
           </div>
 
           <div className="mt-3">
@@ -1047,6 +1134,449 @@ export function ImportTab() {
           </div>
         )}
       </div>
+    </div>
+
+      {pendingConfirm !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-xl">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
+              <div>
+                <h4 className="text-sm font-bold text-[var(--color-foreground)]">Existing drugs found</h4>
+                <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+                  <span className="font-semibold text-[var(--color-foreground)]">{pendingConfirm}</span> of the drug(s) in
+                  this file already exist in the catalogue.
+                </p>
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+              Replace them with the values from this file, or skip them and only add the new drugs?
+            </p>
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setPendingConfirm(null)} className={btnGhost}>
+                Cancel
+              </button>
+              <button type="button" onClick={() => void doImport("keep")} disabled={confirming !== null} className={btnGhost}>
+                {confirming === "keep" ? "Importing…" : "Keep existing (add new only)"}
+              </button>
+              <button type="button" onClick={() => void doImport("replace")} disabled={confirming !== null} className={btnPrimary}>
+                {confirming === "replace" ? "Replacing…" : "Replace them"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// BRANCHES TAB
+// ---------------------------------------------------------------------------
+// Branch administration (prices + branch manager) lives on /app/pharmacy/prices
+// — admin-gated, and the natural home for everything branch-related.
+export function BranchAdminTabs() {
+  const [tab, setTab] = useState<"prices" | "branches">("prices");
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2" role="group" aria-label="Branch administration">
+        <button
+          type="button"
+          onClick={() => setTab("prices")}
+          aria-pressed={tab === "prices"}
+          className={`focus-ring inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
+            tab === "prices" ? "bg-[var(--color-primary)] text-white" : "border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
+          }`}
+        >
+          <Tag size={14} aria-hidden="true" /> Branch prices
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("branches")}
+          aria-pressed={tab === "branches"}
+          className={`focus-ring inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors duration-200 ${
+            tab === "branches" ? "bg-[var(--color-primary)] text-white" : "border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
+          }`}
+        >
+          <Store size={14} aria-hidden="true" /> Branches
+        </button>
+      </div>
+      {tab === "prices" ? <PricesTab /> : <BranchesTab />}
+    </div>
+  );
+}
+
+interface BranchRow {
+  id: string;
+  name: string;
+  code: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  phone: string | null;
+  email: string | null;
+  isMain: boolean;
+  isActive: boolean;
+}
+
+export function BranchesTab() {
+  const [rows, setRows] = useState<BranchRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [modal, setModal] = useState<{ open: true; branch: BranchRow | null } | { open: false }>({ open: false });
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/pharmacy/admin/branches", { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to load branches");
+      setRows(body.data ?? []);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to load branches");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function submit(form: FormData) {
+    const payload: Record<string, unknown> = { name: String(form.get("name") ?? "").trim() };
+    for (const k of ["code", "address", "city", "state", "phone", "email"] as const) {
+      const v = String(form.get(k) ?? "").trim();
+      if (v) payload[k] = v;
+    }
+    const editing = modal.open && modal.branch;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(
+        editing ? `/api/pharmacy/admin/branches/${editing.id}` : "/api/pharmacy/admin/branches",
+        {
+          method: editing ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to save branch");
+      setModal({ open: false });
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to save branch");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggle(b: BranchRow) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/pharmacy/admin/branches/${b.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !b.isActive }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update branch");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to update branch");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(b: BranchRow) {
+    if (
+      !confirm(
+        `Delete branch "${b.name}"?\n\nStaff assigned to it become branchless and its stock / price rows are removed. This cannot be undone.`
+      )
+    )
+      return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/pharmacy/admin/branches/${b.id}`, { method: "DELETE" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to delete branch");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to delete branch");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-[var(--color-muted-fg)]">
+          Branch staff only see their branch&apos;s stock and prices. The main branch always stays.
+        </p>
+        <button
+          type="button"
+          onClick={() => setModal({ open: true, branch: null })}
+          disabled={busy}
+          className={btnPrimary}
+        >
+          <Plus size={14} aria-hidden="true" /> Add branch
+        </button>
+      </div>
+
+      {err && (
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+        >
+          {err}
+        </p>
+      )}
+
+      {loading ? (
+        <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading branches…</p>
+      ) : rows.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-12 text-center shadow-[var(--shadow-sm)]">
+          <Store size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+            No branches yet — add your first one.
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((b) => (
+            <div
+              key={b.id}
+              className={`rounded-2xl border bg-white p-4 shadow-[var(--shadow-sm)] transition-colors duration-200 ${
+                b.isActive ? "border-[var(--color-border)]" : "border-dashed opacity-70"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-[var(--color-primary-dark)]">
+                    <Store size={16} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[var(--color-foreground)]">{b.name}</p>
+                    <p className="text-[11px] text-[var(--color-muted-fg)]">
+                      {b.isMain ? (
+                        <span className="font-semibold text-[var(--color-primary-dark)]">Main branch</span>
+                      ) : b.code ? (
+                        b.code
+                      ) : (
+                        "Branch"
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                    b.isActive
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-slate-200 bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {b.isActive ? "Active" : "Inactive"}
+                </span>
+              </div>
+
+              {(b.address || b.city || b.state) && (
+                <div className="mt-3 flex items-start gap-1.5 text-xs text-[var(--color-muted-fg)]">
+                  <MapPin size={12} aria-hidden="true" className="mt-0.5 shrink-0" />
+                  <span className="min-w-0">
+                    {[b.address, b.city, b.state].filter(Boolean).join(", ")}
+                  </span>
+                </div>
+              )}
+              {b.phone && (
+                <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+                  <PhoneIcon size={12} aria-hidden="true" className="shrink-0" />
+                  <span>{b.phone}</span>
+                </div>
+              )}
+              {b.email && (
+                <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+                  <Mail size={12} aria-hidden="true" className="shrink-0" />
+                  <span className="truncate">{b.email}</span>
+                </div>
+              )}
+
+              <div className="mt-4 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModal({ open: true, branch: b })}
+                  disabled={busy}
+                  className={btnGhost}
+                >
+                  <Pencil size={12} aria-hidden="true" /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void toggle(b)}
+                  disabled={busy}
+                  className={btnGhost}
+                >
+                  {b.isActive ? "Deactivate" : "Activate"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void remove(b)}
+                  disabled={busy || b.isMain}
+                  title={b.isMain ? "The main branch cannot be deleted" : "Delete branch"}
+                  className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 size={12} aria-hidden="true" /> Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {modal.open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={modal.branch ? `Edit ${modal.branch.name}` : "Add branch"}
+        >
+          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold">{modal.branch ? `Edit — ${modal.branch.name}` : "Add branch"}</h3>
+              <button
+                type="button"
+                onClick={() => setModal({ open: false })}
+                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                aria-label="Close"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <form
+              className="mt-5 space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void submit(new FormData(e.currentTarget));
+              }}
+            >
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-name">
+                    Branch name
+                  </label>
+                  <input
+                    id="b-name"
+                    name="name"
+                    required
+                    maxLength={120}
+                    className={inputCls}
+                    defaultValue={modal.branch?.name ?? ""}
+                    placeholder="e.g. Victoria Island Pharmacy"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-code">
+                    Code
+                  </label>
+                  <input
+                    id="b-code"
+                    name="code"
+                    className={inputCls}
+                    defaultValue={modal.branch?.code ?? ""}
+                    placeholder="e.g. VI"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-phone">
+                    Phone
+                  </label>
+                  <input
+                    id="b-phone"
+                    name="phone"
+                    className={inputCls}
+                    defaultValue={modal.branch?.phone ?? ""}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-address">
+                    Address
+                  </label>
+                  <input
+                    id="b-address"
+                    name="address"
+                    className={inputCls}
+                    defaultValue={modal.branch?.address ?? ""}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-city">
+                    City
+                  </label>
+                  <input
+                    id="b-city"
+                    name="city"
+                    className={inputCls}
+                    defaultValue={modal.branch?.city ?? ""}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-state">
+                    State
+                  </label>
+                  <input
+                    id="b-state"
+                    name="state"
+                    className={inputCls}
+                    defaultValue={modal.branch?.state ?? ""}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="b-email">
+                    Email
+                  </label>
+                  <input
+                    id="b-email"
+                    name="email"
+                    type="email"
+                    className={inputCls}
+                    defaultValue={modal.branch?.email ?? ""}
+                  />
+                </div>
+              </div>
+              {err && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+                >
+                  {err}
+                </p>
+              )}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setModal({ open: false })}
+                  className={btnGhost + " flex-1 justify-center"}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className={btnPrimary + " flex-1 justify-center"}
+                >
+                  {busy ? "Saving…" : modal.branch ? "Save changes" : "Create branch"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

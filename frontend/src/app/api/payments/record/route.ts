@@ -1,6 +1,6 @@
-import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, requireModuleLevel, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger } from "@/lib/api-utils";
+import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, requireModuleLevel, resolvePayingAccountId, postBankLedger } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
-import { notifyUsers } from "@/lib/notify";
+import { notifyUsers, resolvePatientUserIds } from "@/lib/notify";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +21,7 @@ export interface RecordPaymentBody {
   patientId: string;
   amount: number;
   paymentMethod: string;
+  accountId?: string | null;
   allocation: Array<{ invoiceId: string; amount: number }>;
   transactionRef?: string;
   notes?: string;
@@ -79,9 +80,10 @@ export const POST = withAuth(async (req, ctx) => {
   const createdPayments = [];
   const touchedInvoices = [];
 
-  // Banking ledger: cash receipts go to the Cash account; every other method
-  // credits the default bank account (or Cash when none is configured).
-  const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
+  // Banking ledger: receipts land in the selected account — Cash when the
+  // picker says cash, the chosen bank when a bank is picked, or the
+  // method-derived default (first active bank for non-cash methods).
+  const ledgerAccount = await resolvePayingAccountId(ctx.svc, tenantId, body.accountId, body.paymentMethod);
 
   for (const item of body.allocation) {
     const { data: invoice } = await ctx.svc
@@ -158,7 +160,7 @@ export const POST = withAuth(async (req, ctx) => {
         await postBankLedger(ctx.svc, {
           tenantId,
           branchId: ctx.branchId ?? null,
-          accountId: bankLedgerAccountForMethod(payment.payment_method, defaultBankId),
+          accountId: ledgerAccount,
           direction: "in",
           amount: Number(payment.amount),
           source: "payment",
@@ -176,16 +178,19 @@ export const POST = withAuth(async (req, ctx) => {
     }
   }
 
-  // Notify the patient's portal account and other billing staff
-  if (patient.user_id) {
+  // Notify the patient's portal account (and the family root when the payer
+  // is a dependant) that the payment landed; the portal shows the receipt.
+  const invoiceNumbers = touchedInvoices.map((i) => i.invoice_number).filter(Boolean).join(", ");
+  const portalUsers = await resolvePatientUserIds(ctx.svc, tenantId, body.patientId);
+  if (portalUsers.length > 0) {
     await notifyUsers(ctx.svc, {
       orgId: tenantId,
-      userIds: [patient.user_id],
+      userIds: portalUsers,
       type: "payment_confirmed",
       title: "Payment confirmed",
-      message: `${reference} — ₦${body.amount.toLocaleString()}`,
-      referenceType: "payments",
-      referenceId: createdPayments[0]?.id,
+      message: `${reference} — ₦${body.amount.toLocaleString()} received on ${invoiceNumbers || "your bill"}. A receipt is available in your portal.`,
+      referenceType: "invoices",
+      referenceId: touchedInvoices[0]?.id,
     });
   }
   const { data: billingStaff } = await ctx.svc

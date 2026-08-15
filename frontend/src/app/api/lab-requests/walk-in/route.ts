@@ -4,8 +4,7 @@ import {
   ValidationError,
   requireTenant,
   requireModuleLevel,
-  resolveBankAccountId,
-  bankLedgerAccountForMethod,
+  resolvePayingAccountId,
   postBankLedger,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
@@ -31,6 +30,7 @@ export interface WalkInLabRequestBody {
   notes?: string;
   assignedToIds?: string[];
   paymentMethod: string;
+  accountId?: string | null;
   transactionRef?: string;
   items: Array<{
     serviceId?: string;
@@ -64,6 +64,11 @@ export const POST = withStaff(async (req, ctx) => {
   if (body.paymentMethod === "paystack" && !body.email?.trim()) {
     throw new ValidationError("An email is required for Paystack payments");
   }
+
+  // Validate the chosen receiving account BEFORE any writes so a bad bank
+  // never leaves a half-created patient/request behind. "cash"/absent → the
+  // method-derived default (first active bank for non-cash), uuid → that bank.
+  const ledgerAccount = await resolvePayingAccountId(ctx.svc, tenantId, body.accountId, body.paymentMethod);
 
   // 1. Fast-create the walk-in patient record (no portal login).
   const settings = await getTenantSettings(ctx.svc, tenantId);
@@ -234,12 +239,11 @@ export const POST = withStaff(async (req, ctx) => {
     }
     payment = insertedPay;
 
-    const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
     try {
       await postBankLedger(ctx.svc, {
         tenantId,
         branchId: ctx.branchId ?? null,
-        accountId: bankLedgerAccountForMethod(payment.payment_method, defaultBankId),
+        accountId: ledgerAccount,
         direction: "in",
         amount: total,
         source: "payment",

@@ -18,6 +18,7 @@ interface ImportExportMenuProps {
   onImport: (rows: string[][]) => Promise<ImportResult>;
   onImported?: () => void;
   disabled?: boolean;
+  importExtra?: React.ReactNode;
 }
 
 /**
@@ -36,6 +37,7 @@ export default function ImportExportMenu({
   onImport,
   onImported,
   disabled = false,
+  importExtra,
 }: ImportExportMenuProps) {
   const [importOpen, setImportOpen] = useState(false);
 
@@ -82,6 +84,7 @@ export default function ImportExportMenu({
         onClose={() => setImportOpen(false)}
         onImport={onImport}
         onImported={onImported}
+        extraContent={importExtra}
       />
     </div>
   );

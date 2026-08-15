@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
-import { PricesTab } from "@/components/dashboard/pharmacy-admin-view";
+import { BranchAdminTabs } from "@/components/dashboard/pharmacy-admin-view";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +26,7 @@ export default async function BranchPricesPage() {
           Per-branch retail price overrides for the pharmacy catalogue.
         </p>
       </div>
-      <PricesTab />
+      <BranchAdminTabs />
     </div>
   );
 }

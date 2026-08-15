@@ -2,13 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, CalendarOff, CalendarRange, Clock, KeyRound, Mail, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Stethoscope, Trash2, UserRoundCheck, UserRoundPlus, Users } from "lucide-react";
+import { CalendarDays, CalendarOff, CalendarRange, Clock, Eye, EyeOff, KeyRound, Mail, MapPin, MoreHorizontal, Pencil, Phone, Plus, Power, ShieldCheck, Stethoscope, Trash2, UserRoundCheck, UserRoundPlus, Users } from "lucide-react";
 import { ActionDropdown } from "@/components/ui/action-dropdown";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { fmtDate, fmtTime } from "@/lib/shift-format";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface StaffUser {
   id: string;
@@ -19,6 +21,8 @@ interface StaffUser {
   avatar_url: string | null;
   is_active: boolean;
   created_at: string;
+  branch_id: string | null;
+  branches?: { name: string } | null;
   staff?: {
     id: string;
     staff_number: string;
@@ -37,6 +41,14 @@ interface StaffUser {
 }
 
 type DutyStatus = "all" | "on_duty" | "off_duty" | "on_leave";
+
+interface BranchRow {
+  id: string;
+  name: string;
+  code: string | null;
+  isMain: boolean;
+  isActive: boolean;
+}
 
 const CREATABLE_ROLES: StaffRole[] = [
   "hospital_admin",
@@ -106,10 +118,13 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [deptFilter, setDeptFilter] = useState("");
   const [specFilter, setSpecFilter] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [editTarget, setEditTarget] = useState<StaffUser | null>(null);
   const [busy, setBusy] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<DutyStatus>("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [todayShifts, setTodayShifts] = useState<Record<string, { from_time: string; until_time: string }>>({});
   const [availTarget, setAvailTarget] = useState<StaffUser | null>(null);
   const [availForm, setAvailForm] = useState({ is_available: true, available_from: "09:00", available_until: "17:00" });
@@ -117,6 +132,7 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   const [leaveForm, setLeaveForm] = useState({ on_leave_until: "" });
   const [roleTarget, setRoleTarget] = useState<StaffUser | null>(null);
   const [roleForm, setRoleForm] = useState("");
+  const [branches, setBranches] = useState<BranchRow[]>([]);
   const router = useRouter();
 
   const todayISO = () => {
@@ -148,6 +164,12 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load staff");
       setUsers(body.data ?? []);
+
+      const branchesRes = await fetch("/api/pharmacy/admin/branches", { cache: "no-store" });
+      if (branchesRes.ok) {
+        const branchesBody = await branchesRes.json();
+        setBranches(branchesBody.data ?? []);
+      }
 
       const today = todayISO();
       const dutyRes = await fetch(`/api/duty-roster?from=${today}&to=${today}`, { cache: "no-store" });
@@ -188,11 +210,13 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           role: form.get("role"),
           department: form.get("department") || undefined,
           specialization: form.get("specialization") || undefined,
+          branchId: form.get("branchId") ? String(form.get("branchId")) : null,
         }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to create user");
       setShowCreate(false);
+      setShowStaffPassword(false);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create user");
@@ -269,6 +293,25 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
     setBusy(true);
     setError(null);
     try {
+      // 1) user-level fields (name / email / phone / role) — PATCH admin users (not for self)
+      const userPatch: Record<string, unknown> = {};
+      if (form.get("fullName") !== editTarget.full_name) userPatch.full_name = form.get("fullName");
+      if (String(form.get("email") ?? "").trim().toLowerCase() !== editTarget.email) userPatch.email = String(form.get("email") ?? "").trim().toLowerCase();
+      if ((form.get("phone") ?? "") !== (editTarget.phone ?? "")) userPatch.phone = form.get("phone") || null;
+      if (form.get("role") !== editTarget.role) userPatch.role = form.get("role");
+      if (String(form.get("branchId") ?? "") !== (editTarget.branch_id ?? "")) {
+        userPatch.branchId = form.get("branchId") ? String(form.get("branchId")) : null;
+      }
+      if (Object.keys(userPatch).length && editTarget.id !== meId) {
+        const res = await fetch(`/api/admin/users/${editTarget.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userPatch),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to save user details");
+      }
+      // 2) staff-profile fields
       const res = await fetch(`/api/staff/${editTarget.staff.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -283,8 +326,8 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           is_available: form.get("is_available") === "on",
         }),
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to save staff details");
+      const body2 = await res.json();
+      if (!res.ok) throw new Error(body2.error ?? "Failed to save staff details");
       setEditTarget(null);
       await load();
     } catch (e) {
@@ -387,7 +430,9 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
   }
 
   const visibleUsers = users.filter(
-    (u) => statusFilter === "all" || dutyStatusOf(u) === statusFilter
+    (u) =>
+      (statusFilter === "all" || dutyStatusOf(u) === statusFilter) &&
+      inDateRange(u.created_at, from, to)
   );
 
   const STAFF_EXPORT_COLUMNS = [
@@ -534,6 +579,13 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
             className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-3 pr-3 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
           />
         </div>
+        <DateRangeBar
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setFrom(""); setTo(""); }}
+        />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as DutyStatus)}
@@ -777,6 +829,14 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     </span>
                   </div>
                 )}
+                {user.branch_id && (
+                  <div className="flex items-center gap-2">
+                    <MapPin size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
+                    <span className="truncate font-medium text-[var(--color-foreground)]">
+                      {user.branches?.name ?? "Branch"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Clock size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
                   {dutyStatusOf(user) === "on_leave" ? (
@@ -911,6 +971,24 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     ))}
                   </select>
                 </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="s-branch">
+                    Branch
+                  </label>
+                  <select id="s-branch" name="branchId" className={inputCls} defaultValue="">
+                    <option value="">— No branch (all branches) —</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                        {b.isMain ? " (main)" : ""}
+                        {!b.isActive ? " (inactive)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                    Branch staff see that branch&apos;s stock and prices. Pick later from Edit details.
+                  </p>
+                </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium" htmlFor="s-dept">
                     Department
@@ -927,15 +1005,26 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                   <label className="mb-1 block text-sm font-medium" htmlFor="s-password">
                     Login password
                   </label>
-                  <input
-                    id="s-password"
-                    name="password"
-                    type="password"
-                    required
-                    minLength={8}
-                    placeholder="8+ characters"
-                    className={inputCls}
-                  />
+                  <div className="relative">
+                    <input
+                      id="s-password"
+                      name="password"
+                      type={showStaffPassword ? "text" : "password"}
+                      required
+                      minLength={8}
+                      placeholder="8+ characters"
+                      className={`${inputCls} pr-12`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowStaffPassword((v) => !v)}
+                      className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[var(--color-muted-fg)] transition-colors duration-200 hover:text-[var(--color-foreground)]"
+                      aria-label={showStaffPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showStaffPassword}
+                    >
+                      {showStaffPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+                    </button>
+                  </div>
                   <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
                     The staff member signs in with this email + password at /login.
                   </p>
@@ -952,7 +1041,10 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowCreate(false)}
+onClick={() => {
+                      setShowCreate(false);
+                      setShowStaffPassword(false);
+                    }}
                   className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
                 >
                   Cancel
@@ -1000,6 +1092,82 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
               }}
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-name">
+                    Full name
+                  </label>
+                  <input
+                    id="sd-name"
+                    name="fullName"
+                    required
+                    className={inputCls}
+                    defaultValue={editTarget.full_name}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-email">
+                    Email
+                  </label>
+                  <input
+                    id="sd-email"
+                    name="email"
+                    type="email"
+                    required
+                    className={inputCls}
+                    defaultValue={editTarget.email}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-phone">
+                    Phone
+                  </label>
+                  <input
+                    id="sd-phone"
+                    name="phone"
+                    className={inputCls}
+                    defaultValue={editTarget.phone ?? ""}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-role">
+                    Role
+                  </label>
+                  <select
+                    id="sd-role"
+                    name="role"
+                    className={inputCls}
+                    defaultValue={editTarget.role}
+                  >
+                    {Array.from(new Set([editTarget.role, ...rolesFor(myRole)])).map((r) => (
+                      <option key={r} value={r}>
+                        {ROLE_LABELS[r]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-branch">
+                    Branch
+                  </label>
+                  <select
+                    id="sd-branch"
+                    name="branchId"
+                    className={inputCls}
+                    defaultValue={editTarget.branch_id ?? ""}
+                  >
+                    <option value="">— No branch (all branches) —</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                        {b.isMain ? " (main)" : ""}
+                        {!b.isActive ? " (inactive)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                    Branch staff see that branch&apos;s stock and prices.
+                  </p>
+                </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium" htmlFor="sd-dept">
                     Department

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2, Megaphone, Trash2 } from "lucide-react";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -34,6 +36,8 @@ export default function NotificationsView() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
@@ -66,18 +70,25 @@ export default function NotificationsView() {
 
   async function markRead(id: string) {
     const res = await fetch(`/api/notifications/${id}`, { method: "PUT" });
-    if (res.ok) setItems((rows) => rows.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    if (res.ok) {
+      setItems((rows) => rows.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+      window.dispatchEvent(new Event("skycare:notifs-changed"));
+    }
   }
 
   async function remove(id: string) {
     const res = await fetch(`/api/notifications/${id}`, { method: "DELETE" });
-    if (res.ok) setItems((rows) => rows.filter((n) => n.id !== id));
+    if (res.ok) {
+      setItems((rows) => rows.filter((n) => n.id !== id));
+      window.dispatchEvent(new Event("skycare:notifs-changed"));
+    }
   }
 
   async function markAllRead() {
     const unread = items.filter((n) => !n.is_read);
     await Promise.all(unread.map((n) => fetch(`/api/notifications/${n.id}`, { method: "PUT" }).catch(() => {})));
     await load();
+    window.dispatchEvent(new Event("skycare:notifs-changed"));
   }
 
   async function sendAnnouncement(e: React.FormEvent) {
@@ -105,6 +116,8 @@ export default function NotificationsView() {
     }
   }
 
+  const visibleItems = items.filter((n) => inDateRange(n.created_at, from, to));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -112,7 +125,14 @@ export default function NotificationsView() {
           <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Notifications</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Updates from your hospital.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <DateRangeBar
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onClear={() => { setFrom(""); setTo(""); }}
+          />
           <div className="flex rounded-lg border border-[var(--color-border)] bg-white p-0.5">
             {(["all", "unread"] as const).map((f) => (
               <button
@@ -178,9 +198,15 @@ export default function NotificationsView() {
           <Bell size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No notifications.</p>
         </div>
+      ) : visibleItems.length === 0 ? (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
+          <p className="text-sm font-medium text-[var(--color-foreground)]">
+            No notifications match the current date range.
+          </p>
+        </div>
       ) : (
         <div className="space-y-2">
-          {items.map((n) => (
+          {visibleItems.map((n) => (
             <div
               key={n.id}
               className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3.5 shadow-[var(--shadow-sm)] ${n.is_read ? "border-[var(--color-border)] bg-white" : "border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)]/30"}`}

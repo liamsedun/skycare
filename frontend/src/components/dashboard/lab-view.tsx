@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CalendarPlus, FileDown, FlaskConical, ListChecks, Loader2, Plus, ReceiptText, Search, TestTube, Wrench } from "lucide-react";
+import { CalendarPlus, CheckSquare, Eye, FileDown, FlaskConical, ListChecks, Loader2, Pencil, Plus, ReceiptText, Search, Square, TestTube, Trash2, Wrench } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import ImportExportMenu from "@/components/ui/import-export-menu";
+import { ActionDropdown } from "@/components/ui/action-dropdown";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface LabService {
   id: string;
@@ -124,6 +127,9 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
   const [showCreate, setShowCreate] = useState(false);
   const [showAddService, setShowAddService] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const servicesRef = useRef<LabService[]>([]);
   const [servicesReload, setServicesReload] = useState(0);
@@ -134,6 +140,9 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
     try {
       const params = new URLSearchParams({ pageSize: "100" });
       if (filter !== "all") params.set("status", filter);
+      if (q.trim()) params.set("q", q.trim());
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
       const res = await fetch(`/api/lab-requests?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load lab requests");
@@ -143,13 +152,18 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, q, fromDate, toDate]);
 
   useEffect(() => {
     loadRequests();
   }, [loadRequests]);
 
   const viewed = viewId ? requests.find((r) => r.id === viewId) ?? null : null;
+
+  const visibleRequests = useMemo(
+    () => requests.filter((r) => inDateRange(r.requested_at, fromDate, toDate)),
+    [requests, fromDate, toDate]
+  );
 
   const requestRowsFor = (rs: LabRequest[]) =>
     rs.map((r) => [
@@ -245,34 +259,29 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
   }
 
   async function importServices(rows: string[][]): Promise<ImportResult> {
-    const errors: string[] = [];
-    let created = 0;
-    for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      try {
-        const res = await fetch("/api/lab-services", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: r[0]?.trim(),
-            type: r[1]?.trim() === "imaging" ? "imaging" : "lab",
-            price: Number(r[2] ?? 0) || 0,
-            newCategory: r[3]?.trim() || undefined,
-            referenceRange: r[4]?.trim() || undefined,
-            externalLabId: r[5]?.trim() || undefined,
-          }),
-        });
-        const body = await res.json();
-        if (!res.ok) {
-          errors.push(`Row ${i + 1}: ${body.error ?? "Failed to add service"}`);
-          continue;
-        }
-        created++;
-      } catch (e) {
-        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : "Network error"}`);
-      }
-    }
-    return { created, failed: errors.length, errors };
+    const records = rows.map((r) => ({
+      name: r[0]?.trim(),
+      type: r[1]?.trim() === "imaging" ? "imaging" : "lab",
+      price: Number(r[2] ?? 0) || 0,
+      newCategory: r[3]?.trim() || undefined,
+      referenceRange: r[4]?.trim() || undefined,
+      externalLabId: r[5]?.trim() || undefined,
+    }));
+    const res = await fetch("/api/lab-services/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ records }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error ?? "Import failed");
+    const payload = (body as { data?: { created?: number; updated?: number; errors?: Array<{ row?: number; message?: string }> } }).data ?? {};
+    const errors = (payload.errors ?? []).map(
+      (e: { row?: number; message?: string }) => `Row ${e.row ?? "?"}: ${e.message ?? "Unknown error"}`
+    );
+    const notes: string[] = [];
+    if ((payload.updated ?? 0) > 0) notes.push(`${payload.updated} existing service(s) updated in place with the imported values.`);
+    if ((payload.created ?? 0) > 0) notes.push(`${payload.created} new service(s) added.`);
+    return { created: payload.created ?? 0, failed: errors.length, errors, notes };
   }
 
   const handleImported = () => {
@@ -356,7 +365,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
 
       {tab === "requests" ? (
         <>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter lab requests">
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter lab requests">
             {STATUS_FILTERS.map((item) => (
               <button
                 key={item}
@@ -370,20 +379,39 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
                 {item.replace(/_/g, " ")}
               </button>
             ))}
+            <span className="mx-1 hidden h-5 w-px bg-[var(--color-border)] sm:block" aria-hidden="true" />
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search patient, service, referrer…"
+              aria-label="Search lab requests"
+              className="h-9 w-56 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+            />
+            <DateRangeBar
+              from={fromDate}
+              to={toDate}
+              onFromChange={setFromDate}
+              onToChange={setToDate}
+              onClear={() => {
+                setFromDate("");
+                setToDate("");
+              }}
+            />
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 size={24} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
             </div>
-          ) : requests.length === 0 ? (
+          ) : visibleRequests.length === 0 ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
               <FlaskConical size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
               <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No lab requests found.</p>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {requests.map((req) => (
+              {visibleRequests.map((req) => (
                 <div key={req.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -493,7 +521,10 @@ function ServicesTab({
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editing, setEditing] = useState<LabService | null>(null);
+  const [viewing, setViewing] = useState<LabService | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busyBulk, setBusyBulk] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -578,6 +609,11 @@ function ServicesTab({
       const res = await fetch(`/api/lab-services/${id}`, { method: "DELETE" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Delete failed");
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       await load();
       onChanged();
     } catch (e) {
@@ -585,6 +621,54 @@ function ServicesTab({
     } finally {
       setBusyId(null);
     }
+  }
+
+  async function removeSelected() {
+    if (selected.size === 0) return;
+    const names = services.filter((s) => selected.has(s.id)).map((s) => s.name).join(", ");
+    if (!confirm(`Delete ${selected.size} selected service(s)?\n\n${names}\n\nThis cannot be undone. Historical lab results keep their service names.`)) return;
+    setBusyBulk(true);
+    setError(null);
+    try {
+      let failed = 0;
+      for (const id of selected) {
+        const res = await fetch(`/api/lab-services/${id}`, { method: "DELETE" });
+        const json = await res.json();
+        if (!res.ok) {
+          failed++;
+          console.error(json.error ?? `Failed to delete service ${id}`);
+        }
+      }
+      setSelected(new Set());
+      if (failed > 0) setError(`${failed} service(s) could not be deleted.`);
+      await load();
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Bulk delete failed");
+    } finally {
+      setBusyBulk(false);
+    }
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (filtered.every((s) => next.has(s.id))) {
+        for (const s of filtered) next.delete(s.id);
+      } else {
+        for (const s of filtered) next.add(s.id);
+      }
+      return next;
+    });
   }
 
   return (
@@ -657,6 +741,31 @@ function ServicesTab({
             <ListChecks size={16} aria-hidden="true" /> Bulk prices
           </button>
         )}
+        {canManageCatalog && services.length > 0 && (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white px-3.5 py-2.5 text-sm font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-[var(--color-muted)]"
+              aria-pressed={filtered.length > 0 && filtered.every((s) => selected.has(s.id))}
+            >
+              {filtered.length > 0 && filtered.every((s) => selected.has(s.id)) ? (
+                <CheckSquare size={16} aria-hidden="true" />
+              ) : (
+                <Square size={16} aria-hidden="true" />
+              )}
+              {filtered.length > 0 && filtered.every((s) => selected.has(s.id)) ? "Deselect all" : "Select all"}
+            </button>
+            <button
+              type="button"
+              onClick={removeSelected}
+              disabled={selected.size === 0 || busyBulk}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-semibold text-red-600 transition-colors duration-200 hover:bg-red-100 disabled:opacity-50"
+            >
+              <Trash2 size={15} aria-hidden="true" /> Delete selected{selected.size > 0 ? ` (${selected.size})` : ""}
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -684,6 +793,15 @@ function ServicesTab({
                 <ul className="divide-y divide-[var(--color-border)]">
                   {items.map((s) => (
                     <li key={s.id} className="flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm">
+                      {canManageCatalog && (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(s.id)}
+                          onChange={() => toggleSelect(s.id)}
+                          aria-label={`Select ${s.name}`}
+                          className="h-4 w-4 shrink-0 accent-[var(--color-primary)]"
+                        />
+                      )}
                       <div className="min-w-0 flex-1">
                         <p className={`font-medium ${s.is_active ? "text-[var(--color-foreground)]" : "text-[var(--color-muted-fg)] line-through"}`}>
                           {s.name}
@@ -706,16 +824,6 @@ function ServicesTab({
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${approvalBadge(s.approval_status)}`}>
                         {s.approval_status}
                       </span>
-                      {canEditService && (
-                        <button
-                          type="button"
-                          disabled={busyId === s.id}
-                          onClick={() => setEditing(s)}
-                          className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)] disabled:opacity-60"
-                        >
-                          Edit
-                        </button>
-                      )}
                       {canManageCatalog && s.approval_status !== "approved" && (
                         <button
                           type="button"
@@ -748,16 +856,22 @@ function ServicesTab({
                           {s.is_active ? "Active" : "Inactive"}
                         </button>
                       )}
-                      {canManageCatalog && s.is_custom && (
-                        <button
-                          type="button"
-                          disabled={busyId === s.id}
-                          onClick={() => remove(s.id, s.name)}
-                          className="focus-ring rounded-lg px-2 py-1 text-xs font-medium text-rose-600 transition-colors duration-200 hover:bg-rose-50 disabled:opacity-60"
-                        >
-                          Delete
-                        </button>
-                      )}
+                      <ActionDropdown
+                        label="Actions"
+                        variant="outline"
+                        align="right"
+                        ariaLabel={`Actions for ${s.name}`}
+                        className="[&>button]:!px-2.5 [&>button]:!py-1 [&>button]:!text-xs [&>button]:!gap-1"
+                        items={[
+                          { label: "View", description: "Service details", icon: <Eye size={14} aria-hidden="true" />, onClick: () => setViewing(s) },
+                          ...(canEditService
+                            ? [{ label: "Edit", description: "Change price, group, availability", icon: <Pencil size={14} aria-hidden="true" />, onClick: () => setEditing(s) }]
+                            : []),
+                          ...(canManageCatalog
+                            ? [{ label: "Delete", description: "Remove from the catalog", icon: <Trash2 size={14} aria-hidden="true" />, danger: true, onClick: () => remove(s.id, s.name) }]
+                            : []),
+                        ]}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -780,6 +894,8 @@ function ServicesTab({
         />
       )}
 
+      {viewing && <ViewServiceModal service={viewing} onClose={() => setViewing(null)} />}
+
       {bulkOpen && (
         <BulkPriceModal
           services={services}
@@ -792,6 +908,65 @@ function ServicesTab({
         />
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// VIEW SERVICE MODAL — read-only catalog details (all staff)
+// ---------------------------------------------------------------------------
+function ViewServiceModal({ service, onClose }: { service: LabService; onClose: () => void }) {
+  return (
+    <ModalShell title={service.name} onClose={onClose}>
+      <div className="mt-5 space-y-4 text-sm">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div>
+            <dt className="text-xs text-[var(--color-muted-fg)]">Type</dt>
+            <dd className="font-medium capitalize text-[var(--color-foreground)]">{service.type}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[var(--color-muted-fg)]">Price</dt>
+            <dd className="font-medium text-[var(--color-foreground)]">₦{Number(service.price).toLocaleString()}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[var(--color-muted-fg)]">Group / category</dt>
+            <dd className="font-medium text-[var(--color-foreground)]">{service.lab_categories?.name ?? "Uncategorized"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[var(--color-muted-fg)]">Availability</dt>
+            <dd className={`font-medium ${service.is_active ? "text-emerald-600" : "text-[var(--color-muted-fg)]"}`}>
+              {service.is_active ? "Active" : "Inactive"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[var(--color-muted-fg)]">Reference range</dt>
+            <dd className="font-medium text-[var(--color-foreground)]">{service.reference_range ?? "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-[var(--color-muted-fg)]">External lab ID</dt>
+            <dd className="font-medium text-[var(--color-foreground)]">{service.external_lab_id ?? "—"}</dd>
+          </div>
+        </dl>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${approvalBadge(service.approval_status)}`}>
+            {service.approval_status}
+          </span>
+          {service.is_custom && (
+            <span className="rounded-full bg-[var(--color-primary-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary-dark)]">
+              Custom
+            </span>
+          )}
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="focus-ring w-full rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </ModalShell>
   );
 }
 
@@ -1113,6 +1288,12 @@ function AddServiceModal({ canManageCatalog, onClose, onAdded }: { canManageCata
   async function handleSubmit(form: FormData) {
     setBusy(true);
     setError(null);
+    const newCategory = ((form.get("newCategory") as string) ?? "").trim();
+    if (newCategory && /^\d+(\.\d+)?$/.test(newCategory)) {
+      setError(`Category "${newCategory}" looks like a price — use a real category name.`);
+      setBusy(false);
+      return;
+    }
     try {
       const res = await fetch("/api/lab-services", {
         method: "POST",
@@ -1120,7 +1301,7 @@ function AddServiceModal({ canManageCatalog, onClose, onAdded }: { canManageCata
         body: JSON.stringify({
           name: form.get("name"),
           categoryId: (form.get("categoryId") as string) || undefined,
-          newCategory: (form.get("newCategory") as string) || undefined,
+          newCategory: newCategory || undefined,
           type: form.get("type") || "lab",
           price: Number(form.get("price") || 0),
           referenceRange: (form.get("referenceRange") as string) || undefined,
@@ -1222,6 +1403,8 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [isExternal, setIsExternal] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
   const [payMethod, setPayMethod] = useState("cash");
+  const [payAccount, setPayAccount] = useState("cash");
+  const [bankAccounts, setBankAccounts] = useState<{ id: string; bank_name: string; account_name: string; account_number: string }[]>([]);
   const [createdReceipt, setCreatedReceipt] = useState<string | null>(null);
   const [services, setServices] = useState<LabService[]>([]);
   const [selected, setSelected] = useState<Record<string, { sampleType: string; priority: string }>>({});
@@ -1229,10 +1412,11 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
   useEffect(() => {
     (async () => {
       try {
-        const [patientRes, staffRes, serviceRes] = await Promise.all([
+        const [patientRes, staffRes, serviceRes, bankRes] = await Promise.all([
           fetch("/api/patients?pageSize=100", { cache: "no-store" }),
           fetch("/api/staff?pageSize=100", { cache: "no-store" }),
           fetch("/api/lab-services?pageSize=500", { cache: "no-store" }),
+          fetch("/api/settings/bank-accounts", { cache: "no-store" }),
         ]);
         const patientBody = await patientRes.json();
         const staffBody = await staffRes.json();
@@ -1245,7 +1429,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
         );
         setDoctors(
           (staffBody.data ?? [])
-            .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
+            .filter((s: { users?: { role?: string } }) => !!s.users?.role && ["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
             .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({
               id: s.users?.id ?? s.id,
               label: s.users?.full_name ?? "Doctor",
@@ -1264,6 +1448,10 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
             (s: LabService) => s.is_active && s.approval_status === "approved"
           )
         );
+        if (bankRes.ok) {
+          const bb = await bankRes.json();
+          setBankAccounts(bb.data ?? []);
+        }
       } catch {
         /* options non-critical */
       }
@@ -1308,6 +1496,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
             notes: (form.get("notes") as string) || undefined,
             assignedToIds: assigned.size ? Array.from(assigned) : undefined,
             paymentMethod: form.get("payMethod"),
+            accountId: payMethod === "cash" ? "cash" : payAccount,
             transactionRef: (form.get("transactionRef") as string) || undefined,
             items,
           }),
@@ -1574,6 +1763,17 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
             </div>
             {payMethod === "bank_transfer" && (
               <input name="transactionRef" className={`${inputCls} !py-2 mt-2 max-w-sm text-sm`} placeholder="Transfer reference (optional)" />
+            )}
+            {payMethod !== "cash" && (
+              <div className="mt-3">
+                <label className={labelCls} htmlFor="wi-account">Deposit into</label>
+                <select id="wi-account" value={payAccount} onChange={(e) => setPayAccount(e.target.value)} className={inputCls + " max-w-sm"}>
+                  <option value="cash">Cash</option>
+                  {bankAccounts.map((b) => (
+                    <option key={b.id} value={b.id}>{b.bank_name} • {b.account_name} ({b.account_number})</option>
+                  ))}
+                </select>
+              </div>
             )}
           </div>
         )}
@@ -2025,7 +2225,7 @@ function ScheduleAppointmentModal({
         const body = await res.json();
         setDoctors(
           (body.data ?? [])
-            .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
+            .filter((s: { users?: { role?: string } }) => !!s.users?.role && ["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
             .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({
               id: s.users?.id ?? s.id,
               label: s.users?.full_name ?? "Doctor",

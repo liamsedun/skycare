@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { notifyInvoiceIssued } from "@/lib/notify";
 
 // Shared pharmacy billing helpers: central-ledger mirroring and automatic
 // invoicing of prescriptions when they are fully dispensed.
@@ -53,10 +54,33 @@ export async function mirrorPharmacyInvoiceToCentral(
 
   if (syncError || !central) return null;
 
+  // Copy the line items so the patient portal and central billing show the
+  // drugs that were sold (not just the header totals).
+  const { data: soldItems } = await svc
+    .from("pharmacy_invoice_items")
+    .select("drug_name, quantity, unit_price, total_price")
+    .eq("invoice_id", invoice.id);
+  if (soldItems && soldItems.length > 0) {
+    await svc.from("invoice_items").insert(
+      soldItems.map((it) => ({
+        invoice_id: central.id,
+        description: it.drug_name,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        total_price: it.total_price,
+        vat_percent: 0,
+        vat_amount: 0,
+      }))
+    );
+  }
+
   await svc
     .from("pharmacy_invoices")
     .update({ synced_invoice_id: central.id })
     .eq("id", invoice.id);
+
+  // The patient's portal account (and the family root) learns about the bill.
+  await notifyInvoiceIssued(svc, tenantId, invoice.patient_id, central.id, invoice.invoice_number, Number(invoice.total_amount));
 
   return central.id;
 }
@@ -84,7 +108,8 @@ export async function createPrescriptionInvoice(
   tenantId: string,
   rx: PrescriptionForInvoice,
   items: InvoiceLineSource[],
-  actorId: string
+  actorId: string,
+  branchId?: string | null
 ): Promise<{ id: string; invoice_number: string; total_amount: number } | null> {
   const lines = items.filter((i) => i.pharmacy_drug_id && Math.floor(Number(i.quantity) || 0) > 0);
   if (lines.length === 0) return null;
@@ -99,7 +124,7 @@ export async function createPrescriptionInvoice(
 
   const { data: invoiceId, error } = await svc.rpc("pharmacy_invoice_create", {
     p_tenant_id: tenantId,
-    p_branch_id: rx.branch_id ?? null,
+    p_branch_id: branchId ?? rx.branch_id ?? null,
     p_patient_id: rx.patient_id ?? null,
     p_visit_id: null,
     p_source: "prescription",

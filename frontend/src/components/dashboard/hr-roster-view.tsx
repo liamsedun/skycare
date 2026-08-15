@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CalendarRange, Loader2, Plus, Trash2, X } from "lucide-react";
+import { CalendarPlus, CalendarRange, Loader2, Plus, Trash2, X } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
+import FilterBar from "@/components/filters/filter-bar";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -56,15 +58,32 @@ export default function HrRosterView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [fRole, setFRole] = useState("");
+  const [fDept, setFDept] = useState("");
+  const [fShift, setFShift] = useState("");
+  const [fStatus, setFStatus] = useState("");
 
   const [showAssign, setShowAssign] = useState(false);
   const [showShift, setShowShift] = useState(false);
+  const [showBulk, setShowBulk] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const [staffId, setStaffId] = useState("");
   const [shiftId, setShiftId] = useState("");
   const [shiftDate, setShiftDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+
+  const [bulkShiftId, setBulkShiftId] = useState("");
+  const [bulkFrom, setBulkFrom] = useState("");
+  const [bulkTo, setBulkTo] = useState("");
+  const [bulkDept, setBulkDept] = useState("");
+  const [bulkRole, setBulkRole] = useState("");
+  const [bulkStaffIds, setBulkStaffIds] = useState<string[]>([]);
+  const [bulkNotes, setBulkNotes] = useState("");
+  const [bulkMsg, setBulkMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const [shiftName, setShiftName] = useState("");
   const [shiftStart, setShiftStart] = useState("08:00");
@@ -129,6 +148,44 @@ export default function HrRosterView() {
     }
   }
 
+  async function bulkAssign(e: React.FormEvent) {
+    e.preventDefault();
+    if (!bulkShiftId || !bulkFrom || !bulkTo || bulkStaffIds.length === 0) return;
+    setBusy(true);
+    setBulkMsg(null);
+    try {
+      const res = await fetch("/api/hr/roster/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shift_id: bulkShiftId,
+          from_date: bulkFrom,
+          to_date: bulkTo,
+          staff_ids: bulkStaffIds,
+          notes: bulkNotes.trim() || undefined,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to bulk assign");
+      const d = body.data ?? {};
+      const skippedReasons = new Map<string, number>();
+      for (const s of d.skipped ?? []) skippedReasons.set(s.reason, (skippedReasons.get(s.reason) ?? 0) + 1);
+      const skipNote = [...skippedReasons.entries()].map(([r, n]) => `${n} ${r}`).join(" · ");
+      setBulkMsg({
+        kind: "ok",
+        text: `Assigned ${d.total} shift${d.total === 1 ? "" : "s"}${d.skipped?.length ? ` · ${d.skipped.length} skipped (${skipNote})` : ""}`,
+      });
+      setShowBulk(false);
+      setBulkStaffIds([]);
+      setBulkNotes("");
+      await load();
+    } catch (e) {
+      setBulkMsg({ kind: "err", text: e instanceof Error ? e.message : "Failed to bulk assign" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function createShift(e: React.FormEvent) {
     e.preventDefault();
     if (!shiftName.trim()) return;
@@ -187,13 +244,44 @@ export default function HrRosterView() {
     }
   }
 
+  const roleOptions = [...new Set(rows.map((r) => r.staff?.users?.role).filter(Boolean))].sort() as string[];
+  const deptOptions = [...new Set(rows.map((r) => r.staff?.department).filter(Boolean))].sort() as string[];
+  const shiftOptions = [...new Set(rows.map((r) => r.shift?.name).filter(Boolean))].sort() as string[];
+  const statusOptions = [...new Set(rows.map((r) => r.status))].sort();
+
+  const visible = rows.filter((r) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      (r.staff?.users?.full_name ?? "").toLowerCase().includes(q) ||
+      (r.staff?.users?.role ?? "").toLowerCase().includes(q) ||
+      (r.shift?.name ?? "").toLowerCase().includes(q) ||
+      r.status.toLowerCase().includes(q);
+    if (fRole && r.staff?.users?.role !== fRole) return false;
+    if (fDept && r.staff?.department !== fDept) return false;
+    if (fShift && r.shift?.name !== fShift) return false;
+    if (fStatus && r.status !== fStatus) return false;
+    return matchesSearch && inDateRange(r.shift_date, from, to);
+  });
+
   const byDate = new Map<string, Assignment[]>();
-  for (const r of rows) {
+  for (const r of visible) {
     const list = byDate.get(r.shift_date) ?? [];
     list.push(r);
     byDate.set(r.shift_date, list);
   }
   const dates = [...byDate.keys()].sort();
+
+  const bulkCandidates = staff.filter((s) => s.users?.is_active !== false).filter((s) => !bulkDept || s.department === bulkDept).filter((s) => !bulkRole || s.users?.role === bulkRole);
+  const bulkDeptOptions = [...new Set(staff.map((s) => s.department).filter(Boolean))].sort() as string[];
+  const bulkRoleOptions = [...new Set(staff.map((s) => s.users?.role).filter(Boolean))].sort() as string[];
+  const bulkDays = !bulkFrom || !bulkTo || bulkTo < bulkFrom ? 0 : Math.floor((Date.parse(bulkTo) - Date.parse(bulkFrom)) / 86400000) + 1;
+  const toggleStaff = (id: string) =>
+    setBulkStaffIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const selectAllCandidates = () =>
+    setBulkStaffIds((prev) => [...new Set([...prev, ...bulkCandidates.map((s) => s.id)])]);
+  const clearCandidates = () =>
+    setBulkStaffIds((prev) => prev.filter((id) => !bulkCandidates.some((s) => s.id === id)));
 
   const HR_ROSTER_EXPORT_COLUMNS = [
     "shift_date",
@@ -207,7 +295,7 @@ export default function HrRosterView() {
   ];
 
   function hrRosterRows() {
-    return rows.map((r) => [
+    return visible.map((r) => [
       r.shift_date,
       r.staff?.users?.full_name ?? "",
       r.staff?.users?.role ?? "",
@@ -220,7 +308,7 @@ export default function HrRosterView() {
   }
 
   function exportHrRosterCsv() {
-    if (rows.length === 0) {
+    if (visible.length === 0) {
       alert("Nothing to export — there are no shift assignments this month.");
       return;
     }
@@ -228,7 +316,7 @@ export default function HrRosterView() {
   }
 
   function exportHrRosterPdf() {
-    if (rows.length === 0) {
+    if (visible.length === 0) {
       alert("Nothing to export — there are no shift assignments this month.");
       return;
     }
@@ -277,10 +365,24 @@ export default function HrRosterView() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <input type="month" className={inputCls + " max-w-[180px]"} value={month} onChange={(e) => setMonth(e.target.value)} />
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); setFRole(""); setFDept(""); setFShift(""); setFStatus(""); }}
+          searchPlaceholder="Search staff, shift or status…"
+          searchWidth={230}
+        />
         {isAdmin && (
           <>
             <button className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white hover:opacity-90" onClick={() => setShowAssign(true)}>
               <Plus className="h-4 w-4" /> Assign shift
+            </button>
+            <button className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-muted)]" onClick={() => setShowBulk(true)}>
+              <CalendarPlus className="h-4 w-4" /> Bulk assign
             </button>
             <button className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-muted)]" onClick={() => setShowShift(true)}>
               <CalendarRange className="h-4 w-4" /> New shift template
@@ -297,7 +399,31 @@ export default function HrRosterView() {
           onImport={importHrRoster}
           onImported={() => load()}
         />
-        <span className="text-sm text-[var(--color-muted-fg)]">{rows.length} assignments · {shifts.filter((s) => s.is_active).length} shift templates</span>
+        <span className="text-sm text-[var(--color-muted-fg)]">{visible.length} assignments · {shifts.filter((s) => s.is_active).length} shift templates</span>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <select className={inputCls + " max-w-[180px]"} value={fRole} onChange={(e) => setFRole(e.target.value)} aria-label="Filter by role">
+          <option value="">All roles</option>
+          {roleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select className={inputCls + " max-w-[200px]"} value={fDept} onChange={(e) => setFDept(e.target.value)} aria-label="Filter by department">
+          <option value="">All departments</option>
+          {deptOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <select className={inputCls + " max-w-[200px]"} value={fShift} onChange={(e) => setFShift(e.target.value)} aria-label="Filter by shift">
+          <option value="">All shifts</option>
+          {shiftOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select className={inputCls + " max-w-[160px]"} value={fStatus} onChange={(e) => setFStatus(e.target.value)} aria-label="Filter by status">
+          <option value="">All statuses</option>
+          {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        {(fRole || fDept || fShift || fStatus) && (
+          <button className="rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-muted)]" onClick={() => { setFRole(""); setFDept(""); setFShift(""); setFStatus(""); }}>
+            Clear filters
+          </button>
+        )}
       </div>
 
       {error && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
@@ -391,6 +517,83 @@ export default function HrRosterView() {
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
               <button type="submit" disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />} Assign
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showBulk && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowBulk(false)}>
+          <form className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={bulkAssign}>
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Bulk assign shifts</h3>
+                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Assign one shift template to many staff across a date range.</p>
+              </div>
+              <button type="button" className="rounded-lg p-1.5 hover:bg-[var(--color-muted)]" onClick={() => { setShowBulk(false); setBulkMsg(null); }}><X className="h-4 w-4" /></button>
+            </div>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className={labelCls}>Shift</label>
+                  <select className={inputCls} value={bulkShiftId} onChange={(e) => setBulkShiftId(e.target.value)} required>
+                    <option value="">Select shift…</option>
+                    {shifts.filter((s) => s.is_active).map((s) => (
+                      <option key={s.id} value={s.id}>{s.name} · {String(s.start_time).slice(0, 5)}–{String(s.end_time).slice(0, 5)}{s.department ? ` · ${s.department}` : ""}{s.ward?.name ? ` · ${s.ward.name}` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>From</label>
+                  <input type="date" className={inputCls} value={bulkFrom} onChange={(e) => setBulkFrom(e.target.value)} required />
+                </div>
+                <div>
+                  <label className={labelCls}>To</label>
+                  <input type="date" className={inputCls} value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} required />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>Notes</label>
+                <input className={inputCls} placeholder="Optional — applied to every assigned shift" value={bulkNotes} onChange={(e) => setBulkNotes(e.target.value)} />
+              </div>
+              <div>
+                <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-[var(--color-foreground)]">Staff</span>
+                  <select className={inputCls + " max-w-[220px]"} value={bulkDept} onChange={(e) => setBulkDept(e.target.value)} aria-label="Narrow by department">
+                    <option value="">All departments</option>
+                    {bulkDeptOptions.map((d) => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <select className={inputCls + " max-w-[220px]"} value={bulkRole} onChange={(e) => setBulkRole(e.target.value)} aria-label="Narrow by role">
+                    <option value="">All roles</option>
+                    {bulkRoleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                  <button type="button" className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]" onClick={selectAllCandidates}>Select all {bulkCandidates.length}</button>
+                  <button type="button" className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]" onClick={clearCandidates}>Clear</button>
+                </div>
+                <div className="max-h-56 overflow-y-auto rounded-xl border border-[var(--color-border)]">
+                  {bulkCandidates.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">No active staff match these filters.</div>
+                  ) : (
+                    <div className="divide-y divide-[var(--color-border)]">
+                      {bulkCandidates.map((s) => (
+                        <label key={s.id} className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--color-muted)]">
+                          <input type="checkbox" className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]" checked={bulkStaffIds.includes(s.id)} onChange={() => toggleStaff(s.id)} />
+                          <span className="font-medium">{s.users?.full_name}</span>
+                          <span className="text-xs text-[var(--color-muted-fg)]">{s.users?.role}{s.department ? ` · ${s.department}` : ""}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-xl bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-800">
+                {bulkStaffIds.length} staff × {bulkDays} day{bulkDays === 1 ? "" : "s"} = {bulkStaffIds.length * bulkDays} shift{bulkStaffIds.length * bulkDays === 1 ? "" : "s"}
+              </div>
+              {bulkMsg?.kind === "ok" && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{bulkMsg.text}</div>}
+              {bulkMsg?.kind === "err" && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{bulkMsg.text}</div>}
+              <button type="submit" disabled={busy || bulkStaffIds.length === 0 || !bulkShiftId || !bulkFrom || !bulkTo} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Assign {bulkStaffIds.length * bulkDays} shift{bulkStaffIds.length * bulkDays === 1 ? "" : "s"}
               </button>
             </div>
           </form>

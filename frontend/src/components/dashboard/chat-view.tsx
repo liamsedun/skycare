@@ -17,17 +17,21 @@ import {
 import { initials } from "@/lib/auth";
 
 interface OtherUser {
-  id: string;
+id: string;
   full_name: string;
+  role?: string;
   patient_number: string | null;
   avatar_url: string | null;
   is_dependant: boolean;
+  has_account?: boolean;
   phone?: string | null;
 }
 
 interface ChatItem {
   id: string;
-  patient_id: string;
+  kind: "staff" | "patient";
+  patient_id: string | null;
+  other_staff_user_id: string | null;
   last_message: string | null;
   last_sender_id: string | null;
   last_message_at: string | null;
@@ -36,12 +40,16 @@ interface ChatItem {
 }
 
 interface DirectoryEntry {
-  patient_id: string;
-  user_id: string;
+  kind?: "staff" | "patient";
+  id?: string;
+  patient_id?: string | null;
+  user_id: string | null;
   full_name: string;
+  role?: string;
   patient_number: string | null;
   avatar_url: string | null;
   is_dependant: boolean;
+  has_account?: boolean;
   phone?: string | null;
 }
 
@@ -175,6 +183,12 @@ export default function ChatView() {
 
   useEffect(() => {
     loadList();
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((b) => {
+        if (b.data?.user?.id) currentUserId.current = b.data.user.id;
+      })
+      .catch(() => {});
   }, [loadList]);
 
   // Presence heartbeat + chat list refresh
@@ -192,7 +206,6 @@ export default function ChatView() {
       const res = await fetch(`/api/chats/${chatId}/messages`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load messages");
-      currentUserId.current = body.data?.chat?.staff_user_id ?? "";
       setMessages(body.data?.messages ?? []);
       setChats((rows) =>
         rows.map((c) => (c.id === chatId ? { ...c, unread_count: 0 } : c))
@@ -234,16 +247,21 @@ export default function ChatView() {
     setCreating(true);
     setError(null);
     try {
+      const isStaff = entry.kind === "staff";
       const res = await fetch("/api/chats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientId: entry.patient_id }),
+        body: JSON.stringify(
+          isStaff ? { staffUserId: entry.id } : { patientId: entry.patient_id }
+        ),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to start chat");
       const chat: ChatItem = {
         id: body.data.chat.id,
-        patient_id: entry.patient_id,
+        kind: isStaff ? "staff" : "patient",
+        patient_id: body.data.chat.patient_id ?? null,
+        other_staff_user_id: body.data.chat.other_staff_user_id ?? null,
         last_message: null,
         last_sender_id: null,
         last_message_at: null,
@@ -352,9 +370,7 @@ export default function ChatView() {
         ? true
         : activeTab === "urgent"
           ? c.unread_count > 0
-          : activeTab === "patient"
-            ? true
-            : false;
+          : c.kind === activeTab;
     const matchesQuery = name.toLowerCase().includes(query.toLowerCase());
     return matchesTab && matchesQuery;
   });
@@ -460,7 +476,7 @@ export default function ChatView() {
                     <input
                       value={newQuery}
                       onChange={(e) => setNewQuery(e.target.value)}
-                      placeholder="Search patients…"
+                      placeholder="Search patients or staff…"
                       className="w-full bg-transparent text-sm text-[#16221F] outline-none placeholder:text-[#9FAEAB]"
                     />
                   </div>
@@ -468,26 +484,34 @@ export default function ChatView() {
                     {newDirectory.length === 0 && (
                       <div className="px-4 py-12 text-center">
                         <p className="text-sm text-[#6B7A77]">
-                          {directory.length === 0 ? "No patients with portal accounts yet." : "No matches found."}
+                          {directory.length === 0 ? "No patients or staff yet." : "No matches found."}
                         </p>
                       </div>
                     )}
                     {newDirectory.map((d) => {
-                      const existing = chats.find((c) => c.patient_id === d.patient_id);
+                      const isStaff = d.kind === "staff";
+                      const existing = chats.find((c) =>
+                        isStaff
+                          ? c.kind === "staff" && c.other_staff_user_id === d.id
+                          : c.kind === "patient" && c.patient_id === d.patient_id
+                      );
                       return (
                         <button
-                          key={d.patient_id}
+                          key={isStaff ? `s-${d.id}` : `p-${d.patient_id}`}
                           type="button"
                           disabled={creating || Boolean(existing)}
                           onClick={() => startChat(d)}
                           className="flex w-full items-center gap-3 border-b border-[#ECEFEE] bg-transparent px-3.5 py-3 text-left transition-colors hover:bg-white disabled:opacity-50"
                         >
-                          <Avatar name={d.full_name} color={AMBER} size={38} />
+                          <Avatar name={d.full_name} color={isStaff ? TEAL : AMBER} size={38} />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-[14px] font-medium text-[#16221F]">{d.full_name}</span>
                             <span className="block truncate text-xs text-[#6B7A77]">
-                              {d.patient_number} {d.is_dependant ? "· Dependant" : ""}
-                              {d.phone ? ` · ${d.phone}` : ""}
+                              {isStaff
+                                ? `${d.role?.replace(/_/g, " ") ?? "Staff"}${d.phone ? ` · ${d.phone}` : ""}`
+                                : `${d.patient_number ?? ""} ${d.is_dependant ? "· Dependant" : ""}${
+                                    d.has_account === false ? " · No portal login — family replies" : ""
+                                  }${d.phone ? ` · ${d.phone}` : ""}`}
                             </span>
                           </span>
                           {existing ? (
@@ -509,7 +533,7 @@ export default function ChatView() {
                       <MessageCircle size={28} className="mx-auto text-[#9FAEAB]" aria-hidden="true" />
                       <p className="mt-2 text-sm text-[#6B7A77]">
                         {chats.length === 0
-                          ? "No conversations yet. Start one with a patient."
+                          ? "No conversations yet. Start one with a patient or colleague."
                           : "No conversations found."}
                       </p>
                     </div>
@@ -548,8 +572,11 @@ export default function ChatView() {
                             )}
                           </span>
                           <span className="mt-0.5 block truncate text-[11px] text-[#9FAEAB]">
-                            {u?.patient_number ?? ""}
-                            {u?.is_dependant ? " · Dependant" : ""}
+                            {c.kind === "staff"
+                              ? `${u?.role?.replace(/_/g, " ") ?? "Staff"}${u?.phone ? ` · ${u.phone}` : ""}`
+                              : `${u?.patient_number ?? ""}${
+                                  u?.is_dependant ? " · Dependant" : ""
+                                }${u && u.has_account === false ? " · No portal login — family replies" : ""}`}
                           </span>
                         </span>
                       </button>
@@ -590,7 +617,13 @@ export default function ChatView() {
                       </span>
                       <span className="block truncate text-xs text-[#9FBAC2]">
                         {activeOnline ? "Active now" : "Offline"}
-                        {active.other_user?.patient_number ? ` · ${active.other_user.patient_number}` : ""}
+                        {active.kind === "staff"
+                          ? active.other_user?.role
+                            ? ` · ${active.other_user.role.replace(/_/g, " ")}`
+                            : ""
+                          : active.other_user?.patient_number
+                            ? ` · ${active.other_user.patient_number}`
+                            : ""}
                       </span>
                     </span>
                     {/* In-chat search — before the phone icon */}

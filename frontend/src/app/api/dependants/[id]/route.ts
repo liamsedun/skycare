@@ -1,5 +1,6 @@
 import { withAuth, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { syncPortalAccountEmail } from "@/lib/dependant-portal";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,23 @@ export const PUT = withAuth(async (req, ctx) => {
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];
   }
+  if (typeof patch.email === "string") {
+    const em = patch.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) throw new ValidationError("Invalid email address");
+    patch.email = em;
+  }
+  if (Object.keys(patch).length === 0) return ok(existing);
+
+  // If the dependant has a portal login, keep its email in sync (auth + users
+  // mirror) so a corrected address actually changes what they log in with.
+  if (existing.user_id && typeof patch.email === "string") {
+    try {
+      await syncPortalAccountEmail(ctx.svc, existing.user_id, patch.email);
+    } catch (e) {
+      throw new ValidationError(e instanceof Error ? e.message : "Failed to update portal login email");
+    }
+  }
+
   const { data, error } = await ctx.svc
     .from("patients")
     .update(patch)

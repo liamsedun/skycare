@@ -2,6 +2,7 @@ import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenan
 import { getPagination } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
+import { createPortalAccount } from "@/lib/dependant-portal";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -105,37 +106,39 @@ export const POST = withAuth(async (req, ctx) => {
   const settings = await getTenantSettings(ctx.svc, tenantId);
   const dependantNumber = await generatePatientNumber(ctx.svc, tenantId, settings.dependantPrefix);
 
-  // Optional portal login for the dependant
+  // Optional portal login for the dependant — explicit credentials win; otherwise
+  // a login is auto-provisioned from the dependant's own email with a generated
+  // temporary password (returned once so staff can share it).
   let portalUserId: string | null = null;
-  if (body.portalEmail && body.portalPassword) {
-    if (body.portalPassword.length < 8) {
+  let tempPassword: string | null = null;
+  const explicitEmail = body.portalEmail?.trim().toLowerCase();
+  const explicitPassword = body.portalPassword;
+  const fallbackEmail = body.email?.trim().toLowerCase() || null;
+  if (explicitEmail && explicitPassword) {
+    if (explicitPassword.length < 8) {
       throw new ValidationError("Portal password must be at least 8 characters");
     }
-    const { data: authUser, error: authError } = await ctx.svc.auth.admin.createUser({
-      email: body.portalEmail.trim().toLowerCase(),
-      password: body.portalPassword,
-      email_confirm: true,
-      app_metadata: { role: "patient_api", tenant_id: tenantId, branch_id: ctx.branchId ?? null },
-      user_metadata: { full_name: `${body.firstName} ${body.lastName}` },
+    const res = await createPortalAccount(ctx.svc, {
+      email: explicitEmail,
+      fullName: `${body.firstName} ${body.lastName}`.trim(),
+      tenantId,
+      branchId: ctx.branchId ?? null,
+      phone: body.phone?.trim() ?? null,
+      password: explicitPassword,
     });
-    if (authError || !authUser?.user) {
-      throw new ValidationError(authError?.message ?? "Failed to create dependant portal account");
-    }
-    const { error: userError } = await ctx.svc.from("users").insert({
-      id: authUser.user.id,
-      tenant_id: tenantId,
-      branch_id: ctx.branchId ?? null,
-      email: body.portalEmail.trim().toLowerCase(),
-      full_name: `${body.firstName} ${body.lastName}`.trim(),
-      role: "patient_api",
-      phone: body.phone?.trim() || null,
-      is_active: true,
+    portalUserId = res.userId;
+  } else if ((explicitEmail || explicitPassword) && !fallbackEmail) {
+    throw new ValidationError("Portal login needs both an email and a password");
+  } else if (fallbackEmail) {
+    const res = await createPortalAccount(ctx.svc, {
+      email: fallbackEmail,
+      fullName: `${body.firstName} ${body.lastName}`.trim(),
+      tenantId,
+      branchId: ctx.branchId ?? null,
+      phone: body.phone?.trim() ?? null,
     });
-    if (userError) {
-      await ctx.svc.auth.admin.deleteUser(authUser.user.id);
-      throw new ValidationError("Failed to save dependant portal account");
-    }
-    portalUserId = authUser.user.id;
+    portalUserId = res.userId;
+    tempPassword = res.tempPassword;
   }
 
   const { data: dependant, error } = await ctx.svc
@@ -183,7 +186,7 @@ export const POST = withAuth(async (req, ctx) => {
     entityId: dependant.id,
     description: `Added dependant ${dependantNumber} — ${dependant.first_name} ${dependant.last_name} (${body.relationship})`,
   });
-  return ok(dependant);
+  return ok(tempPassword ? { ...dependant, tempPassword } : dependant);
 });
 
 export const runtime = "nodejs";

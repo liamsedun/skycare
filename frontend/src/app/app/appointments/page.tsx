@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Calendar, CheckCircle2, Clock, Loader2, Search, Stethoscope, User, X, XCircle } from "lucide-react";
 import { NewAppointmentButton } from "@/components/dashboard/appointment-actions";
 import { formatDate } from "@/lib/auth";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 type DisplayStatus = "Scheduled" | "Confirmed" | "In Progress" | "Completed" | "Cancelled";
 
@@ -108,7 +110,11 @@ export default function AppointmentsPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/appointments?pageSize=100", { cache: "no-store" });
+      const params = new URLSearchParams({ pageSize: "100" });
+      if (search.trim()) params.set("q", search.trim());
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
+      const res = await fetch(`/api/appointments?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load appointments");
       setAppointments((body.data ?? []) as AppointmentRow[]);
@@ -118,7 +124,7 @@ export default function AppointmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search, fromDate, toDate]);
 
   useEffect(() => {
     load();
@@ -134,8 +140,7 @@ export default function AppointmentsPage() {
       const display = mapStatus(a.status);
       if (tab !== "all" && display.toLowerCase() !== tab) return false;
       const date = a.scheduled_date?.slice(0, 10) ?? "";
-      if (fromDate && date < fromDate) return false;
-      if (toDate && date > toDate) return false;
+      if (!inDateRange(a.scheduled_date, fromDate, toDate)) return false;
       if (search) {
         const q = search.toLowerCase();
         const haystack = [
@@ -205,22 +210,17 @@ export default function AppointmentsPage() {
             className="focus-ring w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-9 pr-3 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--color-muted-fg)] focus:border-[var(--color-primary)]"
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-[var(--color-muted-fg)]">From:</span>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
-          />
-          <span className="text-xs text-[var(--color-muted-fg)]">To:</span>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
-          />
-          {hasFilters && (
+        <DateRangeBar
+          from={fromDate}
+          to={toDate}
+          onFromChange={setFromDate}
+          onToChange={setToDate}
+          onClear={() => {
+            setFromDate("");
+            setToDate("");
+          }}
+        />
+        {hasFilters && (
             <button
               type="button"
               onClick={() => {
@@ -233,7 +233,6 @@ export default function AppointmentsPage() {
               <X size={14} aria-hidden="true" /> Clear
             </button>
           )}
-        </div>
       </div>
 
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by status">

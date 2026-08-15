@@ -1,5 +1,5 @@
 import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
-import { getPagination, resolveParam } from "@/lib/api-utils";
+import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
@@ -16,7 +16,32 @@ export const GET = withAuth(async (req, ctx) => {
   const dateTo = resolveParam(req.nextUrl.searchParams.get("to"));
   const doctorId = resolveParam(req.nextUrl.searchParams.get("doctor_id"));
   const patientId = resolveParam(req.nextUrl.searchParams.get("patient_id"));
-  const q = resolveParam(req.nextUrl.searchParams.get("q"))?.trim();
+  const q = resolveParam(req.nextUrl.searchParams.get("q"))?.trim() || null;
+
+  let qIds: { patientIds: string[]; doctorIds: string[]; rowIds: string[] } | null = null;
+  if (q) {
+    const like = `%${sanitizeLike(q)}%`;
+    const [patRes, docRes, rowRes] = await Promise.all([
+      ctx.svc
+        .from("patients")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .or(`first_name.ilike.${like},last_name.ilike.${like},patient_number.ilike.${like}`),
+      ctx.svc.from("users").select("id").eq("tenant_id", tenantId).ilike("full_name", like).limit(300),
+      ctx.svc
+        .from("appointments")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .or(`reason.ilike.${like},notes.ilike.${like},type.ilike.${like}`)
+        .limit(800),
+    ]);
+    if (patRes.error || docRes.error || rowRes.error) throw new ValidationError("Failed to search appointments");
+    qIds = {
+      patientIds: (patRes.data ?? []).map((r) => r.id),
+      doctorIds: (docRes.data ?? []).map((r) => r.id),
+      rowIds: (rowRes.data ?? []).map((r) => r.id),
+    };
+  }
 
   let familyIds: string[] | null = null;
   if (ctx.role === "patient_api") {
@@ -50,6 +75,14 @@ export const GET = withAuth(async (req, ctx) => {
   if (doctorId) query = query.eq("doctor_id", doctorId);
   if (patientId) query = query.eq("patient_id", patientId);
   if (familyIds) query = query.in("patient_id", familyIds);
+  if (qIds) {
+    const ors: string[] = [];
+    if (qIds.rowIds.length > 0) ors.push(`id.in.(${qIds.rowIds.join(",")})`);
+    if (qIds.patientIds.length > 0) ors.push(`patient_id.in.(${qIds.patientIds.join(",")})`);
+    if (qIds.doctorIds.length > 0) ors.push(`doctor_id.in.(${qIds.doctorIds.join(",")})`);
+    if (ors.length === 0) return okPaginated([], 0, page, pageSize);
+    query = query.or(ors.join(","));
+  }
 
   const { data, count } = await query;
   return okPaginated(data ?? [], count ?? 0, page, pageSize);

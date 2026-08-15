@@ -1,12 +1,10 @@
-import { Suspense } from "react";
-import RosterView from "@/components/dashboard/roster-view";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+// Roster was duplicated: the legacy duty-roster page (/app/roster) is now
+// consolidated into the HR module's Shifts & Roster (/app/hr/roster), which
+// supports shift templates, month grids and conflict guards.
 export default function RosterPage() {
-  return (
-    <Suspense fallback={<p className="py-16 text-center text-sm text-[var(--color-muted-fg)]">Loading roster…</p>}>
-      <RosterView />
-    </Suspense>
-  );
+  redirect("/app/hr/roster");
 }

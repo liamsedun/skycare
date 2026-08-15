@@ -1,4 +1,5 @@
 import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { computeFinancialOverview } from "@/lib/financial-overview";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -308,6 +309,9 @@ export const GET = withStaff(async (req, ctx) => {
     patients: a.patients ?? null,
   }));
 
+  // Consolidated hospital-wide P&L for the selected month (all modules).
+  const financials = await computeFinancialOverview(ctx.svc, tenantId, { from, to });
+
   return ok({
     kpis: {
       totalPatients: patientsRes.count ?? 0,
@@ -332,6 +336,7 @@ export const GET = withStaff(async (req, ctx) => {
       net,
       margin,
     },
+    financials,
     weekly,
     split: { medical, other },
     monthlyTrend,

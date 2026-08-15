@@ -79,7 +79,7 @@ export const POST = withStaff(async (req, ctx) => {
       .eq("tenant_id", tenantId)
       .eq("is_active", true)
       .maybeSingle();
-    if (!doctor || !["hospital_admin", ...CLINICIAN_ROLES].includes(doctor.role)) {
+    if (!doctor || !["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(doctor.role)) {
       throw new ValidationError("Invalid doctor selected");
     }
   }

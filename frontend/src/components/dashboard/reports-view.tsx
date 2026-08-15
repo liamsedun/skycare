@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, FileText, Loader2, Plus } from "lucide-react";
 import { formatDate } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -47,6 +49,8 @@ export default function ReportsView() {
   const [content, setContent] = useState("");
   const [authorTitle, setAuthorTitle] = useState("");
   const [saving, setSaving] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const loadPatients = useCallback(async () => {
     try {
@@ -85,16 +89,21 @@ export default function ReportsView() {
     loadReports(selected);
   }, [selected, loadReports]);
 
+  const visibleReports = useMemo(
+    () => reports.filter((r) => inDateRange(r.report_date, from, to)),
+    [reports, from, to]
+  );
+
   const grouped = useMemo(() => {
     const map = new Map<string, { date: string; reports: Report[] }>();
-    for (const r of reports) {
+    for (const r of visibleReports) {
       const key = r.report_date;
       const g = map.get(key) ?? { date: key, reports: [] as Report[] };
       g.reports.push(r);
       map.set(key, g);
     }
     return [...map.values()];
-  }, [reports]);
+  }, [visibleReports]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -146,19 +155,28 @@ export default function ReportsView() {
         </p>
       )}
 
-      <div>
-        <label className={labelCls} htmlFor="r-patient">Patient</label>
-        <select
-          id="r-patient"
-          value={selected}
-          onChange={(e) => setSelected(e.target.value)}
-          className={inputCls + " max-w-md"}
-        >
-          <option value="">All patients</option>
-          {patients.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className={labelCls} htmlFor="r-patient">Patient</label>
+          <select
+            id="r-patient"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className={inputCls + " max-w-md"}
+          >
+            <option value="">All patients</option>
+            {patients.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </div>
+        <DateRangeBar
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setFrom(""); setTo(""); }}
+        />
       </div>
 
       {loading ? (
@@ -168,6 +186,10 @@ export default function ReportsView() {
       ) : reports.length === 0 ? (
         <p className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-12 text-center text-sm text-[var(--color-muted-fg)] shadow-[var(--shadow-sm)]">
           No medical reports found{selected ? " for this patient" : ""}.
+        </p>
+      ) : visibleReports.length === 0 ? (
+        <p className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-12 text-center text-sm text-[var(--color-muted-fg)] shadow-[var(--shadow-sm)]">
+          No medical reports match the current date range.
         </p>
       ) : (
         <div className="space-y-4">

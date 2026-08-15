@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import DateRangeBar from "@/components/filters/date-range-bar";
+import { inDateRange } from "@/lib/daterange";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -34,6 +36,8 @@ export default function HrCredentialsView() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [form, setForm] = useState({ staff_id: "", license_number: "", category: "", issue_date: "", expiry_date: "" });
 
   const load = useCallback(async () => {
@@ -64,6 +68,8 @@ export default function HrCredentialsView() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const visible = rows.filter((c) => inDateRange(c.issue_date, from, to));
 
   async function addCred(e: React.FormEvent) {
     e.preventDefault();
@@ -148,6 +154,16 @@ export default function HrCredentialsView() {
 
       {error && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
+      <div className="flex flex-wrap items-center gap-3">
+        <DateRangeBar
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setFrom(""); setTo(""); }}
+        />
+      </div>
+
       <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-[var(--color-border)] text-xs uppercase text-[var(--color-muted-fg)]">
@@ -162,7 +178,7 @@ export default function HrCredentialsView() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
-            {rows.map((c) => (
+            {visible.map((c) => (
               <tr key={c.id}>
                 <td className="px-4 py-3">
                   <div className="font-medium">{c.staff?.users?.full_name}</div>
@@ -189,7 +205,7 @@ export default function HrCredentialsView() {
                 </td>
               </tr>
             ))}
-            {rows.length === 0 && (
+            {visible.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-[var(--color-muted-fg)]">No credentials recorded.</td></tr>
             )}
           </tbody>

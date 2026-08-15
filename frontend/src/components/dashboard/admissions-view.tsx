@@ -5,8 +5,10 @@ import {
   ArrowRightLeft, DoorOpen, Loader2, Plus, RefreshCw, Search, Stethoscope, UserPlus, X,
 } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
+import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
 
 const EXPORT_COLUMNS = [
   "patient",
@@ -51,6 +53,8 @@ export default function AdmissionsView() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"active" | "discharged">("active");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -72,12 +76,15 @@ export default function AdmissionsView() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/admissions?status=${tab}`, { cache: "no-store" });
+    const params = new URLSearchParams({ status: tab });
+    if (fromDate) params.set("from", fromDate);
+    if (toDate) params.set("to", toDate);
+    const res = await fetch(`/api/admissions?${params.toString()}`, { cache: "no-store" });
     const body = await res.json();
     if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Failed to load admissions" }); setLoading(false); return; }
     setRows(body.data ?? []);
     setLoading(false);
-  }, [tab]);
+  }, [tab, fromDate, toDate]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -105,6 +112,11 @@ export default function AdmissionsView() {
     () => wards.flatMap((w) => w.beds.filter((b) => b.status === "available").map((b) => ({ ...b, wardName: w.name }))),
     [wards]
   );
+
+  const currentBedId = (a: AdmissionRow | null) => {
+    const b = a?.beds;
+    return b ? (Array.isArray(b) ? (b[0]?.id ?? null) : b.id) : null;
+  };
 
   const openAdmit = () => {
     setShowAdmit(true);
@@ -170,7 +182,8 @@ export default function AdmissionsView() {
 
   const filtered = rows.filter((a) => {
     const q = search.toLowerCase();
-    return !q || patientName(a).toLowerCase().includes(q) || patientNo(a).toLowerCase().includes(q);
+    const matchesSearch = !q || patientName(a).toLowerCase().includes(q) || patientNo(a).toLowerCase().includes(q);
+    return matchesSearch && inDateRange(a.admitted_at, fromDate, toDate);
   });
 
   const rowsFor = (rs: AdmissionRow[]) =>
@@ -271,6 +284,13 @@ export default function AdmissionsView() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-fg)]" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search patient…" className={`${inputCls} pl-9`} style={{ width: 260 }} />
           </div>
+          <DateRangeBar
+            from={fromDate}
+            to={toDate}
+            onFromChange={setFromDate}
+            onToChange={setToDate}
+            onClear={() => { setFromDate(""); setToDate(""); }}
+          />
           <div className="flex rounded-lg border border-[var(--color-border)] p-0.5">
             {(["active", "discharged"] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)} className={`rounded-md px-3 py-1.5 text-xs font-semibold capitalize transition-colors ${tab === t ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-muted-fg)] hover:bg-slate-50"}`}>
@@ -332,7 +352,7 @@ export default function AdmissionsView() {
                       <div className="flex justify-end gap-2">
                         {a.status === "admitted" && (
                           <>
-                            <button onClick={() => { setTransferFor(a); setToBedId(""); setReason(""); }} className={btnGhost} title="Transfer bed">
+                            <button onClick={() => { setTransferFor(a); setToBedId(""); setReason(""); void loadLookups(); }} className={btnGhost} title="Transfer bed">
                               <ArrowRightLeft size={14} />
                             </button>
                             <button onClick={() => { setDischargeFor(a); setSummary(""); setFollowUp(""); setMedications(""); }} className={btnGhost} title="Discharge">
@@ -416,11 +436,14 @@ export default function AdmissionsView() {
                 Destination bed
                 <select className={`${inputCls} mt-1`} value={toBedId} onChange={(e) => setToBedId(e.target.value)}>
                   <option value="">Select bed…</option>
-                  {availableBeds.map((b) => (
+                  {availableBeds.filter((b) => b.id !== currentBedId(transferFor)).map((b) => (
                     <option key={b.id} value={b.id}>Bed {b.bed_number} — {b.wardName}</option>
                   ))}
                 </select>
               </label>
+              {availableBeds.filter((b) => b.id !== currentBedId(transferFor)).length === 0 && (
+                <p className="rounded-lg bg-amber-50 p-2.5 text-xs text-amber-700">No other beds are currently available to transfer into.</p>
+              )}
               <label className="block text-xs font-semibold text-[var(--color-muted-fg)]">
                 Reason (optional)
                 <input className={`${inputCls} mt-1`} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Closer to nurses station" />

@@ -3,6 +3,8 @@
 import { useEffect, use, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Printer, ReceiptText } from "lucide-react";
+import TenantLetterhead from "@/components/print/tenant-letterhead";
+import { useTenantBranding } from "@/lib/use-tenant-branding";
 
 interface ReceiptData {
   tenant_name: string;
@@ -49,6 +51,7 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { branding } = useTenantBranding();
 
   useEffect(() => {
     (async () => {
@@ -97,10 +100,11 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
+          <TenantLetterhead brand={branding} />
           <div className="border-b border-[var(--color-border)] bg-slate-50/60 px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{receipt.tenant_name}</p>
+                <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{branding?.name ?? receipt.tenant_name}</p>
                 <p className="font-mono text-lg font-bold text-[var(--color-foreground)]">
                   {receipt.payment?.reference ?? `LAB-${receipt.request.id.slice(0, 8)}`}
                 </p>

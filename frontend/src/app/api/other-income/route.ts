@@ -1,4 +1,4 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolvePayingAccountId, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { INCOME_CATEGORIES } from "@/lib/expense-categories";
@@ -7,7 +7,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const SELECT =
-  "id, tenant_id, branch_id, description, category, amount, income_date, payment_method, source, notes, created_by, created_at, updated_at";
+  "id, tenant_id, branch_id, account_id, description, category, amount, income_date, payment_method, source, notes, created_by, created_at, updated_at";
 
 // GET /api/other-income?category=&from=&to=&search=&page=&pageSize=
 export const GET = withStaff(async (req, ctx) => {
@@ -41,6 +41,7 @@ export interface CreateIncomeBody {
   amount: number;
   incomeDate: string;
   paymentMethod?: string;
+  accountId?: string | null;
   source?: string;
   notes?: string;
 }
@@ -58,11 +59,14 @@ export const POST = withStaff(async (req, ctx) => {
     throw new ValidationError("Invalid income category");
   }
 
+  const ledgerAccount = await resolvePayingAccountId(ctx.svc, tenantId, body.accountId, body.paymentMethod || "cash");
+
   const { data: income, error } = await ctx.svc
     .from("other_income")
     .insert({
       tenant_id: tenantId,
       branch_id: ctx.branchId ?? null,
+      account_id: ledgerAccount,
       description: body.description.trim(),
       category: body.category,
       amount: body.amount,
@@ -83,14 +87,14 @@ export const POST = withStaff(async (req, ctx) => {
     description: `Recorded income ₦${body.amount.toLocaleString()} — ${body.description.trim()}`,
   });
 
-  // Banking ledger auto-post: cash receipts go to Cash, every other method
-  // credits the default bank account (or Cash when none is configured).
+  // Banking ledger auto-post: the receipt lands in the selected account — Cash
+  // when accountId is "cash"/unset-with-cash-method, the chosen bank when a
+  // bank is picked, or the tenant default bank for other methods.
   try {
-    const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
     await postBankLedger(ctx.svc, {
       tenantId,
       branchId: ctx.branchId ?? null,
-      accountId: bankLedgerAccountForMethod(income.payment_method, defaultBankId),
+      accountId: ledgerAccount,
       direction: "in",
       amount: Number(income.amount),
       source: "other_income",

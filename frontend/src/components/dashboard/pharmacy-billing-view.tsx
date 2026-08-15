@@ -5,8 +5,11 @@ import {
   Receipt, Wallet, FileText, ShieldCheck, Printer, Plus, X, Search, CheckCircle2, Clock, Banknote,
 } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
+import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import { useTenantBranding } from "@/lib/use-tenant-branding";
 
 // ============================================================================
 // Pharmacy Billing — sales invoices, multi-method payments, insurance claims,
@@ -125,7 +128,7 @@ interface InvoiceRow {
   pharmacy_invoice_items?: Array<{ id: string; drug_name: string; quantity: number; unit_price: number; total_price: number }>;
 }
 
-interface DrugOption { id: string; name: string; unitPrice: number; dosage: string | null; stock: number }
+interface DrugOption { id: string; name: string; unitPrice: number; dosage: string | null; inStock: number; priceSource?: "branch_override" | "base_override" | "catalog" | "wholesale" }
 interface PatientOption { id: string; label: string }
 
 function SalesTab() {
@@ -136,18 +139,24 @@ function SalesTab() {
   const [detail, setDetail] = useState<InvoiceRow | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [q, setQ] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ pageSize: "50" });
       if (status) params.set("status", status);
+      if (q.trim()) params.set("q", q.trim());
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
       const res = await fetch(`/api/pharmacy/invoices?${params.toString()}`, { cache: "no-store" });
       if (res.ok) setRows((await res.json()).data ?? []);
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [status, q, fromDate, toDate]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -186,6 +195,8 @@ function SalesTab() {
     printTable("Pharmacy Sales", SALES_COLUMNS, salesRows());
   }
 
+  const visible = rows.filter((r) => inDateRange(r.created_at, fromDate, toDate));
+
   async function importSales(_rows: string[][]): Promise<ImportResult> {
     return {
       created: 0,
@@ -197,6 +208,21 @@ function SalesTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search invoice, patient, drug…"
+          aria-label="Search pharmacy sales"
+          className={`${inputCls} w-56`}
+        />
+        <DateRangeBar
+          from={fromDate}
+          to={toDate}
+          onFromChange={setFromDate}
+          onToChange={setToDate}
+          onClear={() => { setFromDate(""); setToDate(""); }}
+        />
         <div className="flex-1" />
         <select value={status} onChange={(e) => setStatus(e.target.value)} className={`${inputCls} w-auto`}>
           <option value="">All statuses</option>
@@ -236,10 +262,10 @@ function SalesTab() {
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
-            ) : rows.length === 0 ? (
+            ) : visible.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No pharmacy sales yet.</td></tr>
             ) : (
-              rows.map((r) => (
+              visible.map((r) => (
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5 font-medium text-[var(--color-foreground)]">{r.invoice_number}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
@@ -269,7 +295,7 @@ function SalesTab() {
 }
 
 function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [items, setItems] = useState<Array<{ drugId: string; name: string; qty: string; price: string }>>([]);
+  const [items, setItems] = useState<Array<{ drugId: string; name: string; qty: string; price: string; priceSource?: DrugOption["priceSource"] }>>([]);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [patientId, setPatientId] = useState("");
   const [discount, setDiscount] = useState("");
@@ -304,9 +330,27 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   }, [query]);
 
   function addItem(d: DrugOption) {
-    setItems((prev) => [...prev, { drugId: d.id, name: d.name, qty: "1", price: String(d.unitPrice ?? "") }]);
+    setItems((prev) => [...prev, { drugId: d.id, name: d.name, qty: "1", price: String(d.unitPrice ?? ""), priceSource: d.priceSource }]);
     setQuery("");
     setResults([]);
+  }
+
+  function priceSourceChip(source?: DrugOption["priceSource"]) {
+    if (source === "branch_override") {
+      return (
+        <span className="ml-2 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700" title="This branch's price override applies to this drug">
+          Branch price
+        </span>
+      );
+    }
+    if (source === "base_override") {
+      return (
+        <span className="ml-2 inline-block rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700" title='"All branches" price override applies to this drug'>
+          All-branch price
+        </span>
+      );
+    }
+    return null;
   }
 
   function removeItem(i: number) {
@@ -461,7 +505,17 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
                     <span className="block font-medium">{d.name}</span>
                     <span className="block text-xs text-[var(--color-muted-fg)]">
                       {[d.dosage, `₦${Number(d.unitPrice ?? 0).toLocaleString()}`].filter(Boolean).join(" · ")}
-                      <span className="ml-1 text-emerald-600">{d.stock} in stock</span>
+                      {d.priceSource === "branch_override" && (
+                        <span className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700">branch price</span>
+                      )}
+                      {d.priceSource === "base_override" && (
+                        <span className="ml-1 rounded bg-sky-100 px-1 py-0.5 text-[10px] font-semibold text-sky-700">all-branch price</span>
+                      )}
+                      {Number(d.inStock ?? 0) > 0 ? (
+                        <span className="ml-1 font-semibold text-emerald-600">{Number(d.inStock)} in stock</span>
+                      ) : (
+                        <span className="ml-1 font-semibold text-red-500">out of stock</span>
+                      )}
                     </span>
                   </button>
                 </li>
@@ -484,7 +538,12 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               <tbody className="divide-y divide-[var(--color-border)]">
                 {items.map((it, i) => (
                   <tr key={i}>
-                    <td className="px-3 py-2 text-[var(--color-foreground)]">{it.name}</td>
+                    <td className="px-3 py-2">
+                      <span className="flex items-center text-[var(--color-foreground)]">
+                        {it.name}
+                        {priceSourceChip(it.priceSource)}
+                      </span>
+                    </td>
                     <td className="px-3 py-2">
                       <input type="number" min={1} value={it.qty} onChange={(e) => setItem(i, "qty", e.target.value)} className={`${inputCls} px-2 py-1`} />
                     </td>
@@ -559,7 +618,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   const [channel, setChannel] = useState<ConvertChannel>("in_house");
   const [method, setMethod] = useState("cash");
   const [bankAccounts, setBankAccounts] = useState<Array<{ id: string; label: string }>>([]);
-  const [bankAccountId, setBankAccountId] = useState("");
+  const [bankAccountId, setBankAccountId] = useState("cash");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -590,7 +649,6 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             label: `${a.bank_name} — ${a.account_name}`,
           }));
           setBankAccounts(accounts);
-          if (accounts.length > 0) setBankAccountId(accounts[0].id);
         }
       } finally {
         setLoading(false);
@@ -642,7 +700,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
         setDone({
           summary: `Walk-in sale completed — invoice ${body.data.invoice.invoice_number}, ${method.toUpperCase()} payment of ₦${Number(
             body.data.invoice.total_amount
-          ).toLocaleString()} recorded to the bank ledger.`,
+          ).toLocaleString()} recorded to ${bankAccountId === "cash" ? "the cash ledger" : "the bank ledger"}.`,
           invoiceNumber: body.data.invoice.invoice_number,
         });
       } else if (channel === "in_house") {
@@ -763,16 +821,15 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
                     <option value="card">Card</option>
                   </select>
                 </div>
-                {bankAccounts.length > 0 && (
-                  <div>
-                    <label className={lbl} htmlFor="cs-bank">Bank account (ledger)</label>
+                <div>
+                    <label className={lbl} htmlFor="cs-bank">Deposit into</label>
                     <select id="cs-bank" value={bankAccountId} onChange={(e) => setBankAccountId(e.target.value)} className={inputCls}>
+                      <option value="cash">Cash</option>
                       {bankAccounts.map((a) => (
                         <option key={a.id} value={a.id}>{a.label}</option>
                       ))}
                     </select>
                   </div>
-                )}
               </div>
             )}
 
@@ -810,6 +867,7 @@ function InvoiceDetail({ invoice, onClose, onChanged }: { invoice: InvoiceRow; o
   const [splits, setSplits] = useState<Array<{ method: string; amount: string; reference: string }>>([{ method: "cash", amount: "", reference: "" }]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { branding } = useTenantBranding();
 
   useEffect(() => {
     (async () => {
@@ -854,16 +912,47 @@ function InvoiceDetail({ invoice, onClose, onChanged }: { invoice: InvoiceRow; o
   const print = () => {
     const w = window.open("", "_blank", "width=420,height=640");
     if (!w) return;
-    w.document.write(`<html><head><title>${invoice.invoice_number}</title><style>
+    const esc = (v: unknown) =>
+      String(v ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    const name = esc(branding?.name ?? "Pharmacy");
+    const address = esc(
+      [branding?.address, [branding?.city, branding?.state].filter(Boolean).join(", "), branding?.country]
+        .filter(Boolean)
+        .join(", ")
+    );
+    const contact = esc(
+      [
+        branding?.phone && `Tel: ${branding.phone}`,
+        branding?.email && `Email: ${branding.email}`,
+        branding?.website,
+      ]
+        .filter(Boolean)
+        .join(" • ")
+    );
+    const letterhead = `
+      <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;">
+        ${branding?.logo_url ? `<img src="${esc(branding.logo_url)}" alt="logo" style="width:44px;height:44px;object-fit:contain;" />` : ""}
+        <div>
+          <p style="margin:0;font-size:14px;font-weight:bold;">${name}</p>
+          ${address ? `<p class="muted" style="margin:1px 0 0;">${address}</p>` : ""}
+          ${contact ? `<p class="muted" style="margin:1px 0 0;">${contact}</p>` : ""}
+        </div>
+      </div>`;
+    w.document.write(`<html><head><title>${esc(invoice.invoice_number)}</title><style>
       body{font-family:ui-monospace,monospace;font-size:12px;padding:16px;max-width:320px;margin:auto}
       h1{font-size:14px;margin:0 0 4px} .muted{color:#666} .row{display:flex;justify-content:space-between;margin:2px 0}
       table{width:100%;border-collapse:collapse;margin-top:8px} td{padding:3px 0;border-bottom:1px dashed #ccc}
       .tot{border-top:2px solid #000;margin-top:6px;padding-top:6px}
     </style></head><body>
-      <h1>LIFE BLOSSOM PHARMACY</h1>
-      <p class="muted">${invoice.invoice_number}<br>${new Date(invoice.created_at).toLocaleString()}<br>${invoice.patients ? `${invoice.patients.first_name} ${invoice.patients.last_name}` : "Walk-in"}</p>
+      ${letterhead}
+      <h1>${esc(invoice.invoice_number)}</h1>
+      <p class="muted">${new Date(invoice.created_at).toLocaleString()}<br>${invoice.patients ? `${esc(`${invoice.patients.first_name} ${invoice.patients.last_name}`)}` : "Walk-in"}</p>
       <table><tbody>
-        ${(invoice.pharmacy_invoice_items ?? []).map((it) => `<tr><td>${it.drug_name}</td><td>${it.quantity} × ${ngn(it.unit_price)}</td><td>${ngn(it.total_price)}</td></tr>`).join("")}
+        ${(invoice.pharmacy_invoice_items ?? []).map((it) => `<tr><td>${esc(it.drug_name)}</td><td>${it.quantity} × ${ngn(it.unit_price)}</td><td>${ngn(it.total_price)}</td></tr>`).join("")}
       </tbody></table>
       <div class="tot">
         <div class="row"><span>Subtotal</span><span>${ngn(invoice.subtotal)}</span></div>
@@ -1022,16 +1111,26 @@ function PaymentsTab() {
     }>
   >([]);
   const [ledgerLoading, setLedgerLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ pageSize: "100" });
+      if (q.trim()) params.set("q", q.trim());
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
+      const res = await fetch(`/api/pharmacy/payments?${params.toString()}`, { cache: "no-store" });
+      if (res.ok) setRows((await res.json()).data ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }, [q, fromDate, toDate]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/pharmacy/payments", { cache: "no-store" });
-        if (res.ok) setRows((await res.json()).data ?? []);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    void load();
     (async () => {
       try {
         const res = await fetch("/api/pharmacy/bank-ledger?limit=12", { cache: "no-store" });
@@ -1040,9 +1139,11 @@ function PaymentsTab() {
         setLedgerLoading(false);
       }
     })();
-  }, []);
+  }, [load]);
 
   const total = useMemo(() => rows.reduce((s, r) => s + Number(r.amount), 0), [rows]);
+
+  const visible = rows.filter((r) => inDateRange(r.received_at, fromDate, toDate));
 
   const PAYMENTS_COLUMNS = ["invoice_number", "patient_name", "method", "amount", "reference", "received_at"];
 
@@ -1094,8 +1195,23 @@ function PaymentsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Payments</h4>
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search invoice, patient, reference…"
+          aria-label="Search pharmacy payments"
+          className={`${inputCls} w-56`}
+        />
+        <DateRangeBar
+          from={fromDate}
+          to={toDate}
+          onFromChange={setFromDate}
+          onToChange={setToDate}
+          onClear={() => { setFromDate(""); setToDate(""); }}
+        />
+        <div className="flex-1" />
         <ImportExportMenu
           entityLabel="Pharmacy Payments"
           exportCsv={exportCsv}
@@ -1104,10 +1220,7 @@ function PaymentsTab() {
           importSample={[["PH-INV-0001", "Ada Okafor", "cash", "15000", "REF-1001"]]}
           templateFilename="pharmacy-payments-import-template.csv"
           onImport={importPayments}
-          onImported={() => void (async () => {
-            const res = await fetch("/api/pharmacy/payments", { cache: "no-store" });
-            if (res.ok) setRows((await res.json()).data ?? []);
-          })()}
+          onImported={() => void load()}
         />
       </div>
 
@@ -1162,10 +1275,10 @@ function PaymentsTab() {
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
-            ) : rows.length === 0 ? (
+            ) : visible.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No payments recorded yet.</td></tr>
             ) : (
-              rows.map((r) => (
+              visible.map((r) => (
                 <tr key={r.id}>
                   <td className="px-4 py-2.5 font-medium">{r.pharmacy_invoices?.invoice_number ?? "—"}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">

@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, ClipboardList, Loader2, Plus, RefreshCw, X } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
+import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -48,6 +50,8 @@ export default function WardRoundsView() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const [showAdd, setShowAdd] = useState(false);
   const [admissionId, setAdmissionId] = useState("");
@@ -72,6 +76,8 @@ export default function WardRoundsView() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const visible = rounds.filter((r) => inDateRange(r.round_time, from, to));
 
   const nameOf = (a: ActiveAdmission) => {
     const p = Array.isArray(a.patients) ? a.patients[0] : a.patients;
@@ -207,6 +213,15 @@ export default function WardRoundsView() {
             />
           </div>
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <DateRangeBar
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onClear={() => { setFrom(""); setTo(""); }}
+          />
+        </div>
         {toast && <p className="mt-3 text-xs text-rose-600">{toast}</p>}
       </div>
 
@@ -214,13 +229,13 @@ export default function WardRoundsView() {
         <div className="flex justify-center py-16 text-[var(--color-muted-fg)]">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
-      ) : rounds.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center text-sm text-[var(--color-muted-fg)]">
           No ward round entries yet.
         </div>
       ) : (
         <div className="space-y-3">
-          {rounds.map((r) => (
+          {visible.map((r) => (
             <div key={r.id} className="rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-[var(--color-foreground)]">

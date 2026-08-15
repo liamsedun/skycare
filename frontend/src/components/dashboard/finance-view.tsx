@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Calendar, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Eye, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ngn } from "@/lib/auth";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/expense-categories";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 export type FinanceKind = "expense" | "income";
 
@@ -43,6 +45,7 @@ interface Tx {
   vendor: string | null;
   source: string | null;
   notes: string | null;
+  account_id?: string | null;
 }
 
 interface TxForm {
@@ -51,8 +54,16 @@ interface TxForm {
   amount: string;
   date: string;
   paymentMethod: string;
+  accountId: string;
   secondary: string;
   notes: string;
+}
+
+interface BankAccount {
+  id: string;
+  bank_name: string;
+  account_name: string;
+  account_number: string;
 }
 
 const PAYMENT_METHODS = ["cash", "card", "transfer", "mobile_money"];
@@ -63,27 +74,46 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
   const categoryList = Array.from(categories) as string[];
 
   const now = new Date();
-  const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+  const [fromDate, setFromDate] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`);
+  const [toDate, setToDate] = useState(() => new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10));
   const [rows, setRows] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
   const [catFilter, setCatFilter] = useState("all");
   const [showEditor, setShowEditor] = useState(false);
   const [editing, setEditing] = useState<Tx | null>(null);
+  const [viewing, setViewing] = useState<Tx | null>(null);
   const [deleting, setDeleting] = useState<Tx | null>(null);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [form, setForm] = useState<TxForm>(() => emptyForm(new Date().toISOString().slice(0, 10)));
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [y, m] = month.split("-").map(Number);
-      const from = `${y}-${String(m).padStart(2, "0")}-01`;
-      const to = new Date(y, m, 0).toISOString().slice(0, 10);
-      const res = await fetch(`/api/${isExpense ? "expenses" : "other-income"}?from=${from}&to=${to}&pageSize=100`, { cache: "no-store" });
+      if (isExpense) {
+        const br = await fetch(`/api/settings/bank-accounts`, { cache: "no-store" });
+        if (br.ok) {
+          const bb = await br.json();
+          setBankAccounts(bb.data ?? []);
+        }
+      } else {
+        const br = await fetch(`/api/settings/bank-accounts`, { cache: "no-store" });
+        if (br.ok) {
+          const bb = await br.json();
+          setBankAccounts(bb.data ?? []);
+        }
+      }
+      const params = new URLSearchParams({ pageSize: "100" });
+      if (fromDate) params.set("from", fromDate);
+      if (toDate) params.set("to", toDate);
+      if (search.trim()) params.set("search", search.trim());
+      const res = await fetch(`/api/${isExpense ? "expenses" : "other-income"}?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load records");
       setRows(body.data ?? []);
@@ -92,7 +122,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
     } finally {
       setLoading(false);
     }
-  }, [month, isExpense]);
+  }, [fromDate, toDate, search, isExpense]);
 
   useEffect(() => {
     load();
@@ -101,18 +131,22 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
   const filtered = useMemo(() => {
     let items = rows;
     if (catFilter !== "all") items = items.filter((r) => r.category === catFilter);
+    if (filterFrom || filterTo) {
+      items = items.filter((r) => inDateRange(r.expense_date ?? r.income_date ?? "", filterFrom, filterTo));
+    }
     if (search) {
       const q = search.toLowerCase();
       items = items.filter((r) => r.description.toLowerCase().includes(q) || (r.vendor ?? r.source ?? "").toLowerCase().includes(q));
     }
     return items;
-  }, [rows, catFilter, search]);
+  }, [rows, catFilter, search, filterFrom, filterTo]);
 
   const total = useMemo(() => filtered.reduce((s, r) => s + Number(r.amount), 0), [filtered]);
   const monthLabel = useMemo(() => {
-    const [y, m] = month.split("-").map(Number);
-    return new Date(y, m - 1, 1).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
-  }, [month]);
+    const end = toDate ? new Date(`${toDate}T00:00:00`) : new Date();
+    if (!end.getTime()) return toDate;
+    return end.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  }, [toDate]);
 
   function openEditor(tx: Tx | null) {
     setEditing(tx);
@@ -122,6 +156,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
       amount: String(tx.amount),
       date: (tx.expense_date ?? tx.income_date ?? "").slice(0, 10),
       paymentMethod: tx.payment_method || "cash",
+      accountId: tx.account_id ?? "cash",
       secondary: tx.vendor ?? tx.source ?? "",
       notes: tx.notes ?? "",
     } : emptyForm(new Date().toISOString().slice(0, 10)));
@@ -141,8 +176,8 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
         notes: form.notes || null,
       };
       const body = isExpense
-        ? { ...base, expenseDate: form.date, vendor: form.secondary || null }
-        : { ...base, incomeDate: form.date, source: form.secondary || null };
+        ? { ...base, expenseDate: form.date, vendor: form.secondary || null, accountId: form.accountId }
+        : { ...base, incomeDate: form.date, source: form.secondary || null, accountId: form.accountId };
       const res = await fetch(editing ? `/api/${isExpense ? "expenses" : "other-income"}/${editing.id}` : `/api/${isExpense ? "expenses" : "other-income"}`, {
         method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -153,6 +188,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
           expense_date: form.date,
           income_date: form.date,
           payment_method: form.paymentMethod,
+          account_id: form.accountId === "cash" ? null : form.accountId,
           vendor: form.secondary || null,
           source: form.secondary || null,
           notes: form.notes || null,
@@ -203,12 +239,12 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
     ]);
 
   function exportCsv() {
-    if (filtered.length === 0) { alert("Nothing to export — no records for this month."); return; }
-    downloadCsv(`${isExpense ? "expenses" : "other-income"}-${month}.csv`, TX_COLUMNS, txRows());
+    if (filtered.length === 0) { alert("Nothing to export — no records for this period."); return; }
+    downloadCsv(`${isExpense ? "expenses" : "other-income"}-${fromDate}-to-${toDate}.csv`, TX_COLUMNS, txRows());
   }
 
   function exportPdf() {
-    if (filtered.length === 0) { alert("Nothing to export — no records for this month."); return; }
+    if (filtered.length === 0) { alert("Nothing to export — no records for this period."); return; }
     printTable(isExpense ? "Expenses" : "Other Income", TX_COLUMNS, txRows());
   }
 
@@ -257,16 +293,27 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <Calendar size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
+          <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+            From
             <input
-              type="month"
-              value={month}
-              onChange={(e) => e.target.value && setMonth(e.target.value)}
-              className="rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--color-primary)]"
-              aria-label="Reporting period"
+              type="date"
+              value={fromDate}
+              onChange={(e) => e.target.value && setFromDate(e.target.value)}
+              className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
+              aria-label="Period from"
             />
-          </div>
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+            To
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => e.target.value && setToDate(e.target.value)}
+              className="rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-primary)]"
+              aria-label="Period to"
+            />
+          </label>
           <ImportExportMenu
             entityLabel={isExpense ? "Expenses" : "Other Income"}
             exportCsv={exportCsv}
@@ -334,6 +381,16 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
             <option key={c} value={c}>{CATEGORY_LABELS[c] ?? c}</option>
           ))}
         </select>
+        <DateRangeBar
+          from={filterFrom}
+          to={filterTo}
+          onFromChange={setFilterFrom}
+          onToChange={setFilterTo}
+          onClear={() => {
+            setFilterFrom("");
+            setFilterTo("");
+          }}
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
@@ -376,6 +433,15 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
                     <td className="hidden px-4 py-3 text-xs text-[var(--color-muted-fg)] sm:table-cell">{r.vendor ?? r.source ?? "—"}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setViewing(r)}
+                          className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                          aria-label="View"
+                          title="View details"
+                        >
+                          <Eye size={15} aria-hidden="true" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => openEditor(r)}
@@ -448,6 +514,20 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
                 </div>
               </div>
               <div>
+                <label className={labelCls} htmlFor="fx-acct">{isExpense ? "Pay from account" : "Deposit into"}</label>
+                <select id="fx-acct" className={inputCls} value={form.accountId} onChange={(e) => setForm({ ...form, accountId: e.target.value })}>
+                  <option value="cash">Cash</option>
+                  {bankAccounts.map((b) => (
+                    <option key={b.id} value={b.id}>{b.bank_name} • {b.account_name} ({b.account_number})</option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                  {isExpense
+                    ? "Choose the bank (or cash till) this expense is paid from."
+                    : "Choose the bank (or cash till) this income is deposited into."}
+                </p>
+              </div>
+              <div>
                 <label className={labelCls} htmlFor="fx-sec">{isExpense ? "Vendor" : "Source"} (optional)</label>
                 <input id="fx-sec" className={inputCls} value={form.secondary} onChange={(e) => setForm({ ...form, secondary: e.target.value })} placeholder={isExpense ? "e.g. PHCN" : "e.g. Donation from charity"} />
               </div>
@@ -473,6 +553,87 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {viewing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[var(--color-foreground)]">
+                {isExpense ? "Expense" : "Income"} details
+              </h2>
+              <button
+                type="button"
+                onClick={() => setViewing(null)}
+                className="focus-ring rounded-lg p-1 text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Description</dt>
+                <dd className="mt-0.5 font-semibold text-[var(--color-foreground)]">{viewing.description}</dd>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Date</dt>
+                  <dd className="mt-0.5 text-[var(--color-foreground)]">{viewing.expense_date ?? viewing.income_date ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Amount</dt>
+                  <dd className={`mt-0.5 font-bold ${isExpense ? "text-rose-600" : "text-emerald-700"}`}>{ngn(Number(viewing.amount))}</dd>
+                </div>
+              </div>
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Category</dt>
+                <dd className="mt-0.5">
+                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${CATEGORY_COLORS[viewing.category] ?? "bg-gray-100 text-gray-600"}`}>
+                    {CATEGORY_LABELS[viewing.category] ?? viewing.category}
+                  </span>
+                </dd>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Payment method</dt>
+                  <dd className="mt-0.5 capitalize text-[var(--color-foreground)]">{viewing.payment_method.replace(/_/g, " ")}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">{isExpense ? "Vendor" : "Source"}</dt>
+                  <dd className="mt-0.5 text-[var(--color-foreground)]">{viewing.vendor ?? viewing.source ?? "—"}</dd>
+                </div>
+              </div>
+              {viewing.account_id !== undefined && (
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">{isExpense ? "Paid from" : "Deposited into"}</dt>
+                  <dd className="mt-0.5 text-[var(--color-foreground)]">
+                    {viewing.account_id
+                      ? bankAccounts.find((b) => b.id === viewing.account_id)?.bank_name
+                        ? `${bankAccounts.find((b) => b.id === viewing.account_id)!.bank_name} • ${bankAccounts.find((b) => b.id === viewing.account_id)!.account_name}`
+                        : "Bank account"
+                      : "Cash"}
+                  </dd>
+                </div>
+              )}
+              {viewing.notes && (
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Notes</dt>
+                  <dd className="mt-0.5 whitespace-pre-wrap text-[var(--color-foreground)]">{viewing.notes}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setViewing(null)}
+                className="focus-ring rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -508,5 +669,5 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
 }
 
 function emptyForm(date: string): TxForm {
-  return { description: "", category: "other", amount: "", date, paymentMethod: "cash", secondary: "", notes: "" };
+  return { description: "", category: "other", amount: "", date, paymentMethod: "cash", accountId: "cash", secondary: "", notes: "" };
 }

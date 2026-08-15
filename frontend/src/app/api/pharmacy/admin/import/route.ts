@@ -8,20 +8,32 @@ export const dynamic = "force-dynamic";
 // POST /api/pharmacy/admin/import
 // Bulk upload a drug catalogue from a CSV document.
 //
-// Body: { csv: string, skipExisting?: boolean, defaultCategory?: string }
+// Body: { csv: string, skipExisting?: boolean, conflictAction?: "replace"|"keep",
+//         defaultCategory?: string, dryRun?: boolean }
 //
 // CSV contract (first row = headers; quote-aware parser):
 //   name*, category*, form*                  (required)
 //   generic / generic_name, brand, dosage,
 //   sku, wholesale / wholesale_price, price / unit_price,
-//   reorder_level, reorder_qty, requires_rx, nafdac / nafdac_number
+//   reorder_level, reorder_qty, requires_rx, nafdac / nafdac_number,
+//   supplier / supplier_name                 (optional, exact tenant supplier name)
+//
+// Conflict handling (rows whose name already exists in the catalogue):
+//   replace  -> the existing drug is updated in place with the CSV values
+//   keep     -> the existing drug is left untouched (counted in `skipped`)
+// The legacy `skipExisting: true` is an alias for conflictAction "keep".
+//
+// dryRun: validate + match against the catalogue and return `{ total, existing,
+//   errors }` WITHOUT writing anything — the client uses it to prompt the user
+//   before a replace run.
 //
 // Rules: max 1000 data rows; a row is skipped (with reason) if it repeats a
-// name already seen in the file or already in the catalogue and
-// skipExisting=true; duplicates by case-insensitive name never create a
-// second drug (the DB normalized unique index is the last line of defence).
+// name already seen in the file; duplicates by case-insensitive name never
+// create a second drug (the DB normalized unique index is the last line of
+// defence, and the existing-name lookup is chunked so large files never trip
+// the uq_pharmacy_drug unique constraint at insert).
 //
-// Response: { total, created, updated, skipped, errors: [{ row, reason }] }
+// Response: { total, created, updated, skipped, existing, errors: [{ row, reason }] }
 // ============================================================================
 
 const MAX_ROWS = 1000;
@@ -50,6 +62,18 @@ const HEADER_ALIASES: Record<string, string> = {
   requires_rx: "requires_rx",
   nafdac: "nafdac_number",
   nafdac_number: "nafdac_number",
+  supplier: "supplier",
+  supplier_name: "supplier",
+  supplier_name_alt: "supplier",
+  "supplier name": "supplier",
+  suppliers: "supplier",
+  "suppliers name": "supplier",
+  vendor: "supplier",
+  vendor_name: "supplier",
+  "vendor name": "supplier",
+  vendors: "supplier",
+  manufacturer: "supplier",
+  distributor: "supplier",
 };
 
 function parseCsv(text: string): string[][] {
@@ -110,7 +134,7 @@ export const POST = withAuth(
     if (!header.includes("name")) throw new ValidationError('CSV must have a "name" column');
 
     // 2. per-row validation
-    interface Row { row: number; name: string; normalized: string; columns: Record<string, unknown>; }
+    interface Row { row: number; name: string; normalized: string; columns: Record<string, unknown>; supplierName: string | null; }
     const parsedRows: Row[] = [];
     const errors: Array<{ row: number; reason: string }> = [];
     const seen = new Map<string, number>(); // normalized name -> first row
@@ -163,34 +187,71 @@ export const POST = withAuth(
           requires_rx: parseBool(col(i, "requires_rx")) ?? true,
           nafdac_number: col(i, "nafdac_number") || null,
         },
+        supplierName: col(i, "supplier") || null,
       });
     }
 
-    // 3. match + upsert
+    // 2b. tenant supplier lookup for the optional `supplier` column
+    const { data: tenantSuppliers } = await ctx.svc
+      .from("pharmacy_suppliers")
+      .select("id, name")
+      .eq("tenant_id", tenantId);
+    const supplierByNorm = new Map<string, string>();
+    for (const s of (tenantSuppliers ?? []) as Array<{ id: string; name: string }>) {
+      supplierByNorm.set(s.name.toLowerCase().trim(), s.id);
+    }
+
+    // 3. match + upsert — chunk the existing-name lookup so huge files never
+    //    blow past PostgREST URL limits (a failed lookup previously made every
+    //    row look "new" and the bulk insert tripped uq_pharmacy_drug).
     const names = parsedRows.map((r) => r.name.toLowerCase());
     const byNorm = new Map<string, string>();
-    if (names.length > 0) {
-      const { data: existingRows } = await ctx.svc
+    const CHUNK = 100;
+    for (let i = 0; i < names.length; i += CHUNK) {
+      const slice = names.slice(i, i + CHUNK);
+      const { data: existingRows, error: qErr } = await ctx.svc
         .from("pharmacy_drugs")
         .select("id, name_normalized")
         .eq("tenant_id", tenantId)
-        .in("name_normalized", names);
+        .in("name_normalized", slice);
+      if (qErr) throw new ValidationError(`existing-drug lookup failed: ${qErr.message}`);
       for (const e of (existingRows ?? []) as Array<{ name_normalized: string; id: string }>) {
         byNorm.set(e.name_normalized, e.id);
       }
     }
 
+    const existing = parsedRows.filter((r) => byNorm.has(r.name.toLowerCase())).length;
+
+    // dry-run: count matches, write nothing (client prompts before replacing)
+    if (body.dryRun === true) {
+      return ok({ total: raw.length - 1, existing, errors }, 200);
+    }
+
+    const conflictAction =
+      body.conflictAction === "replace" ? "replace"
+      : body.conflictAction === "keep" || skipExisting === true ? "keep"
+      : "replace";
+
     let created = 0, updated = 0, skipped = 0;
     const insertList: any[] = [];
     for (const r of parsedRows) {
+      const columns = { ...r.columns };
+      if (r.supplierName) {
+        const supplierId = supplierByNorm.get(r.supplierName.toLowerCase().trim());
+        if (!supplierId) {
+          errors.push({ row: r.row, reason: `unknown supplier "${r.supplierName}" — add it on the Suppliers tab first` });
+          continue;
+        }
+        columns.supplier_id = supplierId;
+      }
       const existingId = byNorm.get(r.name.toLowerCase());
       if (existingId) {
-        if (skipExisting) { skipped++; errors.push({ row: r.row, reason: "already exists — skipped (skipExisting)" }); continue; }
-        const { error } = await ctx.svc.from("pharmacy_drugs").update({ ...r.columns, updated_at: new Date().toISOString() }).eq("id", existingId);
+        if (conflictAction === "keep") { skipped++; continue; }
+        const { error } = await ctx.svc.from("pharmacy_drugs").update({ ...columns, updated_at: new Date().toISOString() }).eq("id", existingId);
         if (error) errors.push({ row: r.row, reason: `update failed: ${error.message}` });
         else updated++;
       } else {
-        insertList.push({ tenant_id: tenantId, ...r.columns });
+        insertList.push({ tenant_id: tenantId, ...columns });
       }
     }
     // batched insert (chunked, no-row-orphan)
@@ -202,7 +263,7 @@ export const POST = withAuth(
       else errors.push({ row: 0, reason: `bulk insert failed: ${error.message}` });
     }
 
-    return ok({ total: raw.length - 1, created, updated, skipped, errors: errors.slice(0, 400) }, 201);
+    return ok({ total: raw.length - 1, created, updated, skipped, existing, errors: errors.slice(0, 400) }, 201);
   },
   { roles: ["hospital_admin", "super_admin"] }
 );

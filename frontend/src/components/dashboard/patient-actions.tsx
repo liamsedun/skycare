@@ -95,11 +95,13 @@ export default function PatientActions({ patients }: { patients: PatientRow[] })
     });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error ?? "Import failed");
-    const errors = (body.errors ?? []).map(
+    // The API wraps results in the { success, data } envelope.
+    const payload = (body as { data?: { created?: number; errors?: Array<{ row?: number; message?: string }> } }).data ?? {};
+    const errors = (payload.errors ?? []).map(
       (e: { row?: number; message?: string }) =>
         `Row ${e.row ?? "?"}: ${e.message ?? "Unknown error"}`
     );
-    return { created: body.created ?? 0, failed: errors.length, errors };
+    return { created: payload.created ?? 0, failed: errors.length, errors };
   }
 
   return (

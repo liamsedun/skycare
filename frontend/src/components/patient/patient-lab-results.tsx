@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, FlaskConical } from "lucide-react";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface LabResult {
   id: string;
@@ -46,6 +48,8 @@ export default function PatientLabResults() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -65,12 +69,16 @@ export default function PatientLabResults() {
     load();
   }, [load]);
 
+  const visible = orders.filter((order) => inDateRange(order.requested_at, from, to));
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Lab results</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Laboratory orders and completed results for your family.</p>
       </div>
+
+      <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
@@ -80,7 +88,7 @@ export default function PatientLabResults() {
 
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading lab orders…</p>
-      ) : orders.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <FlaskConical size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No lab orders yet.</p>
@@ -88,7 +96,7 @@ export default function PatientLabResults() {
         </div>
       ) : (
         <div className="space-y-3">
-          {orders.map((order) => {
+          {visible.map((order) => {
             const open = expanded === order.id;
             const allReady = order.status === "completed";
             return (

@@ -6,9 +6,9 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const LEAVE_TYPES = ["annual", "sick", "emergency", "study", "unpaid", "maternity"];
+const LEAVE_TYPES = ["annual", "sick", "emergency", "study", "unpaid", "maternity", "paternity"];
 
-// GET /api/hr/leave-balances — staff see their own, HR admins see all.
+// GET /api/hr/leave-balances?year=YYYY&staff_id=me — staff see their own, HR admins see all (or self via staff_id=me).
 // POST /api/hr/leave-balances — adjust entitlement (HR admin).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
@@ -16,15 +16,16 @@ export const GET = withStaff(async (req, ctx) => {
   await ctx.svc.rpc("hr_sync_leave_balances", { p_tenant: tenantId });
 
   const year = Number(req.nextUrl.searchParams.get("year") ?? new Date().getFullYear());
+  const staffIdParam = req.nextUrl.searchParams.get("staff_id");
   let query = ctx.svc
     .from("leave_balances")
     .select("id, staff_id, leave_year, leave_type, entitled_days, used_days, staff:staff(department, users(full_name, role))")
     .eq("tenant_id", tenantId)
     .eq("leave_year", year);
-  if (!isHr) {
+  if (!isHr || staffIdParam === "me") {
     const { data: me } = await ctx.svc.from("staff").select("id").eq("user_id", ctx.user.id).eq("tenant_id", tenantId).maybeSingle();
     if (!me) return ok([]);
-    query = query.eq("staff.id", me.id);
+    query = query.eq("staff_id", me.id);
   }
   const { data, error } = await query.order("staff_id").order("leave_type");
   if (error) throw new ValidationError(error.message);

@@ -56,7 +56,7 @@ interface SendMailBody {
   body: string;
   attachments?: string[];
   broadcast?: boolean;
-  broadcastScope?: "staff" | "all";
+  broadcastScope?: "staff" | "patients" | "all";
 }
 
 // POST /api/mail/inbox — send a message to one or more staff (or broadcast)
@@ -74,6 +74,7 @@ export const POST = withAuth(async (req, ctx) => {
     const scope = body.broadcastScope ?? "staff";
     let q = ctx.svc.from("users").select("id").eq("tenant_id", tenantId);
     if (scope === "staff") q = q.neq("role", "patient_api");
+    if (scope === "patients") q = q.eq("role", "patient_api");
     const { data: users } = await q;
     if (users) recipientIds = users.map((u: any) => u.id).filter((id: string) => id !== ctx.user.id);
   } else if (body.recipientIds?.length) {
@@ -87,6 +88,63 @@ export const POST = withAuth(async (req, ctx) => {
     const { data: users } = await q;
     const valid = new Set((users ?? []).map((u: any) => u.id));
     recipientIds = unique.filter((id) => valid.has(id) && id !== ctx.user.id);
+    // Login-less dependant patient ids resolve to the family primary holder.
+    const leftover = unique.filter((id) => !valid.has(id));
+    if (!isPatient && leftover.length > 0) {
+      const { data: deps } = await ctx.svc
+        .from("patients")
+        .select("id, primary_account_id")
+        .eq("tenant_id", tenantId)
+        .eq("is_primary_account", false)
+        .is("user_id", null)
+        .in("id", leftover.slice(0, 200));
+      if (deps?.length) {
+        const primIds = [...new Set(deps.map((d: any) => d.primary_account_id).filter(Boolean))];
+        if (primIds.length) {
+          // primary_account_id is a PATIENT id (self-FK) — resolve the holder's
+          // user id via the patients table, not users.
+          const { data: prims } = await ctx.svc
+            .from("patients")
+            .select("id, user_id")
+            .in("id", primIds);
+          const primUserMap = new Map<string, string | null>(
+            (prims ?? []).map((p: any) => [p.id, p.user_id])
+          );
+          for (const d of deps ?? []) {
+            const holderUserId = primUserMap.get(d.primary_account_id);
+            if (holderUserId && holderUserId !== ctx.user.id) {
+              recipientIds.push(holderUserId);
+            }
+          }
+        }
+      }
+      recipientIds = [...new Set(recipientIds)];
+    }
+    // Login-less PRIMARY patients resolve to their family members with portal logins.
+    const leftP = leftover.filter((id) => !valid.has(id) && !recipientIds.includes(id));
+    if (!isPatient && leftP.length > 0) {
+      const { data: primsNL } = await ctx.svc
+        .from("patients")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .eq("is_primary_account", true)
+        .is("user_id", null)
+        .in("id", leftP.slice(0, 200));
+      const primIds = (primsNL ?? []).map((p: any) => p.id);
+      if (primIds.length) {
+        const { data: fam } = await ctx.svc
+          .from("patients")
+          .select("user_id, primary_account_id")
+          .eq("tenant_id", tenantId)
+          .eq("is_primary_account", false)
+          .not("user_id", "is", null)
+          .in("primary_account_id", primIds);
+        for (const f of fam ?? []) {
+          if (f.user_id && f.user_id !== ctx.user.id) recipientIds.push(f.user_id);
+        }
+        recipientIds = [...new Set(recipientIds)];
+      }
+    }
   }
 
   if (recipientIds.length === 0) throw new ValidationError("No valid recipients");

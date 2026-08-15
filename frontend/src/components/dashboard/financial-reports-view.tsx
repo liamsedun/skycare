@@ -2,18 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ArrowDownRight,
+  ArrowUpRight,
+  Banknote,
+  BedDouble,
   CalendarRange,
-  DollarSign,
   Download,
+  Landmark,
   Loader2,
+  PieChart as PieIcon,
   Printer,
   ReceiptText,
-  TrendingUp,
+  ShoppingCart,
+  Stethoscope,
+  TestTube2,
   Wallet,
+  Layers,
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   PieChart,
   Pie,
   Cell,
@@ -24,39 +32,43 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { formatDate, ngn } from "@/lib/auth";
+import { ngn } from "@/lib/auth";
 
 const inputCls =
   "focus-ring h-10 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 
-interface Invoice {
-  id: string;
-  invoice_number: string;
-  issue_date: string;
-  status: string;
-  total_amount: number;
-  paid_amount: number;
+interface ModuleIncome {
+  invoiced: number;
+  collected: number;
+  outstanding: number;
+  count: number;
 }
 
-interface ExpenseRecord {
-  id: string;
-  description: string;
-  category: string;
-  amount: number;
-  expense_date: string;
-}
-
-interface IncomeRecord {
-  id: string;
-  description: string;
-  category: string;
-  amount: number;
-  income_date: string;
-}
-
-interface PatientRowLite {
-  id: string;
-  created_at: string;
+interface FinancialSummary {
+  range: { from: string; to: string };
+  income: {
+    medical: ModuleIncome;
+    ward: ModuleIncome;
+    lab: ModuleIncome;
+    pharmacy: ModuleIncome;
+    other: ModuleIncome;
+    totals: ModuleIncome;
+  };
+  expenses: {
+    general: { total: number; count: number; byCategory: Array<{ category: string; amount: number }> };
+    payroll: { total: number; gross: number; net: number; statutory: number; count: number };
+    stock: { total: number; count: number };
+    total: number;
+  };
+  pnl: {
+    incomeCollected: number;
+    incomeInvoiced: number;
+    expensesTotal: number;
+    netCollected: number;
+    netInvoiced: number;
+    marginCollected: number;
+    marginInvoiced: number;
+  };
 }
 
 interface OrgInfo {
@@ -66,55 +78,20 @@ interface OrgInfo {
   address: string | null;
   city: string | null;
   state: string | null;
+  country: string | null;
   logo_url: string | null;
+  website: string | null;
 }
 
-const EXPENSE_LINES = [
-  "Medical Expenses",
-  "Other Medical Expenses",
-  "Staff Salary",
-  "Electricity (PHCN)",
-  "Motor Vehicle Maintenance (Fuel & Repairs)",
-  "Generator (Fuel & Repairs)",
-  "Stationeries & Printing",
-  "Janitorial/Cleaning",
-  "Internet",
-  "Telephone",
-  "Rents & Rates",
-  "Bank Charges",
-  "Travelling/Transportation",
-  "Newspapers/Medical Journals",
-  "Staff Welfare & Training",
-  "Other Misc. Expenses",
-] as const;
+const CHART_COLORS = ["#2563eb", "#14b8a6", "#8b5cf6", "#f59e0b", "#ec4899"];
 
-function expenseLineFor(e: ExpenseRecord): string {
-  const desc = (e.description || "").toLowerCase();
-  const cat = e.category || "";
-  if (/(generator|diesel|petrol)/.test(desc)) return "Generator (Fuel & Repairs)";
-  if (/(internet|wifi|data)/.test(desc)) return "Internet";
-  if (/(telephone|airtime)/.test(desc)) return "Telecommunications";
-  if (/(stationer|printing|printer|paper|ink)/.test(desc)) return "Stationeries & Printing";
-  if (/(janitor|cleaning|cleaner|sanitiz|sanitise|housekeeping)/.test(desc)) return "Janitorial/Cleaning";
-  if (/(bank charge|banking|pos fee|pos charge|card fee|transaction fee)/.test(desc)) return "Bank Charges";
-  if (/(newspaper|journal|magazine)/.test(desc)) return "Newspapers/Medical Journals";
-  if (/(vehicle|car repair|fuel for car|motor repair)/.test(desc)) return "Motor Vehicle Maintenance (Fuel & Repairs)";
-  if (/(travel|transport|fare|travelling)/.test(desc)) return "Travelling/Transportation";
-  switch (cat) {
-    case "medical_supplies": return "Medical Expenses";
-    case "equipment": return "Other Medical Expenses";
-    case "salaries": return "Staff Salary";
-    case "utilities": return "Electricity (PHCN)";
-    case "rent": return "Rents & Rates";
-    case "maintenance": return "Motor Vehicle Maintenance (Fuel & Repairs)";
-    case "transport": return "Travelling/Transportation";
-    case "staff_welfare":
-    case "training": return "Staff Welfare & Training";
-    default: return "Other Misc. Expenses";
-  }
-}
-
-const CHART_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#6366f1", "#ec4899", "#14b8a6"];
+const MODULE_META: Array<{ key: keyof FinancialSummary["income"]; label: string; icon: typeof Stethoscope; tint: string; bar: string }> = [
+  { key: "medical", label: "Medical Services", icon: Stethoscope, tint: "bg-blue-50 text-blue-600", bar: "#2563eb" },
+  { key: "ward", label: "Ward (Admissions)", icon: BedDouble, tint: "bg-teal-50 text-teal-600", bar: "#14b8a6" },
+  { key: "lab", label: "Laboratory", icon: TestTube2, tint: "bg-violet-50 text-violet-600", bar: "#8b5cf6" },
+  { key: "pharmacy", label: "Pharmacy", icon: ShoppingCart, tint: "bg-amber-50 text-amber-600", bar: "#f59e0b" },
+  { key: "other", label: "Other Income", icon: Banknote, tint: "bg-pink-50 text-pink-600", bar: "#ec4899" },
+];
 
 function fmtPeriodDate(d: string): string {
   return new Date(`${d}T00:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -141,18 +118,12 @@ function downloadCsv(filename: string, rows: string[][]) {
 
 export default function FinancialReportsView() {
   const now = new Date();
-  const [month, setMonth] = useState(
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
-  );
-  const [pnlFrom, setPnlFrom] = useState("");
-  const [pnlTo, setPnlTo] = useState("");
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [otherIncomeData, setOtherIncomeData] = useState<IncomeRecord[]>([]);
-  const [expensesData, setExpensesData] = useState<ExpenseRecord[]>([]);
-  const [patients, setPatients] = useState<PatientRowLite[]>([]);
+  const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [summary, setSummary] = useState<FinancialSummary | null>(null);
   const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingExpenses, setLoadingExpenses] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const monthLabel = useMemo(() => {
@@ -160,201 +131,174 @@ export default function FinancialReportsView() {
     return new Date(y, m - 1, 1).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
   }, [month]);
 
-  const loadFinancials = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [invRes, incRes, patRes, orgRes] = await Promise.all([
-        fetch("/api/invoices?pageSize=100", { cache: "no-store" }),
-        fetch("/api/other-income?page_size=500", { cache: "no-store" }),
-        fetch("/api/patients?pageSize=100", { cache: "no-store" }),
-        fetch("/api/tenant-settings", { cache: "no-store" }),
-      ]);
-      const [invBody, incBody, patBody, orgBody] = await Promise.all([
-        invRes.json(),
-        incRes.json(),
-        patRes.json(),
-        orgRes.json(),
-      ]);
-      if (invRes.ok) setInvoices((invBody.data ?? []) as Invoice[]);
-      if (incRes.ok) setOtherIncomeData((incBody.data ?? []) as IncomeRecord[]);
-      if (patRes.ok) setPatients((patBody.data ?? []) as PatientRowLite[]);
-      if (orgRes.ok) setOrgInfo((orgBody.data ?? null) as OrgInfo | null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load financial data");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   // Every calendar month the user selects, reset the P&L window to that month.
   useEffect(() => {
     const [y, m] = month.split("-").map(Number);
     const lastDay = new Date(y, m, 0).getDate();
-    setPnlFrom(`${y}-${String(m).padStart(2, "0")}-01`);
-    setPnlTo(`${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`);
+    setFrom(`${y}-${String(m).padStart(2, "0")}-01`);
+    setTo(`${y}-${String(m).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`);
   }, [month]);
 
   useEffect(() => {
-    loadFinancials();
-  }, [loadFinancials]);
-
-  // Expenses for the P&L window only.
-  useEffect(() => {
-    if (!pnlFrom || !pnlTo) return;
-    setLoadingExpenses(true);
-    fetch(`/api/expenses?from=${pnlFrom}&to=${pnlTo}&pageSize=500`, { cache: "no-store" })
-      .then((r) => r.json())
-      .then((body) => {
-        if (body.data) setExpensesData(body.data as ExpenseRecord[]);
+    if (!from || !to) return;
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      fetch(`/api/financial/summary?from=${from}&to=${to}`, { cache: "no-store" }),
+      fetch("/api/tenant/branding", { cache: "no-store" }),
+    ])
+      .then(async ([res, orgRes]) => {
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? "Failed to load financial report");
+        setSummary(body.data as FinancialSummary);
+        const orgBody = await orgRes.json();
+        if (orgRes.ok) setOrgInfo((orgBody.data ?? null) as OrgInfo | null);
       })
-      .catch(() => setExpensesData([]))
-      .finally(() => setLoadingExpenses(false));
-  }, [pnlFrom, pnlTo]);
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load financial report"))
+      .finally(() => setLoading(false));
+  }, [from, to]);
 
-  const kpis = useMemo(() => {
-    const [y, m] = month.split("-").map(Number);
-    const start = new Date(y, m - 1, 1);
-    const end = new Date(y, m, 1);
-    const prevStart = new Date(y, m - 2, 1);
-    const inMonth = (d: Date) => d >= start && d < end;
-    const inPrev = (d: Date) => d >= prevStart && d < start;
-
-    const medRev = invoices
-      .filter((i) => (i.status === "paid" || i.status === "partially_paid") && inMonth(new Date(i.issue_date)))
-      .reduce((sum, i) => sum + i.total_amount, 0);
-    const othRev = otherIncomeData
-      .filter((r) => inMonth(new Date(r.income_date)))
-      .reduce((sum, r) => sum + r.amount, 0);
-    const totalRevenue = medRev + othRev;
-    const prevMonthRev =
-      invoices
-        .filter((i) => (i.status === "paid" || i.status === "partially_paid") && inPrev(new Date(i.issue_date)))
-        .reduce((sum, i) => sum + i.total_amount, 0) +
-      otherIncomeData.filter((r) => inPrev(new Date(r.income_date))).reduce((sum, r) => sum + r.amount, 0);
-    const trend = prevMonthRev > 0 ? ((totalRevenue - prevMonthRev) / prevMonthRev) * 100 : 0;
-    const newPatients = patients.filter((p) => inMonth(new Date(p.created_at))).length;
-
-    return {
-      totalRevenue,
-      trendPct: trend,
-      revenueUp: totalRevenue >= prevMonthRev,
-      newPatients,
-      totalPatients: patients.length,
-    };
-  }, [invoices, otherIncomeData, patients, month]);
-
-  const revenueTrendData = useMemo(() => {
-    const now2 = new Date();
-    const byMonth: Record<string, number> = {};
-    const key = (d: Date) => d.toLocaleString("default", { month: "short", year: "2-digit" });
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now2.getFullYear(), now2.getMonth() - i, 1);
-      byMonth[key(d)] = 0;
-    }
-    invoices.filter((i) => i.status === "paid" || i.status === "partially_paid").forEach((i) => {
-      const k = key(new Date(i.issue_date));
-      if (byMonth[k] !== undefined) byMonth[k] += i.total_amount;
+  const moduleRows = useMemo(() => {
+    if (!summary) return [];
+    return MODULE_META.map((m) => {
+      const Icon = m.icon;
+      return {
+        key: m.key,
+        label: m.label,
+        icon: Icon,
+        tint: m.tint,
+        bar: m.bar,
+        ...summary.income[m.key],
+      };
     });
-    otherIncomeData.forEach((r) => {
-      const k = key(new Date(r.income_date));
-      if (byMonth[k] !== undefined) byMonth[k] += r.amount;
-    });
-    return Object.entries(byMonth).map(([monthName, amount]) => ({ month: monthName, amount }));
-  }, [invoices, otherIncomeData]);
+  }, [summary]);
 
-  const incomeSourcePie = useMemo(() => {
-    const med = invoices
-      .filter((i) => i.status === "paid" || i.status === "partially_paid")
-      .reduce((sum, i) => sum + i.total_amount, 0);
-    const oth = otherIncomeData.reduce((sum, r) => sum + r.amount, 0);
-    const data = [
-      { name: "Medical services", value: med },
-      { name: "Other income", value: oth },
-    ].filter((d) => d.value > 0);
-    return data.map((d, i) => ({ ...d, color: CHART_COLORS[i % CHART_COLORS.length] }));
-  }, [invoices, otherIncomeData]);
+  const incomePie = useMemo(() => {
+    if (!summary) return [];
+    return MODULE_META.map((m, i) => ({
+      name: m.label,
+      value: summary.income[m.key].collected,
+      color: CHART_COLORS[i % CHART_COLORS.length],
+    })).filter((d) => d.value > 0);
+  }, [summary]);
 
-  const pnlData = useMemo(() => {
-    if (!pnlFrom || !pnlTo) return null;
-    const start = new Date(`${pnlFrom}T00:00:00`);
-    const end = new Date(`${pnlTo}T23:59:59`);
-    const inPeriod = (d: string) => {
-      const dt = new Date(d);
-      return dt >= start && dt <= end;
-    };
-    const medRev = invoices
-      .filter((i) => (i.status === "paid" || i.status === "partially_paid") && inPeriod(i.issue_date))
-      .reduce((sum, i) => sum + i.total_amount, 0);
-    const othRev = otherIncomeData.filter((r) => inPeriod(r.income_date)).reduce((sum, r) => sum + r.amount, 0);
-    const totals: Record<string, number> = {};
-    EXPENSE_LINES.forEach((l) => { totals[l] = 0; });
-    expensesData.forEach((e) => {
-      const line = expenseLineFor(e);
-      totals[line] = (totals[line] || 0) + Number(e.amount || 0);
-    });
-    const totalExpenses = Object.values(totals).reduce((s, v) => s + v, 0);
-    const totalIncome = medRev + othRev;
-    return {
-      medRev,
-      othRev,
-      totalIncome,
-      lines: EXPENSE_LINES.map((label) => ({ label, amount: totals[label] || 0 })),
-      totalExpenses,
-      net: totalIncome - totalExpenses,
-    };
-  }, [invoices, otherIncomeData, expensesData, pnlFrom, pnlTo]);
+  const collectedVsInvoiced = useMemo(() => {
+    if (!summary) return [];
+    return MODULE_META.map((m) => ({
+      name: m.label.split(" ")[0],
+      collected: summary.income[m.key].collected,
+      invoiced: summary.income[m.key].invoiced,
+    }));
+  }, [summary]);
+
+  const kpiCards = useMemo(() => {
+    if (!summary) return [];
+    const p = summary.pnl;
+    const t = summary.income.totals;
+    return [
+      {
+        label: "Total Income Collected",
+        value: ngn(p.incomeCollected),
+        sub: `${t.count} transactions`,
+        icon: Wallet,
+        tint: "from-emerald-500 to-teal-600",
+        accent: "text-emerald-600",
+        up: true,
+      },
+      {
+        label: "Invoiced (Earned)",
+        value: ngn(p.incomeInvoiced),
+        sub: `${ngn(t.outstanding)} outstanding`,
+        icon: ReceiptText,
+        tint: "from-blue-500 to-indigo-600",
+        accent: "text-blue-600",
+        up: true,
+      },
+      {
+        label: "Total Expenses",
+        value: ngn(p.expensesTotal),
+        sub: `payroll ${ngn(summary.expenses.payroll.total)} · stock ${ngn(summary.expenses.stock.total)} · general ${ngn(summary.expenses.general.total)}`,
+        icon: Landmark,
+        tint: "from-rose-500 to-pink-600",
+        accent: "text-rose-600",
+        up: false,
+      },
+      {
+        label: "Net (Collected)",
+        value: ngn(p.netCollected),
+        sub: `${p.marginCollected.toFixed(1)}% margin · invoiced basis ${ngn(p.netInvoiced)}`,
+        icon: PieIcon,
+        tint: p.netCollected >= 0 ? "from-amber-500 to-orange-600" : "from-rose-500 to-red-600",
+        accent: p.netCollected >= 0 ? "text-emerald-600" : "text-rose-600",
+        up: p.netCollected >= 0,
+      },
+    ];
+  }, [summary]);
 
   const exportCsv = useCallback(() => {
-    if (!pnlData) return;
+    if (!summary) return;
     const rows: string[][] = [
-      [`${orgInfo?.name ?? "SkyCare"} — Financial Report`],
+      [`${orgInfo?.name ?? "SkyCare"} — Consolidated Financial Report`],
       ["Generated", new Date().toLocaleString()],
-      ["Period", monthLabel],
+      ["Period", `From ${fmtPeriodDate(summary.range.from)} to ${fmtPeriodDate(summary.range.to)}`],
       [""],
-      ["Metric", "Value"],
-      ["Total Revenue", String(kpis.totalRevenue)],
-      ["Revenue vs Last Month", `${kpis.revenueUp ? "+" : ""}${kpis.trendPct.toFixed(1)}%`],
-      ["New Patients (Month)", String(kpis.newPatients)],
-      ["Total Patients", String(kpis.totalPatients)],
+      ["INCOME BY MODULE"],
+      ["Module", "Invoiced", "Collected", "Outstanding", "Count"],
+      ...MODULE_META.map((m) => {
+        const d = summary.income[m.key];
+        return [m.label, String(d.invoiced), String(d.collected), String(d.outstanding), String(d.count)];
+      }),
+      ["All modules", String(summary.income.totals.invoiced), String(summary.income.totals.collected), String(summary.income.totals.outstanding), String(summary.income.totals.count)],
       [""],
-      ["Month", "Revenue"],
-      ...revenueTrendData.map((d) => [d.month, String(d.amount)]),
+      ["EXPENSES"],
+      ["Category", "Amount"],
+      ...summary.expenses.general.byCategory.map((c) => [c.category, String(c.amount)]),
+      ["Payroll (net paid)", String(summary.expenses.payroll.total)],
+      ["Stock purchases", String(summary.expenses.stock.total)],
+      ["Total expenses", String(summary.expenses.total)],
       [""],
-      ["PROFIT AND LOSS STATEMENT"],
-      ["Period", `From ${fmtPeriodDate(pnlFrom)} to ${fmtPeriodDate(pnlTo)}`],
-      ["Revenue from Medical Services", String(pnlData.medRev)],
-      ["Other Incomes", String(pnlData.othRev)],
-      ["Total Income", String(pnlData.totalIncome)],
-      [""],
-      ["Less: Expenses"],
-      ...pnlData.lines.map((l) => [l.label, String(l.amount)]),
-      ["Total Expenses", String(pnlData.totalExpenses)],
-      ["NET PROFIT/(LOSS) FOR THE PERIOD", String(pnlData.net)],
+      ["PROFIT AND LOSS (COLLECTED BASIS)"],
+      ["Total income (collected)", String(summary.pnl.incomeCollected)],
+      ["Total income (invoiced)", String(summary.pnl.incomeInvoiced)],
+      ["Total expenses", String(summary.pnl.expensesTotal)],
+      ["Net (collected)", String(summary.pnl.netCollected)],
+      ["Net (invoiced)", String(summary.pnl.netInvoiced)],
+      ["Margin (collected)", `${summary.pnl.marginCollected.toFixed(1)}%`],
     ];
     downloadCsv(`financial-report-${new Date().toISOString().split("T")[0]}.csv`, rows);
-  }, [orgInfo, monthLabel, kpis, revenueTrendData, pnlData, pnlFrom, pnlTo]);
+  }, [summary, orgInfo]);
 
   const printPnl = useCallback(() => {
-    if (!pnlData) return;
-    const contact = [orgInfo?.phone && `Tel: ${orgInfo.phone}`, orgInfo?.email && `Email: ${orgInfo.email}`]
-      .filter(Boolean).join(" • ");
-    const rows: Array<[string, number, string?]> = [
-      ["Revenue from Medical Services", pnlData.medRev],
-      ["Other Incomes", pnlData.othRev],
-      ["Total Income", pnlData.totalIncome, "bold"],
-      ["Less: Expenses", 0, "italic"],
-      ...pnlData.lines.map((l) => [l.label, l.amount] as [string, number]),
-      ["Total Expenses", pnlData.totalExpenses, "bold"],
-      ["NET PROFIT/(LOSS) FOR THE PERIOD", pnlData.net, "net"],
+    if (!summary) return;
+    const orgAddress = [orgInfo?.address, [orgInfo?.city, orgInfo?.state].filter(Boolean).join(", "), orgInfo?.country].filter(Boolean).join(", ");
+    const contact = [orgInfo?.phone && `Tel: ${orgInfo.phone}`, orgInfo?.email && `Email: ${orgInfo.email}`, orgInfo?.website].filter(Boolean).join(" • ");
+    const incomeRows = MODULE_META.map((m) => [
+      m.label,
+      summary.income[m.key].invoiced,
+      summary.income[m.key].collected,
+      summary.income[m.key].outstanding,
+    ] as [string, number, number, number]);
+    const expRows: Array<[string, number, string?]> = [
+      ...summary.expenses.general.byCategory.map((c) => [c.category, c.amount] as [string, number]),
+      ["Payroll (net paid)", summary.expenses.payroll.total],
+      ["Stock purchases (supplier payments)", summary.expenses.stock.total],
+      ["Total Expenses", summary.expenses.total, "bold"],
     ];
-    const rowHtml = rows.map((r: any) => {
-      const cls = r[2] === "bold" ? ' class="b"' : r[2] === "italic" ? ' class="i"' : r[2] === "net" ? ' class="net"' : "";
-      return `<tr${cls}><td>${r[0]}</td><td class="amt">${ngn(r[1])}</td></tr>`;
-    }).join("");
-    const w = window.open("", "_blank", "width=820,height=960");
+    const netAmt = summary.pnl.netCollected;
+    const buildTable = (header: string[], rowsHtml: string) =>
+      `<h2 class="sec">${header[0]}</h2><table><thead><tr>${header.slice(1).map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+    const incomeTable = buildTable(
+      ["A. INCOME BY MODULE", "Module", "Invoiced (N)", "Collected (N)", "Outstanding (N)"],
+      incomeRows.map((r) => `<tr><td>${r[0]}</td><td class="amt">${ngn(r[1])}</td><td class="amt">${ngn(r[2])}</td><td class="amt">${ngn(r[3])}</td></tr>`).join("") +
+        `<tr class="b"><td>Total</td><td class="amt">${ngn(summary.income.totals.invoiced)}</td><td class="amt">${ngn(summary.income.totals.collected)}</td><td class="amt">${ngn(summary.income.totals.outstanding)}</td></tr>`
+    );
+    const expTable = buildTable(
+      ["B. EXPENSES", "Item", "Amount (N)"],
+      expRows.map((r: any) => `<tr${r[2] === "bold" ? ' class="b"' : ""}><td>${r[0]}</td><td class="amt">${ngn(r[1])}</td></tr>`).join("")
+    );
+    const w = window.open("", "_blank", "width=900,height=1000");
     if (!w) return;
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Profit &amp; Loss Statement</title>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Consolidated Financial Report</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; margin: 0; padding: 40px; background: #fff; }
@@ -367,44 +311,44 @@ export default function FinancialReportsView() {
   .title { text-align: center; margin-bottom: 24px; }
   .title p:first-child { font-size: 17px; font-weight: 700; margin: 0; }
   .title p:last-child { font-size: 11px; color: #555; margin: 4px 0 0; }
-  table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; border: 1px solid #ccc; font-size: 13px; margin-bottom: 28px; }
+  thead th { background: #f2f6fc; border-bottom: 2px solid #cbd9f2; text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; }
   tr { border-bottom: 1px solid #eee; }
   tr.b { background: #f5f5f5; font-weight: 700; }
-  tr.b td { border-top: 1px solid #bbb; }
-  tr.i td { font-style: italic; color: #666; }
-  tr.net { background: #efefef; font-weight: 800; }
-  tr.net td { border-top: 2px solid #999; border-bottom: 2px solid #999; }
-  td { padding: 9px 14px; }
-  td.amt { text-align: right; }
+  td, th { padding: 8px 12px; }
+  td.amt, th.amt { text-align: right; }
+  .sec { font-size: 13px; text-transform: uppercase; letter-spacing: .4px; }
+  .net { margin-top: 8px; font-size: 14px; font-weight: 800; }
+  .net span { float: right; }
   @media print { body { padding: 20px; } }
 </style></head><body>
   <div class="header">
     ${orgInfo?.logo_url ? `<img class="logo" src="${orgInfo.logo_url}" alt="logo" />` : `<div class="logo-fallback">${(orgInfo?.name || "S")[0]}</div>`}
     <div>
       <h1>${orgInfo?.name || "Hospital"}</h1>
-      ${orgInfo?.address ? `<p class="sub">${orgInfo.address}</p>` : ""}
+      ${orgAddress ? `<p class="sub">${orgAddress}</p>` : ""}
       ${contact ? `<p class="contact">${contact}</p>` : ""}
     </div>
   </div>
   <div class="title">
-    <p>PROFIT AND LOSS STATEMENT</p>
-    <p>For the period from ${fmtPeriodDate(pnlFrom)} to ${fmtPeriodDate(pnlTo)}</p>
+    <p>CONSOLIDATED FINANCIAL REPORT</p>
+    <p>For the period from ${fmtPeriodDate(summary.range.from)} to ${fmtPeriodDate(summary.range.to)}</p>
   </div>
-  <table>${rowHtml}</table>
+  ${incomeTable}
+  ${expTable}
+  <div class="net">NET PROFIT/(LOSS) FOR THE PERIOD (COLLECTED BASIS) <span>${ngn(netAmt)}</span></div>
   <script>window.onload = function(){ window.print(); };</script>
 </body></html>`);
     w.document.close();
-  }, [pnlData, orgInfo, pnlFrom, pnlTo]);
+  }, [summary, orgInfo]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Financial Report
-          </h1>
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Financial Report</h1>
           <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            Revenue, expenses and profit &amp; loss for your hospital.
+            Whole-hospital income &amp; expenses — medical services, ward, lab, pharmacy, other income, payroll and general expenses.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -430,7 +374,7 @@ export default function FinancialReportsView() {
             onClick={printPnl}
             className="focus-ring inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] px-4 py-2.5 text-sm font-medium transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
           >
-            <Printer size={15} aria-hidden="true" /> Print P&L
+            <Printer size={15} aria-hidden="true" /> Print Report
           </button>
         </div>
       </div>
@@ -445,62 +389,28 @@ export default function FinancialReportsView() {
         <div className="flex items-center justify-center py-24">
           <Loader2 size={24} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" />
         </div>
-      ) : (
+      ) : summary ? (
         <>
+          {/* Hero KPI cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                label: "Total Revenue (Month)",
-                value: ngn(kpis.totalRevenue),
-                trend: `${kpis.revenueUp ? "+" : ""}${kpis.trendPct.toFixed(1)}% vs last month`,
-                up: kpis.revenueUp,
-                icon: DollarSign,
-                color: "text-emerald-600",
-                bg: "bg-emerald-50",
-              },
-              {
-                label: "Other Income (Month)",
-                value: ngn(otherIncomeData.filter((r) => {
-                  const [y, m] = month.split("-").map(Number);
-                  const d = new Date(r.income_date);
-                  return d.getMonth() + 1 === m && d.getFullYear() === y;
-                }).reduce((s, r) => s + r.amount, 0)),
-                trend: "donations, sales, grants",
-                up: true,
-                icon: TrendingUp,
-                color: "text-sky-600",
-                bg: "bg-sky-50",
-              },
-              {
-                label: "New Patients (Month)",
-                value: String(kpis.newPatients),
-                trend: `${kpis.totalPatients} on record`,
-                up: true,
-                icon: ReceiptText,
-                color: "text-blue-600",
-                bg: "bg-blue-50",
-              },
-              {
-                label: "Net for Period",
-                value: pnlData ? ngn(pnlData.net) : "—",
-                trend: "per selected P&L window",
-                up: (pnlData?.net ?? 0) >= 0,
-                icon: Wallet,
-                color: "text-purple-600",
-                bg: "bg-purple-50",
-              },
-            ].map((kpi) => {
+            {kpiCards.map((kpi) => {
               const Icon = kpi.icon;
               return (
-                <div key={kpi.label} className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-                  <div className="flex items-start justify-between">
+                <div key={kpi.label} className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]">
+                  <div className={`pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-gradient-to-br ${kpi.tint} opacity-10 blur-2xl transition-opacity duration-300 group-hover:opacity-20`} />
+                  <div className="relative flex items-start justify-between">
                     <div className="min-w-0">
-                      <p className="text-sm text-[var(--color-muted-fg)]">{kpi.label}</p>
-                      <p className="mt-1 truncate text-xl font-bold text-[var(--color-foreground)]">{kpi.value}</p>
-                      <p className={`mt-1 text-xs font-medium ${kpi.up ? "text-emerald-600" : "text-[var(--color-destructive)]"}`}>{kpi.trend}</p>
+                      <p className="text-sm font-medium text-[var(--color-muted-fg)]">{kpi.label}</p>
+                      <p className="mt-1.5 truncate text-2xl font-bold tracking-tight text-[var(--color-foreground)]">{kpi.value}</p>
+                      <p className="mt-2 flex items-center gap-1 text-xs">
+                        <span className={`flex items-center gap-0.5 font-semibold ${kpi.accent}`}>
+                          {kpi.up ? <ArrowUpRight size={13} aria-hidden="true" /> : <ArrowDownRight size={13} aria-hidden="true" />}
+                          {kpi.sub}
+                        </span>
+                      </p>
                     </div>
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${kpi.bg}`}>
-                      <Icon size={20} aria-hidden="true" className={kpi.color} />
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${kpi.tint} text-white shadow-sm`}>
+                      <Icon size={20} aria-hidden="true" />
                     </div>
                   </div>
                 </div>
@@ -508,46 +418,72 @@ export default function FinancialReportsView() {
             })}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">Revenue trend (12 months)</h2>
-              <div className="h-72">
-                {revenueTrendData.every((d) => d.amount === 0) ? (
-                  <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-fg)]">
-                    No revenue data yet.
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={revenueTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${(v / 1e6).toFixed(1)}M`} />
-                      <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }}
-                        formatter={(v) => [ngn(Number(v)), "Revenue"]} labelStyle={{ color: "var(--color-foreground)" }} />
-                      <Line type="monotone" dataKey="amount" stroke="#2563eb" strokeWidth={2} dot={{ fill: "#2563eb", r: 3 }} activeDot={{ r: 5 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
+          {/* Module income section */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)] lg:col-span-2">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--color-foreground)]">
+                    <Layers size={16} aria-hidden="true" className="text-[var(--color-primary)]" /> Income by Module
+                  </h2>
+                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Collected vs invoiced vs outstanding, per revenue stream</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-sm">
+                  <thead>
+                    <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
+                      <th className="py-2.5 pr-3 font-semibold">Module</th>
+                      <th className="py-2.5 pr-3 text-right font-semibold">Invoiced</th>
+                      <th className="py-2.5 pr-3 text-right font-semibold">Collected</th>
+                      <th className="py-2.5 text-right font-semibold">Outstanding</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border)]">
+                    {moduleRows.map((r) => {
+                      const Icon = r.icon ?? Stethoscope;
+                      return (
+                        <tr key={r.key} className="group hover:bg-[var(--color-muted)]/30">
+                          <td className="py-3 pr-3">
+                            <div className="flex items-center gap-2.5">
+                              <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${r.tint}`}>
+                                <Icon size={15} aria-hidden="true" />
+                              </span>
+                              <span className="font-medium text-[var(--color-foreground)]">{r.label}</span>
+                              <span className="rounded-full bg-[var(--color-muted)]/60 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-fg)]">{r.count}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 pr-3 text-right font-medium text-[var(--color-foreground)]">{ngn(r.invoiced)}</td>
+                          <td className="py-3 pr-3 text-right font-semibold text-emerald-600">{ngn(r.collected)}</td>
+                          <td className="py-3 text-right text-[var(--color-muted-fg)]">{ngn(r.outstanding)}</td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-[var(--color-muted)]/40 font-bold">
+                      <td className="px-2 py-3 text-[var(--color-foreground)]">All Modules</td>
+                      <td className="px-2 py-3 text-right text-[var(--color-foreground)]">{ngn(summary.income.totals.invoiced)}</td>
+                      <td className="px-2 py-3 text-right text-emerald-600">{ngn(summary.income.totals.collected)}</td>
+                      <td className="px-2 py-3 text-right text-[var(--color-muted-fg)]">{ngn(summary.income.totals.outstanding)}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">Income by source</h2>
-              <div className="h-72">
-                {incomeSourcePie.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-fg)]">
-                    No income recorded yet.
-                  </div>
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
+              <h2 className="mb-1 text-base font-semibold text-[var(--color-foreground)]">Income split</h2>
+              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">Collected share by module</p>
+              <div className="h-64">
+                {incomePie.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-fg)]">No income recorded yet.</div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={incomeSourcePie} cx="50%" cy="50%" innerRadius={60} outerRadius={95} paddingAngle={3} dataKey="value" nameKey="name">
-                        {incomeSourcePie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      <Pie data={incomePie} cx="50%" cy="50%" innerRadius={58} outerRadius={88} paddingAngle={3} dataKey="value" nameKey="name">
+                        {incomePie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
-                      <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }}
-                        formatter={(v) => [ngn(Number(v)), ""]} labelStyle={{ color: "var(--color-foreground)" }} />
-                      <Legend verticalAlign="bottom" iconType="circle" iconSize={8}
-                        formatter={(value: string) => <span className="text-xs text-[var(--color-muted-fg)]">{value}</span>} />
+                      <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }} formatter={(v) => [ngn(Number(v)), ""]} labelStyle={{ color: "var(--color-foreground)" }} />
+                      <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => <span className="text-xs text-[var(--color-muted-fg)]">{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -555,84 +491,121 @@ export default function FinancialReportsView() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
+          {/* Collected vs invoiced + expenses */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
+              <h2 className="mb-1 text-base font-semibold text-[var(--color-foreground)]">Collected vs Invoiced</h2>
+              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">How much was billed vs actually received, by module</p>
+              <div className="h-64">
+                {collectedVsInvoiced.every((d) => d.collected === 0 && d.invoiced === 0) ? (
+                  <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-fg)]">No data for this period.</div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={collectedVsInvoiced} barGap={4}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${(v / 1e6).toFixed(1)}M`} />
+                      <Tooltip cursor={{ fill: "var(--color-muted)/20" }} contentStyle={{ borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }} formatter={(v) => [ngn(Number(v)), ""]} labelStyle={{ color: "var(--color-foreground)" }} />
+                      <Legend iconType="circle" iconSize={8} formatter={(value: string) => <span className="text-xs text-[var(--color-muted-fg)]">{value}</span>} />
+                      <Bar dataKey="collected" name="Collected" fill="#10b981" radius={[6, 6, 0, 0]} />
+                      <Bar dataKey="invoiced" name="Invoiced" fill="#94a3b8" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
+              <h2 className="mb-1 text-base font-semibold text-[var(--color-foreground)]">Expenses Breakdown</h2>
+              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">Payroll, stock purchases and general operating expenses</p>
+              <div className="space-y-3">
+                {[
+                  { label: "General expenses", value: summary.expenses.general.total, tint: "bg-rose-500" },
+                  { label: "Payroll (net paid)", value: summary.expenses.payroll.total, tint: "bg-amber-500" },
+                  { label: "Stock purchases (supplier payments)", value: summary.expenses.stock.total, tint: "bg-sky-500" },
+                ].map((e) => {
+                  const pct = summary.expenses.total > 0 ? (e.value / summary.expenses.total) * 100 : 0;
+                  return (
+                    <div key={e.label}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="text-[var(--color-foreground)]">{e.label}</span>
+                        <span className="font-semibold text-[var(--color-foreground)]">{ngn(e.value)}</span>
+                      </div>
+                      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--color-muted)]/50">
+                        <div className={`h-full rounded-full ${e.tint} transition-all duration-500`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3">
+                  <span className="text-sm font-semibold text-[var(--color-foreground)]">Total Expenses</span>
+                  <span className="text-lg font-bold text-rose-600">{ngn(summary.expenses.total)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Expense categories detail */}
+          <div className="rounded-2xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4">
               <div>
                 <h2 className="text-base font-semibold text-[var(--color-foreground)]">Profit &amp; Loss Statement</h2>
                 <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
-                  From {pnlFrom ? fmtPeriodDate(pnlFrom) : "—"} to {pnlTo ? fmtPeriodDate(pnlTo) : "—"}
+                  From {fmtPeriodDate(summary.range.from)} to {fmtPeriodDate(summary.range.to)} · collected basis
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={pnlFrom}
-                  onChange={(e) => e.target.value && setPnlFrom(e.target.value)}
-                  aria-label="From date"
-                  className={inputCls + " max-w-[9.5rem] text-xs"}
-                />
+                <input type="date" value={from} onChange={(e) => e.target.value && setFrom(e.target.value)} aria-label="From date" className={inputCls + " max-w-[9.5rem] text-xs"} />
                 <span className="text-xs text-[var(--color-muted-fg)]">to</span>
-                <input
-                  type="date"
-                  value={pnlTo}
-                  onChange={(e) => e.target.value && setPnlTo(e.target.value)}
-                  aria-label="To date"
-                  className={inputCls + " max-w-[9.5rem] text-xs"}
-                />
+                <input type="date" value={to} onChange={(e) => e.target.value && setTo(e.target.value)} aria-label="To date" className={inputCls + " max-w-[9.5rem] text-xs"} />
               </div>
             </div>
             <div className="p-5">
-              {loadingExpenses ? (
-                <div className="flex justify-center py-10"><Loader2 size={20} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" /></div>
-              ) : pnlData ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[480px] text-sm">
-                    <tbody className="divide-y divide-[var(--color-border)]">
-                      <tr>
-                        <td className="py-2.5 text-[var(--color-foreground)]">Revenue from Medical Services</td>
-                        <td className="py-2.5 text-right font-medium text-[var(--color-foreground)]">{ngn(pnlData.medRev)}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <tbody className="divide-y divide-[var(--color-border)]">
+                    <tr className="bg-[var(--color-muted)]/40">
+                      <td className="px-2 py-2.5 font-bold text-[var(--color-foreground)]">Total Income (Collected)</td>
+                      <td className="px-2 py-2.5 text-right font-bold text-emerald-600">{ngn(summary.pnl.incomeCollected)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 text-xs italic text-[var(--color-muted-fg)]">Less: Expenses</td>
+                      <td className="py-2" />
+                    </tr>
+                    {summary.expenses.general.byCategory.map((c) => (
+                      <tr key={c.category}>
+                        <td className="py-2 pl-6 text-[var(--color-foreground)]">{c.category}</td>
+                        <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(c.amount)}</td>
                       </tr>
-                      <tr>
-                        <td className="py-2.5 text-[var(--color-foreground)]">Other Incomes</td>
-                        <td className="py-2.5 text-right font-medium text-[var(--color-foreground)]">{ngn(pnlData.othRev)}</td>
-                      </tr>
-                      <tr className="bg-[var(--color-muted)]/40">
-                        <td className="px-2 py-2.5 font-bold text-[var(--color-foreground)]">Total Income</td>
-                        <td className="px-2 py-2.5 text-right font-bold text-[var(--color-foreground)]">{ngn(pnlData.totalIncome)}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 text-xs italic text-[var(--color-muted-fg)]">Less: Expenses</td>
-                        <td className="py-2" />
-                      </tr>
-                      {pnlData.lines.map((l) => (
-                        <tr key={l.label}>
-                          <td className="py-2 pl-6 text-[var(--color-foreground)]">{l.label}</td>
-                          <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(l.amount)}</td>
-                        </tr>
-                      ))}
-                      <tr className="bg-[var(--color-muted)]/40">
-                        <td className="px-2 py-2.5 font-bold text-[var(--color-foreground)]">Total Expenses</td>
-                        <td className="px-2 py-2.5 text-right font-bold text-[var(--color-foreground)]">{ngn(pnlData.totalExpenses)}</td>
-                      </tr>
-                      <tr>
-                        <td className={`py-3 text-sm font-bold ${pnlData.net >= 0 ? "text-emerald-600" : "text-[var(--color-destructive)]"}`}>
-                          NET PROFIT/(LOSS) FOR THE PERIOD
-                        </td>
-                        <td className={`py-3 text-right font-bold ${pnlData.net >= 0 ? "text-emerald-600" : "text-[var(--color-destructive)]"}`}>
-                          {ngn(pnlData.net)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-10 text-center text-sm text-[var(--color-muted-fg)]">
-                  Select a period to view the P&amp;L statement.
-                </div>
-              )}
+                    ))}
+                    <tr>
+                      <td className="py-2 pl-6 text-[var(--color-foreground)]">Payroll (net paid)</td>
+                      <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(summary.expenses.payroll.total)}</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 pl-6 text-[var(--color-foreground)]">Stock purchases (supplier payments)</td>
+                      <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(summary.expenses.stock.total)}</td>
+                    </tr>
+                    <tr className="bg-[var(--color-muted)]/40">
+                      <td className="px-2 py-2.5 font-bold text-[var(--color-foreground)]">Total Expenses</td>
+                      <td className="px-2 py-2.5 text-right font-bold text-[var(--color-foreground)]">{ngn(summary.expenses.total)}</td>
+                    </tr>
+                    <tr>
+                      <td className={`py-3 text-sm font-bold ${summary.pnl.netCollected >= 0 ? "text-emerald-600" : "text-[var(--color-destructive)]"}`}>
+                        NET PROFIT/(LOSS) FOR THE PERIOD
+                      </td>
+                      <td className={`py-3 text-right font-bold ${summary.pnl.netCollected >= 0 ? "text-emerald-600" : "text-[var(--color-destructive)]"}`}>
+                        {ngn(summary.pnl.netCollected)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </>
+      ) : (
+        <div className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Select a period to view the report.</div>
       )}
     </div>
   );

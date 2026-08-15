@@ -1,5 +1,6 @@
 import { withStaff, ok, ValidationError, requireTenant, ForbiddenError, CLINICAL_ROLES } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { notifyInvoiceIssued } from "@/lib/notify";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,14 @@ export const POST = withStaff(async (req, ctx) => {
       rate: Number(ch.rate ?? 0),
       alreadyPosted: ch.already_posted === true,
     };
+    if (charge.alreadyPosted === false) {
+      const { data: admission } = await ctx.svc
+        .from("admissions")
+        .select("patient_id")
+        .eq("id", admissionId)
+        .maybeSingle();
+      await notifyInvoiceIssued(ctx.svc, tenantId, admission?.patient_id, ch.invoice_id, ch.invoice_number, Number(ch.charge ?? 0));
+    }
     await logAudit(req, ctx, {
       action: "create",
       entityType: "invoices",

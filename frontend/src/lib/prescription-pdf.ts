@@ -42,6 +42,7 @@ export interface PrescriptionPdfBundle {
     address: string | null;
     email: string | null;
     phone: string | null;
+    website: string | null;
     currency: string;
     logo: string | null;
   };
@@ -116,7 +117,7 @@ async function loadBundle(
 
   const { data: tenant } = await svc
     .from("tenants")
-    .select("name, logo_url, address, city, state, country, email, phone, currency")
+    .select("name, slug, domain, logo_url, address, city, state, country, email, phone, currency")
     .eq("id", tenantId)
     .maybeSingle();
 
@@ -176,6 +177,7 @@ async function loadBundle(
       address: [tenant?.address, tenant?.city, tenant?.state, tenant?.country].filter(Boolean).join(", ") || null,
       email: tenant?.email ?? null,
       phone: tenant?.phone ?? null,
+      website: tenant?.domain ?? (tenant?.slug ? `${tenant.slug}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "skycare.app"}` : null),
       currency: tenant?.currency ?? "NGN",
       logo: logoDataUrl,
     },

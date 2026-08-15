@@ -77,9 +77,14 @@ export const PATCH = withAuth(
         requires_rx: v.requiresRx,
         is_controlled: v.isControlled,
         nafdac_number: v.nafdacNumber,
+        supplier_id: v.supplierId,
       });
     } else {
       Object.assign(patch, drugUpdateColumns(body));
+      if (patch.supplier_id) {
+        const { data: supp } = await ctx.svc.from("pharmacy_suppliers").select("id").eq("tenant_id", tenantId).eq("id", patch.supplier_id).maybeSingle();
+        if (!supp) throw new ValidationError("Supplier not found in this hospital");
+      }
     }
     delete patch.tenant_id;
 

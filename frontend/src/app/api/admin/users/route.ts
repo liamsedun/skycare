@@ -50,7 +50,7 @@ export const GET = withAuth(async (req, ctx) => {
   let query = ctx.svc
     .from("users")
     .select(
-      "id, tenant_id, branch_id, email, full_name, role, phone, avatar_url, is_active, module_access, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, available_from, available_until, on_leave_until)",
+      "id, tenant_id, branch_id, branches!users_branch_id_fkey(name, code), email, full_name, role, phone, avatar_url, is_active, module_access, last_login_at, created_at, staff(id, staff_number, department, specialization, license_number, qualification, employment_type, years_of_exp, base_salary, is_available, available_from, available_until, on_leave_until)",
       { count: "exact" }
     )
     .neq("role", "patient_api")
@@ -79,6 +79,19 @@ export interface CreateUserBody {
   department?: string;
   specialization?: string;
   staffNumber?: string;
+  branchId?: string | null;
+}
+
+async function resolveBranch(ctx: any, tenantId: string, branchId: unknown): Promise<string | null> {
+  if (branchId === null || branchId === undefined || branchId === "") return null;
+  const { data } = await ctx.svc
+    .from("branches")
+    .select("id")
+    .eq("id", branchId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (!data) throw new ValidationError("Branch not found in this hospital");
+  return data.id;
 }
 
 // POST /api/admin/users — create an admin/staff login with direct credentials.
@@ -106,7 +119,13 @@ export const POST = withAuth(async (req, ctx) => {
   }
 
   const tenantId = creatingSuperAdmin ? null : requireTenant(ctx);
-  const branchId = creatingSuperAdmin ? null : ctx.branchId ?? null;
+  // Explicit branch wins; otherwise the new staff member inherits the creator's
+  // branch claim (NULL => any/all branches).
+  const branchId = creatingSuperAdmin
+    ? null
+    : body.branchId !== undefined
+      ? await resolveBranch(ctx, tenantId!, body.branchId)
+      : ctx.branchId ?? null;
   const email = body.email.trim().toLowerCase();
   const { data: existing } = await ctx.svc
     .from("users")

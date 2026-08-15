@@ -7,7 +7,9 @@ import {
 } from "lucide-react";
 import { ngn, formatDate } from "@/lib/auth";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
 import ImportExportMenu from "@/components/ui/import-export-menu";
+import FilterBar from "@/components/filters/filter-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 
 // ============================================================================
@@ -61,6 +63,8 @@ interface SupplierBalance {
   totalBought: number;
   totalPaid: number;
   outstanding: number;
+  openingBought: number;
+  openingPaid: number;
   poCount: number;
   paymentCount: number;
   lastBoughtAt: string | null;
@@ -69,8 +73,10 @@ interface SupplierBalance {
 
 export function BalancesTab() {
   const [rows, setRows] = useState<SupplierBalance[]>([]);
-  const [totals, setTotals] = useState({ total_bought: 0, total_paid: 0, total_outstanding: 0 });
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,7 +86,6 @@ export function BalancesTab() {
       if (res.ok) {
         const d = body.data ?? {};
         setRows(d.suppliers ?? []);
-        setTotals(d.totals ?? {});
       }
     } finally {
       setLoading(false);
@@ -89,58 +94,118 @@ export function BalancesTab() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const visible = rows.filter((r) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q || r.supplierName.toLowerCase().includes(q) || (r.code ?? "").toLowerCase().includes(q);
+    const matchesDate = inDateRange(r.lastBoughtAt, from, to) || inDateRange(r.lastPaidAt, from, to);
+    return matchesSearch && matchesDate;
+  });
+
+  const filteredTotals = visible.reduce(
+    (acc, r) => ({
+      total_bought: acc.total_bought + r.totalBought,
+      total_paid: acc.total_paid + r.totalPaid,
+      total_outstanding: acc.total_outstanding + r.outstanding,
+    }),
+    { total_bought: 0, total_paid: 0, total_outstanding: 0 }
+  );
+
   const exportRows = () =>
-    rows.map((r) => [
+    visible.map((r) => [
       r.supplierName,
       r.code ?? "",
       r.totalOrdered,
       r.totalBought,
       r.totalPaid,
       r.outstanding,
+      r.openingBought,
       r.poCount,
       r.paymentCount,
     ]);
+
+  async function importOpeningBalances(rowsIn: string[][]): Promise<ImportResult> {
+    const rows = rowsIn.map((r, i) => ({
+      row: i + 2,
+      supplierName: String(r[0] ?? "").trim(),
+      totalBought: String(r[1] ?? "").trim(),
+      totalPaid: String(r[2] ?? "").trim(),
+      notes: String(r[3] ?? "").trim() || undefined,
+    }));
+    try {
+      const res = await fetch("/api/pharmacy/procurement/balances/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const body = await res.json();
+      if (!res.ok) return { created: 0, failed: rows.length, errors: [body.error ?? "Import failed"] };
+      const d = body.data ?? {};
+      return {
+        created: d.imported ?? 0,
+        failed: (d.errors ?? []).length,
+        errors: (d.errors ?? []).map((e: { row: number; message: string }) => `Row ${e.row}: ${e.message}`),
+        notes: d.imported > 0 ? [`Opening balance saved for ${d.imported} supplier(s)`] : [],
+      };
+    } catch (e) {
+      return { created: 0, failed: rows.length, errors: [e instanceof Error ? e.message : "Import failed"] };
+    }
+  }
 
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
           <p className="text-xs font-medium text-[var(--color-muted-fg)]">Total bought from suppliers</p>
-          <p className="mt-1 text-2xl font-bold text-[var(--color-foreground)]">{ngn(totals.total_bought)}</p>
+          <p className="mt-1 text-2xl font-bold text-[var(--color-foreground)]">{ngn(filteredTotals.total_bought)}</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
           <p className="text-xs font-medium text-[var(--color-muted-fg)]">Total paid</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-600">{ngn(totals.total_paid)}</p>
+          <p className="mt-1 text-2xl font-bold text-emerald-600">{ngn(filteredTotals.total_paid)}</p>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
           <p className="text-xs font-medium text-[var(--color-muted-fg)]">Outstanding owing</p>
-          <p className={`mt-1 text-2xl font-bold ${totals.total_outstanding > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-            {ngn(totals.total_outstanding)}
+          <p className={`mt-1 text-2xl font-bold ${filteredTotals.total_outstanding > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+            {ngn(filteredTotals.total_outstanding)}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-[var(--color-foreground)]">Supplier balances</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+          searchPlaceholder="Search supplier or code…"
+          searchWidth={240}
+        />
         <ImportExportMenu
           entityLabel="supplier balances"
           exportCsv={() => {
-            if (rows.length === 0) { alert("Nothing to export yet."); return; }
+            if (visible.length === 0) { alert("Nothing to export yet."); return; }
             downloadCsv(`supplier-balances-${dateStamp()}.csv`,
-              ["Supplier", "Code", "Total ordered", "Total bought", "Total paid", "Outstanding", "POs", "Payments"],
+              ["Supplier", "Code", "Total ordered", "Total bought", "Total paid", "Outstanding", "Opening bought", "POs", "Payments"],
               exportRows());
           }}
           exportPdf={() => {
-            if (rows.length === 0) { alert("Nothing to export yet."); return; }
+            if (visible.length === 0) { alert("Nothing to export yet."); return; }
             printTable("Supplier Balances",
-              ["Supplier", "Code", "Total ordered", "Total bought", "Total paid", "Outstanding", "POs", "Payments"],
+              ["Supplier", "Code", "Total ordered", "Total bought", "Total paid", "Outstanding", "Opening bought", "POs", "Payments"],
               exportRows());
           }}
-          importTitle="Import supplier balances"
-          importDescription="Balances are calculated from purchase orders, goods received notes and payments — they cannot be imported."
-          importColumns={["supplier"]}
-          templateFilename="supplier-balances-template.csv"
-          onImport={async () => ({ created: 0, failed: 0, errors: ["Balances are calculated from purchase orders and payments — import is not available."] })}
+          importTitle="Import opening balances"
+          importDescription="Use this when migrating from another system or a spreadsheet — enter what you have bought from and paid to each supplier so far. Names match your supplier list (add any missing ones on the Suppliers tab first); re-importing overwrites an existing opening balance. Purchases and payments recorded in SkyCare keep adding on top."
+          importColumns={["supplier_name", "total_bought", "total_paid", "notes"]}
+          importSample={[
+            ["Emzor Pharmaceutical Industries Limited", "2500000", "1800000", "Opening balance from previous system"],
+          ]}
+          templateFilename="supplier-opening-balances-template.csv"
+          onImport={importOpeningBalances}
+          onImported={() => void load()}
         />
       </div>
 
@@ -148,7 +213,7 @@ export function BalancesTab() {
         <div className="flex items-center justify-center py-16">
           <Loader2 size={22} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
         </div>
-      ) : rows.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
           <Building2 size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No supplier activity yet.</p>
@@ -171,9 +236,16 @@ export function BalancesTab() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
+              {visible.map((r) => (
                 <tr key={r.supplierId} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-muted)]/30">
-                  <td className="px-4 py-3 font-medium text-[var(--color-foreground)]">{r.supplierName}</td>
+                  <td className="px-4 py-3 font-medium text-[var(--color-foreground)]">
+                    {r.supplierName}
+                    {r.openingBought > 0 && (
+                      <p className="text-[10px] font-normal text-amber-600">
+                        +{ngn(r.openingBought)} opening balance
+                      </p>
+                    )}
+                  </td>
                   <td className="px-4 py-3">{ngn(r.totalBought)}</td>
                   <td className="px-4 py-3 text-emerald-700">{ngn(r.totalPaid)}</td>
                   <td className={`px-4 py-3 font-semibold ${r.outstanding > 0 ? "text-rose-600" : "text-emerald-600"}`}>
@@ -234,7 +306,12 @@ interface OfferOption {
   isPreferred: boolean;
 }
 
-interface OrderLine { key: number; drugId: string; quantity: string; unitCost: string }
+interface DrugOption {
+  id: string;
+  name: string;
+  unit: string | null;
+  supplierId: string | null;
+}
 
 interface PoDetailItem {
   id: string;
@@ -274,6 +351,9 @@ export function PurchaseOrdersTab() {
   const [rows, setRows] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -282,6 +362,7 @@ export function PurchaseOrdersTab() {
   const [receivePo, setReceivePo] = useState<PurchaseOrder | null>(null);
   const [detailPo, setDetailPo] = useState<PoDetail | null>(null);
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([]);
+  const [importSupplierId, setImportSupplierId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -365,10 +446,60 @@ export function PurchaseOrdersTab() {
   const remaining = (po: PurchaseOrder) =>
     po.items.some((i) => i.quantityReceived < i.quantityOrdered);
 
+  async function importPoLines(rowsIn: string[][]): Promise<ImportResult> {
+    if (!importSupplierId) {
+      return { created: 0, failed: rowsIn.length, errors: ["Select a supplier for this order — the picker sits above the file field."] };
+    }
+    const parsed = rowsIn.map((r, i) => ({
+      row: i + 2,
+      drugName: String(r[0] ?? "").trim(),
+      quantity: Number(String(r[1] ?? "").trim()),
+      unitCost: Number(String(r[2] ?? "").trim()),
+    }));
+    try {
+      const res = await fetch("/api/pharmacy/procurement/purchase-orders/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ supplierId: importSupplierId, rows: parsed }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        return { created: 0, failed: rowsIn.length, errors: [body.error ?? "Import failed"] };
+      }
+      const d = body.data ?? {};
+      return {
+        created: d.rowsCreated ?? 0,
+        failed: (d.errors ?? []).length,
+        errors: (d.errors ?? []).map((e: { row: number; message: string }) => `Row ${e.row}: ${e.message}`),
+        notes: d.supplierName ? [`PO created for ${d.supplierName}`] : [],
+      };
+    } catch (e) {
+      return { created: 0, failed: rowsIn.length, errors: [e instanceof Error ? e.message : "Import failed"] };
+    }
+  }
+
+  const visible = rows.filter((po) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q || po.poNumber.toLowerCase().includes(q) || po.supplierName.toLowerCase().includes(q);
+    return matchesSearch && inDateRange(po.createdAt, from, to);
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          <FilterBar
+            query={search}
+            onQueryChange={setSearch}
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+            searchPlaceholder="Search PO number or supplier…"
+            searchWidth={230}
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -396,11 +527,29 @@ export function PurchaseOrdersTab() {
                 ["PO number", "Supplier", "Status", "Total cost", "Units ordered", "Units received", "Expected by", "Created"],
                 exportRows());
             }}
-            importTitle="Import purchase orders"
-            importDescription="Purchase orders are created through the New order flow so stock and supplier costs stay in sync."
-            importColumns={["po_number"]}
-            templateFilename="purchase-orders-template.csv"
-            onImport={blockedImport("Purchase orders must be created through the New order flow — import is not available.")}
+            importTitle="Import purchase order lines"
+            importDescription="Pick the supplier, then import a CSV of drug lines. Drug names are matched against the catalogue; unknown names are reported per row and the rest still import as one draft order."
+            importColumns={["drug_name", "quantity", "unit_cost"]}
+            importSample={[["Accord Levothyroxine 50mcg x28", "500", "3500"], ["Amoxicillin 500mg Capsules x20", "1000", "2200"]]}
+            templateFilename="purchase-order-lines-template.csv"
+            importExtra={
+              <div>
+                <label className="mb-1 block text-xs font-medium text-[var(--color-foreground)]">Supplier for this order</label>
+                <select
+                  value={importSupplierId}
+                  onChange={(e) => setImportSupplierId(e.target.value)}
+                  className={inputCls}
+                  aria-label="Supplier for imported order"
+                >
+                  <option value="">Select supplier…</option>
+                  {suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            }
+            onImport={importPoLines}
+            onImported={() => void load()}
           />
         </div>
         <button type="button" onClick={() => setCreateOpen(true)} className={btnPrimary}>
@@ -418,7 +567,7 @@ export function PurchaseOrdersTab() {
         <div className="flex items-center justify-center py-16">
           <Loader2 size={22} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
         </div>
-      ) : rows.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
           <Package size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No purchase orders found.</p>
@@ -426,7 +575,7 @@ export function PurchaseOrdersTab() {
         </div>
       ) : (
         <div className="space-y-3">
-          {rows.map((po) => {
+          {visible.map((po) => {
             const busy = busyId === po.id;
             const statusStyle = PO_STATUS_STYLES[po.status] ?? "bg-slate-100 text-slate-600";
             return (
@@ -527,19 +676,78 @@ function CreateOrderModal({
 }) {
   const [supplierId, setSupplierId] = useState("");
   const [offers, setOffers] = useState<OfferOption[]>([]);
-  const [lines, setLines] = useState<OrderLine[]>([{ key: 1, drugId: "", quantity: "", unitCost: "" }]);
+  const [drugs, setDrugs] = useState<DrugOption[]>([]);
+  const [qty, setQty] = useState<Record<string, string>>({});
+  const [cost, setCost] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
   const [expectedBy, setExpectedBy] = useState("");
+  const [drugSearch, setDrugSearch] = useState("");
+  const [onlySupplierD, setOnlySupplierD] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const nextKey = useMemo(() => Math.max(0, ...lines.map((l) => l.key)) + 1, [lines]);
+
+  const loadDrugs = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pharmacy/drugs", { cache: "no-store" });
+      const body = await res.json();
+      setDrugs(
+        res.ok
+          ? (body.data ?? []).map((d: { id: string; name: string; form: string | null; supplierId: string | null }) => ({
+              id: d.id,
+              name: d.name,
+              unit: d.form || null,
+              supplierId: d.supplierId ?? null,
+            }))
+          : []
+      );
+    } catch {
+      setDrugs([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDrugs();
+  }, [loadDrugs]);
+
+  const drugOptions = useMemo(() => {
+    const map = new Map<string, DrugOption>();
+    for (const d of drugs) map.set(d.id, d);
+    for (const o of offers) if (!map.has(o.drugId)) map.set(o.drugId, { id: o.drugId, name: o.drugName, unit: o.unit, supplierId: null });
+    return Array.from(map.values());
+  }, [drugs, offers]);
+
+  const supplierDrugIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const o of offers) ids.add(o.drugId);
+    for (const d of drugs) if (d.supplierId && d.supplierId === supplierId) ids.add(d.id);
+    return ids;
+  }, [offers, drugs, supplierId]);
+
+  const visibleDrugs = useMemo(() => {
+    const q = drugSearch.trim().toLowerCase();
+    let list = drugOptions;
+    if (onlySupplierD) list = list.filter((d) => supplierDrugIds.has(d.id));
+    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q));
+    return [...list].sort((a, b) => {
+      const ap = supplierDrugIds.has(a.id) ? 0 : 1;
+      const bp = supplierDrugIds.has(b.id) ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+      return a.name.localeCompare(b.name);
+    });
+  }, [drugOptions, supplierDrugIds, onlySupplierD, drugSearch]);
 
   const loadOffers = useCallback(async (sid: string) => {
     if (!sid) { setOffers([]); return; }
     try {
       const res = await fetch(`/api/pharmacy/procurement/supplier-offers?supplier_id=${sid}`, { cache: "no-store" });
       const body = await res.json();
-      setOffers(res.ok ? (body.data ?? []) : []);
+      const list = res.ok ? (body.data ?? []) : [];
+      setOffers(list);
+      setCost((prev) => {
+        const next = { ...prev };
+        for (const o of list) if (!next[o.drugId]) next[o.drugId] = String(o.unitCost);
+        return next;
+      });
     } catch {
       setOffers([]);
     }
@@ -547,34 +755,29 @@ function CreateOrderModal({
 
   function pickSupplier(sid: string) {
     setSupplierId(sid);
-    setLines((prev) => prev.map((l) => ({ ...l, drugId: "", unitCost: "" })));
+    setOnlySupplierD(false);
     void loadOffers(sid);
   }
 
-  function pickDrug(line: OrderLine, drugId: string) {
-    const offer = offers.find((o) => o.drugId === drugId);
-    setLines((prev) =>
-      prev.map((l) =>
-        l.key === line.key ? { ...l, drugId, unitCost: offer ? String(offer.unitCost) : l.unitCost } : l
-      )
-    );
-  }
-
-  const total = lines.reduce((sum, l) => sum + (Number(l.quantity) || 0) * (Number(l.unitCost) || 0), 0);
+  const choseCount = Object.keys(qty).filter((id) => Number(qty[id]) > 0).length;
+  const total = drugOptions.reduce(
+    (sum, d) => sum + (Number(qty[d.id]) || 0) * (Number(cost[d.id]) || 0),
+    0
+  );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      const items = lines
-        .filter((l) => l.drugId && Number(l.quantity) > 0)
-        .map((l) => ({
-          drugId: l.drugId,
-          quantity: Number(l.quantity),
-          unitCost: Number(l.unitCost) || 0,
+      const items = drugOptions
+        .filter((d) => Number(qty[d.id]) > 0)
+        .map((d) => ({
+          drugId: d.id,
+          quantity: Number(qty[d.id]),
+          unitCost: Number(cost[d.id]) || 0,
         }));
-      if (items.length === 0) throw new Error("Add at least one drug line");
+      if (items.length === 0) throw new Error("Enter a quantity for at least one drug");
       const res = await fetch("/api/pharmacy/procurement/purchase-orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -609,54 +812,101 @@ function CreateOrderModal({
         </div>
 
         <div className="space-y-2">
-          <p className={labelCls}>Drug lines</p>
-          {lines.map((line) => (
-            <div key={line.key} className="grid grid-cols-12 gap-2">
-              <select
-                className={`${inputCls} col-span-6`}
-                value={line.drugId}
-                onChange={(e) => pickDrug(line, e.target.value)}
-                aria-label="Drug"
-              >
-                <option value="">Select drug…</option>
-                {offers.map((o) => (
-                  <option key={o.drugId} value={o.drugId}>
-                    {o.drugName}{o.unit ? ` (${o.unit})` : ""}{o.isPreferred ? " ★" : ""}
-                  </option>
-                ))}
-              </select>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className={labelCls + " mb-0"}>
+              Drug lines {choseCount > 0 && <span className="text-xs font-medium text-[var(--color-muted-fg)]">· {choseCount} chosen</span>}
+            </p>
+            {supplierId && (
+              <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
+                <input
+                  type="checkbox"
+                  checked={onlySupplierD}
+                  onChange={(e) => setOnlySupplierD(e.target.checked)}
+                  className="accent-[var(--color-primary)]"
+                />
+                Only {suppliers.find((s) => s.id === supplierId)?.name ?? "this supplier"}’s drugs
+              </label>
+            )}
+          </div>
+
+          {drugOptions.length > 0 && (
+            <div className="relative">
+              <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
               <input
-                type="number" min={1} step={1} placeholder="Qty"
-                value={line.quantity}
-                onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, quantity: e.target.value } : l))}
-                className={`${inputCls} col-span-2`}
-                aria-label="Quantity"
+                value={drugSearch}
+                onChange={(e) => setDrugSearch(e.target.value)}
+                placeholder="Search the catalogue…"
+                className={inputCls + " pl-9"}
+                aria-label="Search drugs"
               />
-              <input
-                type="number" min={0} step="0.01" placeholder="Unit cost"
-                value={line.unitCost}
-                onChange={(e) => setLines((prev) => prev.map((l) => l.key === line.key ? { ...l, unitCost: e.target.value } : l))}
-                className={`${inputCls} col-span-3`}
-                aria-label="Unit cost"
-              />
-              <button
-                type="button"
-                onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                disabled={lines.length === 1}
-                className="focus-ring col-span-1 rounded-lg p-2 text-rose-500 hover:bg-rose-50 disabled:opacity-40"
-                aria-label="Remove line"
-              >
-                <X size={15} aria-hidden="true" />
-              </button>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setLines((prev) => [...prev, { key: nextKey, drugId: "", quantity: "", unitCost: "" }])}
-            className="focus-ring inline-flex items-center gap-1 rounded-lg border border-dashed border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
-          >
-            <Plus size={13} aria-hidden="true" /> Add line
-          </button>
+          )}
+
+          {drugOptions.length === 0 ? (
+            <p className="rounded-lg border border-[var(--color-border)] px-3 py-4 text-sm text-[var(--color-muted-fg)]">
+              No drugs in the catalog yet — add drugs from the pharmacy inventory first.
+            </p>
+          ) : visibleDrugs.length === 0 ? (
+            <p className="rounded-lg border border-[var(--color-border)] px-3 py-4 text-sm text-[var(--color-muted-fg)]">
+              {onlySupplierD && supplierDrugIds.size === 0 ? (
+                <>
+                  No drugs are linked to <span className="font-semibold">{suppliers.find((s) => s.id === supplierId)?.name ?? "this supplier"}</span> yet — link drugs to it in Pharmacy → Inventory (the Supplier column) or in the drug CSV import, and they will pin to the top here. For now, turn this toggle off to pick from the full catalogue.
+                </>
+              ) : (
+                "No drugs match this search."
+              )}
+            </p>
+          ) : (
+            <>
+              <div className="max-h-[45vh] overflow-y-auto rounded-xl border border-[var(--color-border)]">
+                <div className="grid grid-cols-12 gap-2 border-b border-[var(--color-border)] bg-[var(--color-muted)]/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                  <span className="col-span-6">Drug</span>
+                  <span className="col-span-3">Qty</span>
+                  <span className="col-span-3 text-right">Unit cost (₦)</span>
+                </div>
+                {visibleDrugs.map((d) => {
+                  const offer = offers.find((o) => o.drugId === d.id);
+                  const pinned = supplierDrugIds.has(d.id);
+                  return (
+                    <div key={d.id} className={`grid grid-cols-12 items-center gap-2 border-b border-[var(--color-border)] px-3 py-2 last:border-b-0 ${Number(qty[d.id]) > 0 ? "bg-[var(--color-primary-soft)]/50" : ""}`}>
+                      <div className="col-span-6 min-w-0">
+                        <p className="truncate text-sm font-medium text-[var(--color-foreground)]" title={d.name}>
+                          {d.name}{d.unit ? ` (${d.unit})` : ""}
+                          {offer?.isPreferred ? <span className="ml-1 text-amber-500" title="Preferred supplier">★</span> : null}
+                        </p>
+                        {pinned && !offer && (
+                          <p className="text-[10px] text-[var(--color-muted-fg)]">Tagged to this supplier</p>
+                        )}
+                      </div>
+                      <div className="col-span-3">
+                        <input
+                          type="number" min={1} step={1} placeholder="0"
+                          value={qty[d.id] ?? ""}
+                          onChange={(e) => setQty((prev) => ({ ...prev, [d.id]: e.target.value }))}
+                          className={inputCls + " px-2 py-1.5"}
+                          aria-label={`Quantity for ${d.name}`}
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <input
+                          type="number" min={0} step="0.01" placeholder="0.00"
+                          value={cost[d.id] ?? ""}
+                          onChange={(e) => setCost((prev) => ({ ...prev, [d.id]: e.target.value }))}
+                          className={inputCls + " px-2 py-1.5 text-right"}
+                          aria-label={`Unit cost for ${d.name}`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {supplierId && supplierDrugIds.size === 0 && (
+                <p className="text-xs text-[var(--color-muted-fg)]">
+                  None of your catalog drugs are tagged to this supplier yet — tag them in Pharmacy → Admin → Drugs so they pin to the top here. You can still order any drug manually.
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -703,8 +953,9 @@ function ReceiveGoodsModal({
   onClose: () => void;
   onReceived: () => Promise<void>;
 }) {
+  const pendingItems = po.items.filter((i) => (i.quantityOrdered ?? 0) - (i.quantityReceived ?? 0) > 0);
   const [lines, setLines] = useState(
-    po.items.map((i) => ({
+    pendingItems.map((i) => ({
       key: i.id,
       poItemId: i.id,
       quantityReceived: String(Math.max(0, i.quantityOrdered - i.quantityReceived)),
@@ -753,6 +1004,16 @@ function ReceiveGoodsModal({
       <p className="mb-4 text-xs text-[var(--color-muted-fg)]">
         Receiving creates a goods received note (GRN), adds stock batches and updates inventory.
       </p>
+      {po.items.length - lines.length > 0 && (
+        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+          {po.items.length - lines.length} of {po.items.length} line(s) already received — showing only the {lines.length} line(s) still pending.
+        </p>
+      )}
+      {lines.length === 0 && (
+        <p className="rounded-lg border border-[var(--color-border)] px-3 py-4 text-sm text-[var(--color-muted-fg)]">
+          All lines on this purchase order have been fully received.
+        </p>
+      )}
       <form onSubmit={submit} className="space-y-4">
         {lines.map((line) => {
           const item = po.items.find((i) => i.id === line.poItemId);
@@ -805,7 +1066,7 @@ function ReceiveGoodsModal({
           <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium hover:bg-slate-50">
             Cancel
           </button>
-          <button type="submit" disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+          <button type="submit" disabled={busy || lines.length === 0} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
             {busy ? "Receiving…" : "Receive goods"}
           </button>
         </div>
@@ -906,6 +1167,9 @@ export function PaymentsTab() {
   const [balances, setBalances] = useState<SupplierBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [supplierFilter, setSupplierFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -966,10 +1230,31 @@ export function PaymentsTab() {
       p.createdByName ?? "",
     ]);
 
+  const visible = rows.filter((p) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      p.supplierName.toLowerCase().includes(q) ||
+      (p.poNumber ?? "").toLowerCase().includes(q) ||
+      (p.reference ?? "").toLowerCase().includes(q);
+    return matchesSearch && inDateRange(p.paidAt, from, to);
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
+          <FilterBar
+            query={search}
+            onQueryChange={setSearch}
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+            searchPlaceholder="Search supplier, PO or reference…"
+            searchWidth={230}
+          />
           <select
             value={supplierFilter}
             onChange={(e) => setSupplierFilter(e.target.value)}
@@ -1017,7 +1302,7 @@ export function PaymentsTab() {
         <div className="flex items-center justify-center py-16">
           <Loader2 size={22} className="animate-spin text-[var(--color-primary)]" aria-hidden="true" />
         </div>
-      ) : rows.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
           <Wallet size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No payments recorded.</p>
@@ -1038,7 +1323,7 @@ export function PaymentsTab() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((p) => {
+              {visible.map((p) => {
                 const Icon = METHOD_ICONS[p.method] ?? Wallet;
                 return (
                   <tr key={p.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-muted)]/30">

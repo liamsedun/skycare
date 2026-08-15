@@ -127,17 +127,19 @@ export default function MedicalReportsSection({
       .then((r) => r.json())
       .then((b) => setRole(b.data?.claims?.role ?? null))
       .catch(() => setRole(null));
-    fetch("/api/tenant-settings", { cache: "no-store" })
+    fetch("/api/tenant/branding", { cache: "no-store" })
       .then((r) => r.json())
       .then((b) => {
-        if (b.data?.hospital) {
+        if (b.data) {
           setOrg({
-            name: b.data.hospital.name ?? "",
-            logo_url: b.data.hospital.logo_url ?? null,
-            address: b.data.hospital.address ?? "",
-            phone: b.data.hospital.phone ?? "",
-            email: b.data.hospital.email ?? "",
-            website: b.data.hospital.website ?? "",
+            name: b.data.name ?? "",
+            logo_url: b.data.logo_url ?? null,
+            address: [b.data.address, [b.data.city, b.data.state].filter(Boolean).join(", "), b.data.country]
+              .filter(Boolean)
+              .join(", "),
+            phone: b.data.phone ?? "",
+            email: b.data.email ?? "",
+            website: b.data.website ?? "",
           });
         }
       })

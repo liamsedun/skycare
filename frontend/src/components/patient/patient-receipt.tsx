@@ -3,6 +3,8 @@
 import { useEffect, use, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Printer, ReceiptText } from "lucide-react";
+import TenantLetterhead from "@/components/print/tenant-letterhead";
+import { useTenantBranding } from "@/lib/use-tenant-branding";
 
 interface ReceiptItem {
   id: string;
@@ -49,6 +51,7 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
   const [invoice, setInvoice] = useState<ReceiptInvoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { branding } = useTenantBranding();
 
   useEffect(() => {
     (async () => {
@@ -95,10 +98,14 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
+          <TenantLetterhead brand={branding} />
           <div className="border-b border-[var(--color-border)] bg-slate-50/60 px-6 py-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-[var(--color-muted-fg)]">
+              Invoice / Receipt
+            </p>
+            <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">SkyCare HMS</p>
+                <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{branding?.name ?? "SkyCare HMS"}</p>
                 <p className="font-mono text-lg font-bold text-[var(--color-foreground)]">{invoice.invoice_number}</p>
                 <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Issued: {fmtDate(invoice.issue_date)}</p>
               </div>
@@ -165,7 +172,7 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
             )}
 
             <p className="mt-6 text-center text-xs text-[var(--color-muted-fg)]">
-              Thank you for choosing SkyCare HMS. This is a computer-generated receipt.
+              Thank you for choosing {branding?.name ?? "SkyCare HMS"}. This is a computer-generated receipt.
             </p>
           </div>
         </div>

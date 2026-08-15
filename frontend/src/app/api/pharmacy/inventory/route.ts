@@ -1,4 +1,5 @@
 import { withStaff, ok, ValidationError, requireTenant, sanitizeLike } from "@/lib/api-utils";
+import { resolveEffectivePrices } from "@/lib/pharmacy-pricing";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export const GET = withStaff(async (req, ctx) => {
 
   let drugsQuery = ctx.svc
     .from("pharmacy_drugs")
-    .select("id, name, generic_name, brand, category, form, dosage, unit_price, wholesale_price, reorder_level, reorder_qty, sku, requires_rx, is_controlled, nafdac_number, is_active")
+    .select("id, name, generic_name, brand, category, form, dosage, unit_price, wholesale_price, reorder_level, reorder_qty, sku, requires_rx, is_controlled, nafdac_number, supplier_id, is_active, pharmacy_suppliers(name)")
     .eq("tenant_id", tenantId)
     .range((page - 1) * limit, page * limit - 1)
     .order("name");
@@ -46,17 +47,17 @@ export const GET = withStaff(async (req, ctx) => {
   if (countsRes.error) throw new ValidationError(countsRes.error.message);
 
   const drugIds = (drugsRes.data ?? []).map((d: { id: string }) => d.id);
-  const overrideRes = drugIds.length > 0
-    ? await ctx.svc
-        .from("pharmacy_price_overrides")
-        .select("drug_id, unit_price")
-        .eq("tenant_id", tenantId)
-        .in("drug_id", drugIds)
-    : { data: [] as Array<{ drug_id: string; unit_price: number }>, error: null };
-  if (overrideRes.error) throw new ValidationError(overrideRes.error.message);
+  // Pricing follows the branch being viewed (uuid) or, for "all"/"central",
+  // the caller's branch claim — branch overrides never leak across branches.
+  const priceBranch = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(branchParam)
+    ? branchParam
+    : ctx.branchId ?? null;
+  const priceRes = await resolveEffectivePrices(ctx.svc, tenantId, priceBranch, drugIds).catch(() => new Map());
   const effectivePrice = new Map<string, number>();
-  for (const o of overrideRes.data ?? []) {
-    if (!effectivePrice.has(o.drug_id)) effectivePrice.set(o.drug_id, o.unit_price);
+  const sourceByDrug = new Map<string, string>();
+  for (const [id, eff] of priceRes) {
+    effectivePrice.set(id, eff.price);
+    sourceByDrug.set(id, eff.source);
   }
 
   const batchesByDrug = new Map<string, Array<{ expiry_date: string; quantity_on_hand: number; branch_id: string | null }>>();
@@ -88,12 +89,15 @@ export const GET = withStaff(async (req, ctx) => {
       unitPrice,
       wholesalePrice: Number(d.wholesale_price ?? 0),
       effectivePrice: Number(effectivePrice.get(d.id) ?? unitPrice),
+      priceSource: sourceByDrug.get(d.id) ?? "catalog",
       reorderLevel: reorder,
       reorderQty: d.reorder_qty ?? 100,
       sku: d.sku,
       requiresRx: d.requires_rx,
       isControlled: d.is_controlled,
       nafdacNumber: d.nafdac_number,
+      supplierId: d.supplier_id ?? null,
+      supplierName: (d.pharmacy_suppliers as { name?: string } | null)?.name ?? null,
       isActive: d.is_active,
       stock,
       lowStock: stock <= reorder,

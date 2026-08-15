@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface Appointment {
   id: string;
@@ -48,6 +50,8 @@ export default function PatientAppointments() {
   const [showBook, setShowBook] = useState(false);
   const [busy, setBusy] = useState(false);
   const [family, setFamily] = useState<FamilyMember[]>([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -152,6 +156,8 @@ export default function PatientAppointments() {
   const cancellable = (a: Appointment) => ["scheduled", "confirmed"].includes(a.status);
   const confirmable = (a: Appointment) => a.status === "scheduled";
 
+  const visible = appointments.filter((a) => inDateRange(a.scheduled_date, from, to));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -172,6 +178,8 @@ export default function PatientAppointments() {
         </button>
       </div>
 
+      <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
+
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
           {error}
@@ -180,7 +188,7 @@ export default function PatientAppointments() {
 
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading appointments…</p>
-      ) : appointments.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No appointments yet.</p>
@@ -188,7 +196,7 @@ export default function PatientAppointments() {
         </div>
       ) : (
         <div className="space-y-3">
-          {appointments.map((a) => (
+          {visible.map((a) => (
             <div key={a.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>

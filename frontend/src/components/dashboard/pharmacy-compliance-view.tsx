@@ -6,7 +6,9 @@ import {
 } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
+import FilterBar from "@/components/filters/filter-bar";
 import { dateStamp, downloadCsv, printTable, type ExportCell } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
 
 // ============================================================================
 // Pharmacy Compliance — NAFDAC controlled-drug register, hash-chained
@@ -157,6 +159,9 @@ function AlertsTab() {
   const [status, setStatus] = useState("open");
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState("");
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async (stat = status) => {
     setLoading(true);
@@ -183,20 +188,31 @@ function AlertsTab() {
     void load();
   };
 
+  const visible = rows.filter((a) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      a.alert_type.toLowerCase().includes(q) ||
+      a.message.toLowerCase().includes(q) ||
+      a.severity.toLowerCase().includes(q) ||
+      (a.pharmacy_drugs?.name ?? "").toLowerCase().includes(q);
+    return matchesSearch && inDateRange(a.created_at, from, to);
+  });
+
   const { columns: alertCols, rows: alertRows } = rowsAsExport(
-    rows.map((a) => ({
+    visible.map((a) => ({
       alert_type: a.alert_type, severity: a.severity, drug: a.pharmacy_drugs?.name ?? "",
       message: a.message, raised_at: a.created_at, status: a.status,
     }))
   );
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — no alerts yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — no alerts yet."); return; }
     downloadCsv(`compliance-alerts-${dateStamp()}.csv`, alertCols, alertRows);
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — no alerts yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — no alerts yet."); return; }
     printTable("Pharmacy Compliance Alerts", alertCols, alertRows);
   }
 
@@ -226,8 +242,21 @@ function AlertsTab() {
           />
         </div>
       </div>
+      <div className="mb-4">
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+          searchPlaceholder="Search type, drug, severity or message…"
+          searchWidth={280}
+        />
+      </div>
       {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}
-      {loading ? <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading alerts…</p> : rows.length === 0 ? (
+      {loading ? <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading alerts…</p> : visible.length === 0 ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No alerts match this filter.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -244,7 +273,7 @@ function AlertsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
-              {rows.map((a) => (
+              {visible.map((a) => (
                 <tr key={a.id}>
                   <td className="py-2.5 pr-3 font-medium text-[var(--color-foreground)]">{a.alert_type}</td>
                   <td className="py-2.5 pr-3 text-[var(--color-muted-fg)]">{a.pharmacy_drugs?.name ?? "—"}</td>
@@ -280,6 +309,9 @@ function RegisterTab() {
   const [drugs, setDrugs] = useState<DrugRow[]>([]);
   const [drugId, setDrugId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async (did = drugId) => {
     setLoading(true);
@@ -297,11 +329,24 @@ function RegisterTab() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const patientLabel = (r: RegRow) =>
+    r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : r.prescription_id ? "(Rx)" : "—";
+
+  const visible = rows.filter((r) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      (r.pharmacy_drugs?.name ?? "").toLowerCase().includes(q) ||
+      patientLabel(r).toLowerCase().includes(q) ||
+      (r.prescriber_name ?? "").toLowerCase().includes(q);
+    return matchesSearch && inDateRange(r.created_at, from, to);
+  });
+
   const { columns: regCols, rows: regRows } = rowsAsExport(
-    rows.map((r) => ({
+    visible.map((r) => ({
       when: r.created_at,
       drug: r.pharmacy_drugs?.name ?? "",
-      patient: r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : r.prescription_id ? "(Rx)" : "",
+      patient: patientLabel(r),
       qty_in: r.quantity_received ?? "",
       qty_out: r.quantity_dispensed ?? "",
       balance_after: r.balance_after,
@@ -311,12 +356,12 @@ function RegisterTab() {
   );
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — no register entries yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — no register entries yet."); return; }
     downloadCsv(`controlled-register-${dateStamp()}.csv`, regCols, regRows);
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — no register entries yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — no register entries yet."); return; }
     printTable("NAFDAC Controlled Drug Register", regCols, regRows);
   }
 
@@ -344,9 +389,22 @@ function RegisterTab() {
           />
         </div>
       </div>
+      <div className="mb-4">
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+          searchPlaceholder="Search drug, patient or prescriber…"
+          searchWidth={280}
+        />
+      </div>
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading register…</p>
-      ) : rows.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No register entries yet.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -364,12 +422,12 @@ function RegisterTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
-              {rows.map((r) => (
+              {visible.map((r) => (
                 <tr key={r.id}>
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{fmt(r.created_at)}</td>
                   <td className="py-2.5 pr-3">{r.pharmacy_drugs?.name ?? "—"}</td>
                   <td className="py-2.5 pr-3 text-[var(--color-muted-fg)]">
-                    {r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : r.prescription_id ? "(Rx)" : "—"}
+                    {patientLabel(r)}
                   </td>
                   <td className="py-2.5 pr-3 text-emerald-600">{r.quantity_received || "—"}</td>
                   <td className="py-2.5 pr-3 text-red-600">{r.quantity_dispensed || "—"}</td>
@@ -394,6 +452,9 @@ function AuditTab() {
   const [verified, setVerified] = useState<{ verified: boolean; brokenAt: number | null; total: number } | null>(null);
   const [checking, setChecking] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -415,15 +476,26 @@ function AuditTab() {
     } catch { setVerified(null); } finally { setChecking(false); }
   };
 
-  const { columns: auditCols, rows: auditRows } = rowsAsExport(rows as unknown as Array<Record<string, unknown>>);
+  const visible = rows.filter((r) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      r.drug_name.toLowerCase().includes(q) ||
+      r.action.toLowerCase().includes(q) ||
+      (r.users?.full_name ?? "").toLowerCase().includes(q) ||
+      r.hash.toLowerCase().includes(q);
+    return matchesSearch && inDateRange(r.created_at, from, to);
+  });
+
+  const { columns: auditCols, rows: auditRows } = rowsAsExport(visible as unknown as Array<Record<string, unknown>>);
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — no audit entries yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — no audit entries yet."); return; }
     downloadCsv(`dispense-audit-${dateStamp()}.csv`, auditCols, auditRows);
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — no audit entries yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export — no audit entries yet."); return; }
     printTable("Pharmacy Dispensing Audit Trail", auditCols, auditRows);
   }
 
@@ -448,6 +520,19 @@ function AuditTab() {
           />
         </div>
       </div>
+      <div className="mb-4">
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+          searchPlaceholder="Search drug, action, actor or hash…"
+          searchWidth={280}
+        />
+      </div>
       {verified && (
         <div className={`mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${verified.verified ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
           {verified.verified ? <><Check size={15} /> {verified.total.toLocaleString()} audit rows — hash chain verified unbroken</> : <><X size={15} /> Chain BROKEN at row {verified.brokenAt} — audit tampering possible</>}
@@ -455,7 +540,7 @@ function AuditTab() {
       )}
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading audit trail…</p>
-      ) : rows.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No movements logged yet.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -472,7 +557,7 @@ function AuditTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
-              {rows.map((r) => (
+              {visible.map((r) => (
                 <tr key={r.id}>
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">#{r.id}</td>
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{fmt(r.created_at)}</td>
@@ -507,11 +592,20 @@ function DispenseTab() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [lastDispense, setLastDispense] = useState<{ drug: string; qty: number; at: string } | null>(null);
+  const [history, setHistory] = useState<RegRow[]>([]);
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   useEffect(() => {
-    fetch("/api/pharmacy/controlled-drugs", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((j) => setDrugs(j.data ?? []))
+    Promise.all([
+      fetch("/api/pharmacy/controlled-drugs", { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/pharmacy/compliance/register?pageSize=200", { cache: "no-store" }).then((r) => r.json()),
+    ])
+      .then(([d, r]) => {
+        setDrugs(d.data ?? []);
+        setHistory(((r.data ?? []) as RegRow[]).filter((row) => row.quantity_dispensed > 0));
+      })
       .catch(() => setDrugs([]));
   }, []);
 
@@ -557,8 +651,45 @@ function DispenseTab() {
     }
   };
 
+  const visibleDrugs = drugs.filter((d) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      d.name.toLowerCase().includes(q) ||
+      (d.control_schedule ?? "").toLowerCase().includes(q) ||
+      (d.nafdac_number ?? "").toLowerCase().includes(q)
+    );
+  });
+
+  const patientLabel = (r: RegRow) =>
+    r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : r.prescription_id ? "(Rx)" : "—";
+
+  const visibleHistory = history.filter((h) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      !q || (h.pharmacy_drugs?.name ?? "").toLowerCase().includes(q) || patientLabel(h).toLowerCase().includes(q);
+    return matchesSearch && inDateRange(h.created_at, from, to);
+  });
+
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className="space-y-5">
+      <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
+          searchPlaceholder="Search drug, schedule or NAFDAC no…"
+          searchWidth={300}
+        />
+        <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+          Search filters the controlled formulary; the date range filters recent dispensings below.
+        </p>
+      </div>
+      <div className="grid gap-5 lg:grid-cols-2">
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <h3 className="font-semibold text-[var(--color-foreground)]">Prescribed controlled doses</h3>
         <p className="mb-4 text-xs text-[var(--color-muted-fg)]">Enforced: NAFDAC registration, Rx must be active and match the patient, per-dispense cap, and auto-logs the chain.</p>
@@ -663,7 +794,7 @@ function DispenseTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
-              {drugs.map((d) => (
+              {visibleDrugs.map((d) => (
                 <tr key={d.id} className={d.low ? "bg-red-50" : undefined}>
                   <td className="py-2.5 pr-3">{d.name}</td>
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{d.control_schedule ?? "—"}</td>
@@ -672,9 +803,50 @@ function DispenseTab() {
                   <td className="py-2.5 text-[var(--color-muted-fg)]">{d.register_balance ?? "—"}</td>
                 </tr>
               ))}
+              {visibleDrugs.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-xs text-[var(--color-muted-fg)]">No controlled drugs match this search.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+      </div>
+      </div>
+
+      <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+        <h3 className="font-semibold text-[var(--color-foreground)]">Recent controlled dispensing</h3>
+        <p className="mb-3 text-xs text-[var(--color-muted-fg)]">Latest out-movements from the NAFDAC register — filtered by the search and date range above.</p>
+        {visibleHistory.length === 0 ? (
+          <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">No dispensing activity in this period.</p>
+        ) : (
+          <div className="max-h-[400px] overflow-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="sticky top-0 border-b border-[var(--color-border)] bg-white text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <tr>
+                  <th className="py-2 pr-3 font-semibold">When</th>
+                  <th className="py-2 pr-3 font-semibold">Drug</th>
+                  <th className="py-2 pr-3 font-semibold">Patient</th>
+                  <th className="py-2 pr-3 font-semibold">Qty</th>
+                  <th className="py-2 pr-3 font-semibold">Balance after</th>
+                  <th className="py-2 font-semibold">Dispensed by</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border)]">
+                {visibleHistory.map((h) => (
+                  <tr key={h.id}>
+                    <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{fmt(h.created_at)}</td>
+                    <td className="py-2.5 pr-3">{h.pharmacy_drugs?.name ?? "—"}</td>
+                    <td className="py-2.5 pr-3 text-[var(--color-muted-fg)]">{patientLabel(h)}</td>
+                    <td className="py-2.5 pr-3 font-semibold text-red-600">{h.quantity_dispensed}</td>
+                    <td className="py-2.5 pr-3 text-[var(--color-muted-fg)]">{h.balance_after}</td>
+                    <td className="py-2.5 text-[var(--color-muted-fg)]">{h.users?.full_name ?? "system"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -695,6 +867,7 @@ function ReportsTab() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [search, setSearch] = useState("");
 
   const run = async () => {
     setLoading(true);
@@ -716,9 +889,9 @@ function ReportsTab() {
   useEffect(() => { void run(); }, []);
 
   const exportCsv = () => {
-    if (rows.length === 0) return;
-    const headers = Object.keys(rows[0]).join(",");
-    const lines = rows.map((r) => Object.values(r).map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
+    if (visibleRows.length === 0) return;
+    const headers = Object.keys(visibleRows[0]).join(",");
+    const lines = visibleRows.map((r) => Object.values(r).map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","));
     const blob = new Blob([`${headers}\n${lines.join("\n")}`], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -731,14 +904,20 @@ function ReportsTab() {
 
   const columns = useMemo(() => (rows.length ? Object.keys(rows[0]) : []), [rows]);
 
-  const reportRows = () => rows.map((r) => columns.map((c) => {
+  const visibleRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) => columns.some((c) => String(r[c] ?? "").toLowerCase().includes(q)));
+  }, [rows, search, columns]);
+
+  const reportRows = () => visibleRows.map((r) => columns.map((c) => {
     const v = r[c];
     if (v == null || typeof v === "string" || typeof v === "number") return v;
     return JSON.stringify(v);
   }));
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — run the report first."); return; }
+    if (visibleRows.length === 0) { alert("Nothing to export — run the report first."); return; }
     printTable(`NAFDAC ${report} report — ${from} to ${to}`, columns, reportRows());
   }
 
@@ -766,6 +945,17 @@ function ReportsTab() {
           <label className="text-xs"><span className="mb-1 block font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Window (days)</span><input type="number" min={1} className={inputCls + " w-24"} value={days} onChange={(e) => setDays(Number(e.target.value))} /></label>
         )}
         <button type="button" onClick={() => void run()} disabled={loading} className={btnPrimary}>{loading ? "Loading…" : <><Activity size={14} />Run report</>}</button>
+        <FilterBar
+          query={search}
+          onQueryChange={setSearch}
+          from=""
+          to=""
+          onFromChange={() => undefined}
+          onToChange={() => undefined}
+          onClear={() => setSearch("")}
+          searchPlaceholder="Search report rows…"
+          searchWidth={200}
+        />
         <ImportExportMenu
           entityLabel="NAFDAC Reports"
           exportCsv={exportCsv}
@@ -778,7 +968,7 @@ function ReportsTab() {
       {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Running {report} report…</p>
-      ) : rows.length === 0 ? (
+      ) : visibleRows.length === 0 ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No rows for this report / window.</p>
       ) : (
         <div className="max-h-[480px] overflow-auto">
@@ -787,7 +977,7 @@ function ReportsTab() {
               <tr>{columns.map((c) => <th key={c} className="py-2 pr-3 font-semibold">{c}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
-              {rows.map((r, i) => (
+              {visibleRows.map((r, i) => (
                 <tr key={i}>{columns.map((c) => <td key={c} className="py-2 pr-3 text-[var(--color-muted-fg)]">{String(r[c] ?? "—")}</td>)}</tr>
               ))}
             </tbody>

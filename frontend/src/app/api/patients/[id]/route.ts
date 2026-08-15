@@ -1,6 +1,7 @@
 import { withStaff, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit, logView } from "@/lib/audit";
 import { normalizeBloodGroup } from "@/app/api/patients/route";
+import { syncPortalAccountEmail } from "@/lib/dependant-portal";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +54,22 @@ export const PUT = withStaff(async (req, ctx) => {
     const ms = String(patch.marital_status ?? "").trim();
     patch.marital_status = ms ? ms.toLowerCase() : "single";
   }
+  if (typeof patch.email === "string") {
+    const em = patch.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) throw new ValidationError("Invalid email address");
+    patch.email = em;
+  }
   if (Object.keys(patch).length === 0) return ok(existing);
+
+  // If the patient has a portal login, keep its email in sync (auth + users
+  // mirror) so a corrected address actually changes what they log in with.
+  if (existing.user_id && typeof patch.email === "string") {
+    try {
+      await syncPortalAccountEmail(ctx.svc, existing.user_id, patch.email);
+    } catch (e) {
+      throw new ValidationError(e instanceof Error ? e.message : "Failed to update portal login email");
+    }
+  }
 
   const { data, error } = await ctx.svc
     .from("patients")
@@ -68,7 +84,7 @@ export const PUT = withStaff(async (req, ctx) => {
     action: "update",
     entityType: "patients",
     entityId: id,
-    description: `Updated patient ${existing.patient_number}`,
+    description: `Updated patient ${existing.patient_number}` + (typeof patch.email === "string" ? " (portal login email synced)" : ""),
   });
   return ok(data);
 });

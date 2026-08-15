@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pill, Plus, X, Printer, Sparkles, AlertTriangle } from "lucide-react";
+import { Pill, Plus, X, Printer, Pencil, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface RxItem {
   id: string;
@@ -21,6 +23,8 @@ interface RxItem {
 
 interface Prescription {
   id: string;
+  patient_id: string | null;
+  doctor_id: string | null;
   status: string;
   pharmacy_type: "in_house" | "external";
   external_pharmacy_name: string | null;
@@ -103,6 +107,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
   const [filter, setFilter] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [q, setQ] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -115,6 +120,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
       if (filter !== "all") params.set("status", filter);
       if (fromDate) params.set("from", fromDate);
       if (toDate) params.set("to", toDate);
+      if (q.trim()) params.set("q", q.trim());
       const res = await fetch(`/api/prescriptions?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load prescriptions");
@@ -124,13 +130,18 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
     } finally {
       setLoading(false);
     }
-  }, [filter, fromDate, toDate]);
+  }, [filter, fromDate, toDate, q]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const viewed = viewId ? rxs.find((r) => r.id === viewId) ?? null : null;
+
+  const visibleRxs = useMemo(
+    () => rxs.filter((rx) => inDateRange(rx.issued_date, fromDate, toDate)),
+    [rxs, fromDate, toDate]
+  );
 
   return (
     <div className="space-y-6">
@@ -178,39 +189,36 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
           </button>
         ))}
         <span className="mx-1 hidden h-5 w-px bg-[var(--color-border)] sm:block" aria-hidden="true" />
-        <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
-          From
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
-            aria-label="Issued from"
-          />
-        </label>
-        <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
-          To
-          <input
-            type="date"
-            value={toDate}
-            min={fromDate || undefined}
-            onChange={(e) => setToDate(e.target.value)}
-            className="h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
-            aria-label="Issued to"
-          />
-        </label>
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search patient, doctor, medication…"
+          aria-label="Search prescriptions"
+          className="h-9 w-56 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+        />
+        <DateRangeBar
+          from={fromDate}
+          to={toDate}
+          onFromChange={setFromDate}
+          onToChange={setToDate}
+          onClear={() => {
+            setFromDate("");
+            setToDate("");
+          }}
+        />
       </div>
 
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading prescriptions…</p>
-      ) : rxs.length === 0 ? (
+      ) : visibleRxs.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Pill size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No prescriptions found.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rxs.map((rx) => (
+          {visibleRxs.map((rx) => (
             <div key={rx.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -303,7 +311,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         );
         setDoctors(
           (staffBody.data ?? [])
-            .filter((s: { users?: { role?: string } }) => !!s.users?.role && CLINICIAN_ROLES.includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
+            .filter((s: { users?: { role?: string } }) => !!s.users?.role && ["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
             .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({ id: s.users?.id ?? s.id, label: s.users?.full_name ?? "Doctor" }))
         );
       } catch {
@@ -619,6 +627,7 @@ function CreateItemRow({ item, onChange, onRemove, canRemove }: { item: CreateIt
   const [open, setOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const searchSeq = useRef(0);
 
   const debouncedSearch = useCallback((q: string) => {
     if (q.trim().length < 2) {
@@ -627,11 +636,20 @@ function CreateItemRow({ item, onChange, onRemove, canRemove }: { item: CreateIt
       return;
     }
     setSearching(true);
+    const myId = ++searchSeq.current;
     fetch(`/api/pharmacy/drugs?query=${encodeURIComponent(q.trim())}`, { cache: "no-store" })
       .then((r) => r.json())
-      .then((body) => setResults(body.data ?? []))
-      .catch(() => setResults([]))
-      .finally(() => setSearching(false));
+      .then((body) => {
+        if (myId !== searchSeq.current) return;
+        setResults(body.data ?? []);
+        setOpen(true);
+      })
+      .catch(() => {
+        if (myId === searchSeq.current) setResults([]);
+      })
+      .finally(() => {
+        if (myId === searchSeq.current) setSearching(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -762,6 +780,192 @@ interface BatchOption {
   location: string | null;
 }
 
+interface EditItem extends CreateItem {
+  id: string | null;
+}
+
+// Pharmacy staff editing an existing prescription: add / remove / replace
+// medications (free-text or catalogue), adjust dosage/frequency/quantity,
+// and fix the diagnosis or notes. Saves via PUT /api/prescriptions/[id] with
+// the FULL replacement item list.
+function EditRxModal({ rx, onClose, onSaved }: { rx: Prescription; onClose: () => void; onSaved: (msg: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [patients, setPatients] = useState<{ id: string; label: string }[]>([]);
+  const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
+  const [patientId, setPatientId] = useState(rx.patient_id ?? "");
+  const [doctorId, setDoctorId] = useState(rx.doctor_id ?? "");
+  const [diagnosis, setDiagnosis] = useState(rx.diagnosis ?? "");
+  const [notes, setNotes] = useState(rx.notes ?? "");
+  const [items, setItems] = useState<EditItem[]>(() =>
+    (rx.prescription_items ?? []).map((i) => ({
+      id: i.id,
+      medicationName: i.medication_name ?? "",
+      pharmacyDrugId: i.pharmacy_drug_id,
+      dosage: i.dosage,
+      frequency: i.frequency,
+      route: i.route ?? "oral",
+      duration: i.duration ?? "",
+      quantity: i.quantity,
+      instructions: i.instructions ?? "",
+    }))
+  );
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [patientRes, staffRes] = await Promise.all([
+          fetch("/api/patients?pageSize=100", { cache: "no-store" }),
+          fetch("/api/staff?pageSize=100", { cache: "no-store" }),
+        ]);
+        const patientBody = await patientRes.json();
+        const staffBody = await staffRes.json();
+        setPatients(
+          (patientBody.data ?? []).map((p: { id: string; first_name: string; last_name: string; patient_number: string }) => ({
+            id: p.id,
+            label: `${p.first_name} ${p.last_name} (${p.patient_number})`,
+          }))
+        );
+        setDoctors(
+          (staffBody.data ?? [])
+            .filter((s: { users?: { role?: string } }) => !!s.users?.role && ["hospital_admin", "nurse", ...CLINICIAN_ROLES].includes(s.users.role as (typeof CLINICIAN_ROLES)[number]))
+            .map((s: { id: string; users?: { id?: string; full_name?: string } }) => ({ id: s.users?.id ?? s.id, label: s.users?.full_name ?? "Doctor" }))
+        );
+      } catch {
+        /* options non-critical */
+      }
+    })();
+  }, []);
+
+  async function save() {
+    setBusy(true);
+    setError(null);
+    try {
+      const cleanItems = items
+        .filter((item) => item.medicationName.trim())
+        .map((item) => ({
+          id: item.id ?? undefined,
+          medicationName: item.medicationName.trim(),
+          pharmacyDrugId: item.pharmacyDrugId ?? undefined,
+          dosage: item.dosage,
+          frequency: item.frequency,
+          route: item.route,
+          duration: item.duration.trim() || undefined,
+          quantity: item.quantity,
+          instructions: item.instructions.trim() || undefined,
+        }));
+      if (cleanItems.length === 0) throw new Error("Add at least one medication");
+
+      const res = await fetch(`/api/prescriptions/${rx.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: patientId || undefined,
+          doctorId: doctorId || undefined,
+          diagnosis: diagnosis.trim() || undefined,
+          notes: notes.trim() || undefined,
+          items: cleanItems,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to update prescription");
+      onSaved(`Prescription updated — ${cleanItems.length} medication(s)`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update prescription");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <ModalShell title={`Edit prescription — ${rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : ""}`} onClose={onClose} wide>
+      <div className="mt-5 space-y-4">
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Editing is allowed while nothing has been dispensed. Existing medications can be removed, new ones added, or any dosage/quantity adjusted.
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelCls} htmlFor="rx-edit-patient">Patient</label>
+            <select id="rx-edit-patient" value={patientId} onChange={(e) => setPatientId(e.target.value)} className={inputCls}>
+              <option value="">Select patient…</option>
+              {patients.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls} htmlFor="rx-edit-doctor">Doctor</label>
+            <select id="rx-edit-doctor" value={doctorId} onChange={(e) => setDoctorId(e.target.value)} className={inputCls}>
+              <option value="">Select doctor…</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>{d.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelCls} htmlFor="rx-edit-dx">Diagnosis (optional)</label>
+            <input
+              id="rx-edit-dx"
+              value={diagnosis}
+              onChange={(e) => setDiagnosis(e.target.value)}
+              placeholder="e.g. Malaria, uncomplicated"
+              className={inputCls}
+            />
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-semibold text-[var(--color-foreground)]">Medications</span>
+            <button
+              type="button"
+              onClick={() => setItems([...items, { ...newItem(), id: null }])}
+              className="focus-ring rounded-lg border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-primary)] hover:border-[var(--color-primary)]"
+            >
+              + Add medication
+            </button>
+          </div>
+          <div className="space-y-3">
+            {items.map((item, idx) => (
+              <CreateItemRow
+                key={item.id ?? `new-${idx}`}
+                item={item}
+                onChange={(next) => {
+                  const all = [...items];
+                  all[idx] = { ...next, id: items[idx].id };
+                  setItems(all);
+                }}
+                onRemove={() => setItems(items.filter((_, i) => i !== idx))}
+                canRemove={items.length > 1}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className={labelCls} htmlFor="rx-edit-notes">Notes (optional)</label>
+          <textarea id="rx-edit-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className={inputCls} />
+        </div>
+
+        {error && (
+          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            {error}
+          </p>
+        )}
+        <div className="flex gap-3 pt-1">
+          <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="button" onClick={save} disabled={busy} className="focus-ring flex-1 rounded-lg bg-[var(--color-primary)] py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60">
+            {busy ? "Saving…" : "Save changes"}
+          </button>
+        </div>
+      </div>
+    </ModalShell>
+  );
+}
+
 function RxDetailModal({ rx, canDispense, onClose, onChanged, onDispensed }: { rx: Prescription; canDispense: boolean; onClose: () => void; onChanged: () => void; onDispensed: (msg: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -773,8 +977,16 @@ function RxDetailModal({ rx, canDispense, onClose, onChanged, onDispensed }: { r
   const [pricingByDrug, setPricingByDrug] = useState<Record<string, AiPricing>>({});
   const [alts, setAlts] = useState<Record<string, AiAlternative[]>>({});
   const [altLoadingFor, setAltLoadingFor] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const dispatchable = canDispense && !["cancelled", "dispensed", "completed"].includes(rx.status);
+
+  // Pharmacy staff may add/remove/replace medications only while the
+  // prescription is untouched: pending/processing and nothing dispensed yet.
+  const editable =
+    canDispense &&
+    ["pending", "processing"].includes(rx.status) &&
+    (rx.prescription_items ?? []).every((i) => (i.dispensed_qty ?? 0) <= 0);
 
   // Load stock batches per item that has a pharmacy catalog link, then run the
   // AI assists: interaction watch across catalogued drugs + suggested retail
@@ -918,6 +1130,24 @@ const itemsPayload = rx.prescription_items
     await setStatus("cancelled");
   }
 
+  async function deleteRx() {
+    if (!confirm("Delete this prescription and its medications? This cannot be undone.")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/prescriptions/${rx.id}`, { method: "DELETE" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to delete prescription");
+      onDispensed("Prescription deleted");
+      onChanged();
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete prescription");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function printRx() {
     setPrinting(true);
     try {
@@ -955,6 +1185,26 @@ const itemsPayload = rx.prescription_items
           >
             <Printer size={14} /> {printing ? "Preparing…" : "Print"}
           </button>
+          {editable && (
+            <>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                disabled={busy}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-foreground)] hover:bg-[var(--color-primary-soft)] disabled:opacity-60"
+              >
+                <Pencil size={14} /> Edit
+              </button>
+              <button
+                type="button"
+                onClick={deleteRx}
+                disabled={busy}
+                className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </>
+          )}
         </div>
 
         {rx.diagnosis && (
@@ -1217,6 +1467,19 @@ const itemsPayload = rx.prescription_items
           </div>
         )}
       </div>
+
+      {editing && (
+        <EditRxModal
+          rx={rx}
+          onClose={() => setEditing(false)}
+          onSaved={(msg) => {
+            setEditing(false);
+            onDispensed(msg);
+            onChanged();
+            onClose();
+          }}
+        />
+      )}
     </ModalShell>
   );
 }

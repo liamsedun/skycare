@@ -109,7 +109,7 @@ export default function SignupPage() {
                   },
                   body: JSON.stringify({
                     name: form.get("hospitalName"),
-                    slug: form.get("slug"),
+                    website: form.get("website") || undefined,
                     fullName: form.get("fullName"),
                     email: form.get("email"),
                     phone: form.get("phone") || undefined,
@@ -137,15 +137,16 @@ export default function SignupPage() {
             </div>
             <div className="relative">
               <input
-                type="text"
-                name="slug"
-                required
-                pattern="[a-z0-9-]+"
-                placeholder="yourhospital  (yourhospital.skycare.app)"
+                type="url"
+                name="website"
+                placeholder="Your website (optional) — https://yourhospital.com"
                 className="w-full rounded-xl border-[1.5px] border-slate-200 bg-slate-50/60 py-3 pl-4 pr-11 text-sm text-slate-800 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-500/10"
               />
               <Globe size={18} aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
             </div>
+            <p className="-mt-2 text-xs text-slate-500">
+              Your free site (e.g. liamsfields.skycare.app) is created automatically after signup.
+            </p>
             <div className="relative">
               <input
                 type="text"

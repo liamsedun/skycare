@@ -180,7 +180,8 @@ export const POST = withStaff(async (req, ctx) => {
             pharmacy_drug_id: i.pharmacy_drug_id ?? null,
             quantity: i.quantity,
           })),
-          ctx.user.id
+          ctx.user.id,
+          ctx.branchId
         );
         if (autoInvoice) {
           await logAudit(req, ctx, {

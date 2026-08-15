@@ -2,6 +2,7 @@ import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, r
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { notifyInvoiceIssued } from "@/lib/notify";
 import { getTenantSettings, generateInvoiceNumber } from "@/lib/tenant-settings";
 import type { NextRequest } from "next/server";
 
@@ -91,7 +92,7 @@ export const POST = withStaff(async (req, ctx) => {
 
   const { data: patient } = await ctx.svc
     .from("patients")
-    .select("id, first_name, last_name")
+    .select("id, first_name, last_name, user_id")
     .eq("id", body.patientId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -151,6 +152,8 @@ export const POST = withStaff(async (req, ctx) => {
     .insert(items)
     .select();
   if (itemsError) throw new ValidationError(itemsError.message);
+
+  await notifyInvoiceIssued(ctx.svc, tenantId, body.patientId, invoice.id, invoiceNumber, body.totalAmount);
 
   await logAudit(req, ctx, {
     action: "create",

@@ -401,3 +401,111 @@ a {
     scroll-behavior: auto;
   }
 }
+
+/* ===== Print / Save-as-PDF — bills, invoices, receipts, reports =====
+   Printing from any app page must render ONLY the document, never the app
+   shell. The print views also carry a tenant letterhead (logo, name, address,
+   email, website, phone) and this block guarantees black-on-white output even
+   when the user has Dark mode enabled. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  aside,
+  header {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body,
+  html[data-theme="dark"] body {
+    background: #ffffff !important;
+  }
+
+  /* Dark-mode users still print black-on-white (light tokens restored). */
+  html[data-theme="dark"] {
+    --color-foreground: #0f172a;
+    --color-muted-fg: #475569;
+    --color-border: #d8e0ec;
+    --color-primary: #2563eb;
+    --color-primary-dark: #1d4ed8;
+    --color-primary-soft: #eff6ff;
+    --color-destructive: #b91c1c;
+    --color-warning: #b45309;
+  }
+
+  html[data-theme="dark"] .bg-white,
+  html[data-theme="dark"] .bg-white\/95,
+  html[data-theme="dark"] .bg-white\/90,
+  html[data-theme="dark"] .bg-white\/80,
+  html[data-theme="dark"] .bg-slate-50,
+  html[data-theme="dark"] .bg-slate-50\/60,
+  html[data-theme="dark"] .bg-slate-50\/40,
+  html[data-theme="dark"] .bg-slate-100 {
+    background-color: #f8fafc !important;
+  }
+
+  html[data-theme="dark"] .bg-emerald-100,
+  html[data-theme="dark"] .bg-emerald-50,
+  html[data-theme="dark"] .bg-amber-100,
+  html[data-theme="dark"] .bg-amber-50,
+  html[data-theme="dark"] .bg-sky-100,
+  html[data-theme="dark"] .bg-sky-50,
+  html[data-theme="dark"] .bg-red-100,
+  html[data-theme="dark"] .bg-red-50,
+  html[data-theme="dark"] .bg-rose-100,
+  html[data-theme="dark"] .bg-rose-50,
+  html[data-theme="dark"] .bg-violet-100 {
+    background-color: #f1f5f9 !important;
+  }
+
+  html[data-theme="dark"] .text-slate-900,
+  html[data-theme="dark"] .text-slate-800 {
+    color: #0f172a !important;
+  }
+  html[data-theme="dark"] .text-slate-700,
+  html[data-theme="dark"] .text-slate-600 {
+    color: #334155 !important;
+  }
+  html[data-theme="dark"] .text-slate-500,
+  html[data-theme="dark"] .text-slate-400 {
+    color: #64748b !important;
+  }
+  html[data-theme="dark"] .text-emerald-600,
+  html[data-theme="dark"] .text-emerald-700,
+  html[data-theme="dark"] .text-emerald-800 {
+    color: #047857 !important;
+  }
+  html[data-theme="dark"] .text-amber-600,
+  html[data-theme="dark"] .text-amber-700,
+  html[data-theme="dark"] .text-amber-800 {
+    color: #b45309 !important;
+  }
+  html[data-theme="dark"] .text-red-600,
+  html[data-theme="dark"] .text-red-700,
+  html[data-theme="dark"] .text-rose-600,
+  html[data-theme="dark"] .text-rose-700 {
+    color: #b91c1c !important;
+  }
+  html[data-theme="dark"] .text-sky-600,
+  html[data-theme="dark"] .text-sky-700 {
+    color: #0369a1 !important;
+  }
+  html[data-theme="dark"] .text-violet-700 {
+    color: #6d28d9 !important;
+  }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-rise { animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+.animate-pop { animation: pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }

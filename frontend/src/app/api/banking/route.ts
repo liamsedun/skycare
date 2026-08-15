@@ -79,7 +79,7 @@ export const GET = withStaff(async (req, ctx) => {
       if (!acc) continue;
       const signed = r.direction === "in" ? Number(r.amount) : -Number(r.amount);
       acc.balance += signed;
-      if (!balanceOnly) {
+      if (!balanceOnly && r.source !== "opening") {
         const inMonth = new Date((r.recorded_at ?? r.created_at) as string) >= monthStart;
         if (!inMonth) continue;
         if (r.direction === "in") acc.monthIn += Number(r.amount);
@@ -123,6 +123,7 @@ export const GET = withStaff(async (req, ctx) => {
     .from("hospital_bank_ledger")
     .select("direction, amount")
     .eq("tenant_id", tenantId)
+    .neq("source", "opening")
     .gte("recorded_at", monthStart.toISOString());
   let monthIn = 0;
   let monthOut = 0;

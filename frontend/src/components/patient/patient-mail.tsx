@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Inbox, Loader2, MailPlus, Send, Trash2 } from "lucide-react";
 import { initials } from "@/lib/auth";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -55,6 +57,8 @@ export default function PatientMail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
 
   const [to, setTo] = useState<string[]>([]);
   const [subject, setSubject] = useState("");
@@ -164,6 +168,9 @@ export default function PatientMail() {
     { id: "compose", label: "Compose" },
   ];
 
+  const visibleInbox = inbox.filter((m) => inDateRange(m.created_at, filterFrom, filterTo));
+  const visibleSent = sent.filter((m) => inDateRange(m.created_at, filterFrom, filterTo));
+
   return (
     <div className="space-y-6">
       <div>
@@ -191,6 +198,10 @@ export default function PatientMail() {
           </button>
         ))}
       </div>
+
+      {tab !== "compose" && (
+        <DateRangeBar from={filterFrom} to={filterTo} onFromChange={setFilterFrom} onToChange={setFilterTo} onClear={() => { setFilterFrom(""); setFilterTo(""); }} />
+      )}
 
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
@@ -260,11 +271,11 @@ export default function PatientMail() {
           </div>
         </form>
       ) : tab === "inbox" ? (
-        inbox.length === 0 ? (
+        visibleInbox.length === 0 ? (
           emptyCard("Your inbox is empty.")
         ) : (
           <div className="space-y-3">
-            {inbox.map((msg) => {
+            {visibleInbox.map((msg) => {
               const open = openId === msg.id;
               return (
                 <div key={msg.id} className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
@@ -300,11 +311,11 @@ export default function PatientMail() {
             })}
           </div>
         )
-      ) : sent.length === 0 ? (
+      ) : visibleSent.length === 0 ? (
         emptyCard("You haven't sent any messages yet.")
       ) : (
         <div className="space-y-3">
-          {sent.map((msg) => {
+          {visibleSent.map((msg) => {
             const open = openId === msg.id;
             return (
               <div key={msg.id} className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">

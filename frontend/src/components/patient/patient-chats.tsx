@@ -26,6 +26,7 @@ interface OtherUser {
 
 interface ChatItem {
   id: string;
+  kind?: "staff" | "patient";
   patient_id: string;
   last_message: string | null;
   last_sender_id: string | null;
@@ -242,7 +243,8 @@ export default function PatientChats() {
       if (!res.ok) throw new Error(body.error ?? "Failed to start chat");
       const chat: ChatItem = {
         id: body.data.chat.id,
-        patient_id: "",
+        kind: "patient",
+        patient_id: body.data.chat.patient_id ?? "",
         last_message: null,
         last_sender_id: null,
         last_message_at: null,
@@ -352,8 +354,8 @@ export default function PatientChats() {
         : activeTab === "urgent"
           ? c.unread_count > 0
           : activeTab === "staff"
-            ? true
-            : false;
+            ? c.kind === "staff"
+            : c.kind === "patient";
     const matchesQuery = name.toLowerCase().includes(query.toLowerCase());
     return matchesTab && matchesQuery;
   });

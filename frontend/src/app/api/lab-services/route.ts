@@ -60,6 +60,9 @@ export const POST = withStaff(async (req, ctx) => {
   if (body.newCategory?.trim()) {
     if (!isAdmin) throw new ValidationError("Only hospital admins can create new categories");
     const catName = body.newCategory.trim();
+    if (/^\d+(\.\d+)?$/.test(catName)) {
+      throw new ValidationError(`Category "${catName}" looks like a price — use a real category name`);
+    }
     const { data: cat } = await ctx.svc
       .from("lab_categories")
       .select("id")

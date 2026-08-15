@@ -5,6 +5,8 @@ import { Clock, Loader2, LogIn, LogOut, RefreshCw } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -39,6 +41,8 @@ export default function HrAttendanceView() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [clocking, setClocking] = useState(false);
   const [me, setMe] = useState<{ full_name?: string; role?: string; user_id?: string } | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,6 +103,8 @@ export default function HrAttendanceView() {
     }
   }
 
+  const visibleRows = rows.filter((r) => inDateRange(r.work_date, from, to));
+
   const myRow = rows.find((r) => r.user_id === me?.user_id);
 
   const ATT_EXPORT_COLUMNS = ["staff", "role", "department", "status", "check_in", "check_out", "notes"];
@@ -143,6 +149,13 @@ export default function HrAttendanceView() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <input type="date" className={inputCls + " max-w-[180px]"} value={date} onChange={(e) => setDate(e.target.value)} />
+        <DateRangeBar
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          onClear={() => { setFrom(""); setTo(""); }}
+        />
         {isAdmin && (
           <button className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm font-medium hover:bg-[var(--color-muted)]" onClick={markMissed} disabled={clocking}>
             <RefreshCw className={`h-4 w-4 ${clocking ? "animate-spin" : ""}`} /> Mark missed shifts
@@ -157,7 +170,7 @@ export default function HrAttendanceView() {
           onImport={importAttendance}
           onImported={() => load()}
         />
-        <span className="text-sm text-[var(--color-muted-fg)]">{rows.length} records</span>
+        <span className="text-sm text-[var(--color-muted-fg)]">{visibleRows.length} records</span>
       </div>
 
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
@@ -203,7 +216,7 @@ export default function HrAttendanceView() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
-            {rows.map((r) => (
+            {visibleRows.map((r) => (
               <tr key={r.id}>
                 <td className="px-4 py-3">
                   <div className="font-medium">{r.users?.full_name}</div>
@@ -218,8 +231,8 @@ export default function HrAttendanceView() {
                 <td className="px-4 py-3 text-xs text-[var(--color-muted-fg)]">{r.notes ?? "—"}</td>
               </tr>
             ))}
-            {rows.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--color-muted-fg)]">No attendance records for this date.</td></tr>
+            {visibleRows.length === 0 && (
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--color-muted-fg)]">{rows.length === 0 ? "No attendance records for this date." : "No attendance records match the current date range."}</td></tr>
             )}
           </tbody>
         </table>

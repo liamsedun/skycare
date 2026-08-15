@@ -161,7 +161,7 @@ export const POST = withStaff(async (req, ctx) => {
 
   const { data: invoiceId, error: invError } = await ctx.svc.rpc("pharmacy_invoice_create", {
     p_tenant_id: tenantId,
-    p_branch_id: rx.branch_id ?? null,
+    p_branch_id: ctx.branchId ?? rx.branch_id ?? null,
     p_patient_id: channel === "walk_in" ? null : rx.patient_id,
     p_visit_id: null,
     p_source: "prescription",

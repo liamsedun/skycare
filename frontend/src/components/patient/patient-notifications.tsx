@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2, Trash2 } from "lucide-react";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface NotifRow {
   id: string;
@@ -29,6 +31,8 @@ export default function PatientNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,19 +55,28 @@ export default function PatientNotifications() {
 
   async function markRead(id: string) {
     const res = await fetch(`/api/notifications/${id}`, { method: "PUT" });
-    if (res.ok) setItems((rows) => rows.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    if (res.ok) {
+      setItems((rows) => rows.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+      window.dispatchEvent(new Event("skycare:notifs-changed"));
+    }
   }
 
   async function remove(id: string) {
     const res = await fetch(`/api/notifications/${id}`, { method: "DELETE" });
-    if (res.ok) setItems((rows) => rows.filter((n) => n.id !== id));
+    if (res.ok) {
+      setItems((rows) => rows.filter((n) => n.id !== id));
+      window.dispatchEvent(new Event("skycare:notifs-changed"));
+    }
   }
 
   async function markAllRead() {
     const unread = items.filter((n) => !n.is_read);
     await Promise.all(unread.map((n) => fetch(`/api/notifications/${n.id}`, { method: "PUT" }).catch(() => {})));
     await load();
+    window.dispatchEvent(new Event("skycare:notifs-changed"));
   }
+
+  const visible = items.filter((n) => inDateRange(n.created_at, from, to));
 
   return (
     <div className="space-y-6">
@@ -97,6 +110,8 @@ export default function PatientNotifications() {
         </div>
       </div>
 
+      <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
+
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
           {error}
@@ -107,14 +122,14 @@ export default function PatientNotifications() {
         <div className="flex items-center justify-center py-16">
           <Loader2 size={22} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" />
         </div>
-      ) : items.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Bell size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No notifications.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {items.map((n) => (
+          {visible.map((n) => (
             <div
               key={n.id}
               className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3.5 shadow-[var(--shadow-sm)] ${n.is_read ? "border-[var(--color-border)] bg-white" : "border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)]/30"}`}

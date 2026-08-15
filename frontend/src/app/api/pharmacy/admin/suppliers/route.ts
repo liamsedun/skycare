@@ -25,6 +25,7 @@ export const GET = withStaff(async (req, ctx) => {
     nafdacLicense: s.nafdac_license,
     paymentTerms: s.payment_terms,
     isActive: s.is_active,
+    createdAt: s.created_at,
   })));
 });
 

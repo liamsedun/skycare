@@ -34,6 +34,8 @@ interface InventoryRow {
   isControlled: boolean;
   nafdacNumber: string | null;
   isActive: boolean;
+  supplierId: string | null;
+  supplierName: string | null;
   stock: number;
   lowStock: boolean;
   outOfStock: boolean;
@@ -190,6 +192,7 @@ export default function PharmacyStockView() {
                 <th className="px-4 py-2.5">Drug</th>
                 <th className="px-4 py-2.5">Category</th>
                 <th className="px-4 py-2.5">Form / Dosage</th>
+                <th className="px-4 py-2.5">Supplier</th>
                 <th className="px-4 py-2.5 text-right">Retail</th>
                 <th className="px-4 py-2.5 text-right">Effective</th>
                 <th className="px-4 py-2.5 text-right">Stock</th>
@@ -200,10 +203,10 @@ export default function PharmacyStockView() {
             </thead>
             <tbody className="divide-y divide-[var(--color-border)]">
               {loading && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading inventory…</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading inventory…</td></tr>
               )}
               {!loading && visible.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">No drugs match the current filters.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">No drugs match the current filters.</td></tr>
               )}
               {!loading && visible.map((r) => (
                 <StockRow
@@ -296,6 +299,9 @@ function StockRow({ row, onOpen, onRestock, onTransfer, onDispense, onEdit, onTo
       </td>
       <td className="px-4 py-3 text-xs text-[var(--color-muted-fg)]">{row.category}</td>
       <td className="px-4 py-3 text-xs">{row.form}{row.dosage ? ` · ${row.dosage}` : ""}</td>
+      <td className="px-4 py-3">
+        <span className="text-xs text-[var(--color-foreground)]">{row.supplierName ?? <span className="text-[var(--color-muted-fg)]">—</span>}</span>
+      </td>
       <td className="px-4 py-3 text-right">{ngnv(row.unitPrice)}</td>
       <td className="px-4 py-3 text-right">
         {row.effectivePrice !== row.unitPrice ? (

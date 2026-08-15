@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Pill } from "lucide-react";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface RxItem {
   id: string;
@@ -47,6 +49,8 @@ export default function PatientPrescriptions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,12 +70,16 @@ export default function PatientPrescriptions() {
     load();
   }, [load]);
 
+  const visible = prescriptions.filter((rx) => inDateRange(rx.issued_date, from, to));
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Prescriptions</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Medications prescribed for you and your family.</p>
       </div>
+
+      <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
@@ -81,7 +89,7 @@ export default function PatientPrescriptions() {
 
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading prescriptions…</p>
-      ) : prescriptions.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Pill size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No prescriptions yet.</p>
@@ -89,7 +97,7 @@ export default function PatientPrescriptions() {
         </div>
       ) : (
         <div className="space-y-3">
-          {prescriptions.map((rx) => {
+          {visible.map((rx) => {
             const open = expanded === rx.id;
             return (
               <div key={rx.id} className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">

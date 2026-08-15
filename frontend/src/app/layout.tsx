@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Figtree, Inter, Noto_Sans } from "next/font/google";
+import localFont from "next/font/local";
+import { Inter, Noto_Sans } from "next/font/google";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import "./globals.css";
 
-const figtree = Figtree({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const figtree = localFont({
+  src: [
+    { path: "./fonts/figtree-latin.woff2", weight: "400 700", style: "normal" },
+    { path: "./fonts/figtree-latinext.woff2", weight: "400 700", style: "normal" },
+  ],
   variable: "--font-heading",
 });
 

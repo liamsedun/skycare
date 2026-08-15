@@ -1,5 +1,5 @@
 import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
-import { getPagination, resolveParam } from "@/lib/api-utils";
+import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { pushNotifyUsers } from "@/lib/push-send";
 import type { NextRequest } from "next/server";
@@ -9,12 +9,16 @@ export const dynamic = "force-dynamic";
 const REQUEST_SELECT =
   "id, tenant_id, branch_id, patient_id, doctor_id, status, is_external, external_lab_id, invoice_id, payment_id, referrer, requested_at, completed_at, notes, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, user_id, is_walk_in), users!lab_requests_doctor_id_fkey(id, full_name, role), lab_request_items(id, service_id, service_name, priority, sample_type, notes, result, result_unit, is_abnormal, reported_at), lab_request_assignments(user_id, users(id, full_name, role)), invoices!fk_lab_requests_invoice(id, invoice_number, status, total_amount), payments!fk_lab_requests_payment(id, reference, payment_method, amount, status, paid_at)";
 
-// GET /api/lab-requests?patient_id=&status=&page=&pageSize=
+// GET /api/lab-requests?q=&patient_id=&status=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=&pageSize=
 export const GET = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
+  const { page, pageSize, from: rangeFrom, to: rangeTo } = getPagination(req.nextUrl.searchParams);
   const patientId = resolveParam(req.nextUrl.searchParams.get("patient_id"));
   const status = resolveParam(req.nextUrl.searchParams.get("status"));
+  const q = resolveParam(req.nextUrl.searchParams.get("q"))?.trim() || null;
+  const from = resolveParam(req.nextUrl.searchParams.get("from"))?.trim() || null;
+  const to = resolveParam(req.nextUrl.searchParams.get("to"))?.trim() || null;
+  if (from && to && from > to) throw new ValidationError("from must be on or before to");
 
   let familyIds: string[] | null = null;
   if (ctx.role === "patient_api") {
@@ -31,16 +35,41 @@ export const GET = withAuth(async (req, ctx) => {
     if (familyIds.length === 0) return okPaginated([], 0, page, pageSize);
   }
 
+  let patientIds: string[] | null = null;
+  let itemReqIds: string[] | null = null;
+  if (q) {
+    const like = `%${sanitizeLike(q)}%`;
+    const [patRes, itRes] = await Promise.all([
+      ctx.svc
+        .from("patients")
+        .select("id")
+        .eq("tenant_id", tenantId)
+        .or(`first_name.ilike.${like},last_name.ilike.${like},patient_number.ilike.${like}`),
+      ctx.svc.from("lab_request_items").select("request_id").ilike("service_name", like).limit(800),
+    ]);
+    if (patRes.error || itRes.error) throw new ValidationError("Failed to search lab requests");
+    patientIds = (patRes.data ?? []).map((r) => r.id);
+    itemReqIds = (itRes.data ?? []).map((r) => r.request_id);
+  }
+
   let query = ctx.svc
     .from("lab_requests")
     .select(REQUEST_SELECT, { count: "exact" })
     .eq("tenant_id", tenantId)
     .order("requested_at", { ascending: false })
-    .range(from, to);
+    .range(rangeFrom, rangeTo);
 
   if (patientId) query = query.eq("patient_id", patientId);
   if (status) query = query.eq("status", status);
   if (familyIds) query = query.in("patient_id", familyIds);
+  if (from) query = query.gte("requested_at", `${from}T00:00:00`);
+  if (to) query = query.lte("requested_at", `${to}T23:59:59.999`);
+  if (q) {
+    const ors = [`referrer.ilike.%${sanitizeLike(q)}%`];
+    if (patientIds && patientIds.length > 0) ors.push(`patient_id.in.(${patientIds.join(",")})`);
+    if (itemReqIds && itemReqIds.length > 0) ors.push(`id.in.(${itemReqIds.join(",")})`);
+    query = query.or(ors.join(","));
+  }
 
   const { data, count } = await query;
   return okPaginated(data ?? [], count ?? 0, page, pageSize);

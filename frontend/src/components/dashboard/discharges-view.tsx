@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Download, FileText, Loader2, ReceiptText, RefreshCw } from "lucide-react";
 import { generateDischargePDF } from "@/components/pdf/generateDischargePDF";
 import ImportExportMenu from "@/components/ui/import-export-menu";
+import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
 
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
@@ -42,6 +44,8 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
   const [toast, setToast] = useState<string | null>(null);
   const [pdfing, setPdfing] = useState<string | null>(null);
   const [billing, setBilling] = useState<string | null>(null);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -53,6 +57,8 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const visible = rows.filter((d) => inDateRange(d.discharged_at, from, to));
 
   const nameOf = (d: DischargeRow) => {
     const a = d.admission as any;
@@ -199,6 +205,15 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
             />
           </div>
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <DateRangeBar
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onClear={() => { setFrom(""); setTo(""); }}
+          />
+        </div>
         {toast && <p className="mt-3 text-xs text-rose-600">{toast}</p>}
       </div>
 
@@ -207,7 +222,7 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
           <div className="flex justify-center py-16 text-[var(--color-muted-fg)]">
             <Loader2 className="h-6 w-6 animate-spin" />
           </div>
-        ) : rows.length === 0 ? (
+        ) : visible.length === 0 ? (
           <p className="py-12 text-center text-sm text-[var(--color-muted-fg)]">No discharges yet.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -223,7 +238,7 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((d) => {
+                {visible.map((d) => {
                   const inv = invoiceOf(d);
                   return (
                     <tr key={d.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-slate-50/60">

@@ -170,7 +170,7 @@ export default function PrescriptionDocument({ data }: { data: any }) {
           {h.logo && <Image src={h.logo} style={styles.logo} />}
           <View>
             <Text style={styles.hospitalName}>{h.name ?? "Hospital"}</Text>
-            <Text style={styles.hospitalMeta}>{[h.address, h.email, h.phone].filter(Boolean).join("  |  ")}</Text>
+            <Text style={styles.hospitalMeta}>{[h.address, h.email, h.phone, h.website].filter(Boolean).join("  |  ")}</Text>
           </View>
         </View>
 

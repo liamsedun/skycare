@@ -43,6 +43,7 @@ export interface DrugInput {
   isControlled?: boolean;
   nafdacNumber?: string | null;
   branchId?: string | null;
+  supplierId?: string | null;
 }
 
 /** Returns a cleaned DrugInput or a list of validation errors. */
@@ -111,6 +112,7 @@ export function validateDrugInput(body: Record<string, unknown>): { ok: true; va
       isControlled: typeof body.isControlled === "boolean" ? body.isControlled : false,
       nafdacNumber: nafdacNumber ?? null,
       branchId: typeof body.branchId === "string" && body.branchId ? body.branchId : null,
+      supplierId: typeof body.supplierId === "string" && body.supplierId ? body.supplierId : null,
     },
   };
 }
@@ -135,6 +137,7 @@ export function drugUpdateColumns(body: Record<string, unknown>): Record<string,
     ["nafdacNumber", "nafdac_number"],
     ["isActive", "is_active"],
     ["branchId", "branch_id"],
+    ["supplierId", "supplier_id"],
   ];
   for (const [key, col] of cols) {
     if (body[key] !== undefined) out[col] = body[key];

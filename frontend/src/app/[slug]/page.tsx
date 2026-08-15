@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
   CalendarCheck,
+  Globe,
   HeartPulse,
   Mail,
   MapPin,
@@ -178,14 +179,28 @@ export default async function TenantWebsitePage({
               { icon: Phone, label: "Phone", value: tenant.phone ?? "—" },
               { icon: Mail, label: "Email", value: tenant.email ?? "—" },
               { icon: MapPin, label: "Address", value: [tenant.address, tenant.city, tenant.state].filter(Boolean).join(", ") || "—" },
+              ...(tenant.website_url
+                ? [{ icon: Globe, label: "Website", value: tenant.website_url }]
+                : []),
             ].map((c) => (
               <div key={c.label} className="flex items-center gap-3 rounded-xl bg-white p-5 shadow-sm">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-sky-100 text-sky-600">
                   <c.icon size={20} />
                 </span>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-slate-500">{c.label}</p>
-                  <p className="text-sm font-semibold">{c.value}</p>
+                  {c.label === "Website" ? (
+                    <a
+                      href={c.value}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block truncate text-sm font-semibold text-sky-600 hover:underline"
+                    >
+                      {c.value}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-semibold">{c.value}</p>
+                  )}
                 </div>
               </div>
             ))}

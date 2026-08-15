@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, NotFoundError, requireTenant, resolveBankAccountId, bankLedgerAccountForMethod, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, NotFoundError, requireTenant, resolvePayingAccountId, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { INCOME_CATEGORIES } from "@/lib/expense-categories";
 import type { NextRequest } from "next/server";
@@ -42,6 +42,14 @@ export const PUT = withStaff(async (req, ctx) => {
   for (const key of allowed) {
     if (key in body) patch[key] = body[key] ?? null;
   }
+  // account selection: explicit null/"cash" → Cash; uuid → validated bank.
+  let rawAccount: unknown;
+  if (body.account_id !== undefined) rawAccount = body.account_id;
+  else if (body.accountId !== undefined) rawAccount = body.accountId;
+  if (rawAccount !== undefined) {
+    const pick = rawAccount == null || rawAccount === "" ? "cash" : String(rawAccount);
+    patch.account_id = pick === "cash" ? null : await resolvePayingAccountId(ctx.svc, tenantId, pick, existing.payment_method);
+  }
 
   const { data: updated, error } = await ctx.svc
     .from("other_income")
@@ -56,11 +64,10 @@ export const PUT = withStaff(async (req, ctx) => {
   // updated values so amounts/methods/dates never drift from the income row.
   try {
     await ctx.svc.from("hospital_bank_ledger").delete().eq("income_id", id).eq("tenant_id", tenantId);
-    const defaultBankId = await resolveBankAccountId(ctx.svc, tenantId);
     await postBankLedger(ctx.svc, {
       tenantId,
       branchId: updated.branch_id ?? null,
-      accountId: bankLedgerAccountForMethod(updated.payment_method, defaultBankId),
+      accountId: updated.account_id,
       direction: "in",
       amount: Number(updated.amount),
       source: "other_income",

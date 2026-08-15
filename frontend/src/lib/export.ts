@@ -1,5 +1,18 @@
 export type ExportCell = string | number | null | undefined;
 
+/** Org identity loaded for print letterheads (mirrors GET /api/tenant/branding). */
+interface PrintBranding {
+  name?: string | null;
+  logo_url?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  website?: string | null;
+}
+
 const pdfWorkerUrl = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url
@@ -75,6 +88,60 @@ export function dateStamp(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * Fetch the tenant's org identity for print letterheads. Fails silently —
+ * printers fall back to a title-only document when branding can't load.
+ */
+async function loadBranding(): Promise<PrintBranding | null> {
+  try {
+    const res = await fetch("/api/tenant/branding", { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = await res.json();
+    return (body.data as PrintBranding | undefined) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function escHtml(v: unknown): string {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Letterhead block (logo, name, address, phone, email, website) for print docs. */
+export function letterheadHtml(brand: PrintBranding | null | undefined): string {
+  if (!brand) return "";
+  const name = brand.name || "SkyCare HMS";
+  const address = [
+    brand.address,
+    [brand.city, brand.state].filter(Boolean).join(", "),
+    brand.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  const contact = [
+    brand.phone && `Tel: ${brand.phone}`,
+    brand.email && `Email: ${brand.email}`,
+    brand.website,
+  ]
+    .filter(Boolean)
+    .join(" &nbsp;&bull;&nbsp; ");
+  const logo = brand.logo_url
+    ? `<img src="${escHtml(brand.logo_url)}" alt="logo" style="width:52px;height:52px;object-fit:contain;" />`
+    : `<div style="width:52px;height:52px;border-radius:8px;background:#e0f2fe;border:1px solid #bae6fd;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#0369a1;">${escHtml((name.trim()[0] ?? "S").toUpperCase())}</div>`;
+  return `<div class="lh" style="display:flex;align-items:center;gap:14px;border-bottom:2px solid #1e3a5f;padding-bottom:12px;margin-bottom:10px;">
+    ${logo}
+    <div>
+      <p style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">${escHtml(name)}</p>
+      ${address ? `<p style="margin:2px 0 0;font-size:11px;color:#475569;">${escHtml(address)}</p>` : ""}
+      ${contact ? `<p style="margin:2px 0 0;font-size:10px;color:#64748b;">${contact}</p>` : ""}
+    </div>
+  </div>`;
+}
+
 export function printTable(
   title: string,
   columns: string[],
@@ -93,7 +160,10 @@ export function printTable(
         `<tr>${columns.map((_, i) => `<td>${esc(r[i])}</td>`).join("")}</tr>`
     )
     .join("");
-  const html = `<!doctype html>
+  void (async () => {
+    const brand = await loadBranding();
+    const headerHtml = letterheadHtml(brand);
+    const html = `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -110,6 +180,7 @@ export function printTable(
 </style>
 </head>
 <body>
+  ${headerHtml}
   <h1>${esc(title)}</h1>
   <p class="sub">${esc(rows.length)} record(s) &middot; generated ${esc(
     new Date().toLocaleString("en-GB")
@@ -121,14 +192,15 @@ export function printTable(
   <script>window.onload=function(){setTimeout(function(){window.print()},300)}</script>
 </body>
 </html>`;
-  const w = window.open("", "_blank");
-  if (!w) {
-    alert("Your browser blocked the print window. Allow pop-ups for this site to export the PDF.");
-    return;
-  }
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+    const w = window.open("", "_blank");
+    if (!w) {
+      alert("Your browser blocked the print window. Allow pop-ups for this site to export the PDF.");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  })();
 }
 
 /** Split a text line into cells on runs of 2+ spaces (how printTable PDFs lay out). */

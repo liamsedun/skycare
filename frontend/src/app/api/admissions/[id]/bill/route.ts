@@ -1,5 +1,6 @@
 import { withStaff, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { notifyInvoiceIssued } from "@/lib/notify";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,12 @@ export const POST = withStaff(async (req, ctx) => {
   };
 
   if (!charge.alreadyPosted) {
+    const { data: patientIdRow } = await ctx.svc
+      .from("admissions")
+      .select("patient_id")
+      .eq("id", admissionId)
+      .maybeSingle();
+    await notifyInvoiceIssued(ctx.svc, tenantId, patientIdRow?.patient_id, ch.invoice_id, ch.invoice_number, Number(ch.charge ?? 0));
     await logAudit(req, ctx, {
       action: "create",
       entityType: "invoices",

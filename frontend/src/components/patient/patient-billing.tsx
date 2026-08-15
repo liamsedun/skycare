@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown, Landmark, ReceiptText } from "lucide-react";
+import { inDateRange } from "@/lib/daterange";
+import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface InvoiceItem {
   id: string;
@@ -67,6 +69,8 @@ export default function PatientBilling() {
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [onlineEnabled, setOnlineEnabled] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const searchParams = useSearchParams();
   const paystackStatus = searchParams.get("paystack");
 
@@ -112,6 +116,8 @@ export default function PatientBilling() {
   const outstanding = invoices
     .filter((inv) => ["pending", "partially_paid"].includes(inv.status))
     .reduce((sum, inv) => sum + (Number(inv.total_amount) - Number(inv.paid_amount)), 0);
+
+  const visible = invoices.filter((inv) => inDateRange(inv.issue_date, from, to));
 
   async function declarePayment(invoiceId: string, amount: number, method: string) {
     setBusy(true);
@@ -160,6 +166,8 @@ export default function PatientBilling() {
         </p>
       </div>
 
+      <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
+
       {error && (
         <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
           {error}
@@ -191,14 +199,14 @@ export default function PatientBilling() {
 
       {loading ? (
         <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading invoices…</p>
-      ) : invoices.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No invoices yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {invoices.map((inv) => {
+          {visible.map((inv) => {
             const due = Number(inv.total_amount) - Number(inv.paid_amount);
             const open = expanded === inv.id;
             return (

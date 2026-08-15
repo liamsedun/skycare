@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, okPaginated, ValidationError, NotFoundError, requireTenant, getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
 import type { NextRequest } from "next/server";
@@ -76,11 +76,16 @@ export const POST = withStaff(async (req, ctx) => {
     .single();
   if (afterError || !afterInvoice) throw new ValidationError(afterError?.message ?? "Invoice not found");
 
-  // Dedicated bank-account ledger: pick the target account (explicit choice or
-  // the first active account) so every payment credits the bank side of the
-  // ledger — the walk-in/counter cash and transfer takings are reconcilable.
-  let bankAccountId: string | null = body.bankAccountId ?? null;
-  if (!bankAccountId) {
+  // Dedicated bank-account ledger: pick the target account — an explicit
+  // "cash" keeps the credit on the cash side (account_id NULL); an explicit
+  // bank uuid credits that bank; nothing sent falls back to the first active
+  // account (legacy default) so every payment is reconcilable.
+  let bankAccountId: string | null = null;
+  if (body.bankAccountId === "cash") {
+    bankAccountId = null;
+  } else if (body.bankAccountId && body.bankAccountId !== "") {
+    bankAccountId = body.bankAccountId;
+  } else {
     const { data: defaultAccount } = await ctx.svc
       .from("hospital_bank_accounts")
       .select("id")
@@ -163,15 +168,33 @@ export const POST = withStaff(async (req, ctx) => {
 
   const totalPaid = body.payments.reduce((s, p) => s + Number(p.amount), 0);
   if (afterInvoice.patient_id) {
-    await notifyUsers(ctx.svc, {
-      orgId: tenantId,
-      userIds: [afterInvoice.patient_id],
-      type: "payment_confirmed",
-      title: "Pharmacy payment received",
-      message: `${afterInvoice.invoice_number} — ₦${totalPaid.toLocaleString()}`,
-      referenceType: "payments",
-      referenceId: paymentIds?.[0],
-    });
+    const { data: patient } = await ctx.svc
+      .from("patients")
+      .select("user_id, primary_account_id")
+      .eq("id", afterInvoice.patient_id)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    const userIds = new Set<string>();
+    if (patient?.user_id) userIds.add(patient.user_id);
+    if (patient?.primary_account_id && patient.primary_account_id !== afterInvoice.patient_id) {
+      const { data: root } = await ctx.svc
+        .from("patients")
+        .select("user_id")
+        .eq("id", patient.primary_account_id)
+        .maybeSingle();
+      if (root?.user_id) userIds.add(root.user_id);
+    }
+    if (userIds.size > 0) {
+      await notifyUsers(ctx.svc, {
+        orgId: tenantId,
+        userIds: Array.from(userIds),
+        type: "payment_confirmed",
+        title: "Pharmacy payment received",
+        message: `${afterInvoice.invoice_number} — ₦${totalPaid.toLocaleString()} received. A receipt is available in your portal.`,
+        referenceType: "invoices",
+        referenceId: invoice.synced_invoice_id ?? null,
+      });
+    }
   }
 
   await logAudit(req, ctx, {
@@ -184,19 +207,55 @@ export const POST = withStaff(async (req, ctx) => {
   return ok({ paymentIds, invoice: afterInvoice }, 201);
 });
 
-// GET /api/pharmacy/payments?invoiceId=&page=&pageSize=
+// GET /api/pharmacy/payments?q=&invoiceId=&from=YYYY-MM-DD&to=YYYY-MM-DD&page=&pageSize=
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const invoiceId = req.nextUrl.searchParams.get("invoiceId");
+  const { page, pageSize, from: rangeFrom, to: rangeTo } = getPagination(req.nextUrl.searchParams);
+  const invoiceId = resolveParam(req.nextUrl.searchParams.get("invoiceId"));
+  const q = resolveParam(req.nextUrl.searchParams.get("q"))?.trim() || null;
+  const from = resolveParam(req.nextUrl.searchParams.get("from"))?.trim() || null;
+  const to = resolveParam(req.nextUrl.searchParams.get("to"))?.trim() || null;
+  if (from && to && from > to) throw new ValidationError("from must be on or before to");
+
+  let patientOrInvoiceIds: string[] | null = null;
+  if (q) {
+    const like = `%${sanitizeLike(q)}%`;
+    const patRes = await ctx.svc
+      .from("patients")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .or(`first_name.ilike.${like},last_name.ilike.${like},patient_number.ilike.${like}`);
+    if (patRes.error) throw new ValidationError("Failed to search payments");
+    const patientIds = (patRes.data ?? []).map((r) => r.id);
+
+    const [invRes, invByPatRes] = await Promise.all([
+      ctx.svc.from("pharmacy_invoices").select("id").eq("tenant_id", tenantId).ilike("invoice_number", like).limit(500),
+      patientIds.length > 0
+        ? ctx.svc.from("pharmacy_invoices").select("id").eq("tenant_id", tenantId).in("patient_id", patientIds).limit(500)
+        : Promise.resolve({ data: [] as Array<{ id: string }>, error: null }),
+    ]);
+    if (invRes.error || invByPatRes.error) throw new ValidationError("Failed to search payments");
+
+    const ids = new Set<string>();
+    for (const r of [...(invRes.data ?? []), ...(invByPatRes.data ?? [])]) ids.add(r.id);
+    patientOrInvoiceIds = Array.from(ids);
+  }
+
   let query = ctx.svc
     .from("pharmacy_payments")
-    .select("id, invoice_id, amount, method, reference, status, received_by, received_at, notes, pharmacy_invoices(invoice_number, patients(first_name, last_name))")
+    .select("id, invoice_id, amount, method, reference, status, received_by, received_at, notes, pharmacy_invoices(invoice_number, patients(first_name, last_name))", { count: "exact" })
     .eq("tenant_id", tenantId)
     .order("received_at", { ascending: false });
   if (invoiceId) query = query.eq("invoice_id", invoiceId);
-  const { data, error } = await query;
+  if (from) query = query.gte("received_at", `${from}T00:00:00`);
+  if (to) query = query.lte("received_at", `${to}T23:59:59.999`);
+  if (q) {
+    const ors = ["reference.ilike.%" + sanitizeLike(q) + "%", "invoice_id.in.(" + (patientOrInvoiceIds ?? []).join(",") + ")"];
+    query = query.or(patientOrInvoiceIds && patientOrInvoiceIds.length > 0 ? ors.join(",") : ors[0]);
+  }
+  const { data, count, error } = await query.range(rangeFrom, rangeTo);
   if (error) throw new ValidationError(error.message);
-  return ok(data ?? []);
+  return okPaginated(data ?? [], count ?? 0, page, pageSize);
 });
 
 export const runtime = "nodejs";

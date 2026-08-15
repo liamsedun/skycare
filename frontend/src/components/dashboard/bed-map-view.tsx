@@ -18,6 +18,8 @@ import {
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { inDateRange } from "@/lib/daterange";
+import FilterBar from "@/components/filters/filter-bar";
 
 const EXPORT_COLUMNS = [
   "ward",
@@ -109,6 +111,11 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
   const [bedInputs, setBedInputs] = useState<Record<string, string>>({});
   const [configBusy, setConfigBusy] = useState(false);
 
+  const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
   const load = useCallback(async () => {
     const res = await fetch("/api/bed-availability", { cache: "no-store" });
     const body = await res.json();
@@ -145,7 +152,43 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
     if (managing) void loadDetails();
   }, [managing, loadDetails]);
 
-  const totals = wards.reduce(
+  const filterActive = Boolean(search.trim() || from || to || statusFilter);
+
+  const bedPasses = (b: BedRow) => {
+    if (statusFilter && b.status !== statusFilter) return false;
+    const q = search.trim().toLowerCase();
+    if (q) {
+      const occupantText = b.occupant ? `${b.occupant.name} ${b.occupant.patientNumber}`.toLowerCase() : "";
+      if (!b.bedNumber.toLowerCase().includes(q) && !occupantText.includes(q)) return false;
+    }
+    if (from || to) {
+      if (b.occupant && !inDateRange(b.occupant.admittedAt, from, to)) return false;
+    }
+    return true;
+  };
+
+  const filteredWards = wards
+    .map((w) => {
+      const q = search.trim().toLowerCase();
+      const wardMatches = !q || w.name.toLowerCase().includes(q);
+      return { ...w, beds: wardMatches ? (w.beds ?? []).filter((b) => bedPasses(b)) : [] };
+    })
+    .filter((w) => w.beds.length > 0 || !filterActive);
+
+  const filteredDetails = details
+    .map((w) => {
+      const q = search.trim().toLowerCase();
+      const wardMatches = !q || w.name.toLowerCase().includes(q);
+      const beds = (w.beds ?? []).filter((b) => {
+        if (statusFilter && b.status !== statusFilter) return false;
+        if (q && !b.bed_number.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      return { ...w, beds: wardMatches ? beds : [] };
+    })
+    .filter((w) => w.beds.length > 0 || !filterActive);
+
+  const totals = filteredWards.reduce(
     (acc, w) => {
       for (const b of w.beds) {
         acc.total += 1;
@@ -177,19 +220,19 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
     );
 
   function exportCsv() {
-    if (wards.length === 0) {
+    if (filteredWards.length === 0) {
       alert("Nothing to export — there are no wards on the bed map yet.");
       return;
     }
-    downloadCsv(`bed-map-${dateStamp()}.csv`, EXPORT_COLUMNS, rowsFor(wards));
+    downloadCsv(`bed-map-${dateStamp()}.csv`, EXPORT_COLUMNS, rowsFor(filteredWards));
   }
 
   function exportPdf() {
-    if (wards.length === 0) {
+    if (filteredWards.length === 0) {
       alert("Nothing to export — there are no wards on the bed map yet.");
       return;
     }
-    printTable("Bed Map", EXPORT_COLUMNS, rowsFor(wards));
+    printTable("Bed Map", EXPORT_COLUMNS, rowsFor(filteredWards));
   }
 
   async function importBeds(rws: string[][]): Promise<ImportResult> {
@@ -344,6 +387,40 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rose-500" /> Occupied {totals.occupied}</span>
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /> Maintenance / cleaning {totals.other}</span>
         </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <FilterBar
+            query={search}
+            onQueryChange={setSearch}
+            from={from}
+            to={to}
+            onFromChange={setFrom}
+            onToChange={setTo}
+            onClear={() => { setSearch(""); setFrom(""); setTo(""); setStatusFilter(""); }}
+            searchPlaceholder="Search ward, bed no, patient…"
+            searchWidth={260}
+          />
+          <div className="flex flex-wrap gap-1" role="group" aria-label="Filter by bed status">
+            {[{ value: "", label: "All" }, { value: "available", label: "Available" }, { value: "occupied", label: "Occupied" }, { value: "maintenance", label: "Maintenance" }, { value: "cleaning", label: "Cleaning" }].map((s) => (
+              <button
+                key={s.value || "all"}
+                type="button"
+                onClick={() => setStatusFilter(s.value)}
+                className={`focus-ring rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors duration-200 ${
+                  statusFilter === s.value
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]"
+                    : "border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {(from || to) && (
+          <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+            Occupancy is filtered to patients admitted within the selected period; vacant beds remain visible.
+          </p>
+        )}
         {toast && <p className="mt-3 text-xs text-rose-600">{toast}</p>}
       </div>
 
@@ -355,11 +432,15 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
         <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center text-sm text-[var(--color-muted-fg)]">
           No active wards yet. {canManage && "Open Manage to create your first ward."}
         </div>
+      ) : filterActive && (managing ? filteredDetails : filteredWards).length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-white p-10 text-center text-sm text-[var(--color-muted-fg)]">
+          No beds match the current filters.
+        </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">
-          {(managing ? details : wards).map((w) => {
+          {(managing ? filteredDetails : filteredWards).map((w) => {
             const detail = managing ? (w as WardDetail) : null;
-            const mapWard = managing ? wards.find((x) => x.id === w.id) : (w as WardRow);
+            const mapWard = managing ? filteredWards.find((x) => x.id === w.id) : (w as WardRow);
             const rate = detail ? rateOf(detail) : null;
             const beds = managing ? (detail?.beds ?? []) : (mapWard?.beds ?? []);
             return (
