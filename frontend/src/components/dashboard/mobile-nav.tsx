@@ -3,39 +3,35 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { Download, UserCog, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { navForRole, type NavItem, type ModuleAccess } from "@/lib/nav";
 import type { StaffRole } from "@/lib/auth";
+import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
 import UnreadMailBadge from "@/components/dashboard/unread-mail-badge";
 
 /**
- * Mobile bottom navigation for staff & admin (renders only below md breakpoint).
- * Six flat tabs (Overview … Billing) plus a floating "More" FAB on the right
- * that opens a 3-column grid of the remaining modules. Items come from
- * navForRole() so role gates and per-user module_access grants apply exactly
- * like the sidebar.
+ * Mobile bottom navigation (renders only below md breakpoint).
+ * Six flat tabs plus a floating "More" FAB on the right that opens a
+ * 3-column grid of the remaining modules. The staff version is fed by
+ * navForRole() so role gates and per-user module_access grants apply
+ * exactly like the sidebar; the patient version is fed by PATIENT_NAV_ITEMS.
  */
-const TAB_KEYS = ["overview", "patients", "appointments", "pharmacy", "lab", "billing"] as const;
 
-const MENU_SPEC: { key: string; label?: string }[] = [
-  { key: "wards", label: "Ward" },
-  { key: "other-income" },
-  { key: "staff" },
-  { key: "hr", label: "Human Resources" },
-  { key: "payroll" },
-  { key: "leave" },
-  { key: "roster", label: "Roster" },
-  { key: "mail" },
-  { key: "chats", label: "Chat" },
-  { key: "reports" },
-  { key: "financial-reports" },
-  { key: "audit-logs" },
-  { key: "account", label: "Accounts" },
-  { key: "subscription" },
-  { key: "download" },
-  { key: "profile" },
-  { key: "settings" },
-];
+export interface MobileNavTile {
+  key: string;
+  label?: string;
+  href?: string;
+  icon: LucideIcon;
+  children?: { href: string; label: string; icon: LucideIcon }[];
+}
+
+export interface MobileNavSpec {
+  root: string;
+  tabs: MobileNavTile[];
+  menu: MobileNavTile[];
+  mailHref?: string;
+}
 
 const TILE_COLORS: Record<string, string> = {
   wards: "#bae6fd",
@@ -55,30 +51,24 @@ const TILE_COLORS: Record<string, string> = {
   download: "#e9d5ff",
   profile: "#fbcfe8",
   settings: "#fca5a5",
+  overview: "#bfdbfe",
+  patients: "#a7f3d0",
+  appointments: "#ddd6fe",
+  pharmacy: "#fcd34d",
+  lab: "#bae6fd",
+  billing: "#99f6e4",
+  prescriptions: "#fecdd3",
+  "lab-results": "#bae6fd",
+  records: "#c7d2fe",
+  family: "#a5f3fc",
+  notifications: "#e2e8f0",
+  "internal-mail": "#fed7aa",
 };
 
-export default function MobileNav({
-  role,
-  moduleAccess,
-}: {
-  role: StaffRole;
-  moduleAccess?: ModuleAccess;
-}) {
+export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [openKey, setOpenKey] = useState<string | null>(null);
-
-  const items = useMemo(() => navForRole(role, moduleAccess), [role, moduleAccess]);
-
-  const index = useMemo(() => {
-    const top = new Map<string, NavItem>();
-    const kids = new Map<string, NavItem>();
-    for (const item of items) {
-      top.set(item.key, item);
-      for (const child of item.children ?? []) kids.set(child.key, child);
-    }
-    return { top, kids };
-  }, [items]);
 
   useEffect(() => {
     setOpen(false);
@@ -97,19 +87,12 @@ export default function MobileNav({
   }, []);
 
   const isActive = (href: string) =>
-    href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+    href === spec.root ? pathname === spec.root : pathname.startsWith(href);
 
-  const tabs = TAB_KEYS.map((k) => index.top.get(k)).filter((t): t is NavItem => Boolean(t));
+  const tabs = spec.tabs.filter((t) => Boolean(t.href));
 
-  const rosterChild = index.kids.get("hr-roster");
-  const menu: NavItem[] = MENU_SPEC.map((spec) => {
-    if (spec.key === "roster") return rosterChild ? { ...rosterChild, label: "Roster" } : null;
-    const item = index.top.get(spec.key) ?? null;
-    if (item && spec.label) return { ...item, label: spec.label };
-    return item;
-  }).filter((t): t is NavItem => Boolean(t));
-
-  const groupTiles = (item: NavItem) => (item.children && item.children.length > 0 ? item.children : null);
+  const groupTiles = (item: MobileNavTile) =>
+    item.children && item.children.length > 0 ? item.children : null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 md:hidden">
@@ -141,7 +124,7 @@ export default function MobileNav({
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin] [scrollbar-color:#2c3849_transparent]">
           <div className="grid grid-cols-3 gap-y-1.5 gap-x-2">
-            {menu.map((item) => {
+            {spec.menu.map((item) => {
               const Icon = item.icon;
               const children = groupTiles(item);
               const expanding = openKey === item.key;
@@ -167,7 +150,7 @@ export default function MobileNav({
                     </button>
                   ) : (
                     <Link
-                      href={item.href}
+                      href={item.href!}
                       onClick={() => {
                         setOpen(false);
                         setOpenKey(null);
@@ -181,7 +164,7 @@ export default function MobileNav({
                         <Icon size={22} aria-hidden="true" />
                       </span>
                       <span className="text-center text-[10px] leading-tight text-[var(--color-foreground)]">{item.label}</span>
-                      {item.href === "/app/mail" && (
+                      {spec.mailHref && item.href === spec.mailHref && (
                         <span className="-mt-1">
                           <UnreadMailBadge />
                         </span>
@@ -194,7 +177,7 @@ export default function MobileNav({
           </div>
 
           {/* group children chips */}
-          {menu.some((m) => m.children && m.children.length > 0) && (
+          {spec.menu.some((m) => m.children && m.children.length > 0) && (
             <div
               className={`grid transition-all duration-200 ${
                 openKey ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
@@ -202,7 +185,7 @@ export default function MobileNav({
             >
               <div className="overflow-hidden">
                 {(() => {
-                  const active = menu.find((m) => m.key === openKey);
+                  const active = spec.menu.find((m) => m.key === openKey);
                   if (!active?.children) return null;
                   return (
                     <div className="flex flex-wrap gap-1.5 px-1 pt-2.5 pb-1">
@@ -242,11 +225,11 @@ export default function MobileNav({
         <div className="flex min-w-0 flex-1">
           {tabs.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.href);
+            const active = isActive(item.href!);
             return (
               <Link
                 key={item.key}
-                href={item.href}
+                href={item.href!}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 pb-1.5 pt-2.5 transition-colors duration-150 active:scale-[0.94] ${
@@ -309,4 +292,122 @@ export default function MobileNav({
       </nav>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Staff spec: fed by navForRole (role gates + module_access grants).  */
+/* ------------------------------------------------------------------ */
+
+const TAB_KEYS = ["overview", "patients", "appointments", "pharmacy", "lab", "billing"] as const;
+
+const MENU_SPEC: { key: string; label?: string }[] = [
+  { key: "wards", label: "Ward" },
+  { key: "other-income" },
+  { key: "staff" },
+  { key: "hr", label: "Human Resources" },
+  { key: "payroll" },
+  { key: "leave" },
+  { key: "roster", label: "Roster" },
+  { key: "mail" },
+  { key: "chats", label: "Chat" },
+  { key: "reports" },
+  { key: "financial-reports" },
+  { key: "audit-logs" },
+  { key: "account", label: "Accounts" },
+  { key: "subscription" },
+  { key: "download" },
+  { key: "profile" },
+  { key: "settings" },
+];
+
+export default function MobileNav({
+  role,
+  moduleAccess,
+}: {
+  role: StaffRole;
+  moduleAccess?: ModuleAccess;
+}) {
+  const items = useMemo(() => navForRole(role, moduleAccess), [role, moduleAccess]);
+
+  const index = useMemo(() => {
+    const top = new Map<string, NavItem>();
+    const kids = new Map<string, NavItem>();
+    for (const item of items) {
+      top.set(item.key, item);
+      for (const child of item.children ?? []) kids.set(child.key, child);
+    }
+    return { top, kids };
+  }, [items]);
+
+  const tabs = TAB_KEYS.map((k) => index.top.get(k)).filter((t): t is NavItem => Boolean(t));
+
+  const rosterChild = index.kids.get("hr-roster");
+  const menu: NavItem[] = MENU_SPEC.map((spec) => {
+    if (spec.key === "roster") return rosterChild ? { ...rosterChild, label: "Roster" } : null;
+    const item = index.top.get(spec.key) ?? null;
+    if (item && spec.label) return { ...item, label: spec.label };
+    return item;
+  }).filter((t): t is NavItem => Boolean(t));
+
+  const spec: MobileNavSpec = { root: "/app", tabs, menu, mailHref: "/app/mail" };
+  return <MobileNavBar spec={spec} />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Patient spec: fed by PATIENT_NAV_ITEMS + account/download pages.    */
+/* ------------------------------------------------------------------ */
+
+const PATIENT_TAB_KEYS = ["overview", "appointments", "billing", "lab-results", "chats", "internal-mail"] as const;
+
+const PATIENT_MENU: { key: string; label?: string; href?: string; icon?: LucideIcon }[] = [
+  { key: "prescriptions" },
+  { key: "records", label: "Medical Records" },
+  { key: "family" },
+  { key: "notifications" },
+  { key: "profile" },
+  { key: "account", label: "Account", href: "/patient/account", icon: UserCog },
+  { key: "download", label: "Download App", href: "/patient/download", icon: Download },
+];
+
+export function PatientMobileNav() {
+  const index = useMemo(() => {
+    const map = new Map<string, MobileNavTile>();
+    for (const item of PATIENT_NAV_ITEMS) {
+      const key = item.href.replace("/patient", "").replace(/^\//, "") || "overview";
+      map.set(key, { key, label: item.label, href: item.href, icon: item.icon });
+    }
+    return map;
+  }, []);
+
+  const tabs = PATIENT_TAB_KEYS.map((k) => index.get(k)).filter(
+    (t): t is MobileNavTile => Boolean(t),
+  );
+
+  const menu: MobileNavTile[] = PATIENT_MENU.flatMap((spec) => {
+    const base = index.get(spec.key);
+    if (!base) {
+      if (spec.href && spec.icon) {
+        return [
+          {
+            key: spec.key,
+            label: spec.label ?? spec.key,
+            href: spec.href,
+            icon: spec.icon,
+          },
+        ];
+      }
+      return [];
+    }
+    return [
+      {
+        ...base,
+        label: spec.label ?? base.label,
+        href: spec.href ?? base.href,
+        icon: spec.icon ?? base.icon,
+      },
+    ];
+  });
+
+  const spec: MobileNavSpec = { root: "/patient", tabs, menu, mailHref: "/patient/internal-mail" };
+  return <MobileNavBar spec={spec} />;
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
+import { PatientMobileNav } from "@/components/dashboard/mobile-nav";
 import NotificationsBell from "@/components/notifications-bell";
 import PatientUserMenu from "@/components/patient/patient-user-menu";
 import { SkyCareMark } from "@/components/landing/skycare-logo";
@@ -143,8 +144,9 @@ export default function PatientShell({
             <PatientUserMenu userName={userName} avatarUrl={avatarUrl} />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 pb-28 sm:px-6 md:pb-6 lg:px-8">{children}</main>
       </div>
+      <PatientMobileNav />
     </div>
   );
 }
