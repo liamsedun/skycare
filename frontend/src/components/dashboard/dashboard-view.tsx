@@ -92,7 +92,15 @@ const tooltipStyle = {
   boxShadow: "0 10px 15px rgb(0 0 0 / 0.08)",
 };
 
-export default function DashboardView({ myRole, fullName }: { myRole?: string; fullName?: string }) {
+export default function DashboardView({
+  myRole,
+  fullName,
+  avatarUrl,
+}: {
+  myRole?: string;
+  fullName?: string;
+  avatarUrl?: string | null;
+}) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -177,7 +185,7 @@ export default function DashboardView({ myRole, fullName }: { myRole?: string; f
             <div className="mt-4 flex flex-wrap gap-2.5">
               <Link
                 href="/app/patients"
-                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[var(--color-primary-dark)] shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[#075985] shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
               >
                 <UserPlus size={16} aria-hidden="true" /> Register Patient
               </Link>
@@ -196,8 +204,19 @@ export default function DashboardView({ myRole, fullName }: { myRole?: string; f
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-lg font-bold ring-2 ring-white/40">
-              {initials(fullName || "")}
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/20 ring-2 ring-white/40">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <span className="text-lg font-bold">{initials(fullName || "")}</span>
+              )}
             </div>
             <div>
               <p className="text-sm font-semibold">{fullName || roleLabel}</p>

@@ -21,7 +21,7 @@ export default async function OverviewPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("full_name")
+    .select("full_name, avatar_url")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
@@ -29,6 +29,7 @@ export default async function OverviewPage() {
     <DashboardView
       myRole={myRole}
       fullName={profile?.full_name ?? user?.email ?? "there"}
+      avatarUrl={profile?.avatar_url ?? null}
     />
   );
 }

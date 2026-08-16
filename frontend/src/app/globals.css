@@ -509,3 +509,50 @@ a {
 .animate-rise { animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes pop { 0% { transform: scale(0.4); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 .animate-pop { animation: pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ------------------------------------------------------------------ */
+/* Mobile bottom-nav: tab pill / pop / glow / dot + stagger entrance   */
+/* ------------------------------------------------------------------ */
+@keyframes tab-pill {
+  from { transform: translateX(-50%) scaleX(0.4); opacity: 0; }
+  to { transform: translateX(-50%) scaleX(1); opacity: 1; }
+}
+.animate-tab-pill { animation: tab-pill 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes tab-pop {
+  0% { transform: scale(0.6) translateY(6px); opacity: 0.4; }
+  60% { transform: scale(1.18) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.animate-tab-pop { animation: tab-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes tab-glow {
+  from { transform: translateX(-50%) scale(0.4); opacity: 0; }
+  to { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+.animate-tab-glow { animation: tab-glow 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes tab-dot {
+  from { transform: scale(0); opacity: 0; }
+  70% { transform: scale(2.8); opacity: 1; }
+  to { transform: scale(2); opacity: 1; }
+}
+.animate-tab-dot { animation: tab-dot 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes nav-item {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-nav-item { animation: nav-item 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes fab-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+.animate-fab-ring { animation: fab-ring 2.6s ease-out infinite; }
+@keyframes fab-sheen {
+  0% { transform: translateX(-160%) skewX(-24deg); }
+  100% { transform: translateX(320%) skewX(-24deg); }
+}
+.animate-fab-sheen { animation: fab-sheen 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-tab-pill, .animate-tab-pop, .animate-tab-glow, .animate-tab-dot,
+  .animate-nav-item, .animate-fab-ring, .animate-fab-sheen {
+    animation: none;
+  }
+}

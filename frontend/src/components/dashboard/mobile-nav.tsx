@@ -135,10 +135,10 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                       type="button"
                       onClick={() => setOpenKey(expanding ? null : item.key)}
                       aria-expanded={expanding}
-                      className="flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
+                      className="group flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
                     >
                       <span
-                        className="relative grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430]"
+                        className="relative grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105"
                         style={{ backgroundColor: TILE_COLORS[item.key] ?? "#e2e8f0" }}
                       >
                         <Icon size={22} aria-hidden="true" />
@@ -155,10 +155,10 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                         setOpen(false);
                         setOpenKey(null);
                       }}
-                      className="flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
+                      className="group flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
                     >
                       <span
-                        className="grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430]"
+                        className="grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105"
                         style={{ backgroundColor: TILE_COLORS[item.key] ?? "#e2e8f0" }}
                       >
                         <Icon size={22} aria-hidden="true" />
@@ -223,7 +223,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
         className="relative z-10 flex items-end gap-1 border-t border-[var(--color-border)] bg-[var(--color-background)] px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))]"
       >
         <div className="flex min-w-0 flex-1">
-          {tabs.map((item) => {
+          {tabs.map((item, i) => {
             const Icon = item.icon;
             const active = isActive(item.href!);
             return (
@@ -232,15 +232,38 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                 href={item.href!}
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
-                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 pb-1.5 pt-2.5 transition-colors duration-150 active:scale-[0.94] ${
+                style={{ animationDelay: `${i * 60}ms` }}
+                className={`group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 pb-1.5 pt-2.5 transition-colors duration-150 active:scale-[0.94] animate-nav-item ${
                   active ? "text-[var(--color-primary)]" : "text-[var(--color-muted-fg)]"
                 }`}
               >
-                <Icon size={22} aria-hidden="true" />
+                <span className="relative grid h-8 w-full place-items-center">
+                  {active && (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-y-0 left-1/2 w-[46px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/20 ring-1 ring-[var(--color-primary)]/35 animate-tab-pill"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="absolute inset-y-1 left-1/2 w-8 -translate-x-1/2 rounded-full bg-[var(--color-primary)]/45 blur-[6px] animate-tab-glow"
+                      />
+                    </>
+                  )}
+                  <Icon
+                    size={22}
+                    aria-hidden="true"
+                    className={`relative z-10 transition-transform duration-300 ${
+                      active
+                        ? "animate-tab-pop drop-shadow-[0_1px_6px_rgba(0,0,0,0.25)]"
+                        : "group-hover:-translate-y-0.5 group-hover:scale-110"
+                    }`}
+                  />
+                </span>
                 <span
                   aria-hidden="true"
-                  className={`h-1 w-1 rounded-full transition-colors duration-150 ${
-                    active ? "bg-[var(--color-primary)]" : "bg-transparent"
+                  className={`h-1 w-1 rounded-full transition-all duration-300 ${
+                    active ? "bg-[var(--color-primary)] animate-tab-dot" : "bg-transparent group-hover:bg-[var(--color-primary)]/40"
                   }`}
                 />
               </Link>
@@ -260,9 +283,21 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
               setOpenKey(null);
             }}
             className={`relative grid h-14 w-14 -translate-y-[18px] place-items-center rounded-full bg-[linear-gradient(145deg,#f5b840,#df9220)] text-[#191304] shadow-[0_10px_24px_rgba(240,169,58,0.4),0_3px_8px_rgba(0,0,0,0.45)] transition-transform duration-200 active:scale-95 ${
-              open ? "-rotate-90" : ""
+              open ? "-rotate-90" : "hover:-translate-y-[21px]"
             }`}
           >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none absolute inset-0 rounded-full border-2 border-[#f5b840]/60 animate-fab-ring transition-opacity duration-300 ${
+                open ? "opacity-0" : "opacity-100"
+              }`}
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-full"
+            >
+              <span className="absolute inset-y-0 w-1/3 bg-white/25 blur-[3px] animate-fab-sheen" />
+            </span>
             <span
               className={`absolute grid place-items-center transition-all duration-200 ${
                 open ? "scale-50 opacity-0" : "scale-100 opacity-100"
