@@ -73,13 +73,14 @@ export default function DownloadView() {
   const [subscribed, setSubscribed] = useState(false);
   const [deviceName, setDeviceName] = useState("This device");
   const [busy, setBusy] = useState(false);
+  const [iosHint, setIosHint] = useState<"install" | "old" | null>(null);
 
   useEffect(() => {
-    setAlreadyStandalone(
+    const isStandaloneNow =
       typeof window !== "undefined" &&
-        (window.matchMedia("(display-mode: standalone)").matches ||
-          (window.navigator as unknown as { standalone?: boolean }).standalone === true)
-    );
+      (window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true);
+    setAlreadyStandalone(isStandaloneNow);
 
     const onPrompt = (e: Event) => {
       e.preventDefault();
@@ -90,6 +91,17 @@ export default function DownloadView() {
     window.addEventListener("appinstalled", onInstalled);
 
     if ("Notification" in window) setPermission(Notification.permission);
+
+    const ua = navigator.userAgent;
+    const isIos =
+      /iPhone|iPad|iPod/.test(ua) ||
+      (ua.includes("Mac") && navigator.maxTouchPoints > 1);
+    const iosMajor = parseInt(ua.match(/OS (\d+)/)?.[1] ?? "0", 10);
+    const iosMinor = parseInt(ua.match(/OS \d+_(\d+)/)?.[1] ?? "0", 10);
+    if (isIos) {
+      if (!isStandaloneNow) setIosHint("install");
+      else if (iosMajor < 16 || (iosMajor === 16 && iosMinor < 4)) setIosHint("old");
+    }
 
     fetch("/api/notifications/vapid-public-key", { cache: "no-store" })
       .then((r) => r.json())
@@ -114,6 +126,25 @@ export default function DownloadView() {
     if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
     setBusy(true);
     try {
+      const ua = navigator.userAgent;
+      const isIos =
+        /iPhone|iPad|iPod/.test(ua) ||
+        (ua.includes("Mac") && navigator.maxTouchPoints > 1);
+      const standaloneNow =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+      const iosMajor = parseInt(ua.match(/OS (\d+)/)?.[1] ?? "0", 10);
+      const iosMinor = parseInt(ua.match(/OS \d+_(\d+)/)?.[1] ?? "0", 10);
+
+      if (isIos && !standaloneNow) {
+        setIosHint("install");
+        return;
+      }
+      if (isIos && (iosMajor < 16 || (iosMajor === 16 && iosMinor < 4))) {
+        setIosHint("old");
+        return;
+      }
+
       const perm = await Notification.requestPermission();
       setPermission(perm);
       if (perm !== "granted") return;
@@ -235,7 +266,11 @@ export default function DownloadView() {
           {PLATFORM_STEPS.map((p) => {
             const Icon = p.icon;
             return (
-              <details key={p.key} className="group rounded-lg border border-[var(--color-border)] p-3">
+              <details
+                key={p.key}
+                open={iosHint === "install" && p.key === "iphone"}
+                className="group rounded-lg border border-[var(--color-border)] p-3"
+              >
                 <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-foreground)]">
                   <Icon size={18} className="text-[var(--color-primary)]" aria-hidden="true" />
                   {p.label}
@@ -314,10 +349,23 @@ export default function DownloadView() {
               push alerts aren&apos;t enabled. In-app notifications and email still work.
             </p>
           )}
-          {permission === "denied" && (
+          {iosHint === "install" && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-amber-700">
+              On an iPhone, push notifications only work from the installed SkyCare app, not
+              inside Safari. Tap the Share button below and choose “Add to Home Screen”, then
+              open SkyCare from your home screen and enable push there.
+            </p>
+          )}
+          {iosHint === "old" && (
+            <p className="rounded-lg bg-amber-50 px-3 py-2 text-amber-700">
+              Web push notifications need iOS 16.4 or later on iPhone. Please update your
+              iPhone in Settings and try again.
+            </p>
+          )}
+          {permission === "denied" && !iosHint && (
             <p className="rounded-lg bg-rose-50 px-3 py-2 text-rose-700">
-              Notification permission is blocked in this browser. Enable it in your browser
-              settings.
+              Notification permission is blocked in this browser: open your browser&apos;s site
+              settings and set Notifications to “Allow”, then try again.
             </p>
           )}
         </div>

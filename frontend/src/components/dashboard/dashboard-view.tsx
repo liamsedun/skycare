@@ -11,9 +11,11 @@ import {
   FlaskConical,
   Loader,
   ReceiptText,
+  Sparkles,
   Stethoscope,
   TrendingDown,
   TrendingUp,
+  UserPlus,
   Users,
 } from "lucide-react";
 import {
@@ -31,7 +33,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ngn, formatTime } from "@/lib/auth";
+import { ngn, formatTime, initials, ROLE_LABELS } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
 import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
 
@@ -90,7 +92,7 @@ const tooltipStyle = {
   boxShadow: "0 10px 15px rgb(0 0 0 / 0.08)",
 };
 
-export default function DashboardView({ myRole }: { myRole?: string }) {
+export default function DashboardView({ myRole, fullName }: { myRole?: string; fullName?: string }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,15 +140,86 @@ export default function DashboardView({ myRole }: { myRole?: string }) {
     };
   }, [data]);
 
+  const greetingMap: Record<number, string> = {
+    0: "Good evening", 1: "Good evening", 2: "Good evening", 3: "Good evening", 4: "Good evening",
+    5: "Good morning", 6: "Good morning", 7: "Good morning", 8: "Good morning", 9: "Good morning",
+    10: "Good morning", 11: "Good morning", 12: "Good afternoon", 13: "Good afternoon", 14: "Good afternoon",
+    15: "Good afternoon", 16: "Good afternoon", 17: "Good evening", 18: "Good evening", 19: "Good evening",
+    20: "Good evening", 21: "Good evening", 22: "Good evening", 23: "Good evening",
+  };
+  const greeting = greetingMap[new Date().getHours()] ?? "Hello";
+  const firstName = useMemo(() => (fullName || "there").split(/\s+/)[0], [fullName]);
+  const roleLabel = (myRole && ROLE_LABELS[myRole as keyof typeof ROLE_LABELS]) || myRole || "Staff";
+
   return (
     <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--color-primary)] bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-primary-dark)] to-[#0b2447] p-6 text-white shadow-[var(--shadow-md)] dark:from-[var(--color-primary)] dark:via-[#b8873a] dark:to-[#3d2c0d] sm:p-8">
+        <div
+          className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -bottom-20 right-24 h-40 w-40 rounded-full bg-black/10 blur-xl"
+          aria-hidden="true"
+        />
+        <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+          <div>
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/80">
+              <Sparkles size={14} aria-hidden="true" /> Staff Dashboard
+            </p>
+            <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
+              {greeting}, {firstName} 👋
+            </h1>
+            <p className="mt-1 max-w-md text-sm text-white/85">
+              Welcome back — here&apos;s a live overview of patients, appointments, revenue and
+              operations.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              <Link
+                href="/app/patients"
+                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[var(--color-primary-dark)] shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                <UserPlus size={16} aria-hidden="true" /> Register Patient
+              </Link>
+              <Link
+                href="/app/appointments"
+                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                <CalendarPlus size={16} aria-hidden="true" /> Book Appointment
+              </Link>
+              <Link
+                href="/app/pharmacy"
+                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-sm font-semibold text-white ring-1 ring-white/30 backdrop-blur transition-transform duration-200 hover:-translate-y-0.5"
+              >
+                <FlaskConical size={16} aria-hidden="true" /> Pharmacy
+              </Link>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-lg font-bold ring-2 ring-white/40">
+              {initials(fullName || "")}
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{fullName || roleLabel}</p>
+              <p className="text-xs text-white/80">{roleLabel}</p>
+              <p className="mt-0.5 text-[11px] text-white/70">
+                {new Intl.DateTimeFormat("en-NG", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }).format(new Date())}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Hospital Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            A live overview of patients, appointments, revenue and operations.
+          <h2 className="text-lg font-bold text-[var(--color-foreground)]">Overview</h2>
+          <p className="mt-0.5 text-sm text-[var(--color-muted-fg)]">
+            Key numbers for the selected reporting period.
           </p>
         </div>
         <label className="flex items-center gap-2 text-sm text-[var(--color-muted-fg)]">
