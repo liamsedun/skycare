@@ -714,7 +714,7 @@ export default function RosterView() {
       {/* Schedule Duty modal */}
       {showSchedule && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Schedule duty"
@@ -845,7 +845,7 @@ export default function RosterView() {
       {/* Edit shift modal */}
       {editShift && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Edit shift"

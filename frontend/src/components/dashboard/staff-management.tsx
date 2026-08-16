@@ -939,12 +939,12 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
       {/* Create user modal */}
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Add admin or staff"
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">
                 Add Admin / Staff
@@ -1090,12 +1090,12 @@ onClick={() => {
       {/* Edit staff details modal */}
       {editTarget?.staff && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Edit staff details"
         >
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">
                 Edit details — {editTarget.full_name}
@@ -1325,12 +1325,12 @@ onClick={() => {
       {/* Availability modal */}
       {availTarget?.staff && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label={`Availability for ${availTarget.full_name}`}
         >
-          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">
                 Availability — {availTarget.full_name}
@@ -1415,12 +1415,12 @@ onClick={() => {
       {/* Leave modal */}
       {leaveTarget?.staff && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label={`Leave for ${leaveTarget.full_name}`}
         >
-          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">
                 {dutyStatusOf(leaveTarget) === "on_leave"
@@ -1500,12 +1500,12 @@ onClick={() => {
       {/* Change role modal */}
       {roleTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label={`Change role for ${roleTarget.full_name}`}
         >
-          <div className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold">
                 Change role — {roleTarget.full_name}
