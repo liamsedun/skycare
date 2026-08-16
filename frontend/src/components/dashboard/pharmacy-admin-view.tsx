@@ -12,6 +12,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import FilterBar from "@/components/filters/filter-bar";
+import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
 // Pharmacy Admin — catalogue administration for hospital admins:
@@ -501,7 +502,7 @@ interface SupplierRow {
   createdAt: string | null;
 }
 
-export function SuppliersTab() {
+export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<SupplierRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -609,10 +610,13 @@ export function SuppliersTab() {
             templateFilename="suppliers-import-template.csv"
             onImport={importSuppliers}
             onImported={() => void load()}
+            allowImport={!viewOnly}
           />
+          {!viewOnly && (
           <button type="button" onClick={() => setModal({ open: true, supplier: null })} className={btnPrimary}>
             <Plus size={14} aria-hidden="true" /> Add supplier
           </button>
+          )}
         </div>
       </div>
 
@@ -648,6 +652,8 @@ export function SuppliersTab() {
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.paymentTerms ?? "—"}</td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex justify-end gap-1">
+                      {!viewOnly && (
+                      <>
                       <button type="button" onClick={() => setModal({ open: true, supplier: s })} className={btnGhost}>
                         <Pencil size={13} aria-hidden="true" /> Edit
                       </button>
@@ -666,6 +672,8 @@ export function SuppliersTab() {
                       >
                         <Archive size={13} aria-hidden="true" />
                       </button>
+                      </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -772,7 +780,7 @@ interface OverrideRow {
 interface BranchRow { id: string; name: string; code: string | null; isMain: boolean; isActive: boolean }
 interface DrugOption { id: string; name: string; dosage: string | null; category: string; unitPrice: number }
 
-export function PricesTab() {
+export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [overrides, setOverrides] = useState<OverrideRow[]>([]);
   const [branches, setBranches] = useState<BranchRow[]>([]);
   const [search, setSearch] = useState("");
@@ -841,7 +849,8 @@ export function PricesTab() {
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className={`grid gap-5 ${viewOnly ? "lg:grid-cols-1" : "lg:grid-cols-2"}`}>
+      {!viewOnly && (
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Set a branch price</h3>
         <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
@@ -906,6 +915,7 @@ export function PricesTab() {
           <Tag size={14} aria-hidden="true" /> {busy ? "Saving…" : "Save override"}
         </button>
       </div>
+      )}
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Active overrides</h3>
@@ -928,6 +938,7 @@ export function PricesTab() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="font-semibold text-[var(--color-primary)]">{ngn(o.unitPrice)}</span>
+                  {!viewOnly && (
                   <button
                     type="button"
                     className="focus-ring rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-red-50 hover:text-red-600"
@@ -939,6 +950,7 @@ export function PricesTab() {
                   >
                     <Trash2 size={14} />
                   </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -1175,7 +1187,8 @@ export function ImportTab() {
 // ---------------------------------------------------------------------------
 // Branch administration (prices + branch manager) lives on /app/pharmacy/prices
 // — admin-gated, and the natural home for everything branch-related.
-export function BranchAdminTabs() {
+export function BranchAdminTabs({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<"prices" | "branches">("prices");
 
   return (
@@ -1202,7 +1215,7 @@ export function BranchAdminTabs() {
           <Store size={14} aria-hidden="true" /> Branches
         </button>
       </div>
-      {tab === "prices" ? <PricesTab /> : <BranchesTab />}
+      {tab === "prices" ? <PricesTab viewOnly={viewOnly} /> : <BranchesTab viewOnly={viewOnly} />}
     </div>
   );
 }
@@ -1220,7 +1233,7 @@ interface BranchRow {
   isActive: boolean;
 }
 
-export function BranchesTab() {
+export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<BranchRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -1320,6 +1333,7 @@ export function BranchesTab() {
         <p className="text-sm text-[var(--color-muted-fg)]">
           Branch staff only see their branch&apos;s stock and prices. The main branch always stays.
         </p>
+        {!viewOnly && (
         <button
           type="button"
           onClick={() => setModal({ open: true, branch: null })}
@@ -1328,6 +1342,7 @@ export function BranchesTab() {
         >
           <Plus size={14} aria-hidden="true" /> Add branch
         </button>
+        )}
       </div>
 
       {err && (
@@ -1408,6 +1423,8 @@ export function BranchesTab() {
               )}
 
               <div className="mt-4 flex items-center gap-2">
+                {!viewOnly && (
+                <>
                 <button
                   type="button"
                   onClick={() => setModal({ open: true, branch: b })}
@@ -1433,6 +1450,8 @@ export function BranchesTab() {
                 >
                   <Trash2 size={12} aria-hidden="true" /> Delete
                 </button>
+                </>
+                )}
               </div>
             </div>
           ))}

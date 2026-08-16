@@ -1,15 +1,12 @@
-import { withStaff, ok, ValidationError, ForbiddenError, requireTenant } from "@/lib/api-utils";
-import { isAdminRole } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logView } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/subscription — tenant subscription & billing (admin only)
+// GET /api/subscription — tenant subscription & billing (staff with module grant)
 export const GET = withStaff(async (req, ctx) => {
-  if (!isAdminRole(ctx.role)) {
-    throw new ForbiddenError("Only administrators can view subscription billing");
-  }
+  await requireModuleLevel(ctx, "subscription");
   const tenantId = requireTenant(ctx);
 
   const [tenantRes, invoicesRes] = await Promise.all([

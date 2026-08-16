@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
+import { requireModulePage } from "@/lib/module-guard";
 import AdmissionsView from "@/components/dashboard/admissions-view";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +16,12 @@ export default async function AdmissionsPage() {
 
   if (!user) redirect("/login?redirect=/app/wards/admissions");
 
+  const accessLevel = await requireModulePage(supabase, user, "wards-admissions", WARD_ROLES);
   const role = getClaims(user).role as StaffRole | undefined;
-  if (!WARD_ROLES.includes(role ?? "")) redirect("/app");
 
   return (
     <div className="space-y-6">
-      <AdmissionsView />
+      <AdmissionsView accessLevel={accessLevel} myRole={role} />
     </div>
   );
 }

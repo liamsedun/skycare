@@ -1,4 +1,4 @@
-import { withAuth, okPaginated, ok, ValidationError, ForbiddenError, requireTenant, sanitizeLike, requireModuleLevel } from "@/lib/api-utils";
+import { withAuth, withStaff, okPaginated, ok, ValidationError, ForbiddenError, requireTenant, sanitizeLike, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
@@ -35,10 +35,9 @@ export const GRANTABLE_ROLES: StaffRole[] = [
 ];
 
 // GET /api/admin/users?role=&search=&is_active=&department=&specialization=&page=&pageSize=
-export const GET = withAuth(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
-    throw new ForbiddenError("Admin access required");
-  }
+// Staff-readable via module grants ("staff" != none); write routes stay admin/full-gated.
+export const GET = withStaff(async (req, ctx) => {
+  await requireModuleLevel(ctx, "staff");
   const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
   const role = resolveParam(req.nextUrl.searchParams.get("role"));
   const search = resolveParam(req.nextUrl.searchParams.get("search"))?.trim();

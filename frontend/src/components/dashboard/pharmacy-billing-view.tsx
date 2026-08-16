@@ -10,6 +10,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { useTenantBranding } from "@/lib/use-tenant-branding";
+import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
 // Pharmacy Billing — sales invoices, multi-method payments, insurance claims,
@@ -34,7 +35,8 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Receipt }> = [
   { id: "report", label: "Daily report", icon: Banknote },
 ];
 
-export default function PharmacyBillingView() {
+export default function PharmacyBillingView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<Tab>("sales");
 
   return (
@@ -64,11 +66,11 @@ export default function PharmacyBillingView() {
         </div>
       </div>
 
-      {tab === "sales" && <SalesTab />}
-      {tab === "payments" && <PaymentsTab />}
-      {tab === "claims" && <ClaimsTab />}
-      {tab === "coverage" && <CoverageTab />}
-      {tab === "report" && <ReportTab />}
+      {tab === "sales" && <SalesTab viewOnly={viewOnly} />}
+      {tab === "payments" && <PaymentsTab viewOnly={viewOnly} />}
+      {tab === "claims" && <ClaimsTab viewOnly={viewOnly} />}
+      {tab === "coverage" && <CoverageTab viewOnly={viewOnly} />}
+      {tab === "report" && <ReportTab viewOnly={viewOnly} />}
     </div>
   );
 }
@@ -131,7 +133,7 @@ interface InvoiceRow {
 interface DrugOption { id: string; name: string; unitPrice: number; dosage: string | null; inStock: number; priceSource?: "branch_override" | "base_override" | "catalog" | "wholesale" }
 interface PatientOption { id: string; label: string }
 
-function SalesTab() {
+function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<InvoiceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -237,13 +239,18 @@ function SalesTab() {
           importColumns={SALES_COLUMNS}
           templateFilename="pharmacy-sales-import-template.csv"
           onImport={importSales}
+          allowImport={!viewOnly}
         />
+        {!viewOnly && (
+        <>
         <button type="button" onClick={() => setConvertOpen(true)} className={btnGhost}>
           <FileText size={14} aria-hidden="true" /> Convert prescription
         </button>
         <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
           <Plus size={14} aria-hidden="true" /> New sale
         </button>
+        </>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
@@ -289,7 +296,7 @@ function SalesTab() {
 
       {open && <NewSaleModal onClose={() => setOpen(false)} onSaved={() => { setOpen(false); void load(); }} />}
       {convertOpen && <ConvertSaleModal onClose={() => setConvertOpen(false)} onSaved={() => { setConvertOpen(false); void load(); }} />}
-      {detail && <InvoiceDetail invoice={detail} onClose={() => setDetail(null)} onChanged={() => { void fetchDetail(detail.id); void load(); }} />}
+      {detail && <InvoiceDetail invoice={detail} onClose={() => setDetail(null)} onChanged={() => { void fetchDetail(detail.id); void load(); }} viewOnly={viewOnly} />}
     </div>
   );
 }
@@ -862,7 +869,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
 // ---------------------------------------------------------------------------
 // INVOICE DETAIL + PAYMENTS
 // ---------------------------------------------------------------------------
-function InvoiceDetail({ invoice, onClose, onChanged }: { invoice: InvoiceRow; onClose: () => void; onChanged: () => void }) {
+function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invoice: InvoiceRow; onClose: () => void; onChanged: () => void; viewOnly?: boolean }) {
   const [payments, setPayments] = useState<Array<{ id: string; method: string; amount: number; reference: string | null; received_at: string }>>([]);
   const [splits, setSplits] = useState<Array<{ method: string; amount: string; reference: string }>>([{ method: "cash", amount: "", reference: "" }]);
   const [busy, setBusy] = useState(false);
@@ -1038,7 +1045,7 @@ function InvoiceDetail({ invoice, onClose, onChanged }: { invoice: InvoiceRow; o
           </div>
         )}
 
-        {outstanding > 0.01 && (
+        {!viewOnly && outstanding > 0.01 && (
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-slate-50 p-3">
             <h4 className="text-xs font-bold uppercase tracking-wide text-[var(--color-muted-fg)]">Record payment</h4>
             <div className="mt-2 space-y-2">
@@ -1094,7 +1101,7 @@ interface PaymentRow {
   pharmacy_invoices: { invoice_number: string; patients: { first_name: string; last_name: string } | null } | null;
 }
 
-function PaymentsTab() {
+function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [ledger, setLedger] = useState<
@@ -1221,6 +1228,7 @@ function PaymentsTab() {
           templateFilename="pharmacy-payments-import-template.csv"
           onImport={importPayments}
           onImported={() => void load()}
+          allowImport={!viewOnly}
         />
       </div>
 
@@ -1314,7 +1322,7 @@ interface ClaimRow {
   pharmacy_invoices: { invoice_number: string; patients: { first_name: string; last_name: string } | null } | null;
 }
 
-function ClaimsTab() {
+function ClaimsTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<ClaimRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Array<{ id: string; invoice_number: string; total_amount: number }>>([]);
@@ -1413,13 +1421,16 @@ function ClaimsTab() {
           templateFilename="pharmacy-claims-import-template.csv"
           onImport={importClaims}
           onImported={() => void load()}
+          allowImport={!viewOnly}
         />
+        {!viewOnly && (
         <button type="button" onClick={async () => {
           const res = await fetch("/api/pharmacy/invoices?status=unpaid&pageSize=100", { cache: "no-store" });
           if (res.ok) { setInvoices((await res.json()).data ?? []); setOpen(true); }
         }} className={btnPrimary}>
           <Plus size={14} aria-hidden="true" /> New claim
         </button>
+        )}
       </div>
 
       {error && <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
@@ -1455,7 +1466,7 @@ function ClaimsTab() {
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{ngn(r.co_pay_amount)}</td>
                   <td className="px-4 py-2.5"><Badge value={r.status} /></td>
                   <td className="px-4 py-2.5 text-right">
-                    {(r.status === "pending" || r.status === "draft") && (
+                    {!viewOnly && (r.status === "pending" || r.status === "draft") && (
                       <div className="flex justify-end gap-1">
                         <button type="button" onClick={() => void process(r.id, "approved", r.claim_amount)} className={btnGhost}>
                           <CheckCircle2 size={13} aria-hidden="true" /> Approve
@@ -1583,7 +1594,7 @@ interface CoverageRow {
   pharmacy_drugs: { name: string } | null;
 }
 
-function CoverageTab() {
+function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<CoverageRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState("");
@@ -1706,7 +1717,8 @@ function CoverageTab() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
+    <div className={`grid gap-5 ${viewOnly ? "lg:grid-cols-1" : "lg:grid-cols-2"}`}>
+      {!viewOnly && (
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Add formulary rule</h3>
         <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
@@ -1776,6 +1788,7 @@ function CoverageTab() {
           {busy ? "Saving…" : "Save rule"}
         </button>
       </div>
+      )}
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1789,6 +1802,7 @@ function CoverageTab() {
             templateFilename="pharmacy-formulary-import-template.csv"
             onImport={importCoverage}
             onImported={() => void load()}
+            allowImport={!viewOnly}
           />
         </div>
         {loading ? (
@@ -1812,6 +1826,7 @@ function CoverageTab() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <ShieldCheck size={14} aria-hidden="true" className={r.is_covered ? "text-emerald-500" : "text-red-400"} />
+                  {!viewOnly && (
                   <button
                     type="button"
                     className="focus-ring rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-red-50 hover:text-red-600"
@@ -1823,6 +1838,7 @@ function CoverageTab() {
                   >
                     <X size={14} />
                   </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -1850,7 +1866,7 @@ interface DailyReport {
   top_drugs: Array<{ name: string; qty: number }>;
 }
 
-function ReportTab() {
+function ReportTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [report, setReport] = useState<DailyReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1932,6 +1948,7 @@ function ReportTab() {
           importColumns={REPORT_COLUMNS}
           templateFilename="pharmacy-daily-report-import-template.csv"
           onImport={importReport}
+          allowImport={!viewOnly}
         />
       </div>
 

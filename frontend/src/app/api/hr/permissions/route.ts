@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, ForbiddenError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, ForbiddenError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { isHrAdmin, hrHasPermission } from "@/lib/hr-perms";
 import type { NextRequest } from "next/server";
@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 // PUT /api/hr/permissions — update a role's matrix (HR admin, hr.permissions.manage).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (!isHrAdmin(ctx.role)) throw new ForbiddenError("HR admin access required");
+  if (!isHrAdmin(ctx.role)) await requireModuleLevel(ctx, "hr-staff");
   await ctx.svc.rpc("hr_seed_role_permissions", { p_tenant: tenantId });
 
   const { data, error } = await ctx.svc

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Package, Upload, Download, CheckCircle2, ChevronDown } from "lucide-react";
+import type { AccessLevel } from "@/lib/nav";
 import PharmacyStockView from "@/components/dashboard/pharmacy-stock-view";
 import { ImportTab } from "@/components/dashboard/pharmacy-admin-view";
 
@@ -14,7 +15,8 @@ import { ImportTab } from "@/components/dashboard/pharmacy-admin-view";
 // (CSV of the whole inventory) is the download action.
 // ============================================================================
 
-export default function PharmacyInventoryShell() {
+export default function PharmacyInventoryShell({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<"stock" | "import">("stock");
   const [menuOpen, setMenuOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -103,6 +105,7 @@ export default function PharmacyInventoryShell() {
                 className="absolute right-0 top-full z-30 mt-1.5 w-60 rounded-xl border border-[var(--color-border)] bg-white p-1.5 shadow-xl"
               >
                 <div className="flex gap-1 border-b border-[var(--color-border)] pb-1.5">
+                  {!viewOnly && (
                   <button
                     type="button"
                     role="menuitem"
@@ -112,6 +115,7 @@ export default function PharmacyInventoryShell() {
                   >
                     <Upload size={16} />
                   </button>
+                  )}
                   <button
                     type="button"
                     role="menuitem"
@@ -123,6 +127,7 @@ export default function PharmacyInventoryShell() {
                     <Download size={16} />
                   </button>
                 </div>
+                {!viewOnly && (
                 <button
                   type="button"
                   role="menuitem"
@@ -131,6 +136,7 @@ export default function PharmacyInventoryShell() {
                 >
                   <Upload size={14} aria-hidden="true" /> Bulk import
                 </button>
+                )}
                 <button
                   type="button"
                   role="menuitem"
@@ -147,7 +153,7 @@ export default function PharmacyInventoryShell() {
       </div>
 
       {tab === "stock" && <PharmacyStockView />}
-      {tab === "import" && <ImportTab />}
+      {tab === "import" && !viewOnly && <ImportTab />}
 
       {toast && (
         <div className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-lg">

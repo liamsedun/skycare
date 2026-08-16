@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Building2, Landmark, Package, ReceiptText, Zap } from "lucide-react";
 import { SuppliersTab } from "@/components/dashboard/pharmacy-admin-view";
 import PharmacyAiView from "@/components/dashboard/pharmacy-ai-view";
+import type { AccessLevel } from "@/lib/nav";
 import {
   BalancesTab,
   PurchaseOrdersTab,
@@ -25,7 +26,8 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export default function PharmacySuppliersProcurement() {
+export default function PharmacySuppliersProcurement({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<TabId>("balances");
 
   return (
@@ -66,7 +68,7 @@ export default function PharmacySuppliersProcurement() {
           <h2 className="flex items-center gap-2 text-sm font-bold text-[var(--color-foreground)]">
             <Building2 className="h-4 w-4 text-[var(--color-primary)]" /> Suppliers
           </h2>
-          <SuppliersTab />
+          <SuppliersTab viewOnly={viewOnly} />
         </section>
       )}
       {tab === "balances" && (

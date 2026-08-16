@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, ForbiddenError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { isHrAdmin, hrHasPermission } from "@/lib/hr-perms";
 import type { NextRequest } from "next/server";
 
@@ -13,7 +13,7 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export const GET = withStaff(async (req: NextRequest, ctx) => {
   const tenantId = requireTenant(ctx);
   if (!isHrAdmin(ctx.role) && !(await hrHasPermission(ctx.svc, tenantId, ctx.role, "hr.payroll.view"))) {
-    throw new ForbiddenError("You have no payroll access");
+    await requireModuleLevel(ctx, "hr-payroll");
   }
 
   const { data, error } = await ctx.svc

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/dashboard/sidebar";
 import Topbar from "@/components/dashboard/topbar";
+import MobileNav from "@/components/dashboard/mobile-nav";
 import type { StaffRole } from "@/lib/auth";
 import type { ModuleAccess } from "@/lib/nav";
 
@@ -49,9 +50,10 @@ export default function AppShell({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar userName={userName} role={role} tenantName={tenantName} tenantLogoUrl={tenantLogoUrl} avatarUrl={avatarUrl} onOpenSidebar={() => setMobileOpen(true)} />
-        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 pb-28 sm:px-6 md:pb-6 lg:px-8">
           {children}
         </main>
+        <MobileNav role={role} moduleAccess={moduleAccess} />
       </div>
     </div>
   );

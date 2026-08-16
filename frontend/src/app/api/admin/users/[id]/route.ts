@@ -1,4 +1,4 @@
-import { withAuth, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
+import { withAuth, withStaff, ok, ValidationError, ForbiddenError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { MODULE_KEYS } from "@/lib/nav";
 import type { AccessLevel, ModuleAccess } from "@/lib/nav";
@@ -29,9 +29,9 @@ async function resolveBranch(ctx: any, tenantId: string, branchId: unknown): Pro
 }
 
 // GET /api/admin/users/[id]
-export const GET = withAuth(async (req, ctx) => {
+export const GET = withStaff(async (req, ctx) => {
   requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
+  await requireModuleLevel(ctx, "staff");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);
   if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {

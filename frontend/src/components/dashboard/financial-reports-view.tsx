@@ -56,7 +56,14 @@ interface FinancialSummary {
   };
   expenses: {
     general: { total: number; count: number; byCategory: Array<{ category: string; amount: number }> };
-    payroll: { total: number; gross: number; net: number; statutory: number; count: number };
+    payroll: {
+      total: number;
+      gross: number;
+      net: number;
+      statutory: number;
+      count: number;
+      byDepartment: Array<{ department: string; gross: number; net: number; count: number }>;
+    };
     stock: { total: number; count: number };
     total: number;
   };
@@ -254,6 +261,8 @@ export default function FinancialReportsView() {
       ["Category", "Amount"],
       ...summary.expenses.general.byCategory.map((c) => [c.category, String(c.amount)]),
       ["Payroll (net paid)", String(summary.expenses.payroll.total)],
+      ["  · by department", ""],
+      ...summary.expenses.payroll.byDepartment.map((d) => [`    ${d.department}`, String(d.net)]),
       ["Stock purchases", String(summary.expenses.stock.total)],
       ["Total expenses", String(summary.expenses.total)],
       [""],
@@ -280,7 +289,8 @@ export default function FinancialReportsView() {
     ] as [string, number, number, number]);
     const expRows: Array<[string, number, string?]> = [
       ...summary.expenses.general.byCategory.map((c) => [c.category, c.amount] as [string, number]),
-      ["Payroll (net paid)", summary.expenses.payroll.total],
+      ["Payroll (net paid, by department)", summary.expenses.payroll.total],
+      ...summary.expenses.payroll.byDepartment.map((d) => [`  ${d.department}`, d.net, "sub"] as [string, number, string]),
       ["Stock purchases (supplier payments)", summary.expenses.stock.total],
       ["Total Expenses", summary.expenses.total, "bold"],
     ];
@@ -294,7 +304,7 @@ export default function FinancialReportsView() {
     );
     const expTable = buildTable(
       ["B. EXPENSES", "Item", "Amount (N)"],
-      expRows.map((r: any) => `<tr${r[2] === "bold" ? ' class="b"' : ""}><td>${r[0]}</td><td class="amt">${ngn(r[1])}</td></tr>`).join("")
+      expRows.map((r: any) => `<tr${r[2] === "bold" ? ' class="b"' : r[2] === "sub" ? ' class="sub"' : ""}><td>${r[0]}</td><td class="amt">${ngn(r[1])}</td></tr>`).join("")
     );
     const w = window.open("", "_blank", "width=900,height=1000");
     if (!w) return;
@@ -315,6 +325,7 @@ export default function FinancialReportsView() {
   thead th { background: #f2f6fc; border-bottom: 2px solid #cbd9f2; text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; }
   tr { border-bottom: 1px solid #eee; }
   tr.b { background: #f5f5f5; font-weight: 700; }
+  tr.sub td { font-size: 12px; color: #444; padding-left: 24px; }
   td, th { padding: 8px 12px; }
   td.amt, th.amt { text-align: right; }
   .sec { font-size: 13px; text-transform: uppercase; letter-spacing: .4px; }
@@ -537,6 +548,29 @@ export default function FinancialReportsView() {
                     </div>
                   );
                 })}
+                {summary.expenses.payroll.byDepartment.length > 0 && (
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-3">
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                      Payroll by department · {summary.expenses.payroll.count} payslips
+                    </div>
+                    <div className="space-y-1.5">
+                      {summary.expenses.payroll.byDepartment.map((d) => {
+                        const pct = summary.expenses.payroll.total > 0 ? (d.net / summary.expenses.payroll.total) * 100 : 0;
+                        return (
+                          <div key={d.department} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="truncate text-[var(--color-foreground)]">{d.department}</span>
+                            <span className="flex items-center gap-2">
+                              <span className="hidden w-24 rounded-full bg-[var(--color-muted)]/60 sm:block">
+                                <span className="block h-1.5 rounded-full bg-amber-500" style={{ width: `${pct}%` }} />
+                              </span>
+                              <span className="font-semibold text-[var(--color-foreground)]">{ngn(d.net)}</span>
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3">
                   <span className="text-sm font-semibold text-[var(--color-foreground)]">Total Expenses</span>
                   <span className="text-lg font-bold text-rose-600">{ngn(summary.expenses.total)}</span>
@@ -578,13 +612,23 @@ export default function FinancialReportsView() {
                         <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(c.amount)}</td>
                       </tr>
                     ))}
+                    {summary.expenses.payroll.byDepartment.length > 0 && (
+                      <>
+                        <tr>
+                          <td className="py-2 pl-6 font-medium text-[var(--color-foreground)]">Payroll (net paid)</td>
+                          <td className="py-2 text-right font-medium text-[var(--color-foreground)]">{ngn(summary.expenses.payroll.total)}</td>
+                        </tr>
+                        {summary.expenses.payroll.byDepartment.map((d) => (
+                          <tr key={d.department} className="opacity-80">
+                            <td className="py-1 pl-12 text-xs text-[var(--color-muted-fg)]">{d.department} <span className="text-[10px]">({d.count} payslips)</span></td>
+                            <td className="py-1 pr-0 text-right text-xs text-[var(--color-muted-fg)]">{ngn(d.net)}</td>
+                          </tr>
+                        ))}
+                      </>
+                    )}
                     <tr>
-                      <td className="py-2 pl-6 text-[var(--color-foreground)]">Payroll (net paid)</td>
-                      <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(summary.expenses.payroll.total)}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 pl-6 text-[var(--color-foreground)]">Stock purchases (supplier payments)</td>
-                      <td className="py-2 text-right text-[var(--color-foreground)]">{ngn(summary.expenses.stock.total)}</td>
+                      <td className="py-1 pl-6 text-[var(--color-foreground)]">Stock purchases (supplier payments)</td>
+                      <td className="py-1 text-right text-[var(--color-foreground)]">{ngn(summary.expenses.stock.total)}</td>
                     </tr>
                     <tr className="bg-[var(--color-muted)]/40">
                       <td className="px-2 py-2.5 font-bold text-[var(--color-foreground)]">Total Expenses</td>

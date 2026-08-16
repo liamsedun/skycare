@@ -48,7 +48,14 @@ export interface FinancialOverview {
   };
   expenses: {
     general: { total: number; count: number; byCategory: Array<{ category: string; amount: number }> };
-    payroll: { total: number; gross: number; net: number; statutory: number; count: number };
+    payroll: {
+      total: number;
+      gross: number;
+      net: number;
+      statutory: number;
+      count: number;
+      byDepartment: Array<{ department: string; gross: number; net: number; count: number }>;
+    };
     stock: { total: number; count: number };
     total: number;
   };
@@ -130,24 +137,36 @@ export async function computeFinancialOverview(
   if (walkinLab > 0) labCount += 1;
 
   // ---- pharmacy (own tables) ----
-  const { data: pharmPays } = await svc
+  // Pharmacy invoices synced into the central billing ledger (synced_invoice_id,
+  // e.g. convert-sale → central invoice) are ALREADY counted in the central
+  // medical/ward buckets above — exclude them and their payments here to avoid
+  // double counting the same money in both the pharmacy and central buckets.
+  const { data: pharmInvRows } = await svc
+    .from("pharmacy_invoices")
+    .select("id, patient_id, total_amount, status, synced_invoice_id")
+    .eq("tenant_id", tenantId)
+    .gte("created_at", `${from}T00:00:00`)
+    .lte("created_at", `${to}T23:59:59.999`);
+  const pharmInvs = (pharmInvRows ?? []).filter((i) => !["cancelled", "refunded"].includes(i.status));
+  const syncedIds = new Set(
+    pharmInvs
+      .filter((i) => i.synced_invoice_id && i.patient_id)
+      .map((i) => i.id as string)
+  );
+  const pharmUnsynced = pharmInvs.filter((i) => !syncedIds.has(i.id as string));
+  const pharmTotal = pharmUnsynced.reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
+  const pharmCount = pharmUnsynced.length;
+
+  const { data: pharmPayRows } = await svc
     .from("pharmacy_payments")
-    .select("amount")
+    .select("amount, invoice_id")
     .eq("tenant_id", tenantId)
     .eq("status", "completed")
     .gte("received_at", `${from}T00:00:00`)
     .lte("received_at", `${to}T23:59:59.999`);
-  const pharmCollected = (pharmPays ?? []).reduce((s, p) => s + Number(p.amount), 0);
-  const { data: pharmInvs } = await svc
-    .from("pharmacy_invoices")
-    .select("total_amount, status")
-    .eq("tenant_id", tenantId)
-    .gte("created_at", `${from}T00:00:00`)
-    .lte("created_at", `${to}T23:59:59.999`);
-  const pharmTotal = (pharmInvs ?? [])
-    .filter((i) => !["cancelled", "refunded"].includes(i.status))
-    .reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
-  const pharmCount = (pharmInvs ?? []).filter((i) => !["cancelled", "refunded"].includes(i.status)).length;
+  const pharmCollected = (pharmPayRows ?? [])
+    .filter((p) => !syncedIds.has(p.invoice_id as string))
+    .reduce((s, p) => s + Number(p.amount), 0);
 
   // ---- other income ----
   const { data: otherRows } = await svc
@@ -176,7 +195,7 @@ export async function computeFinancialOverview(
   // ---- expenses: paid payroll only ----
   const { data: payrollRows } = await svc
     .from("payroll_records")
-    .select("net_salary, base_salary, allowances, bonus, overtime_pay, paye, pension_employer, nhis_employer, pay_date")
+    .select("net_salary, base_salary, allowances, bonus, overtime_pay, paye, pension_employer, nhis_employer, pay_date, staff:staff(department)")
     .eq("tenant_id", tenantId)
     .eq("status", "paid");
   const inRangePaid = (payrollRows ?? []).filter(
@@ -192,6 +211,20 @@ export async function computeFinancialOverview(
       s + Number(p.paye ?? 0) + Number(p.pension_employer ?? 0) + Number(p.nhis_employer ?? 0),
     0
   );
+  const deptMap = new Map<string, { gross: number; net: number; count: number }>();
+  for (const p of inRangePaid) {
+    const deptStaff = p.staff as unknown as { department?: string } | null;
+    const dept = String(deptStaff?.department ?? "Unassigned");
+    const cur = deptMap.get(dept) ?? { gross: 0, net: 0, count: 0 };
+    cur.gross +=
+      Number(p.base_salary ?? 0) + Number(p.allowances ?? 0) + Number(p.bonus ?? 0) + Number(p.overtime_pay ?? 0);
+    cur.net += Number(p.net_salary ?? 0);
+    cur.count += 1;
+    deptMap.set(dept, cur);
+  }
+  const payrollByDepartment = [...deptMap.entries()]
+    .map(([department, v]) => ({ department, gross: round2(v.gross), net: round2(v.net), count: v.count }))
+    .sort((a, b) => b.net - a.net);
 
   // ---- expenses: stock purchases (supplier payments) ----
   const { data: supplierRows } = await svc
@@ -217,7 +250,7 @@ export async function computeFinancialOverview(
   };
 
   const general = { total: round2(generalTotal), count: (expRows ?? []).length, byCategory: Array.from(byCat.entries()).map(([category, amount]) => ({ category, amount: round2(amount) })).sort((a, b) => b.amount - a.amount) };
-  const payroll = { total: round2(payrollNet), gross: round2(payrollGross), net: round2(payrollNet), statutory: round2(payrollStatutory), count: inRangePaid.length };
+  const payroll = { total: round2(payrollNet), gross: round2(payrollGross), net: round2(payrollNet), statutory: round2(payrollStatutory), count: inRangePaid.length, byDepartment: payrollByDepartment };
   const stock = { total: round2(stockTotal), count: (supplierRows ?? []).length };
   const expensesTotal = round2(generalTotal + payroll.total + stock.total);
 

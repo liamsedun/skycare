@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Pill, Plus, X, Printer, Pencil, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
+import type { AccessLevel } from "@/lib/nav";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface RxItem {
@@ -98,7 +99,8 @@ function statusClass(status: string): string {
   }
 }
 
-export default function PharmacyView({ canDispense }: { canDispense: boolean }) {
+export default function PharmacyView({ canDispense, accessLevel = "full" }: { canDispense: boolean; accessLevel?: AccessLevel }) {
+  const viewOnly = accessLevel === "view_only";
   const router = useRouter();
   const [rxs, setRxs] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,13 +154,15 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
             Prescriptions, dispensing and stock.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
-        >
-          <Plus size={16} aria-hidden="true" /> New Prescription
-        </button>
+        {!viewOnly && (
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+          >
+            <Plus size={16} aria-hidden="true" /> New Prescription
+          </button>
+        )}
       </div>
 
 {error && (
@@ -242,7 +246,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
                 onClick={() => setViewId(rx.id)}
                 className="focus-ring mt-3 w-full rounded-lg border border-[var(--color-border)] py-2 text-xs font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
               >
-                View / dispense
+                {viewOnly ? "View" : "View / dispense"}
               </button>
             </div>
           ))}
@@ -263,6 +267,7 @@ export default function PharmacyView({ canDispense }: { canDispense: boolean }) 
         <RxDetailModal
           rx={viewed}
           canDispense={canDispense}
+          viewOnly={viewOnly}
           onClose={() => setViewId(null)}
           onChanged={() => load()}
           onDispensed={(msg) => {
@@ -966,7 +971,7 @@ function EditRxModal({ rx, onClose, onSaved }: { rx: Prescription; onClose: () =
   );
 }
 
-function RxDetailModal({ rx, canDispense, onClose, onChanged, onDispensed }: { rx: Prescription; canDispense: boolean; onClose: () => void; onChanged: () => void; onDispensed: (msg: string) => void }) {
+function RxDetailModal({ rx, canDispense, viewOnly = false, onClose, onChanged, onDispensed }: { rx: Prescription; canDispense: boolean; viewOnly?: boolean; onClose: () => void; onChanged: () => void; onDispensed: (msg: string) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [batches, setBatches] = useState<Record<string, BatchOption[]>>({});
@@ -1185,7 +1190,7 @@ const itemsPayload = rx.prescription_items
           >
             <Printer size={14} /> {printing ? "Preparing…" : "Print"}
           </button>
-          {editable && (
+          {!viewOnly && editable && (
             <>
               <button
                 type="button"
@@ -1272,7 +1277,7 @@ const itemsPayload = rx.prescription_items
                 <th scope="col" className="px-4 py-2.5 font-semibold">Dosage</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Frequency</th>
                 <th scope="col" className="px-4 py-2.5 font-semibold">Qty</th>
-                {canDispense && (
+                {canDispense && !viewOnly && (
                   <>
                     <th scope="col" className="px-4 py-2.5 font-semibold">Dispensed</th>
                     {!external && (
@@ -1364,7 +1369,7 @@ const itemsPayload = rx.prescription_items
                     <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.dosage}</td>
                     <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.frequency}</td>
                     <td className="px-4 py-2.5 font-semibold">{item.quantity}</td>
-                    {canDispense && (
+                    {canDispense && !viewOnly && (
                       <>
                         <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
                           {item.dispensed_qty}/{item.quantity}
@@ -1411,7 +1416,7 @@ const itemsPayload = rx.prescription_items
           </table>
         </div>
 
-        {external && canDispense && (
+        {external && canDispense && !viewOnly && (
           <p className="text-xs text-[var(--color-muted-fg)]">
             External prescription — record dispensing without stock deduction. Enter quantities below and save.
           </p>
@@ -1424,7 +1429,7 @@ const itemsPayload = rx.prescription_items
           </p>
         )}
 
-        {canDispense && rx.status !== "cancelled" && rx.status !== "dispensed" && rx.status !== "completed" && (
+        {canDispense && !viewOnly && rx.status !== "cancelled" && rx.status !== "dispensed" && rx.status !== "completed" && (
           <div className="space-y-2">
             {rx.status === "pending" && (
               <button

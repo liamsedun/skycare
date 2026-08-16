@@ -8,60 +8,85 @@ export const runtime = "nodejs";
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
-// PUT /api/hr/shifts/[id] — update template (HR admin).
-// DELETE /api/hr/shifts/[id] — remove template (blocked while assigned; HR admin).
-export const PUT = withStaff(async (req, ctx) => {
+// PUT /api/hr/shifts/[id] — update a shift template (HR admin).
+// DELETE /api/hr/shifts/[id] — remove a template (HR admin; assignments keep
+//   their rows, the shift reference goes null via ON DELETE SET NULL).
+export const PUT = withStaff(async (req: NextRequest, ctx) => {
   const tenantId = requireTenant(ctx);
-  const id = req.nextUrl.pathname.split("/").pop()!;
   if (!isHrAdmin(ctx.role)) throw new ForbiddenError("HR admin access required");
-  const body = await req.json().catch(() => null);
+  const id = req.nextUrl.pathname.split("/").filter(Boolean).pop() ?? "";
+  if (!id) throw new ValidationError("Shift id is required");
 
-  const patch: Record<string, unknown> = {
-    name: String(body?.name ?? "").trim(),
-    department: String(body?.department ?? "").trim() || null,
-    ward_id: body?.ward_id ?? null,
-    color: String(body?.color ?? "#0ea5e9").trim(),
-    is_active: body?.is_active ?? true,
-  };
-  if (body?.start_time != null) {
-    if (!TIME_RE.test(String(body.start_time).trim())) throw new ValidationError("start_time must be HH:MM");
-    patch.start_time = String(body.start_time).trim();
-  }
-  if (body?.end_time != null) {
-    if (!TIME_RE.test(String(body.end_time).trim())) throw new ValidationError("end_time must be HH:MM");
-    patch.end_time = String(body.end_time).trim();
-  }
-  if (!String(patch.name).trim()) throw new ValidationError("Shift name is required");
-
-  const { data, error } = await ctx.svc
+  const { data: existing, error: getErr } = await ctx.svc
     .from("shifts")
-    .update(patch)
+    .select("id, name, start_time, end_time, department, color, is_active")
     .eq("id", id)
     .eq("tenant_id", tenantId)
-    .select()
     .maybeSingle();
-  if (error) throw new ValidationError(error.message);
-  if (!data) throw new NotFoundError("Shift template not found");
+  if (getErr) throw new ValidationError(getErr.message);
+  if (!existing) throw new NotFoundError("Shift template not found");
 
-  await logAudit(req, ctx, { action: "update", entityType: "shifts", entityId: id, description: `Updated shift template ${data.name}` });
+  const body = await req.json().catch(() => null);
+  const name = String(body?.name ?? existing.name).trim() || existing.name;
+  const startTime = String(body?.start_time ?? existing.start_time).trim();
+  const endTime = String(body?.end_time ?? existing.end_time).trim();
+  if (!name) throw new ValidationError("Shift name is required");
+  if (!TIME_RE.test(startTime) || !TIME_RE.test(endTime)) {
+    throw new ValidationError("start_time and end_time must be HH:MM");
+  }
+
+  const { data: dup, error: dupErr } = await ctx.svc
+    .from("shifts")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .ilike("name", name)
+    .neq("id", id)
+    .maybeSingle();
+  if (dupErr) throw new ValidationError(dupErr.message);
+  if (dup) throw new ValidationError("A shift template with this name already exists");
+
+  const patch: Record<string, unknown> = { name, start_time: startTime, end_time: endTime };
+  if (body?.department !== undefined) patch.department = String(body.department).trim() || null;
+  if (body?.color !== undefined) patch.color = String(body.color ?? "#0ea5e9").trim();
+  if (body?.is_active !== undefined) patch.is_active = Boolean(body.is_active);
+
+  const { data, error } = await ctx.svc.from("shifts").update(patch).eq("id", id).eq("tenant_id", tenantId).select().single();
+  if (error) throw new ValidationError(error.message);
+
+  await logAudit(req, ctx, {
+    action: "update",
+    entityType: "shifts",
+    entityId: data.id,
+    changes: { name, start_time: startTime, end_time: endTime },
+    description: `Updated shift template ${name}`,
+  });
   return ok(data);
 });
 
-export const DELETE = withStaff(async (req, ctx) => {
+export const DELETE = withStaff(async (req: NextRequest, ctx) => {
   const tenantId = requireTenant(ctx);
-  const id = req.nextUrl.pathname.split("/").pop()!;
   if (!isHrAdmin(ctx.role)) throw new ForbiddenError("HR admin access required");
+  const id = req.nextUrl.pathname.split("/").filter(Boolean).pop() ?? "";
+  if (!id) throw new ValidationError("Shift id is required");
 
-  const { count } = await ctx.svc
-    .from("staff_shifts")
-    .select("id", { count: "exact", head: true })
-    .eq("shift_id", id)
-    .eq("tenant_id", tenantId);
-  if ((count ?? 0) > 0) throw new ValidationError("This shift template is assigned to staff; remove the assignments first");
+  const { data: existing, error: getErr } = await ctx.svc
+    .from("shifts")
+    .select("id, name")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (getErr) throw new ValidationError(getErr.message);
+  if (!existing) throw new NotFoundError("Shift template not found");
 
   const { error } = await ctx.svc.from("shifts").delete().eq("id", id).eq("tenant_id", tenantId);
   if (error) throw new ValidationError(error.message);
 
-  await logAudit(req, ctx, { action: "delete", entityType: "shifts", entityId: id, description: "Deleted shift template" });
-  return ok({ deleted: true });
+  await logAudit(req, ctx, {
+    action: "delete",
+    entityType: "shifts",
+    entityId: id,
+    changes: { name: existing.name },
+    description: `Deleted shift template ${existing.name}`,
+  });
+  return ok({ id });
 });

@@ -67,9 +67,7 @@ export const POST = withStaff(async (req, ctx) => {
       });
       if (error) {
         const msg = String(error.message ?? "");
-        if (/CREDENTIAL_REQUIRED/i.test(msg)) {
-          skipped.push({ staff_id: staffId, date, reason: "No verified clinical credential" });
-        } else if (/SHIFT_CONFLICT|duplicate key/i.test(msg)) {
+        if (/SHIFT_CONFLICT|duplicate key/i.test(msg)) {
           skipped.push({ staff_id: staffId, date, reason: "Already assigned on this date" });
         } else {
           errors.push({ staff_id: staffId, date, message: msg });

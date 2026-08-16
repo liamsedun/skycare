@@ -20,6 +20,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import FilterBar from "@/components/filters/filter-bar";
+import type { AccessLevel } from "@/lib/nav";
 
 const EXPORT_COLUMNS = [
   "ward",
@@ -96,7 +97,8 @@ function ModalShell({ title, onClose, children, wide }: { title: string; onClose
   );
 }
 
-export default function BedMapView({ canManage }: { canManage: boolean }) {
+export default function BedMapView({ canManage, accessLevel = "full" }: { canManage: boolean; accessLevel?: AccessLevel }) {
+  const viewOnly = accessLevel === "view_only";
   const [wards, setWards] = useState<WardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -353,7 +355,7 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
             <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${connected ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
               <Satellite size={12} /> {connected ? "LIVE" : "POLLING"}
             </span>
-            {canManage && (
+            {canManage && !viewOnly && (
               <button
                 type="button"
                 onClick={() => setManaging((m) => !m)}
@@ -379,6 +381,7 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
               templateFilename="beds-import-template.csv"
               onImport={importBeds}
               onImported={() => void refreshAll()}
+              allowImport={!viewOnly}
             />
           </div>
         </div>
@@ -458,7 +461,7 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {managing && (
+                    {managing && !viewOnly && (
                       <>
                         <span
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${rate ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
@@ -502,7 +505,7 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
                   </div>
                 )}
 
-                {managing && (
+                {managing && !viewOnly && (
                   <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-border)] pt-3">
                     <input
                       type="text"
@@ -546,7 +549,7 @@ export default function BedMapView({ canManage }: { canManage: boolean }) {
               </div>
             );
           })}
-          {managing && (
+          {managing && !viewOnly && (
             <button
               type="button"
               onClick={openCreate}

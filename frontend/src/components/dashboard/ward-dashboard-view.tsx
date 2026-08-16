@@ -7,6 +7,7 @@ import {
 import {
   Activity, BedDouble, BedSingle, Clock3, HeartPulse, Loader2, ShieldCheck, Users, Wrench,
 } from "lucide-react";
+import type { AccessLevel } from "@/lib/nav";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -27,7 +28,8 @@ interface ForecastPayload {
   occupancy_forecast?: Array<{ date: string; projected_active: number; expected_new: number }>;
 }
 
-export default function WardDashboardView() {
+export default function WardDashboardView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [beds, setBeds] = useState<BedCounts | null>(null);
   const [admStats, setAdmStats] = useState<{ active: number; discharged: number } | null>(null);
   const [forecast, setForecast] = useState<ForecastPayload | null>(null);

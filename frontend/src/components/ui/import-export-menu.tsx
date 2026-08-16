@@ -19,6 +19,7 @@ interface ImportExportMenuProps {
   onImported?: () => void;
   disabled?: boolean;
   importExtra?: React.ReactNode;
+  allowImport?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export default function ImportExportMenu({
   onImported,
   disabled = false,
   importExtra,
+  allowImport = true,
 }: ImportExportMenuProps) {
   const [importOpen, setImportOpen] = useState(false);
 
@@ -62,12 +64,14 @@ export default function ImportExportMenu({
             icon: <Download size={14} aria-hidden="true" />,
             onClick: exportPdf,
           },
-          {
-            label: "Import (CSV/PDF)",
-            description: `Add ${entityLabel} from a CSV or PDF file`,
-            icon: <FileUp size={14} aria-hidden="true" />,
-            onClick: () => setImportOpen(true),
-          },
+          ...(allowImport
+            ? [{
+                label: "Import (CSV/PDF)",
+                description: `Add ${entityLabel} from a CSV or PDF file`,
+                icon: <FileUp size={14} aria-hidden="true" />,
+                onClick: () => setImportOpen(true),
+              }]
+            : []),
         ]}
       />
 

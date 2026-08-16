@@ -9,6 +9,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import FilterBar from "@/components/filters/filter-bar";
 import { dateStamp, downloadCsv, printTable, type ExportCell } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
 // Pharmacy Compliance — NAFDAC controlled-drug register, hash-chained
@@ -112,7 +113,8 @@ const sevStyle = (s: string) =>
       ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
       : "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
 
-export default function PharmacyComplianceView() {
+export default function PharmacyComplianceView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<Tab>("alerts");
 
   return (
@@ -142,11 +144,11 @@ export default function PharmacyComplianceView() {
         </div>
       </div>
 
-      {tab === "alerts" && <AlertsTab />}
-      {tab === "register" && <RegisterTab />}
-      {tab === "audit" && <AuditTab />}
-      {tab === "dispense" && <DispenseTab />}
-      {tab === "reports" && <ReportsTab />}
+      {tab === "alerts" && <AlertsTab viewOnly={viewOnly} />}
+      {tab === "register" && <RegisterTab viewOnly={viewOnly} />}
+      {tab === "audit" && <AuditTab viewOnly={viewOnly} />}
+      {tab === "dispense" && <DispenseTab viewOnly={viewOnly} />}
+      {tab === "reports" && <ReportsTab viewOnly={viewOnly} />}
     </div>
   );
 }
@@ -154,7 +156,7 @@ export default function PharmacyComplianceView() {
 // ---------------------------------------------------------------------------
 // Alerts
 // ---------------------------------------------------------------------------
-function AlertsTab() {
+function AlertsTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<AlertRow[]>([]);
   const [status, setStatus] = useState("open");
   const [loading, setLoading] = useState(true);
@@ -239,6 +241,7 @@ function AlertsTab() {
             importColumns={alertCols}
             templateFilename="compliance-alerts-import-template.csv"
             onImport={async () => blockedImport("Compliance alerts")}
+            allowImport={!viewOnly}
           />
         </div>
       </div>
@@ -283,10 +286,10 @@ function AlertsTab() {
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{a.status}</td>
                   <td className="py-2.5">
                     <div className="flex gap-1.5">
-                      {a.status === "open" && (
+                      {!viewOnly && a.status === "open" && (
                         <button type="button" onClick={() => void resolve(a, "acknowledged")} className={btnGhost}>Acknowledge</button>
                       )}
-                      {a.status !== "resolved" && (
+                      {!viewOnly && a.status !== "resolved" && (
                         <button type="button" onClick={() => void resolve(a, "resolved")} className={btnPrimary}><Check size={12} />Resolve</button>
                       )}
                     </div>
@@ -304,7 +307,7 @@ function AlertsTab() {
 // ---------------------------------------------------------------------------
 // Controlled register
 // ---------------------------------------------------------------------------
-function RegisterTab() {
+function RegisterTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<RegRow[]>([]);
   const [drugs, setDrugs] = useState<DrugRow[]>([]);
   const [drugId, setDrugId] = useState("");
@@ -386,6 +389,7 @@ function RegisterTab() {
             importColumns={regCols}
             templateFilename="controlled-register-import-template.csv"
             onImport={async () => blockedImport("The controlled drug register")}
+            allowImport={!viewOnly}
           />
         </div>
       </div>
@@ -447,7 +451,7 @@ function RegisterTab() {
 // ---------------------------------------------------------------------------
 // Audit trail (hash-chained)
 // ---------------------------------------------------------------------------
-function AuditTab() {
+function AuditTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [rows, setRows] = useState<LogRow[]>([]);
   const [verified, setVerified] = useState<{ verified: boolean; brokenAt: number | null; total: number } | null>(null);
   const [checking, setChecking] = useState(false);
@@ -517,6 +521,7 @@ function AuditTab() {
             importColumns={auditCols}
             templateFilename="dispense-audit-import-template.csv"
             onImport={async () => blockedImport("The dispensing audit trail")}
+            allowImport={!viewOnly}
           />
         </div>
       </div>
@@ -579,7 +584,7 @@ function AuditTab() {
 // ---------------------------------------------------------------------------
 // Controlled dispensing
 // ---------------------------------------------------------------------------
-function DispenseTab() {
+function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [drugs, setDrugs] = useState<DrugRow[]>([]);
   const [drugId, setDrugId] = useState("");
   const [patientId, setPatientId] = useState("");
@@ -689,7 +694,8 @@ function DispenseTab() {
           Search filters the controlled formulary; the date range filters recent dispensings below.
         </p>
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className={`grid gap-5 ${viewOnly ? "lg:grid-cols-1" : "lg:grid-cols-2"}`}>
+      {!viewOnly && (
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <h3 className="font-semibold text-[var(--color-foreground)]">Prescribed controlled doses</h3>
         <p className="mb-4 text-xs text-[var(--color-muted-fg)]">Enforced: NAFDAC registration, Rx must be active and match the patient, per-dispense cap, and auto-logs the chain.</p>
@@ -754,6 +760,7 @@ function DispenseTab() {
         </button>
         {msg && <p className={`mt-3 text-sm ${msg.ok ? "text-emerald-600" : "text-red-600"}`}>{msg.text}</p>}
       </div>
+      )}
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -775,6 +782,7 @@ function DispenseTab() {
             importColumns={["name", "control_schedule", "on_hand", "register_balance", "max_qty_per_dispense", "nafdac_number", "low"]}
             templateFilename="controlled-formulary-import-template.csv"
             onImport={async () => blockedImport("The controlled formulary")}
+            allowImport={!viewOnly}
           />
         </div>
         {lastDispense && (
@@ -859,7 +867,7 @@ interface ReportRow {
   [key: string]: unknown;
 }
 
-function ReportsTab() {
+function ReportsTab({ viewOnly = false }: { viewOnly?: boolean }) {
   const [report, setReport] = useState<"usage" | "movements" | "expiry" | "supplier">("usage");
   const [from, setFrom] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10));
   const [to, setTo] = useState(new Date().toISOString().slice(0, 10));
@@ -963,6 +971,7 @@ function ReportsTab() {
           importColumns={columns}
           templateFilename="nafdac-report-import-template.csv"
           onImport={importReport}
+          allowImport={!viewOnly}
         />
       </div>
       {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}

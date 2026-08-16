@@ -1,6 +1,5 @@
-import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { isHrAdmin, hrHasPermission } from "@/lib/hr-perms";
-import { ForbiddenError } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +11,7 @@ export const runtime = "nodejs";
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   if (!isHrAdmin(ctx.role) && !(await hrHasPermission(ctx.svc, tenantId, ctx.role, "hr.payroll.view"))) {
-    throw new ForbiddenError("HR payroll access required");
+    await requireModuleLevel(ctx, "hr-payroll");
   }
   const year = Number(req.nextUrl.searchParams.get("year") ?? new Date().getFullYear());
   if (!Number.isInteger(year) || year < 2000 || year > 2100) throw new ValidationError("year must be a valid 4-digit year");

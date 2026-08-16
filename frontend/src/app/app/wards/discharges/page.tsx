@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
+import { requireModulePage } from "@/lib/module-guard";
 import DischargesView from "@/components/dashboard/discharges-view";
 
 export const dynamic = "force-dynamic";
@@ -15,12 +16,13 @@ export default async function DischargesPage() {
 
   if (!user) redirect("/login?redirect=/app/wards/discharges");
 
+  const accessLevel = await requireModulePage(supabase, user, "wards-discharges", WARD_ROLES);
   const role = getClaims(user).role as StaffRole | undefined;
-  if (!WARD_ROLES.includes(role ?? "")) redirect("/app");
+  const viewOnly = accessLevel === "view_only";
 
   return (
     <div className="space-y-6">
-      <DischargesView canBill={role === "hospital_admin" || role === "super_admin"} />
+      <DischargesView accessLevel={accessLevel} canBill={!viewOnly && (role === "hospital_admin" || role === "super_admin")} />
     </div>
   );
 }

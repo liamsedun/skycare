@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
+import { requireModulePage } from "@/lib/module-guard";
 import { BranchAdminTabs } from "@/components/dashboard/pharmacy-admin-view";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +14,8 @@ export default async function BranchPricesPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/prices");
 
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-prices", ["hospital_admin", "super_admin"]);
   const role = getClaims(user).role as StaffRole | undefined;
-  if (!["hospital_admin", "super_admin"].includes(role ?? "")) {
-    redirect("/app");
-  }
 
   return (
     <div className="space-y-6">
@@ -26,7 +25,7 @@ export default async function BranchPricesPage() {
           Per-branch retail price overrides for the pharmacy catalogue.
         </p>
       </div>
-      <BranchAdminTabs />
+      <BranchAdminTabs accessLevel={accessLevel} myRole={role} />
     </div>
   );
 }

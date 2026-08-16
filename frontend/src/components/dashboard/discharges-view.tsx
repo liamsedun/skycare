@@ -8,6 +8,7 @@ import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import type { AccessLevel } from "@/lib/nav";
 
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
@@ -38,7 +39,8 @@ interface DischargeRow {
   } | null;
 }
 
-export default function DischargesView({ canBill }: { canBill: boolean }) {
+export default function DischargesView({ canBill, accessLevel = "full" }: { canBill: boolean; accessLevel?: AccessLevel }) {
+  const viewOnly = accessLevel === "view_only";
   const [rows, setRows] = useState<DischargeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
@@ -202,6 +204,7 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
               templateFilename="discharges-import-template.csv"
               onImport={importDischarges}
               onImported={() => void load()}
+              allowImport={!viewOnly}
             />
           </div>
         </div>
@@ -253,7 +256,7 @@ export default function DischargesView({ canBill }: { canBill: boolean }) {
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">
                             {inv.invoice_number} · ₦{Number(inv.total_amount ?? 0).toLocaleString()}
                           </span>
-                        ) : canBill ? (
+                        ) : canBill && !viewOnly ? (
                           <button
                             type="button"
                             onClick={() => void postBill(d.admission_id)}

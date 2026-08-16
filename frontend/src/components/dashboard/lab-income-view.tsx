@@ -6,6 +6,7 @@ import { ngn } from "@/lib/auth";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { printTable } from "@/lib/export";
+import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
 // Lab Services Income — per-service billed vs collected for a from/to window
@@ -63,7 +64,8 @@ function labStatusBadge(status: string) {
   );
 }
 
-export default function LabIncomeView() {
+export default function LabIncomeView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [rows, setRows] = useState<IncomeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +167,7 @@ export default function LabIncomeView() {
               importColumns={["Service", "Category", "Times billed", "Income (billed)", "Collected"]}
               templateFilename="lab-income-import-template.csv"
               onImport={importIncome}
+              allowImport={!viewOnly}
             />
           </div>
         </div>

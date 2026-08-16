@@ -23,6 +23,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import type { AccessLevel } from "@/lib/nav";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 async function fetchAllPatients() {
@@ -158,7 +159,8 @@ function KpiCard({ label, value, icon: Icon, tone, hint }: { label: string; valu
   );
 }
 
-export default function BillingView() {
+export default function BillingView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pending, setPending] = useState<PendingPayment[]>([]);
@@ -303,25 +305,27 @@ export default function BillingView() {
             Every income stream — medical services, lab, pharmacy and ward bills.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ImportExportMenu
-            entityLabel="Invoices"
-            exportCsv={exportCsv}
-            exportPdf={exportPdf}
-            importColumns={["patient_number", "description", "quantity", "unit_price", "issue_date", "due_date", "notes"]}
-            importSample={[["LB-P-0001", "Consultation", "1", "5000", "2026-08-11", "2026-08-25", "Annual checkup"]]}
-            templateFilename="invoices-import-template.csv"
-            onImport={importInvoices}
-            onImported={() => void load()}
-          />
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
-          >
-            <Plus size={16} aria-hidden="true" /> Create Invoice
-          </button>
-        </div>
+        {!viewOnly && (
+          <div className="flex flex-wrap items-center gap-2">
+            <ImportExportMenu
+              entityLabel="Invoices"
+              exportCsv={exportCsv}
+              exportPdf={exportPdf}
+              importColumns={["patient_number", "description", "quantity", "unit_price", "issue_date", "due_date", "notes"]}
+              importSample={[["LB-P-0001", "Consultation", "1", "5000", "2026-08-11", "2026-08-25", "Annual checkup"]]}
+              templateFilename="invoices-import-template.csv"
+              onImport={importInvoices}
+              onImported={() => void load()}
+            />
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+            >
+              <Plus size={16} aria-hidden="true" /> Create Invoice
+            </button>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -379,65 +383,67 @@ export default function BillingView() {
                     {p.reference} · {p.payment_method.replace(/_/g, " ")}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={async () => {
-                      setBusy(true);
-                      setError(null);
-                      try {
-                        const res = await fetch("/api/payments/record", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            patientId: p.patients?.id,
-                            amount: Number(p.amount),
-                            paymentMethod: p.payment_method,
-                            allocation: [{ invoiceId: p.invoice_id, amount: Number(p.amount) }],
-                            pendingPaymentId: p.id,
-                          }),
-                        });
-                        const body = await res.json();
-                        if (!res.ok) throw new Error(body.error ?? "Failed to confirm");
-                        await load();
-                      } catch (e) {
-                        setError(e instanceof Error ? e.message : "Failed to confirm payment");
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                    className="focus-ring rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={async () => {
-                      if (!confirm("Cancel this pending declaration?")) return;
-                      setBusy(true);
-                      setError(null);
-                      try {
-                        const res = await fetch("/api/payments/cancel", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ pendingPaymentId: p.id }),
-                        });
-                        const body = await res.json();
-                        if (!res.ok) throw new Error(body.error ?? "Failed to cancel");
-                        await load();
-                      } catch (e) {
-                        setError(e instanceof Error ? e.message : "Failed to cancel payment");
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                    className="focus-ring rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                    Decline
-                  </button>
-                </div>
+                {!viewOnly && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setError(null);
+                        try {
+                          const res = await fetch("/api/payments/record", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              patientId: p.patients?.id,
+                              amount: Number(p.amount),
+                              paymentMethod: p.payment_method,
+                              allocation: [{ invoiceId: p.invoice_id, amount: Number(p.amount) }],
+                              pendingPaymentId: p.id,
+                            }),
+                          });
+                          const body = await res.json();
+                          if (!res.ok) throw new Error(body.error ?? "Failed to confirm");
+                          await load();
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : "Failed to confirm payment");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                      className="focus-ring rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        if (!confirm("Cancel this pending declaration?")) return;
+                        setBusy(true);
+                        setError(null);
+                        try {
+                          const res = await fetch("/api/payments/cancel", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ pendingPaymentId: p.id }),
+                          });
+                          const body = await res.json();
+                          if (!res.ok) throw new Error(body.error ?? "Failed to cancel");
+                          await load();
+                        } catch (e) {
+                          setError(e instanceof Error ? e.message : "Failed to cancel payment");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                      className="focus-ring rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -572,7 +578,7 @@ export default function BillingView() {
                     onClick={() => setViewed({ id: inv.id, kind: inv.kind })}
                     className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2 text-xs font-semibold text-[var(--color-primary)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
                   >
-                    View & record payment
+                    {viewOnly ? "View invoice" : "View & record payment"}
                   </button>
                   <a
                     href={printHref(inv)}
@@ -609,6 +615,7 @@ export default function BillingView() {
             load();
             router.refresh();
           }}
+          viewOnly={viewOnly}
         />
       )}
     </div>
@@ -845,7 +852,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
   );
 }
 
-function InvoiceDetailModal({ invoice, onClose, onChanged }: { invoice: Invoice | null; onClose: () => void; onChanged: () => void }) {
+function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = false }: { invoice: Invoice | null; onClose: () => void; onChanged: () => void; viewOnly?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(() => (invoice ? Number(invoice.total_amount) - Number(invoice.paid_amount) : 0));
@@ -954,7 +961,7 @@ function InvoiceDetailModal({ invoice, onClose, onChanged }: { invoice: Invoice 
             >
               <Printer size={13} aria-hidden="true" /> Print / PDF
             </a>
-            {!isPharmacy && invoice.status !== "paid" && invoice.status !== "cancelled" && (
+            {!viewOnly && !isPharmacy && invoice.status !== "paid" && invoice.status !== "cancelled" && (
               <button
                 type="button"
                 onClick={cancelInvoice}
@@ -1036,7 +1043,7 @@ function InvoiceDetailModal({ invoice, onClose, onChanged }: { invoice: Invoice 
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4 text-sm text-[var(--color-muted-fg)]">
               Pharmacy sale payments are recorded in the Pharmacy → Billing page. Use the PDF button to print or save this bill.
             </div>
-          ) : outstanding > 0 && invoice.status !== "cancelled" ? (
+          ) : !viewOnly && outstanding > 0 && invoice.status !== "cancelled" ? (
             <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/30 p-4">
               <div>
                 <label className={labelCls} htmlFor="r-amount">Amount</label>

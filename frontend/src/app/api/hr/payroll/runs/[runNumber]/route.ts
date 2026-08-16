@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { isHrAdmin, hrHasPermission } from "@/lib/hr-perms";
 import type { NextRequest } from "next/server";
 
@@ -21,6 +21,7 @@ export const GET = withStaff(async (req: NextRequest, ctx) => {
     .eq("run_number", runNumber);
 
   if (!isHrAdmin(ctx.role) && !(await hrHasPermission(ctx.svc, tenantId, ctx.role, "hr.payroll.view"))) {
+    await requireModuleLevel(ctx, "hr-payroll");
     const { data: me } = await ctx.svc
       .from("staff")
       .select("id")

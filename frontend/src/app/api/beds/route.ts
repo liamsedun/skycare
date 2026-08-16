@@ -16,15 +16,15 @@ export const GET = withStaff(async (req, ctx) => {
     .from("beds")
     .select(
       "id, ward_id, bed_number, status, created_at, updated_at, " +
-      "ward!inner(id, name, ward_type, branch_id, tenant_id)"
+      "wards!inner(id, name, ward_type, branch_id, tenant_id)"
     )
-    .eq("ward.tenant_id", tenantId);
+    .eq("wards.tenant_id", tenantId);
   if (wardId) query = query.eq("ward_id", wardId);
   if (status) query = query.eq("status", status);
   const { data, error } = await query.order("bed_number");
   if (error) throw new Error(error.message);
   // Only beds whose ward belongs to this tenant.
-  const rows = (data ?? []).filter((b: any) => b.ward?.tenant_id === tenantId);
+  const rows = (data ?? []).filter((b: any) => b.wards?.tenant_id === tenantId);
   return ok(rows);
 });
 

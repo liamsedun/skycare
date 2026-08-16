@@ -7,6 +7,7 @@ import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import type { AccessLevel } from "@/lib/nav";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -44,7 +45,8 @@ const VITAL_FIELDS: Array<[string, string]> = [
   ["temp", "Temp (°C)"], ["bp", "BP"], ["hr", "HR (bpm)"], ["rr", "RR"], ["spo2", "SpO₂ (%)"], ["weight", "Weight (kg)"],
 ];
 
-export default function WardRoundsView() {
+export default function WardRoundsView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [active, setActive] = useState<ActiveAdmission[]>([]);
   const [rounds, setRounds] = useState<RoundRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,7 +202,9 @@ export default function WardRoundsView() {
             <button onClick={() => void load()} className={btnGhost} disabled={loading}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />} Refresh
             </button>
-            <button onClick={openAdd} className={btnPrimary}><Plus size={14} /> New round entry</button>
+            {!viewOnly && (
+              <button onClick={openAdd} className={btnPrimary}><Plus size={14} /> New round entry</button>
+            )}
             <ImportExportMenu
               entityLabel="Ward Rounds"
               exportCsv={exportCsv}
@@ -210,6 +214,7 @@ export default function WardRoundsView() {
               templateFilename="ward-rounds-import-template.csv"
               onImport={importRounds}
               onImported={() => void load()}
+              allowImport={!viewOnly}
             />
           </div>
         </div>

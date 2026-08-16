@@ -177,6 +177,12 @@ export const MODULE_KEYS = NAV_ITEMS.flatMap((i) => [i.key, ...(i.children?.map(
  * access. When moduleAccess is null/undefined the role defaults apply.
  * A module with submenus stays visible while the parent itself or any of its
  * children has a non-none level; each child is filtered by its own level.
+ *
+ * A NON-NULL module_access record is the AUTHORITY for that user: hard-coded
+ * per-module role lists are ignored (the admin's per-user grant wins), so a
+ * grant in Settings → Users & Roles always shows up on the portal. Only
+ * system pages (Settings/Account/Download/Profile) stay role-gated — they are
+ * never grantable in the UI.
  */
 export function navForRole(role: StaffRole | undefined, moduleAccess: ModuleAccess): NavItem[] {
   if (!role) return [];
@@ -185,9 +191,15 @@ export function navForRole(role: StaffRole | undefined, moduleAccess: ModuleAcce
   const access = moduleAccess != null ? moduleAccess : null;
 
   const visibleItems = NAV_ITEMS.filter((item) => {
-    if (item.roles && !item.roles.includes(role)) return false;
-    if (!access) return true; // role default
-    if (ALWAYS_VISIBLE_KEYS.has(item.key)) return true;
+    if (!access) {
+      // Role default: hard-coded role lists are the filter.
+      if (item.roles && !item.roles.includes(role)) return false;
+      return true;
+    }
+    if (ALWAYS_VISIBLE_KEYS.has(item.key)) {
+      // System pages are never grantable — keep the role gate regardless.
+      return !item.roles || item.roles.includes(role);
+    }
     if (item.children && item.children.length > 0) {
       const anyChildVisible = item.children.some((c) => accessLevelOf(access, c.key) !== "none");
       return accessLevelOf(access, item.key) !== "none" || anyChildVisible;
@@ -200,10 +212,9 @@ export function navForRole(role: StaffRole | undefined, moduleAccess: ModuleAcce
   if (!access) return visibleItems;
   return visibleItems.map((item) => {
     if (!item.children || item.children.length === 0) return item;
-    const children = item.children.filter((c) => {
-      if (c.roles && !c.roles.includes(role)) return false;
-      return ALWAYS_VISIBLE_KEYS.has(c.key) || accessLevelOf(access, c.key) !== "none";
-    });
+    const children = item.children.filter(
+      (c) => ALWAYS_VISIBLE_KEYS.has(c.key) || accessLevelOf(access, c.key) !== "none"
+    );
     return children.length === item.children.length ? item : { ...item, children };
   });
 }

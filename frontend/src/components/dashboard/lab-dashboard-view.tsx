@@ -9,6 +9,7 @@ import {
   BarChart3, CalendarRange, FlaskConical, Loader2, Users, Wallet, PackageSearch,
 } from "lucide-react";
 import { ngn } from "@/lib/auth";
+import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
 // Lab Dashboard — income, patients served and request metrics for a month
@@ -47,7 +48,8 @@ const REQUEST_LABELS: Array<[string, string]> = [
   ["cancelled", "Cancelled"],
 ];
 
-export default function LabDashboardView() {
+export default function LabDashboardView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);

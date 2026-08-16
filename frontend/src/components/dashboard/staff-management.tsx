@@ -11,6 +11,7 @@ import { fmtDate, fmtTime } from "@/lib/shift-format";
 import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import type { AccessLevel } from "@/lib/nav";
 
 interface StaffUser {
   id: string;
@@ -109,7 +110,8 @@ function initialsOf(name: string): string {
     .toUpperCase();
 }
 
-export default function StaffManagement({ meId, myRole }: { meId: string; myRole?: string }) {
+export default function StaffManagement({ meId, myRole, accessLevel = "full" }: { meId: string; myRole?: string; accessLevel?: AccessLevel }) {
+  const viewOnly = accessLevel === "view_only";
   const [users, setUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -533,30 +535,51 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <ActionDropdown
-            label="New"
-            icon={<Plus size={16} aria-hidden="true" />}
-            items={[
-              {
-                label: "Staff",
-                description: "Add an admin or staff member",
-                icon: <UserRoundPlus size={14} aria-hidden="true" />,
-                onClick: () => setShowCreate(true),
-              },
-            ]}
-          />
-          <ImportExportMenu
-            entityLabel="Staff"
-            exportCsv={exportStaffCsv}
-            exportPdf={exportStaffPdf}
-            importColumns={["first_name", "last_name", "email", "phone", "role", "department", "specialization", "password"]}
-            importSample={[
-              ["Ada", "Okafor", "ada.okafor@clinic.com", "0803 000 1111", "doctor", "Cardiology", "Consultant", ""],
-            ]}
-            templateFilename="staff-import-template.csv"
-            onImport={importStaff}
-            onImported={() => load()}
-          />
+          {!viewOnly && (
+            <ActionDropdown
+              label="New"
+              icon={<Plus size={16} aria-hidden="true" />}
+              items={[
+                {
+                  label: "Staff",
+                  description: "Add an admin or staff member",
+                  icon: <UserRoundPlus size={14} aria-hidden="true" />,
+                  onClick: () => setShowCreate(true),
+                },
+              ]}
+            />
+          )}
+          {viewOnly ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={exportStaffCsv}
+                className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 hover:text-[var(--color-foreground)]"
+              >
+                Export CSV
+              </button>
+              <button
+                type="button"
+                onClick={exportStaffPdf}
+                className="focus-ring rounded-lg border border-[var(--color-border)] px-3 py-2.5 text-sm font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 hover:text-[var(--color-foreground)]"
+              >
+                Export PDF
+              </button>
+            </div>
+          ) : (
+            <ImportExportMenu
+              entityLabel="Staff"
+              exportCsv={exportStaffCsv}
+              exportPdf={exportStaffPdf}
+              importColumns={["first_name", "last_name", "email", "phone", "role", "department", "specialization", "password"]}
+              importSample={[
+                ["Ada", "Okafor", "ada.okafor@clinic.com", "0803 000 1111", "doctor", "Cardiology", "Consultant", ""],
+              ]}
+              templateFilename="staff-import-template.csv"
+              onImport={importStaff}
+              onImported={() => load()}
+            />
+          )}
         </div>
       </div>
 
@@ -693,130 +716,132 @@ export default function StaffManagement({ meId, myRole }: { meId: string; myRole
                     </p>
                   </div>
                 </div>
-                <div className="relative shrink-0" data-staff-menu>
-                  <button
-                    type="button"
-                    onClick={() => setMenuOpenId(menuOpenId === user.id ? null : user.id)}
-                    disabled={busy}
-                    aria-label={`Actions for ${user.full_name}`}
-                    aria-expanded={menuOpenId === user.id}
-                    className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
-                  >
-                    <MoreHorizontal size={16} aria-hidden="true" />
-                  </button>
-                  {menuOpenId === user.id && (
-                    <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-[var(--shadow-lg)]">
-                      {user.staff && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuOpenId(null);
-                            router.push(`/app/roster?staff=${user.staff!.id}`);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                        >
-                          <CalendarRange size={13} aria-hidden="true" /> Schedule Duty
-                        </button>
-                      )}
-                      {user.staff && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuOpenId(null);
-                            openAvailability(user);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                        >
-                          <Clock size={13} aria-hidden="true" /> Availability
-                        </button>
-                      )}
-                      {user.staff &&
-                        (dutyStatusOf(user) === "on_leave" ? (
+                {!viewOnly && (
+                  <div className="relative shrink-0" data-staff-menu>
+                    <button
+                      type="button"
+                      onClick={() => setMenuOpenId(menuOpenId === user.id ? null : user.id)}
+                      disabled={busy}
+                      aria-label={`Actions for ${user.full_name}`}
+                      aria-expanded={menuOpenId === user.id}
+                      className="focus-ring inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
+                    >
+                      <MoreHorizontal size={16} aria-hidden="true" />
+                    </button>
+                    {menuOpenId === user.id && (
+                      <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white py-1 shadow-[var(--shadow-lg)]">
+                        {user.staff && (
                           <button
                             type="button"
                             onClick={() => {
                               setMenuOpenId(null);
-                              openLeave(user);
+                              router.push(`/app/roster?staff=${user.staff!.id}`);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
                           >
-                            <UserRoundCheck size={13} aria-hidden="true" /> Return to Duty
+                            <CalendarRange size={13} aria-hidden="true" /> Schedule Duty
                           </button>
-                        ) : (
+                        )}
+                        {user.staff && (
                           <button
                             type="button"
                             onClick={() => {
                               setMenuOpenId(null);
-                              openLeave(user);
+                              openAvailability(user);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
                           >
-                            <CalendarOff size={13} aria-hidden="true" /> Mark On Leave
+                            <Clock size={13} aria-hidden="true" /> Availability
                           </button>
-                        ))}
-                      {user.staff && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuOpenId(null);
-                            setEditTarget(user);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                        >
-                          <Pencil size={13} aria-hidden="true" /> Edit
-                        </button>
-                      )}
-                      {canManage && (
-                        <>
+                        )}
+                        {user.staff &&
+                          (dutyStatusOf(user) === "on_leave" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                openLeave(user);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            >
+                              <UserRoundCheck size={13} aria-hidden="true" /> Return to Duty
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                openLeave(user);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            >
+                              <CalendarOff size={13} aria-hidden="true" /> Mark On Leave
+                            </button>
+                          ))}
+                        {user.staff && (
                           <button
                             type="button"
                             onClick={() => {
                               setMenuOpenId(null);
-                              setRoleTarget(user);
-                              setRoleForm(user.role);
+                              setEditTarget(user);
                             }}
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
                           >
-                            <ShieldCheck size={13} aria-hidden="true" /> Change Role
+                            <Pencil size={13} aria-hidden="true" /> Edit
                           </button>
+                        )}
+                        {canManage && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                setRoleTarget(user);
+                                setRoleForm(user.role);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            >
+                              <ShieldCheck size={13} aria-hidden="true" /> Change Role
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                resetPassword(user);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            >
+                              <KeyRound size={13} aria-hidden="true" /> Reset Password
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMenuOpenId(null);
+                                toggleActive(user);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            >
+                              <Power size={13} aria-hidden="true" />
+                              {user.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                          </>
+                        )}
+                        {canDelete && (
                           <button
                             type="button"
                             onClick={() => {
                               setMenuOpenId(null);
-                              resetPassword(user);
+                              deleteUser(user);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors duration-150 hover:bg-red-50"
                           >
-                            <KeyRound size={13} aria-hidden="true" /> Reset Password
+                            <Trash2 size={13} aria-hidden="true" /> Delete
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setMenuOpenId(null);
-                              toggleActive(user);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-[var(--color-foreground)] transition-colors duration-150 hover:bg-[var(--color-muted)]"
-                          >
-                            <Power size={13} aria-hidden="true" />
-                            {user.is_active ? "Deactivate" : "Activate"}
-                          </button>
-                        </>
-                      )}
-                      {canDelete && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMenuOpenId(null);
-                            deleteUser(user);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors duration-150 hover:bg-red-50"
-                        >
-                          <Trash2 size={13} aria-hidden="true" /> Delete
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2 px-5 text-xs text-[var(--color-muted-fg)]">

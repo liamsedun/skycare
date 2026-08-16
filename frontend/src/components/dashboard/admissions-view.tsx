@@ -9,6 +9,7 @@ import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import type { AccessLevel } from "@/lib/nav";
 
 const EXPORT_COLUMNS = [
   "patient",
@@ -48,7 +49,8 @@ interface AdmissionRow {
   beds?: { id: string; bed_number: string; ward_id: string; ward?: { id: string; name: string; ward_type: string | null } | null } | null;
 }
 
-export default function AdmissionsView() {
+export default function AdmissionsView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [rows, setRows] = useState<AdmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -264,9 +266,11 @@ export default function AdmissionsView() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />}
               Refresh
             </button>
-            <button onClick={openAdmit} className={btnPrimary}>
-              <UserPlus size={14} /> Admit patient
-            </button>
+            {!viewOnly && (
+              <button onClick={openAdmit} className={btnPrimary}>
+                <UserPlus size={14} /> Admit patient
+              </button>
+            )}
             <ImportExportMenu
               entityLabel="Admissions"
               exportCsv={exportCsv}
@@ -276,6 +280,7 @@ export default function AdmissionsView() {
               templateFilename="admissions-import-template.csv"
               onImport={importAdmissions}
               onImported={() => void load()}
+              allowImport={!viewOnly}
             />
           </div>
         </div>
@@ -325,7 +330,7 @@ export default function AdmissionsView() {
                   <th className="px-4 py-3 font-semibold">Diagnosis</th>
                   <th className="px-4 py-3 font-semibold">Admitted</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                  {!viewOnly && <th className="px-4 py-3 font-semibold text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -348,20 +353,22 @@ export default function AdmissionsView() {
                         {a.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        {a.status === "admitted" && (
-                          <>
-                            <button onClick={() => { setTransferFor(a); setToBedId(""); setReason(""); void loadLookups(); }} className={btnGhost} title="Transfer bed">
-                              <ArrowRightLeft size={14} />
-                            </button>
-                            <button onClick={() => { setDischargeFor(a); setSummary(""); setFollowUp(""); setMedications(""); }} className={btnGhost} title="Discharge">
-                              <DoorOpen size={14} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+                    {!viewOnly && (
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          {a.status === "admitted" && (
+                            <>
+                              <button onClick={() => { setTransferFor(a); setToBedId(""); setReason(""); void loadLookups(); }} className={btnGhost} title="Transfer bed">
+                                <ArrowRightLeft size={14} />
+                              </button>
+                              <button onClick={() => { setDischargeFor(a); setSummary(""); setFollowUp(""); setMedications(""); }} className={btnGhost} title="Discharge">
+                                <DoorOpen size={14} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -9,6 +9,7 @@ import {
   CartesianGrid, Tooltip, ResponsiveContainer, Legend, ComposedChart,
 } from "recharts";
 import { formatDate, ngn } from "@/lib/auth";
+import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
 // Pharmacy Analytics — sales analytics, financial insights and reporting
@@ -45,7 +46,8 @@ const REASON_LABEL: Record<string, string> = {
   expired: "Expired", damaged: "Damaged", theft: "Theft", other: "Other",
 };
 
-export default function PharmacyAnalyticsView() {
+export default function PharmacyAnalyticsView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const viewOnly = accessLevel === "view_only";
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);

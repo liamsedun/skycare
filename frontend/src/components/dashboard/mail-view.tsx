@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Inbox, Loader2, MailPlus, Paperclip, Send, Trash2 } from "lucide-react";
+import { Inbox, Loader2, MailPlus, Paperclip, Search, Send, Trash2 } from "lucide-react";
 import { initials, ROLE_LABELS } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
@@ -71,6 +71,7 @@ export default function MailView() {
   const [filterTo, setFilterTo] = useState("");
 
   const [to, setTo] = useState<string[]>([]);
+  const [toSearch, setToSearch] = useState("");
   const [broadcast, setBroadcast] = useState(false);
   const [broadcastPatients, setBroadcastPatients] = useState(false);
   const [subject, setSubject] = useState("");
@@ -108,6 +109,20 @@ export default function MailView() {
   useEffect(() => {
     loadTab(tab);
   }, [tab, loadTab]);
+
+  const searchResults = useMemo(() => {
+    const q = toSearch.trim().toLowerCase();
+    if (!q) return [];
+    return [...recipients.staff, ...recipients.patients]
+      .filter((r) => !to.includes(r.id) && !r.no_path)
+      .filter((r) => `${r.full_name} ${r.email} ${ROLE_LABELS[r.role] ?? r.role}`.toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [toSearch, recipients, to]);
+
+  function addRecipient(id: string) {
+    if (!to.includes(id)) setTo((t) => [...t, id]);
+    setToSearch("");
+  }
 
   async function markRead(rowId: string) {
     await fetch(`/api/mail/${rowId}/read`, { method: "PUT" }).catch(() => {});
@@ -241,7 +256,7 @@ export default function MailView() {
               <input
                 type="checkbox"
                 checked={broadcast}
-                onChange={(e) => setBroadcast(e.target.checked)}
+                onChange={(e) => { setBroadcast(e.target.checked); if (e.target.checked) setToSearch(""); }}
                 className="h-4 w-4 accent-[var(--color-primary)]"
               />
               <span className="text-sm">
@@ -253,7 +268,7 @@ export default function MailView() {
               <input
                 type="checkbox"
                 checked={broadcastPatients}
-                onChange={(e) => setBroadcastPatients(e.target.checked)}
+                onChange={(e) => { setBroadcastPatients(e.target.checked); if (e.target.checked) setToSearch(""); }}
                 className="h-4 w-4 accent-[var(--color-primary)]"
               />
               <span className="text-sm">
@@ -266,7 +281,45 @@ export default function MailView() {
             {!broadcast && !broadcastPatients && (
               <div>
                 <label className={labelCls} htmlFor="mail-to">To *</label>
-                <div className="flex flex-wrap gap-1.5 rounded-lg border border-[var(--color-border)] bg-white p-2">
+                <div className="relative">
+                  <Search size={15} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
+                  <input
+                    id="mail-to"
+                    value={toSearch}
+                    onChange={(e) => setToSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && searchResults.length > 0) {
+                        e.preventDefault();
+                        addRecipient(searchResults[0].id);
+                      }
+                    }}
+                    placeholder="Search staff or patients by name, email or role…"
+                    className="w-full rounded-lg border border-[var(--color-border)] bg-white py-2.5 pl-9 pr-3 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]"
+                  />
+                  {toSearch.trim().length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-auto rounded-lg border border-[var(--color-border)] bg-white shadow-lg">
+                      {searchResults.length === 0 ? (
+                        <p className="px-3 py-2.5 text-sm text-[var(--color-muted-fg)]">No matches for “{toSearch.trim()}”.</p>
+                      ) : (
+                        searchResults.map((r) => (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => addRecipient(r.id)}
+                            className="focus-ring flex w-full items-center gap-2 border-b border-[var(--color-border)]/60 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-[var(--color-muted)]"
+                          >
+                            <span className="shrink-0 rounded bg-[var(--color-muted)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-muted-fg)]">
+                              {r.role === "patient_api" ? "Patient" : "Staff"}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate font-medium text-[var(--color-foreground)]">{recipientLabel(r)}</span>
+                            <span className="shrink-0 text-xs text-[var(--color-muted-fg)]">{ROLE_LABELS[r.role] ?? r.role}</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-[var(--color-border)] bg-white p-2">
                   {to.map((id) => {
                     const opt = [...recipients.staff, ...recipients.patients].find((r) => r.id === id);
                     return (
@@ -282,9 +335,9 @@ export default function MailView() {
                     onChange={(e) => {
                       if (e.target.value && !to.includes(e.target.value)) setTo((t) => [...t, e.target.value]);
                     }}
-                    className="min-w-32 flex-1 bg-transparent px-1 text-sm outline-none"
+                    className="min-w-32 flex-1 bg-transparent px-1 py-1 text-sm outline-none"
                   >
-                    <option value="">Add recipient…</option>
+                    <option value="">Or pick from the list…</option>
                     {recipients.staff.length > 0 && (
                       <optgroup label="Staff">
                         {recipients.staff.map((r) => (
@@ -305,6 +358,7 @@ export default function MailView() {
                     )}
                   </select>
                 </div>
+                <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Tip: type in the search bar to find staff or patients quickly — or use the dropdown.</p>
               </div>
             )}
 

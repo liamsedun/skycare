@@ -1,24 +1,21 @@
 import {
   withStaff,
   okPaginated,
-  ForbiddenError,
   requireTenant,
   getPagination,
   resolveParam,
+  requireModuleLevel,
 } from "@/lib/api-utils";
-import { ADMIN_ROLES } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/audit-logs?entity_type=&entity_id=&user_id=&role=&action=&from=&to=&page=&pageSize=
-// Admin-only (hospital_admin / super_admin). Tenant-scoped via service client
-// (bypasses RLS, so the filter is mandatory — mirrors the audit_select policy).
+// Staff-readable via module grants ("audit-logs" != none). Tenant-scoped via service
+// client (bypasses RLS, so the filter is mandatory — mirrors the audit_select policy).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (!ADMIN_ROLES.includes(ctx.role)) {
-    throw new ForbiddenError("Only admins can view audit logs");
-  }
+  await requireModuleLevel(ctx, "audit-logs");
 
   const { page, pageSize, from, to } = getPagination(req.nextUrl.searchParams);
   const entityType = resolveParam(req.nextUrl.searchParams.get("entity_type"));

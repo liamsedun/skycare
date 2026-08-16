@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
+import { requireModulePage } from "@/lib/module-guard";
 import StaffManagement from "@/components/dashboard/staff-management";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +14,8 @@ export default async function StaffPage() {
 
   if (!user) redirect("/login?redirect=/app/staff");
 
-  const claims = getClaims(user);
-  const role = claims.role as StaffRole | undefined;
-  if (role !== "hospital_admin" && role !== "super_admin") {
-    redirect("/app");
-  }
+  const accessLevel = await requireModulePage(supabase, user, "staff", ["hospital_admin", "super_admin"]);
+  const role = getClaims(user).role as StaffRole | undefined;
 
-  return <StaffManagement meId={user.id} myRole={role} />;
+  return <StaffManagement meId={user.id} myRole={role} accessLevel={accessLevel} />;
 }
