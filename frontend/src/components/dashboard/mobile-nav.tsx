@@ -113,7 +113,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
         id="mobile-more-sheet"
         role="dialog"
         aria-label="More menu"
-        className={`absolute bottom-[78px] right-3 flex max-h-[min(560px,calc(100vh-90px))] w-[calc(100vw-24px)] max-w-[350px] origin-bottom-right flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] shadow-[0_-6px_40px_rgba(0,0,0,0.25),0_24px_60px_rgba(0,0,0,0.35)] transition-all duration-200 ${
+        className={`absolute bottom-[66px] right-3 flex max-h-[min(560px,calc(100vh-76px))] w-[calc(100vw-24px)] max-w-[350px] origin-bottom-right flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] shadow-[0_-6px_40px_rgba(0,0,0,0.25),0_24px_60px_rgba(0,0,0,0.35)] transition-all duration-200 ${
           open ? "scale-100 opacity-100" : "pointer-events-none scale-[0.92] opacity-0"
         }`}
       >
@@ -123,7 +123,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
           <span className="text-[10px] text-[var(--color-muted-fg)]">tap a tile to open</span>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin] [scrollbar-color:#2c3849_transparent]">
-          <div className="grid grid-cols-3 gap-y-1.5 gap-x-2">
+          <div className="grid grid-cols-3 gap-y-1 gap-x-2">
             {spec.menu.map((item) => {
               const Icon = item.icon;
               const children = groupTiles(item);
@@ -135,7 +135,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                       type="button"
                       onClick={() => setOpenKey(expanding ? null : item.key)}
                       aria-expanded={expanding}
-                      className="flex w-full flex-col items-center gap-1.5 rounded-xl px-1 pb-1.5 pt-2 transition-colors duration-150 active:bg-white/10"
+                      className="flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
                     >
                       <span
                         className="relative grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430]"
@@ -155,7 +155,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                         setOpen(false);
                         setOpenKey(null);
                       }}
-                      className="flex w-full flex-col items-center gap-1.5 rounded-xl px-1 pb-1.5 pt-2 transition-colors duration-150 active:bg-white/10"
+                      className="flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
                     >
                       <span
                         className="grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430]"
@@ -220,7 +220,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
       {/* bar */}
       <nav
         aria-label="Mobile navigation"
-        className="relative z-10 flex items-end gap-1 border-t border-[var(--color-border)] bg-[var(--color-background)] px-2.5 pt-1.5 pb-[calc(10px+env(safe-area-inset-bottom))]"
+        className="relative z-10 flex items-end gap-1 border-t border-[var(--color-border)] bg-[var(--color-background)] px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))]"
       >
         <div className="flex min-w-0 flex-1">
           {tabs.map((item) => {
