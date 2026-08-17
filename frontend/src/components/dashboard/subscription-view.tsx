@@ -25,9 +25,12 @@ interface TenantPlan {
   plan: string;
   currency: string;
   trial_ends_at: string | null;
+  subscription_status: string | null;
   is_active: boolean;
   created_at: string;
 }
+
+const PLANS = ["basic", "pro", "enterprise", "custom"];
 
 function fmtDate(v: string | null | undefined): string {
   if (!v) return "—";
@@ -38,9 +41,9 @@ function planBadge(plan: string) {
   const color =
     plan === "enterprise"
       ? "bg-indigo-50 text-indigo-700"
-      : plan === "growth"
+      : plan === "pro"
         ? "bg-sky-50 text-sky-700"
-        : plan === "scale"
+        : plan === "custom"
           ? "bg-violet-50 text-violet-700"
           : "bg-slate-100 text-slate-700";
   return (
@@ -52,19 +55,36 @@ function planBadge(plan: string) {
 
 function statusBadge(status: string) {
   const s = status?.toLowerCase() ?? "";
-  const cls =
-    s === "paid"
-      ? "bg-emerald-50 text-emerald-700"
-      : s === "pending"
-        ? "bg-amber-50 text-amber-700"
-        : s === "failed" || s === "cancelled"
-          ? "bg-rose-50 text-rose-700"
-          : "bg-slate-100 text-slate-600";
+  if (["paid"].includes(s)) return <Badge cls="bg-emerald-50 text-emerald-700" label={status} />;
+  if (s === "pending") return <Badge cls="bg-amber-50 text-amber-700" label={status} />;
+  if (["failed", "cancelled"].includes(s)) return <Badge cls="bg-rose-50 text-rose-700" label={status} />;
+  return <Badge cls="bg-slate-100 text-slate-600" label={status} />;
+}
+
+function Badge({ cls, label }: { cls: string; label: string }) {
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${cls}`}>
-      {status}
+    <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${cls}`}>
+      {label}
     </span>
   );
+}
+
+function subscriptionBadge(status: string | null | undefined) {
+  const s = (status ?? "trial").toLowerCase();
+  switch (s) {
+    case "active":
+      return <Badge cls="bg-emerald-50 text-emerald-700" label="Active" />;
+    case "trial":
+      return <Badge cls="bg-sky-50 text-sky-700" label="Trial" />;
+    case "suspended":
+      return <Badge cls="bg-amber-50 text-amber-700" label="Suspended" />;
+    case "past_due":
+      return <Badge cls="bg-orange-50 text-orange-700" label="Past due" />;
+    case "cancelled":
+      return <Badge cls="bg-rose-50 text-rose-700" label="Cancelled" />;
+    default:
+      return <Badge cls="bg-slate-100 text-slate-600" label={status ?? "Trial"} />;
+  }
 }
 
 export default function SubscriptionView() {
@@ -73,6 +93,61 @@ export default function SubscriptionView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/subscription", { cache: "no-store" });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error ?? "Failed to load subscription");
+        return;
+      }
+      setTenant(body.data.tenant);
+      setInvoices(body.data.invoices ?? []);
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const act = async (action: string, plan?: string) => {
+    setBusy(action);
+    setError(null);
+    try {
+      const res = await fetch("/api/subscription", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, plan }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setError(body.error ?? "Request failed");
+        return;
+      }
+      setTenant(body.data.tenant);
+      setNotice(
+        action === "change-plan"
+          ? `Plan changed to ${plan}.`
+          : `Subscription ${actionVerbs[action] ?? action}.`
+      );
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const actionVerbs: Record<string, string> = {
+    activate: "activated",
+    suspend: "suspended",
+    resume: "resumed",
+    cancel: "cancelled",
+  };
 
   useEffect(() => {
     (async () => {
@@ -86,24 +161,19 @@ export default function SubscriptionView() {
           setLoading(false);
           return;
         }
-        const res = await fetch("/api/subscription", { cache: "no-store" });
-        const body = await res.json();
-        if (!res.ok) {
-          setError(body.error ?? "Failed to load subscription");
-          return;
-        }
-        setTenant(body.data.tenant);
-        setInvoices(body.data.invoices ?? []);
+        await load(true);
       } catch {
         setError("Something went wrong");
       } finally {
         setLoading(false);
       }
     })();
-    function isAdminRole(r: string | null | undefined): boolean {
-      return r === "hospital_admin" || r === "super_admin";
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function isAdminRole(r: string | null | undefined): boolean {
+    return r === "hospital_admin" || r === "super_admin";
+  }
 
   if (loading) {
     return (
@@ -114,7 +184,7 @@ export default function SubscriptionView() {
     );
   }
 
-  if (error) {
+  if (error && !tenant) {
     return (
       <div className={`${cardCls} mx-auto max-w-xl text-center`}>
         <ShieldX size={28} className="mx-auto text-rose-500" aria-hidden="true" />
@@ -126,9 +196,16 @@ export default function SubscriptionView() {
     );
   }
 
-  const trialActive = tenant?.trial_ends_at
-    ? new Date(tenant.trial_ends_at) > new Date()
-    : false;
+  const status = tenant?.subscription_status ?? "trial";
+  const trialActive =
+    status !== "cancelled" &&
+    status !== "suspended" &&
+    tenant?.trial_ends_at
+      ? new Date(tenant.trial_ends_at) > new Date()
+      : false;
+
+  const btnCls =
+    "rounded-lg px-3 py-2 text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="space-y-6">
@@ -138,6 +215,17 @@ export default function SubscriptionView() {
           Your hospital&apos;s SkyCare SaaS plan and payment history.
         </p>
       </div>
+
+      {notice && (
+        <div className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+          {error}
+        </div>
+      )}
 
       <div className={cardCls}>
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -163,6 +251,10 @@ export default function SubscriptionView() {
         {tenant && (
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-[var(--color-border)] pt-6 sm:grid-cols-4">
             <div>
+              <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Status</p>
+              <div className="mt-1">{subscriptionBadge(tenant.subscription_status)}</div>
+            </div>
+            <div>
               <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Plan</p>
               <p className="mt-1 text-sm font-medium capitalize text-[var(--color-foreground)]">
                 {tenant.plan}
@@ -172,12 +264,6 @@ export default function SubscriptionView() {
               <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Trial ends</p>
               <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
                 {fmtDate(tenant.trial_ends_at)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">Status</p>
-              <p className="mt-1 text-sm font-medium text-[var(--color-foreground)]">
-                {tenant.is_active ? "Active" : "Suspended"}
               </p>
             </div>
             <div>
@@ -193,6 +279,83 @@ export default function SubscriptionView() {
           <div className="mt-6 rounded-lg bg-[var(--color-primary-soft)] px-4 py-3 text-sm text-[var(--color-primary-dark)]">
             You are on a free trial until {fmtDate(tenant.trial_ends_at)}. Upgrade to continue
             uninterrupted access to SkyCare.
+          </div>
+        )}
+        {status === "suspended" && (
+          <div className="mt-6 rounded-lg bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
+            This subscription has been suspended — your public site is showing a temporary
+            unavailable notice. Resume the subscription to restore full access.
+          </div>
+        )}
+        {status === "cancelled" && (
+          <div className="mt-6 rounded-lg bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+            This subscription has been cancelled. To restore service, contact the SkyCare team —
+            the plan can still be changed from here.
+          </div>
+        )}
+
+        {isAdmin && tenant && (
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[var(--color-border)] pt-5">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
+              Manage subscription
+            </span>
+            {status === "trial" || status === "past_due" ? (
+              <button
+                onClick={() => act("activate")}
+                disabled={busy !== null}
+                className={`${btnCls} bg-emerald-600 text-white hover:bg-emerald-700`}
+              >
+                {busy === "activate" && <Loader2 size={14} className="mr-1 inline animate-spin" />}
+                Activate subscription
+              </button>
+            ) : null}
+            {status === "suspended" ? (
+              <button
+                onClick={() => act("resume")}
+                disabled={busy !== null}
+                className={`${btnCls} bg-emerald-600 text-white hover:bg-emerald-700`}
+              >
+                {busy === "resume" && <Loader2 size={14} className="mr-1 inline animate-spin" />}
+                Resume subscription
+              </button>
+            ) : null}
+            {["trial", "active", "past_due"].includes(status) ? (
+              <button
+                onClick={() => act("suspend")}
+                disabled={busy !== null}
+                className={`${btnCls} bg-amber-600 text-white hover:bg-amber-700`}
+              >
+                {busy === "suspend" && <Loader2 size={14} className="mr-1 inline animate-spin" />}
+                Suspend
+              </button>
+            ) : null}
+            {status !== "cancelled" ? (
+              <button
+                onClick={() => {
+                  if (window.confirm("Cancel this subscription? The public site will show an unavailable notice.")) {
+                    void act("cancel");
+                  }
+                }}
+                disabled={busy !== null}
+                className={`${btnCls} bg-rose-600 text-white hover:bg-rose-700`}
+              >
+                {busy === "cancel" && <Loader2 size={14} className="mr-1 inline animate-spin" />}
+                Cancel subscription
+              </button>
+            ) : null}
+            <select
+              value={tenant.plan}
+              onChange={(e) => act("change-plan", e.target.value)}
+              disabled={busy !== null}
+              className="ml-auto rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-foreground)]"
+              aria-label="Change plan"
+            >
+              {PLANS.map((p) => (
+                <option key={p} value={p}>
+                  {p.charAt(0).toUpperCase() + p.slice(1)} plan
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>
