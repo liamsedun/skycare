@@ -6,9 +6,11 @@ import {
   ChevronDown,
   CreditCard,
   Database,
+  Globe,
   Hash,
   ImagePlus,
   Landmark,
+  LayoutGrid,
   Loader2,
   Palette,
   Save,
@@ -19,6 +21,8 @@ import {
 import { DEFAULT_TENANT_SETTINGS, PREFIX_PATTERN } from "@/lib/tenant-settings";
 import BankAccountsSection from "@/components/dashboard/bank-accounts-section";
 import WebsiteDoctorsSection from "@/components/dashboard/website-doctors-section";
+import WebsiteCmsSection from "@/components/dashboard/website-cms-section";
+import TenantDomainsSection from "@/components/dashboard/tenant-domains-section";
 import SystemBackupSection from "@/components/dashboard/system-backup-section";
 import UsersRolesSection from "@/components/dashboard/users-roles-section";
 
@@ -64,6 +68,8 @@ const SECTIONS = [
   { id: "bank-accounts", label: "Bank Accounts", icon: Landmark },
   { id: "users", label: "Users & Roles", icon: UserCog },
   { id: "doctors", label: "Website Doctors", icon: Stethoscope },
+  { id: "website-cms", label: "Website Content", icon: LayoutGrid },
+  { id: "domains", label: "Custom Domains", icon: Globe },
   { id: "backup", label: "System Backup", icon: Database },
 ] as const;
 
@@ -517,6 +523,8 @@ export default function TenantSettingsView() {
       {activeSection === "bank-accounts" && <BankAccountsSection />}
       {activeSection === "users" && <UsersRolesSection />}
       {activeSection === "doctors" && <WebsiteDoctorsSection />}
+      {activeSection === "website-cms" && <WebsiteCmsSection />}
+      {activeSection === "domains" && <TenantDomainsSection />}
       {activeSection === "backup" && <SystemBackupSection />}
 
       {isSaveableSection && (
