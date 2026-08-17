@@ -1,6 +1,7 @@
 import { withAuth, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { syncPortalAccountEmail } from "@/lib/dependant-portal";
+import { storePatientAvatar } from "@/lib/patient-avatar";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,19 @@ export const PUT = withAuth(async (req, ctx) => {
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];
+  }
+  // Photo changes come through as `avatar` — a data URL to store (or null/"" to clear).
+  const avatar = body.avatar;
+  let avatarUrl: string | null = null;
+  if (typeof avatar === "string" && avatar.trim()) {
+    try {
+      avatarUrl = await storePatientAvatar(ctx.svc, tenantId, id, avatar);
+    } catch (e) {
+      throw new ValidationError(e instanceof Error ? e.message : "Failed to save the photo");
+    }
+    patch.avatar_url = avatarUrl;
+  } else if (avatar === null || avatar === "") {
+    patch.avatar_url = null;
   }
   if (typeof patch.email === "string") {
     const em = patch.email.trim().toLowerCase();

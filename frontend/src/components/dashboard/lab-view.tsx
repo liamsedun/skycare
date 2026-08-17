@@ -1185,7 +1185,7 @@ function BulkPriceModal({
         </div>
 
         <div className="max-h-[55vh] overflow-y-auto rounded-xl border border-[var(--color-border)]">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="sticky top-0 bg-[var(--color-muted)]">
               <tr className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                 <th scope="col" className="px-4 py-2.5 font-semibold">Service</th>
@@ -2080,7 +2080,7 @@ function RequestDetailModal({
           </p>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
+        <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">

@@ -5,6 +5,11 @@ import { Inbox, Loader2, MailPlus, Send, Trash2 } from "lucide-react";
 import { initials } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import {
+  AppHeader,
+  AppSegmented,
+  AppSkeletonList,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -171,8 +176,64 @@ export default function PatientMail() {
   const visibleInbox = inbox.filter((m) => inDateRange(m.created_at, filterFrom, filterTo));
   const visibleSent = sent.filter((m) => inDateRange(m.created_at, filterFrom, filterTo));
 
+  const composeForm = (
+    <form onSubmit={sendMail} className="space-y-4 rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
+      <div>
+        <label className={labelCls} htmlFor="to">
+          To (staff)
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {recipients.length === 0 ? (
+            <p className="text-sm text-[var(--color-muted-fg)]">No staff available. Please try again later.</p>
+          ) : (
+            recipients.map((r) => {
+              const selected = to.includes(r.id);
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => toggleRecipient(r.id)}
+                  className={`focus-ring inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    selected
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]"
+                      : "border-[var(--color-border)] bg-white text-[var(--color-muted-fg)] hover:bg-slate-50"
+                  }`}
+                >
+                  {initials(r.full_name)} {r.full_name}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+      <div>
+        <label className={labelCls} htmlFor="subject">
+          Subject
+        </label>
+        <input id="subject" className={inputCls} value={subject} onChange={(e) => setSubject(e.target.value)} required />
+      </div>
+      <div>
+        <label className={labelCls} htmlFor="body">
+          Message
+        </label>
+        <textarea id="body" rows={6} className={inputCls} value={body} onChange={(e) => setBody(e.target.value)} required />
+      </div>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={sending}
+          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
+        >
+          <Send size={15} /> {sending ? "Sending…" : "Send message"}
+        </button>
+      </div>
+    </form>
+  );
+
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Messages</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Internal mail with hospital staff.</p>
@@ -219,57 +280,7 @@ export default function PatientMail() {
           <Loader2 size={22} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" />
         </div>
       ) : tab === "compose" ? (
-        <form onSubmit={sendMail} className="space-y-4 rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-          <div>
-            <label className={labelCls} htmlFor="to">
-              To (staff)
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {recipients.length === 0 ? (
-                <p className="text-sm text-[var(--color-muted-fg)]">No staff available. Please try again later.</p>
-              ) : (
-                recipients.map((r) => {
-                  const selected = to.includes(r.id);
-                  return (
-                    <button
-                      key={r.id}
-                      type="button"
-                      onClick={() => toggleRecipient(r.id)}
-                      className={`focus-ring inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                        selected
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]"
-                          : "border-[var(--color-border)] bg-white text-[var(--color-muted-fg)] hover:bg-slate-50"
-                      }`}
-                    >
-                      {initials(r.full_name)} {r.full_name}
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-          <div>
-            <label className={labelCls} htmlFor="subject">
-              Subject
-            </label>
-            <input id="subject" className={inputCls} value={subject} onChange={(e) => setSubject(e.target.value)} required />
-          </div>
-          <div>
-            <label className={labelCls} htmlFor="body">
-              Message
-            </label>
-            <textarea id="body" rows={6} className={inputCls} value={body} onChange={(e) => setBody(e.target.value)} required />
-          </div>
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={sending}
-              className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-primary-dark)] disabled:opacity-60"
-            >
-              <Send size={15} /> {sending ? "Sending…" : "Send message"}
-            </button>
-          </div>
-        </form>
+        composeForm
       ) : tab === "inbox" ? (
         visibleInbox.length === 0 ? (
           emptyCard("Your inbox is empty.")
@@ -348,5 +359,154 @@ export default function PatientMail() {
         </div>
       )}
     </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader
+            title="Messages"
+            meta={
+              tab === "inbox"
+                ? `${inbox.filter((m) => !m.isRead).length} unread`
+                : tab === "sent"
+                  ? `${sent.length} sent`
+                  : "New message"
+            }
+          />
+
+          <AppSegmented<Tab>
+            tabs={[
+              { key: "inbox", label: `Inbox ${inbox.filter((m) => !m.isRead).length > 0 ? `(${inbox.filter((m) => !m.isRead).length})` : ""}` },
+              { key: "sent", label: "Sent" },
+              { key: "compose", label: "Compose" },
+            ]}
+            active={tab}
+            onChange={setTab}
+          />
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+          {sentOk && (
+            <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+              Message sent.
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={4} />
+          ) : tab === "compose" ? (
+            <div className="app-glass rounded-2xl p-4">{composeForm}</div>
+          ) : tab === "inbox" ? (
+            visibleInbox.length === 0 ? (
+              <div className="app-glass rounded-2xl py-10 text-center">
+                <Inbox size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+                <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">Your inbox is empty.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {visibleInbox.map((msg) => {
+                  const open = openId === msg.id;
+                  return (
+                    <div key={msg.id} className={`rounded-2xl ${msg.isRead ? "app-glass" : "border border-[#e0a84a]/25 bg-[#e0a84a]/[0.06]"} overflow-hidden`}>
+                      <div className="flex items-center gap-2 p-3.5">
+                        <button
+                          type="button"
+                          onClick={() => toggleOpen(msg.id, msg)}
+                          aria-expanded={open}
+                          className="focus-ring flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                              msg.isRead ? "bg-[var(--color-muted)]/40 text-[var(--color-muted-fg)]" : "bg-[#e0a84a]/15 text-[#e0a84a]"
+                            }`}
+                          >
+                            <Inbox size={16} aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className={`truncate text-sm ${msg.isRead ? "font-medium" : "font-semibold"} text-[var(--color-foreground)]`}>
+                                {msg.subject}
+                              </p>
+                              {!msg.isRead && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-[#e0a84a]" />}
+                            </div>
+                            <p className="truncate text-xs text-[var(--color-muted-fg)]">
+                              {msg.sender?.full_name ?? "Hospital"} · {timeAgo(msg.created_at)}
+                              {msg.is_broadcast ? " · Broadcast" : ""}
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeMessage(msg)}
+                          className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-rose-50 hover:text-[var(--color-destructive)]"
+                          aria-label="Delete message"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                      {open && (
+                        <div className="border-t border-[var(--color-border)] px-3.5 py-3">
+                          <p className="whitespace-pre-wrap text-xs text-[var(--color-foreground)]">{msg.body}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          ) : visibleSent.length === 0 ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <Send size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">You haven&apos;t sent any messages yet.</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {visibleSent.map((msg) => {
+                const open = openId === msg.id;
+                return (
+                  <div key={msg.id} className="app-glass overflow-hidden rounded-2xl">
+                    <div className="flex items-center gap-2 p-3.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleOpen(msg.id, msg)}
+                        aria-expanded={open}
+                        className="focus-ring flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--color-muted)]/40 text-[var(--color-muted-fg)]">
+                          <Send size={16} aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{msg.subject}</p>
+                          <p className="truncate text-xs text-[var(--color-muted-fg)]">
+                            To: {(msg.recipients ?? []).map((r) => r.full_name).join(", ") || "Hospital staff"} · {timeAgo(msg.created_at)}
+                          </p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeMessage(msg)}
+                        className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-rose-50 hover:text-[var(--color-destructive)]"
+                        aria-label="Delete message"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                    {open && (
+                      <div className="border-t border-[var(--color-border)] px-3.5 py-3">
+                        <p className="whitespace-pre-wrap text-xs text-[var(--color-foreground)]">{msg.body}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

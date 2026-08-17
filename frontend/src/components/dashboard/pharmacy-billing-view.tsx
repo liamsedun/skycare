@@ -13,7 +13,7 @@ import { useTenantBranding } from "@/lib/use-tenant-branding";
 import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
-// Pharmacy Billing — sales invoices, multi-method payments, insurance claims,
+// Pharmacy Billing â€” sales invoices, multi-method payments, insurance claims,
 // formulary coverage rules and the daily sales report.
 // ============================================================================
 
@@ -23,7 +23,7 @@ const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
-const ngn = (v: number | null | undefined) => `₦${Number(v ?? 0).toLocaleString()}`;
+const ngn = (v: number | null | undefined) => `â‚¦${Number(v ?? 0).toLocaleString()}`;
 
 type Tab = "sales" | "payments" | "claims" | "coverage" | "report";
 
@@ -188,12 +188,12 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
     ]);
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — there are no sales yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no sales yet."); return; }
     downloadCsv(`pharmacy-sales-${dateStamp()}.csv`, SALES_COLUMNS, salesRows());
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — there are no sales yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no sales yet."); return; }
     printTable("Pharmacy Sales", SALES_COLUMNS, salesRows());
   }
 
@@ -214,7 +214,7 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search invoice, patient, drug…"
+          placeholder="Search invoice, patient, drugâ€¦"
           aria-label="Search pharmacy sales"
           className={`${inputCls} w-56`}
         />
@@ -253,7 +253,7 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
@@ -268,7 +268,7 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : visible.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No pharmacy sales yet.</td></tr>
             ) : (
@@ -276,7 +276,7 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 <tr key={r.id} className="hover:bg-slate-50">
                   <td className="px-4 py-2.5 font-medium text-[var(--color-foreground)]">{r.invoice_number}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
-                    {r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : "—"}
+                    {r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : "â€”"}
                   </td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)] capitalize">{r.source}</td>
                   <td className="px-4 py-2.5 font-semibold">{ngn(r.total_amount)}</td>
@@ -397,7 +397,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           }
         }
         if (shortages.length > 0) {
-          throw new Error(`Insufficient stock — ${shortages.join(" · ")}`);
+          throw new Error(`Insufficient stock â€” ${shortages.join(" Â· ")}`);
         }
       }
 
@@ -418,7 +418,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
       if (dispense) {
         // Dispense every item. A failure here is a race (stock changed after
-        // the pre-flight) — cancel the invoice so we never keep a sale whose
+        // the pre-flight) â€” cancel the invoice so we never keep a sale whose
         // stock did not move, then surface exactly what went wrong.
         const failed: Array<{ name: string; reason: string }> = [];
         for (const it of items) {
@@ -436,11 +436,11 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
             const del = await fetch(`/api/pharmacy/invoices/${body.data.id}`, { method: "DELETE" });
             cancelled = del.ok;
           }
-          const detail = failed.map((f) => `${f.name}: ${f.reason}`).join(" · ");
+          const detail = failed.map((f) => `${f.name}: ${f.reason}`).join(" Â· ");
           throw new Error(
             cancelled
-              ? `Sale cancelled — dispense failed: ${detail}`
-              : `Dispense failed: ${detail} — invoice ${body.data?.invoice_number ?? ""} was KEPT, please review it`
+              ? `Sale cancelled â€” dispense failed: ${detail}`
+              : `Dispense failed: ${detail} â€” invoice ${body.data?.invoice_number ?? ""} was KEPT, please review it`
           );
         }
       }
@@ -474,7 +474,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
           </div>
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <label className={lbl} htmlFor="ns-disc">Discount (₦)</label>
+              <label className={lbl} htmlFor="ns-disc">Discount (â‚¦)</label>
               <input id="ns-disc" type="number" min={0} value={discount} onChange={(e) => setDiscount(e.target.value)} className={inputCls} />
             </div>
             <div className="w-28">
@@ -500,7 +500,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
               id="ns-drug"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search the catalogue…"
+              placeholder="Search the catalogueâ€¦"
               className={`${inputCls} pl-9`}
             />
           </div>
@@ -511,7 +511,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
                   <button type="button" onClick={() => addItem(d)} className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--color-primary-soft)]">
                     <span className="block font-medium">{d.name}</span>
                     <span className="block text-xs text-[var(--color-muted-fg)]">
-                      {[d.dosage, `₦${Number(d.unitPrice ?? 0).toLocaleString()}`].filter(Boolean).join(" · ")}
+                      {[d.dosage, `â‚¦${Number(d.unitPrice ?? 0).toLocaleString()}`].filter(Boolean).join(" Â· ")}
                       {d.priceSource === "branch_override" && (
                         <span className="ml-1 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-semibold text-amber-700">branch price</span>
                       )}
@@ -532,7 +532,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         </div>
 
         {items.length > 0 && (
-          <div className="mt-4 overflow-hidden rounded-lg border border-[var(--color-border)]">
+          <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--color-border)]">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase text-[var(--color-muted-fg)]">
@@ -571,7 +571,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
         <div className="mt-4 flex items-center justify-end gap-4 text-sm">
           <span className="text-[var(--color-muted-fg)]">Subtotal {ngn(subtotal)}</span>
-          {disc > 0 && <span className="text-red-500">−{ngn(disc)}</span>}
+          {disc > 0 && <span className="text-red-500">âˆ’{ngn(disc)}</span>}
           <span className="text-xl font-bold">{ngn(total)}</span>
         </div>
 
@@ -580,7 +580,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         <div className="mt-5 flex gap-3">
           <button type="button" onClick={onClose} className={btnGhost + " flex-1 justify-center py-2.5"}>Cancel</button>
           <button type="button" onClick={submit} disabled={busy || items.length === 0} className={btnPrimary + " flex-1 justify-center py-2.5"}>
-            {busy ? "Creating…" : "Create invoice"}
+            {busy ? "Creatingâ€¦" : "Create invoice"}
           </button>
         </div>
       </div>
@@ -589,13 +589,13 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 }
 
 // ---------------------------------------------------------------------------
-// CONVERT PRESCRIPTION → SALE
+// CONVERT PRESCRIPTION â†’ SALE
 // Pharmacy staff pick a pending prescription and decide the channel:
-//   in-house patient  → stock issued, invoice in the patient's name, payment
+//   in-house patient  â†’ stock issued, invoice in the patient's name, payment
 //                       left outstanding on their account, prescription closed.
-//   walk-in customer  → stock issued, invoice raised, cash/transfer collected
+//   walk-in customer  â†’ stock issued, invoice raised, cash/transfer collected
 //                       NOW (bank ledger credited), prescription closed.
-//   external pharmacy → no stock, no invoice: prescription closed and the
+//   external pharmacy â†’ no stock, no invoice: prescription closed and the
 //                       patient gets Internal Mail with the medication list.
 // ---------------------------------------------------------------------------
 interface RxCandidate {
@@ -613,9 +613,9 @@ interface RxCandidate {
 type ConvertChannel = "in_house" | "walk_in" | "external";
 
 const CHANNELS: Array<{ id: ConvertChannel; label: string; hint: string }> = [
-  { id: "in_house", label: "In-house patient", hint: "Stock issued · invoice in patient's name · payment tracked as outstanding" },
-  { id: "walk_in", label: "Walk-in customer", hint: "Stock issued · invoice raised · cash/transfer collected now, bank ledger credited" },
-  { id: "external", label: "External pharmacy", hint: "No stock, no invoice · prescription closed · patient mailed the medication list" },
+  { id: "in_house", label: "In-house patient", hint: "Stock issued Â· invoice in patient's name Â· payment tracked as outstanding" },
+  { id: "walk_in", label: "Walk-in customer", hint: "Stock issued Â· invoice raised Â· cash/transfer collected now, bank ledger credited" },
+  { id: "external", label: "External pharmacy", hint: "No stock, no invoice Â· prescription closed Â· patient mailed the medication list" },
 ];
 
 function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
@@ -653,7 +653,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
           const body = await bankRes.json();
           const accounts = (body.data ?? []).map((a: { id: string; bank_name: string; account_name: string }) => ({
             id: a.id,
-            label: `${a.bank_name} — ${a.account_name}`,
+            label: `${a.bank_name} â€” ${a.account_name}`,
           }));
           setBankAccounts(accounts);
         }
@@ -705,21 +705,21 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
         const payBody = await payRes.json();
         if (!payRes.ok) throw new Error(`Payment failed: ${payBody.error ?? "unknown error"}`);
         setDone({
-          summary: `Walk-in sale completed — invoice ${body.data.invoice.invoice_number}, ${method.toUpperCase()} payment of ₦${Number(
+          summary: `Walk-in sale completed â€” invoice ${body.data.invoice.invoice_number}, ${method.toUpperCase()} payment of â‚¦${Number(
             body.data.invoice.total_amount
           ).toLocaleString()} recorded to ${bankAccountId === "cash" ? "the cash ledger" : "the bank ledger"}.`,
           invoiceNumber: body.data.invoice.invoice_number,
         });
       } else if (channel === "in_house") {
         setDone({
-          summary: `Sale closed for ${rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : "the patient"} — stock issued, invoice ${
+          summary: `Sale closed for ${rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : "the patient"} â€” stock issued, invoice ${
             body.data?.invoice?.invoice_number ?? ""
           } raised and left outstanding on the patient's account.`,
           invoiceNumber: body.data?.invoice?.invoice_number ?? null,
         });
       } else {
         setDone({
-          summary: `Prescription closed as an external-pharmacy sale${rx.external_pharmacy_name ? ` (${rx.external_pharmacy_name})` : ""} — the patient was mailed the medication list to buy out-of-house.`,
+          summary: `Prescription closed as an external-pharmacy sale${rx.external_pharmacy_name ? ` (${rx.external_pharmacy_name})` : ""} â€” the patient was mailed the medication list to buy out-of-house.`,
         });
       }
     } catch (e) {
@@ -756,7 +756,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             <div className="mt-4">
               <label className={lbl}>1. Choose the prescription</label>
               {loading ? (
-                <p className="rounded-lg border border-[var(--color-border)] p-4 text-center text-xs text-[var(--color-muted-fg)]">Loading prescriptions…</p>
+                <p className="rounded-lg border border-[var(--color-border)] p-4 text-center text-xs text-[var(--color-muted-fg)]">Loading prescriptionsâ€¦</p>
               ) : rxs.length === 0 ? (
                 <p className="rounded-lg border border-[var(--color-border)] p-4 text-center text-xs text-[var(--color-muted-fg)]">
                   No pending prescriptions waiting for conversion.
@@ -786,7 +786,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
                             </span>
                           </span>
                           <span className="mt-0.5 block truncate text-xs text-[var(--color-muted-fg)]">
-                            Issued {new Date(r.issued_date ?? r.created_at).toLocaleDateString()} · {itemNames(r)} · {remaining} item(s) remaining
+                            Issued {new Date(r.issued_date ?? r.created_at).toLocaleDateString()} Â· {itemNames(r)} Â· {remaining} item(s) remaining
                           </span>
                         </button>
                       </li>
@@ -797,7 +797,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             </div>
 
             <div className="mt-4">
-              <label className={lbl}>2. Sale channel — how is this being fulfilled?</label>
+              <label className={lbl}>2. Sale channel â€” how is this being fulfilled?</label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {CHANNELS.map((c) => (
                   <button
@@ -842,13 +842,13 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
 
             {channel === "external" && selected?.external_pharmacy_name && (
               <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">
-                Patient was routed to <strong>{selected.external_pharmacy_name}</strong> — closing sends them the medication list via Internal Mail.
+                Patient was routed to <strong>{selected.external_pharmacy_name}</strong> â€” closing sends them the medication list via Internal Mail.
               </p>
             )}
 
             <div className="mt-4">
               <label className={lbl} htmlFor="cs-notes">Notes (optional)</label>
-              <input id="cs-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. urgent, collected same day, dosage instructions…" className={inputCls} />
+              <input id="cs-notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. urgent, collected same day, dosage instructionsâ€¦" className={inputCls} />
             </div>
 
             {error && <p role="alert" className="mt-3 rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
@@ -856,7 +856,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             <div className="mt-5 flex gap-3">
               <button type="button" onClick={onClose} className={btnGhost + " flex-1 justify-center py-2.5"}>Cancel</button>
               <button type="button" onClick={submit} disabled={busy || rxs.length === 0 || !selectedId} className={btnPrimary + " flex-1 justify-center py-2.5"}>
-                {busy ? "Converting…" : "Convert to sale"}
+                {busy ? "Convertingâ€¦" : "Convert to sale"}
               </button>
             </div>
           </>
@@ -938,7 +938,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
         branding?.website,
       ]
         .filter(Boolean)
-        .join(" • ")
+        .join(" â€¢ ")
     );
     const letterhead = `
       <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;">
@@ -959,11 +959,11 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
       <h1>${esc(invoice.invoice_number)}</h1>
       <p class="muted">${new Date(invoice.created_at).toLocaleString()}<br>${invoice.patients ? `${esc(`${invoice.patients.first_name} ${invoice.patients.last_name}`)}` : "Walk-in"}</p>
       <table><tbody>
-        ${(invoice.pharmacy_invoice_items ?? []).map((it) => `<tr><td>${esc(it.drug_name)}</td><td>${it.quantity} × ${ngn(it.unit_price)}</td><td>${ngn(it.total_price)}</td></tr>`).join("")}
+        ${(invoice.pharmacy_invoice_items ?? []).map((it) => `<tr><td>${esc(it.drug_name)}</td><td>${it.quantity} Ã— ${ngn(it.unit_price)}</td><td>${ngn(it.total_price)}</td></tr>`).join("")}
       </tbody></table>
       <div class="tot">
         <div class="row"><span>Subtotal</span><span>${ngn(invoice.subtotal)}</span></div>
-        ${Number(invoice.discount_amount) > 0 ? `<div class="row"><span>Discount</span><span>−${ngn(invoice.discount_amount)}</span></div>` : ""}
+        ${Number(invoice.discount_amount) > 0 ? `<div class="row"><span>Discount</span><span>âˆ’${ngn(invoice.discount_amount)}</span></div>` : ""}
         <div class="row"><span>Tax</span><span>${ngn(invoice.tax_amount)}</span></div>
         <div class="row" style="font-weight:bold;font-size:14px"><span>TOTAL</span><span>${ngn(invoice.total_amount)}</span></div>
         <div class="row"><span>Paid</span><span>${ngn(invoice.paid_amount)}</span></div>
@@ -981,7 +981,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
           <div>
             <h3 className="text-lg font-bold">{invoice.invoice_number}</h3>
             <p className="text-xs text-[var(--color-muted-fg)]">
-              {invoice.patients ? `${invoice.patients.first_name} ${invoice.patients.last_name} (${invoice.patients.patient_number})` : "Walk-in"} · {new Date(invoice.created_at).toLocaleString()}
+              {invoice.patients ? `${invoice.patients.first_name} ${invoice.patients.last_name} (${invoice.patients.patient_number})` : "Walk-in"} Â· {new Date(invoice.created_at).toLocaleString()}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -993,7 +993,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
           </div>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-lg border border-[var(--color-border)]">
+        <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--color-border)]">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase text-[var(--color-muted-fg)]">
@@ -1019,7 +1019,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
         <div className="mt-3 space-y-1 text-sm">
           <div className="flex justify-between text-[var(--color-muted-fg)]"><span>Subtotal</span><span>{ngn(invoice.subtotal)}</span></div>
           {Number(invoice.discount_amount) > 0 && (
-            <div className="flex justify-between text-red-500"><span>Discount</span><span>−{ngn(invoice.discount_amount)}</span></div>
+            <div className="flex justify-between text-red-500"><span>Discount</span><span>âˆ’{ngn(invoice.discount_amount)}</span></div>
           )}
           <div className="flex justify-between text-[var(--color-muted-fg)]"><span>Tax</span><span>{ngn(invoice.tax_amount)}</span></div>
           <div className="flex justify-between text-base font-bold"><span>Total</span><span>{ngn(invoice.total_amount)}</span></div>
@@ -1036,7 +1036,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
                   <span className="flex items-center gap-2">
                     <Wallet size={13} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
                     <span className="capitalize">{p.method}</span>
-                    {p.reference && <span className="text-xs text-[var(--color-muted-fg)]">· {p.reference}</span>}
+                    {p.reference && <span className="text-xs text-[var(--color-muted-fg)]">Â· {p.reference}</span>}
                   </span>
                   <span className="font-semibold text-emerald-600">{ngn(p.amount)}</span>
                 </li>
@@ -1078,7 +1078,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
             </div>
             {error && <p role="alert" className="mt-2 rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-xs font-medium text-[var(--color-destructive)]">{error}</p>}
             <button type="button" onClick={pay} disabled={busy} className={btnPrimary + " mt-3 w-full justify-center py-2.5"}>
-              {busy ? "Recording…" : `Take payment (${ngn(splits.reduce((s, x) => s + (Number(x.amount) || 0), 0))})`}
+              {busy ? "Recordingâ€¦" : `Take payment (${ngn(splits.reduce((s, x) => s + (Number(x.amount) || 0), 0))})`}
             </button>
           </div>
         )}
@@ -1165,12 +1165,12 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
     ]);
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — there are no payments yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no payments yet."); return; }
     downloadCsv(`pharmacy-payments-${dateStamp()}.csv`, PAYMENTS_COLUMNS, paymentsRows());
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — there are no payments yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no payments yet."); return; }
     printTable("Pharmacy Payments", PAYMENTS_COLUMNS, paymentsRows());
   }
 
@@ -1207,7 +1207,7 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search invoice, patient, reference…"
+          placeholder="Search invoice, patient, referenceâ€¦"
           aria-label="Search pharmacy payments"
           className={`${inputCls} w-56`}
         />
@@ -1241,13 +1241,13 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
       <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
         <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-muted)] px-4 py-2.5">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Bank ledger — money into the bank (latest)</h4>
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Bank ledger â€” money into the bank (latest)</h4>
         </div>
         {ledgerLoading ? (
-          <p className="px-4 py-6 text-center text-xs text-[var(--color-muted-fg)]">Loading…</p>
+          <p className="px-4 py-6 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</p>
         ) : ledger.length === 0 ? (
           <p className="px-4 py-6 text-center text-xs text-[var(--color-muted-fg)]">
-            No bank entries yet — cash/transfer/POS payments will be posted here automatically.
+            No bank entries yet â€” cash/transfer/POS payments will be posted here automatically.
           </p>
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
@@ -1255,11 +1255,11 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
               <div key={l.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-[var(--color-foreground)]">
-                    {l.direction === "in" ? "+" : "−"}{ngn(l.amount)}
+                    {l.direction === "in" ? "+" : "âˆ’"}{ngn(l.amount)}
                     <span className="ml-2 text-xs font-normal uppercase text-[var(--color-muted-fg)]">{l.method ?? l.source}</span>
                   </p>
                   <p className="truncate text-xs text-[var(--color-muted-fg)]">
-                    {l.hospital_bank_accounts ? `${l.hospital_bank_accounts.bank_name} (•• ${l.hospital_bank_accounts.account_number.slice(-4)})` : "No account"} · {l.reference ?? l.source_ref ?? "—"} · {new Date(l.created_at).toLocaleString()}
+                    {l.hospital_bank_accounts ? `${l.hospital_bank_accounts.bank_name} (â€¢â€¢ ${l.hospital_bank_accounts.account_number.slice(-4)})` : "No account"} Â· {l.reference ?? l.source_ref ?? "â€”"} Â· {new Date(l.created_at).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -1268,7 +1268,7 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
@@ -1282,19 +1282,19 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : visible.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No payments recorded yet.</td></tr>
             ) : (
               visible.map((r) => (
                 <tr key={r.id}>
-                  <td className="px-4 py-2.5 font-medium">{r.pharmacy_invoices?.invoice_number ?? "—"}</td>
+                  <td className="px-4 py-2.5 font-medium">{r.pharmacy_invoices?.invoice_number ?? "â€”"}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
                     {r.pharmacy_invoices?.patients ? `${r.pharmacy_invoices.patients.first_name} ${r.pharmacy_invoices.patients.last_name}` : "Walk-in"}
                   </td>
                   <td className="px-4 py-2.5"><Badge value={r.method} /></td>
                   <td className="px-4 py-2.5 font-semibold text-emerald-600">{ngn(r.amount)}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{r.reference ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{r.reference ?? "â€”"}</td>
                   <td className="px-4 py-2.5 text-xs text-[var(--color-muted-fg)]">{new Date(r.received_at).toLocaleString()}</td>
                 </tr>
               ))
@@ -1372,12 +1372,12 @@ function ClaimsTab({ viewOnly = false }: { viewOnly?: boolean }) {
     ]);
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — there are no claims yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no claims yet."); return; }
     downloadCsv(`pharmacy-claims-${dateStamp()}.csv`, CLAIMS_COLUMNS, claimsRows());
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — there are no claims yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no claims yet."); return; }
     printTable("Pharmacy Insurance Claims", CLAIMS_COLUMNS, claimsRows());
   }
 
@@ -1435,7 +1435,7 @@ function ClaimsTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
       {error && <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
 
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
@@ -1450,14 +1450,14 @@ function ClaimsTab({ viewOnly = false }: { viewOnly?: boolean }) {
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : rows.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No claims yet.</td></tr>
             ) : (
               rows.map((r) => (
                 <tr key={r.id}>
                   <td className="px-4 py-2.5 font-medium">{r.claim_number}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{r.pharmacy_invoices?.invoice_number ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{r.pharmacy_invoices?.invoice_number ?? "â€”"}</td>
                   <td className="px-4 py-2.5">
                     <p className="font-medium">{r.provider_name}</p>
                     {r.policy_number && <p className="text-xs text-[var(--color-muted-fg)]">{r.policy_number}</p>}
@@ -1539,9 +1539,9 @@ function NewClaimModal({ invoices, onClose, onSaved }: { invoices: Array<{ id: s
           <div>
             <label className={lbl} htmlFor="cl-inv">Invoice</label>
             <select id="cl-inv" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} className={inputCls}>
-              <option value="">Select an unpaid invoice…</option>
+              <option value="">Select an unpaid invoiceâ€¦</option>
               {invoices.map((i) => (
-                <option key={i.id} value={i.id}>{i.invoice_number} — {ngn(i.total_amount)}</option>
+                <option key={i.id} value={i.id}>{i.invoice_number} â€” {ngn(i.total_amount)}</option>
               ))}
             </select>
           </div>
@@ -1573,7 +1573,7 @@ function NewClaimModal({ invoices, onClose, onSaved }: { invoices: Array<{ id: s
         <div className="mt-5 flex gap-3">
           <button type="button" onClick={onClose} className={btnGhost + " flex-1 justify-center py-2.5"}>Cancel</button>
           <button type="button" onClick={submit} disabled={busy} className={btnPrimary + " flex-1 justify-center py-2.5"}>
-            {busy ? "Submitting…" : "Create claim"}
+            {busy ? "Submittingâ€¦" : "Create claim"}
           </button>
         </div>
       </div>
@@ -1675,12 +1675,12 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
     ]);
 
   function exportCsv() {
-    if (rows.length === 0) { alert("Nothing to export — there are no formulary rules yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no formulary rules yet."); return; }
     downloadCsv(`pharmacy-formulary-${dateStamp()}.csv`, COVERAGE_COLUMNS, coverageRows());
   }
 
   function exportPdf() {
-    if (rows.length === 0) { alert("Nothing to export — there are no formulary rules yet."); return; }
+    if (rows.length === 0) { alert("Nothing to export â€” there are no formulary rules yet."); return; }
     printTable("Pharmacy Formulary Coverage", COVERAGE_COLUMNS, coverageRows());
   }
 
@@ -1741,7 +1741,7 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 id="cv-drug"
                 value={drugName || query}
                 onChange={(e) => { setQuery(e.target.value); setDrugId(""); setDrugName(""); }}
-                placeholder="Search the catalogue…"
+                placeholder="Search the catalogueâ€¦"
                 className={`${inputCls} pl-9`}
               />
             </div>
@@ -1767,12 +1767,12 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
               <label className={lbl} htmlFor="cv-copay">Co-pay type</label>
               <select id="cv-copay" value={coPayType} onChange={(e) => setCoPayType(e.target.value as "percent" | "fixed" | "none")} className={inputCls}>
                 <option value="percent">Percent %</option>
-                <option value="fixed">Fixed ₦</option>
+                <option value="fixed">Fixed â‚¦</option>
                 <option value="none">None</option>
               </select>
             </div>
             <div>
-              <label className={lbl} htmlFor="cv-copayv">{coPayType === "percent" ? "Percent %" : coPayType === "fixed" ? "Amount (₦)" : "—"}</label>
+              <label className={lbl} htmlFor="cv-copayv">{coPayType === "percent" ? "Percent %" : coPayType === "fixed" ? "Amount (â‚¦)" : "â€”"}</label>
               <input id="cv-copayv" type="number" min={0} disabled={coPayType === "none"} value={coPayValue} onChange={(e) => setCoPayValue(e.target.value)} className={inputCls} />
             </div>
           </div>
@@ -1785,7 +1785,7 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
         {error && <p role="alert" className="mt-3 rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
 
         <button type="button" onClick={save} disabled={busy || !drugId} className={btnPrimary + " mt-4"}>
-          {busy ? "Saving…" : "Save rule"}
+          {busy ? "Savingâ€¦" : "Save rule"}
         </button>
       </div>
       )}
@@ -1806,7 +1806,7 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
           />
         </div>
         {loading ? (
-          <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">Loading…</p>
+          <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</p>
         ) : rows.length === 0 ? (
           <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">No formulary rules yet.</p>
         ) : (
@@ -1814,14 +1814,14 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
             {rows.map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{r.pharmacy_drugs?.name ?? "—"}</p>
+                  <p className="truncate text-sm font-medium">{r.pharmacy_drugs?.name ?? "â€”"}</p>
                   <p className="text-xs text-[var(--color-muted-fg)]">
-                    {r.provider_name} · {r.is_covered ? (
+                    {r.provider_name} Â· {r.is_covered ? (
                       <span className="text-emerald-600">
                         {r.co_pay_type === "percent" ? `${r.co_pay_value}% co-pay` : r.co_pay_type === "fixed" ? `${ngn(r.co_pay_value)} co-pay` : "no co-pay"}
                       </span>
                     ) : <span className="text-red-500">not covered</span>}
-                    {r.max_qty_per_claim ? ` · max ${r.max_qty_per_claim}/claim` : ""}
+                    {r.max_qty_per_claim ? ` Â· max ${r.max_qty_per_claim}/claim` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -1918,13 +1918,13 @@ function ReportTab({ viewOnly = false }: { viewOnly?: boolean }) {
   };
 
   function exportCsv() {
-    if (!report) { alert("Nothing to export — load the report for a date first."); return; }
+    if (!report) { alert("Nothing to export â€” load the report for a date first."); return; }
     downloadCsv(`pharmacy-daily-report-${date}.csv`, REPORT_COLUMNS, reportRows());
   }
 
   function exportPdf() {
-    if (!report) { alert("Nothing to export — load the report for a date first."); return; }
-    printTable(`Pharmacy Daily Report — ${date}`, REPORT_COLUMNS, reportRows());
+    if (!report) { alert("Nothing to export â€” load the report for a date first."); return; }
+    printTable(`Pharmacy Daily Report â€” ${date}`, REPORT_COLUMNS, reportRows());
   }
 
   async function importReport(_rowsIn: string[][]): Promise<ImportResult> {

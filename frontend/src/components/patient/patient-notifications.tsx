@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2, Trash2 } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import {
+  AppHeader,
+  AppSegmented,
+  AppSkeletonList,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 interface NotifRow {
   id: string;
@@ -79,7 +84,9 @@ export default function PatientNotifications() {
   const visible = items.filter((n) => inDateRange(n.created_at, from, to));
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Notifications</h1>
@@ -166,5 +173,107 @@ export default function PatientNotifications() {
         </div>
       )}
     </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="Notifications" meta={`${items.filter((n) => !n.is_read).length} unread`} />
+
+          <AppSegmented<"all" | "unread">
+            tabs={[
+              { key: "all", label: "All" },
+              { key: "unread", label: "Unread" },
+            ]}
+            active={filter}
+            onChange={setFilter}
+          />
+
+          {items.some((n) => !n.is_read) && (
+            <button
+              type="button"
+              onClick={markAllRead}
+              className="focus-ring flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-[#e0a84a]/25 bg-[#e0a84a]/10 text-xs font-semibold text-[#e0a84a]"
+            >
+              <CheckCheck size={14} aria-hidden="true" /> Mark All Read
+            </button>
+          )}
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={4} />
+          ) : visible.length === 0 ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <Bell size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+                {filter === "unread" ? "You're all caught up." : "No notifications."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {visible.map((n) => (
+                <div
+                  key={n.id}
+                  className={`rounded-2xl p-4 ${
+                    n.is_read
+                      ? "app-glass"
+                      : "border border-[#e0a84a]/25 bg-[#e0a84a]/[0.06]"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                        n.is_read ? "bg-[var(--color-muted)]/40 text-[var(--color-muted-fg)]" : "bg-[#e0a84a]/15 text-[#e0a84a]"
+                      }`}
+                    >
+                      <Bell size={16} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`text-sm ${n.is_read ? "font-medium" : "font-semibold"} text-[var(--color-foreground)]`}>
+                          {n.title ?? "Notification"}
+                        </p>
+                        {!n.is_read && <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#e0a84a]" />}
+                      </div>
+                      {n.message && (
+                        <p className="mt-0.5 whitespace-pre-wrap text-xs text-[var(--color-muted-fg)]">{n.message}</p>
+                      )}
+                      <p className="mt-1 text-[10px] text-[var(--color-muted-fg)]">{timeAgo(n.created_at)}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-1.5">
+                      {!n.is_read && (
+                        <button
+                          type="button"
+                          onClick={() => markRead(n.id)}
+                          className="focus-ring flex h-8 w-8 items-center justify-center rounded-lg border border-[#e0a84a]/25 text-[#e0a84a]"
+                          aria-label="Mark as read"
+                          title="Mark as read"
+                        >
+                          <CheckCheck size={14} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => remove(n.id)}
+                        className="focus-ring flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-rose-50 hover:text-[var(--color-destructive)]"
+                        aria-label="Delete notification"
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

@@ -65,6 +65,26 @@ const TILE_COLORS: Record<string, string> = {
   "internal-mail": "#fed7aa",
 };
 
+const FOOTER_COLORS: Record<string, string> = {
+  overview: "#60a5fa",
+  patients: "#34d399",
+  appointments: "#a78bfa",
+  pharmacy: "#fbbf24",
+  lab: "#22d3ee",
+  "lab-results": "#22d3ee",
+  billing: "#2dd4bf",
+  chats: "#f472b6",
+  "internal-mail": "#fb923c",
+  mail: "#fb923c",
+  prescriptions: "#fb7185",
+  records: "#818cf8",
+  family: "#22d3ee",
+  notifications: "#94a3b8",
+  account: "#facc15",
+  download: "#c084fc",
+  profile: "#f472b6",
+};
+
 export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -113,7 +133,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
         id="mobile-more-sheet"
         role="dialog"
         aria-label="More menu"
-        className={`absolute bottom-[66px] right-3 flex max-h-[min(560px,calc(100vh-76px))] w-[calc(100vw-24px)] max-w-[350px] origin-bottom-right flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] shadow-[0_-6px_40px_rgba(0,0,0,0.25),0_24px_60px_rgba(0,0,0,0.35)] transition-all duration-200 ${
+        className={`absolute bottom-[84px] right-3 flex max-h-[min(560px,calc(100vh-76px))] w-[calc(100vw-24px)] max-w-[350px] origin-bottom-right flex-col rounded-2xl border border-[var(--color-border)] bg-[var(--color-background)] shadow-[0_-6px_40px_rgba(0,0,0,0.25),0_24px_60px_rgba(0,0,0,0.35)] transition-all duration-200 ${
           open ? "scale-100 opacity-100" : "pointer-events-none scale-[0.92] opacity-0"
         }`}
       >
@@ -124,7 +144,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 [scrollbar-width:thin] [scrollbar-color:#2c3849_transparent]">
           <div className="grid grid-cols-3 gap-y-1 gap-x-2">
-            {spec.menu.map((item) => {
+            {spec.menu.map((item, idx) => {
               const Icon = item.icon;
               const children = groupTiles(item);
               const expanding = openKey === item.key;
@@ -135,18 +155,21 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                       type="button"
                       onClick={() => setOpenKey(expanding ? null : item.key)}
                       aria-expanded={expanding}
-                      className="group flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
+                      style={{ animationDelay: `${idx * 35}ms` }}
+                      className={`group flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10 animate-tile-in ${
+                        expanding ? "bg-[var(--color-primary-soft)]/60" : ""
+                      }`}
                     >
                       <span
-                        className="relative grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105"
+                        className="relative grid h-11 w-11 place-items-center rounded-[16px] text-[#1b2430] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_3px_8px_rgba(0,0,0,0.18)] transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-1 group-hover:scale-110 group-active:scale-95"
                         style={{ backgroundColor: TILE_COLORS[item.key] ?? "#e2e8f0" }}
                       >
                         <Icon size={22} aria-hidden="true" />
-                        <span className="absolute -right-1 -top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-[#f0a93a] px-1 text-[9px] font-bold text-[#191304]">
+                        <span className="absolute -right-1 -top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-[#f0a93a] px-1 text-[9px] font-bold text-[#191304] shadow-[0_1px_3px_rgba(0,0,0,0.35)]">
                           {children.length}
                         </span>
                       </span>
-                      <span className="text-[10px] leading-tight text-[var(--color-foreground)]">{item.label}</span>
+                      <span className="text-center text-[10px] leading-tight text-[var(--color-foreground)] transition-colors duration-200 group-hover:text-[var(--color-primary-dark)]">{item.label}</span>
                     </button>
                   ) : (
                     <Link
@@ -155,15 +178,16 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                         setOpen(false);
                         setOpenKey(null);
                       }}
-                      className="group flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10"
+                      style={{ animationDelay: `${idx * 35}ms` }}
+                      className="group flex w-full flex-col items-center gap-1 rounded-xl px-1 pb-1.5 pt-1.5 transition-colors duration-150 active:bg-white/10 animate-tile-in"
                     >
                       <span
-                        className="grid h-11 w-11 place-items-center rounded-[14px] text-[#1b2430] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-105"
+                        className="grid h-11 w-11 place-items-center rounded-[16px] text-[#1b2430] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_3px_8px_rgba(0,0,0,0.18)] transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:-translate-y-1 group-hover:scale-110 group-active:scale-95"
                         style={{ backgroundColor: TILE_COLORS[item.key] ?? "#e2e8f0" }}
                       >
                         <Icon size={22} aria-hidden="true" />
                       </span>
-                      <span className="text-center text-[10px] leading-tight text-[var(--color-foreground)]">{item.label}</span>
+                      <span className="text-center text-[10px] leading-tight text-[var(--color-foreground)] transition-colors duration-200 group-hover:text-[var(--color-primary-dark)]">{item.label}</span>
                       {spec.mailHref && item.href === spec.mailHref && (
                         <span className="-mt-1">
                           <UnreadMailBadge />
@@ -189,7 +213,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                   if (!active?.children) return null;
                   return (
                     <div className="flex flex-wrap gap-1.5 px-1 pt-2.5 pb-1">
-                      {active.children.map((c) => {
+                      {active.children.map((c, ci) => {
                         const ChildIcon = c.icon;
                         return (
                           <Link
@@ -199,7 +223,8 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                               setOpen(false);
                               setOpenKey(null);
                             }}
-                            className={`flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2.5 py-1.5 text-[11px] text-[var(--color-foreground)] transition-colors duration-150 active:bg-[var(--color-primary-soft)] ${
+                            style={{ animationDelay: `${ci * 45}ms` }}
+                            className={`flex items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-muted)] px-2.5 py-1.5 text-[11px] text-[var(--color-foreground)] transition-colors duration-150 active:bg-[var(--color-primary-soft)] animate-chip-in ${
                               isActive(c.href) ? "bg-[var(--color-primary-soft)] text-[var(--color-primary-dark)]" : ""
                             }`}
                           >
@@ -217,10 +242,10 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
         </div>
       </div>
 
-      {/* bar */}
+      {/* bar — frosted glass floating dock */}
       <nav
         aria-label="Mobile navigation"
-        className="relative z-10 flex items-end gap-1 border-t border-[var(--color-border)] bg-[var(--color-background)] px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))]"
+        className="mobile-nav-bar relative z-10 mx-3 mb-0 flex items-end gap-1 rounded-b-none rounded-t-[1.5rem] border border-[var(--color-border)] bg-[var(--color-background)]/85 px-3 pt-0.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.08),0_12px_34px_rgba(0,0,0,0.18)] backdrop-blur-xl"
       >
         <div className="flex min-w-0 flex-1">
           {tabs.map((item, i) => {
@@ -233,37 +258,51 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
                 aria-label={item.label}
                 aria-current={active ? "page" : undefined}
                 style={{ animationDelay: `${i * 60}ms` }}
-                className={`group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-1 pb-1.5 pt-2.5 transition-colors duration-150 active:scale-[0.94] animate-nav-item ${
-                  active ? "text-[var(--color-primary)]" : "text-[var(--color-muted-fg)]"
+                className={`group flex min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-xl px-1 pb-0 pt-0.5 transition-colors duration-200 active:scale-[0.93] animate-nav-item ${
+                  active ? "text-[var(--color-primary)]" : "text-[var(--color-muted-fg)] hover:text-[var(--color-primary)]"
                 }`}
               >
-                <span className="relative grid h-8 w-full place-items-center">
+                <span className="relative grid h-9 w-full place-items-center">
                   {active && (
                     <>
                       <span
                         aria-hidden="true"
-                        className="absolute inset-y-0 left-1/2 w-[46px] -translate-x-1/2 rounded-full bg-[var(--color-primary)]/20 ring-1 ring-[var(--color-primary)]/35 animate-tab-pill"
-                      />
+                        className="mobile-tab-capsule absolute inset-0 m-auto h-9 w-9 overflow-hidden rounded-[12px] bg-[var(--color-primary)]/15 ring-1 ring-[var(--color-primary)]/30 animate-tab-capsule"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="mobile-tab-shine absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-y-0 w-9 bg-gradient-to-r from-transparent via-[var(--color-primary)]/30 to-transparent animate-tab-shine"
+                        />
+                      </span>
                       <span
                         aria-hidden="true"
-                        className="absolute inset-y-1 left-1/2 w-8 -translate-x-1/2 rounded-full bg-[var(--color-primary)]/45 blur-[6px] animate-tab-glow"
+                        className="mobile-tab-glow absolute inset-0 m-auto h-7 w-7 rounded-full bg-[var(--color-primary)]/25 blur-[5px] animate-tab-glow-pulse"
                       />
                     </>
                   )}
                   <Icon
                     size={22}
+                    strokeWidth={active ? 1.6 : 1.4}
                     aria-hidden="true"
-                    className={`relative z-10 transition-transform duration-300 ${
+                    data-key={item.key}
+                    style={{ color: FOOTER_COLORS[item.key] ?? "var(--color-primary)" }}
+                    className={`mobile-nav-icon relative z-10 transition-transform duration-300 ${
                       active
-                        ? "animate-tab-pop drop-shadow-[0_1px_6px_rgba(0,0,0,0.25)]"
-                        : "group-hover:-translate-y-0.5 group-hover:scale-110"
+                        ? "animate-tab-icon-spring drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
+                        : "opacity-80 group-hover:-translate-y-0.5 group-hover:scale-110 group-hover:opacity-100"
                     }`}
                   />
                 </span>
                 <span
                   aria-hidden="true"
-                  className={`h-1 w-1 rounded-full transition-all duration-300 ${
-                    active ? "bg-[var(--color-primary)] animate-tab-dot" : "bg-transparent group-hover:bg-[var(--color-primary)]/40"
+                  className={`mobile-tab-dot h-1 rounded-full transition-all duration-300 ${
+                    active
+                      ? "w-4 bg-[var(--color-primary)] animate-tab-dot shadow-[0_0_10px_var(--color-primary)]"
+                      : "w-1 bg-transparent group-hover:bg-[var(--color-primary)]/40"
                   }`}
                 />
               </Link>
@@ -272,7 +311,7 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
         </div>
 
         {/* floating More button */}
-        <div className="relative flex w-[72px] flex-none items-end justify-center">
+        <div className="relative flex w-[76px] flex-none items-end justify-center">
           <button
             type="button"
             aria-label={open ? "Close More menu" : "Open More menu"}
@@ -282,10 +321,25 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
               setOpen((o) => !o);
               setOpenKey(null);
             }}
-            className={`relative grid h-14 w-14 -translate-y-[18px] place-items-center rounded-full bg-[linear-gradient(145deg,#f5b840,#df9220)] text-[#191304] shadow-[0_10px_24px_rgba(240,169,58,0.4),0_3px_8px_rgba(0,0,0,0.45)] transition-transform duration-200 active:scale-95 ${
-              open ? "-rotate-90" : "hover:-translate-y-[21px]"
+            className={`relative grid h-14 w-14 -translate-y-[18px] place-items-center rounded-full bg-[linear-gradient(145deg,#f6bd4a,#d98d15)] text-[#191304] shadow-[0_12px_30px_rgba(240,169,58,0.45),0_4px_10px_rgba(0,0,0,0.4)] transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90 ${
+              open ? "-rotate-180" : "hover:-translate-y-[22px] hover:shadow-[0_16px_36px_rgba(240,169,58,0.55),0_4px_10px_rgba(0,0,0,0.4)]"
             }`}
           >
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-1.5 animate-fab-halo"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, rgba(255,205,110,0.65), rgba(240,169,58,0.15) 60deg, transparent 180deg, rgba(255,205,110,0.65) 320deg, rgba(255,205,110,0.65) 360deg)",
+                borderRadius: "9999px",
+                WebkitMaskImage: "radial-gradient(circle, black 30%, transparent 70%)",
+                maskImage: "radial-gradient(circle, black 30%, transparent 70%)",
+              }}
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-3 rounded-full bg-[#f0a93a]/25 blur-xl animate-pulse-glow"
+            />
             <span
               aria-hidden="true"
               className={`pointer-events-none absolute inset-0 rounded-full border-2 border-[#f5b840]/60 animate-fab-ring transition-opacity duration-300 ${
@@ -333,9 +387,10 @@ export function MobileNavBar({ spec }: { spec: MobileNavSpec }) {
 /* Staff spec: fed by navForRole (role gates + module_access grants).  */
 /* ------------------------------------------------------------------ */
 
-const TAB_KEYS = ["overview", "patients", "appointments", "pharmacy", "lab", "billing"] as const;
+const TAB_KEYS = ["overview", "patients", "appointments", "pharmacy", "billing"] as const;
 
 const MENU_SPEC: { key: string; label?: string }[] = [
+  { key: "lab" },
   { key: "wards", label: "Ward" },
   { key: "other-income" },
   { key: "staff" },
@@ -392,9 +447,10 @@ export default function MobileNav({
 /* Patient spec: fed by PATIENT_NAV_ITEMS + account/download pages.    */
 /* ------------------------------------------------------------------ */
 
-const PATIENT_TAB_KEYS = ["overview", "appointments", "billing", "lab-results", "chats", "internal-mail"] as const;
+const PATIENT_TAB_KEYS = ["overview", "appointments", "billing", "chats", "internal-mail"] as const;
 
 const PATIENT_MENU: { key: string; label?: string; href?: string; icon?: LucideIcon }[] = [
+  { key: "lab-results" },
   { key: "prescriptions" },
   { key: "records", label: "Medical Records" },
   { key: "family" },

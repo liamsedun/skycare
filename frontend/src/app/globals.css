@@ -77,6 +77,75 @@ html[data-theme="dark"] body {
   color: #e6e9f0;
 }
 
+/* Responsive safety net: the page must never grow wider than the viewport —
+   wide content scrolls inside its own card instead (tables are wrapped in
+   overflow-x-auto containers). */
+html {
+  overflow-x: clip;
+}
+body {
+  overflow-x: clip;
+  min-width: 0;
+}
+main,
+#app-shell,
+#patient-shell {
+  min-width: 0;
+}
+
+/* ── Patient app mobile view (Life Blossom parity) ─────────────────────────
+   The md:hidden mobile trees sit on a full-bleed app background: a deep navy
+   gradient in dark mode (Life Blossom's shell) and a soft light gradient in
+   light mode, both with a faint grid pattern. Glass cards use .app-glass /
+   .app-glass-strong so they flip with the theme tokens. */
+.app-mobile-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  pointer-events: none;
+  background: linear-gradient(135deg, #f1f5fb 0%, #e8eef7 55%, #dde7f4 100%);
+}
+
+.app-mobile-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+html[data-theme="dark"] .app-mobile-bg {
+  background: linear-gradient(135deg, #0a0f1a 0%, #0d1322 55%, #0f1a2e 100%);
+}
+
+html[data-theme="dark"] .app-mobile-bg::before {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+.app-glass {
+  background: color-mix(in srgb, var(--color-background) 74%, transparent);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+html[data-theme="dark"] .app-glass {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.app-glass-strong {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+}
+
+html[data-theme="dark"] .app-glass-strong {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 /* background surfaces that were hard-coded for light mode */
 html[data-theme="dark"] .bg-white { background-color: #0f1730; }
 html[data-theme="dark"] .bg-white\/95 { background-color: rgb(15 23 48 / 0.95); }
@@ -531,8 +600,8 @@ a {
 .animate-tab-glow { animation: tab-glow 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 @keyframes tab-dot {
   from { transform: scale(0); opacity: 0; }
-  70% { transform: scale(2.8); opacity: 1; }
-  to { transform: scale(2); opacity: 1; }
+  70% { transform: scale(2.2); opacity: 1; }
+  to { transform: scale(1); opacity: 1; }
 }
 .animate-tab-dot { animation: tab-dot 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
 @keyframes nav-item {
@@ -550,9 +619,103 @@ a {
   100% { transform: translateX(320%) skewX(-24deg); }
 }
 .animate-fab-sheen { animation: fab-sheen 3.2s ease-in-out infinite; }
+
+/* -------- Mobile bottom-nav v2: glass bar, springy capsule, halos -------- */
+@keyframes tab-capsule {
+  0% { transform: scale(0.4, 0.55); opacity: 0; }
+  60% { transform: scale(1.08, 1.06); opacity: 1; }
+  100% { transform: scale(1, 1); opacity: 1; }
+}
+.animate-tab-capsule { animation: tab-capsule 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes tab-icon-spring {
+  0% { transform: scale(0.4) translateY(10px); opacity: 0; }
+  55% { transform: scale(1.22) translateY(-3px) rotate(-6deg); opacity: 1; }
+  80% { transform: scale(0.94) translateY(1px) rotate(3deg); }
+  100% { transform: scale(1) translateY(0) rotate(0); opacity: 1; }
+}
+.animate-tab-icon-spring { animation: tab-icon-spring 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes tab-glow-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.45; }
+  50% { transform: scale(1.35); opacity: 0.85; }
+}
+.animate-tab-glow-pulse { animation: tab-glow-pulse 2.6s ease-in-out infinite; }
+@keyframes tab-shine {
+  0% { transform: translateX(-70%) skewX(-20deg); opacity: 0; }
+  25% { opacity: 0.9; }
+  75%, 100% { transform: translateX(170%) skewX(-20deg); opacity: 0; }
+}
+.animate-tab-shine { animation: tab-shine 1.4s ease-out 0.3s both; }
+@keyframes fab-halo {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.animate-fab-halo { animation: fab-halo 5s linear infinite; }
+@keyframes tile-in {
+  0% { opacity: 0; transform: translateY(12px) scale(0.94); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-tile-in { animation: tile-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes chip-in {
+  0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-chip-in { animation: chip-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* -------- Mobile bottom-nav: LIGHT MODE gets a BLUE footer bar --------
+   In light mode the docked footer card is a blue gradient so the
+   colorized tab icons switch to bright 300-level tints (data-key rules
+   below) that read clearly on blue. Dark mode ("Dusk & Gold") keeps the
+   token-based frosted bar + saturated icon set — those styles stay in
+   the component. Unlayered rules override the Tailwind utility classes. */
+html:not([data-theme="dark"]) .mobile-nav-bar {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 58%, #1d4ed8 100%);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 -4px 20px rgba(13, 41, 96, 0.28),
+    0 12px 34px rgba(11, 37, 88, 0.4);
+}
+
+html:not([data-theme="dark"]) .mobile-nav-icon {
+  filter: drop-shadow(0 1px 1px rgba(7, 28, 82, 0.6)) drop-shadow(0 0 5px rgba(255, 255, 255, 0.25));
+}
+html:not([data-theme="dark"]) .mobile-tab-capsule {
+  background: rgba(255, 255, 255, 0.18);
+  --tw-ring-color: rgba(255, 255, 255, 0.6);
+}
+html:not([data-theme="dark"]) .mobile-tab-shine {
+  --tw-gradient-via: rgba(255, 255, 255, 0.4);
+}
+html:not([data-theme="dark"]) .mobile-tab-glow {
+  background: rgba(255, 255, 255, 0.24);
+}
+html:not([data-theme="dark"]) .mobile-tab-dot {
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.95);
+}
+
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="overview"] { color: #dbeafe !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="patients"] { color: #86efac !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="appointments"] { color: #c4b5fd !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="pharmacy"] { color: #fcd34d !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="lab"] { color: #67e8f9 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="lab-results"] { color: #67e8f9 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="billing"] { color: #5eead4 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="chats"] { color: #f9a8d4 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="internal-mail"] { color: #fdba74 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="mail"] { color: #fdba74 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="prescriptions"] { color: #fda4af !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="records"] { color: #a5b4fc !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="family"] { color: #67e8f9 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="notifications"] { color: #e2e8f0 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="account"] { color: #fde047 !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="download"] { color: #d8b4fe !important; }
+html:not([data-theme="dark"]) .mobile-nav-icon[data-key="profile"] { color: #f9a8d4 !important; }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-tab-pill, .animate-tab-pop, .animate-tab-glow, .animate-tab-dot,
-  .animate-nav-item, .animate-fab-ring, .animate-fab-sheen {
+  .animate-nav-item, .animate-fab-ring, .animate-fab-sheen,
+  .animate-tab-capsule, .animate-tab-icon-spring, .animate-tab-glow-pulse,
+  .animate-tab-shine, .animate-fab-halo, .animate-tile-in, .animate-chip-in {
     animation: none;
   }
 }

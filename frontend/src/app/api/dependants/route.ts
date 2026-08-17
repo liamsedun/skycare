@@ -3,6 +3,7 @@ import { getPagination } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
 import { createPortalAccount } from "@/lib/dependant-portal";
+import { storePatientAvatar } from "@/lib/patient-avatar";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export const GET = withAuth(async (req, ctx) => {
   let query = ctx.svc
     .from("patients")
     .select(
-      "id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, blood_group, genotype, allergies, chronic_conditions, dependant_relationship, is_primary_account, primary_account_id, user_id, status, created_at",
+      "id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, blood_group, genotype, allergies, chronic_conditions, dependant_relationship, is_primary_account, primary_account_id, user_id, status, avatar_url, created_at, users(avatar_url)",
       { count: "exact" }
     )
     .eq("tenant_id", tenantId)
@@ -40,7 +41,15 @@ export const GET = withAuth(async (req, ctx) => {
   if (primaryIds) query = query.in("primary_account_id", primaryIds);
 
   const { data, count } = await query;
-  return okPaginated(data ?? [], count ?? 0, page, pageSize);
+  const rows = (data ?? []).map((row) => {
+    const r = row as Record<string, unknown> & { users?: { avatar_url?: string | null } | null };
+    const { users: linkedUser, ...rest } = r;
+    return {
+      ...rest,
+      avatar_url: (rest.avatar_url as string | null | undefined) ?? linkedUser?.avatar_url ?? null,
+    };
+  });
+  return okPaginated(rows, count ?? 0, page, pageSize);
 });
 
 export interface CreateDependantBody {
@@ -63,6 +72,7 @@ export interface CreateDependantBody {
   emergencyContactPhone?: string;
   portalEmail?: string;
   portalPassword?: string;
+  avatar?: string;
 }
 
 // POST /api/dependants — add a family member to a primary patient account
@@ -180,13 +190,38 @@ export const POST = withAuth(async (req, ctx) => {
     throw new ValidationError(error.message);
   }
 
+  // Optional photo (Life Blossom parity): data-URL avatar → public avatars
+  // bucket. Update the just-created row; on failure remove the dependant so
+  // the modal's error state means "nothing was added".
+  let finalRow = dependant;
+  if (body.avatar) {
+    try {
+      const avatarUrl = await storePatientAvatar(ctx.svc, tenantId, dependant.id, body.avatar);
+      const { data: updated, error: avatarError } = await ctx.svc
+        .from("patients")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", dependant.id)
+        .select()
+        .single();
+      if (avatarError) throw new Error(avatarError.message);
+      finalRow = updated;
+    } catch (avatarErr) {
+      await ctx.svc.from("patients").delete().eq("id", dependant.id);
+      if (portalUserId) {
+        await ctx.svc.auth.admin.deleteUser(portalUserId);
+        await ctx.svc.from("users").delete().eq("id", portalUserId);
+      }
+      throw new ValidationError(avatarErr instanceof Error ? avatarErr.message : "Failed to save the photo");
+    }
+  }
+
   await logAudit(req, ctx, {
     action: "create",
     entityType: "patients",
     entityId: dependant.id,
     description: `Added dependant ${dependantNumber} — ${dependant.first_name} ${dependant.last_name} (${body.relationship})`,
   });
-  return ok(tempPassword ? { ...dependant, tempPassword } : dependant);
+  return ok(tempPassword ? { ...finalRow, tempPassword } : finalRow);
 });
 
 export const runtime = "nodejs";

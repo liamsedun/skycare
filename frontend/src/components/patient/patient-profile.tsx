@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/ui/combobox";
+import { AppHeader } from "@/components/patient/mobile/mobile-app-ui";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -40,6 +41,7 @@ interface PatientRow {
   first_name: string;
   last_name: string;
   date_of_birth: string | null;
+  phone: string | null;
   marital_status: string;
   blood_group: string | null;
   genotype: string | null;
@@ -143,6 +145,67 @@ export default function PatientProfile() {
     { label: "Address", value: fullAddress || "Not provided", icon: MapPin, field: "address" },
     { label: "Allergies", value: "Ask your doctor", icon: AlertTriangle },
   ];
+
+  const infoList = infoRows.map((row) => {
+    const isEditing = editingField === row.field;
+    const Icon = row.icon;
+    const options = row.field ? selectOptions[row.field] : undefined;
+    return (
+      <div key={row.label} className="flex items-center justify-between gap-3 px-5 py-3.5">
+        <div className="flex min-w-0 items-center gap-3">
+          <Icon size={16} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
+          <div className="min-w-0">
+            <p className="text-xs text-[var(--color-muted-fg)]">{row.label}</p>
+            {isEditing ? (
+              <div className="mt-1 flex items-center gap-2">
+                {options ? (
+                  <Combobox
+                    options={options}
+                    defaultValue={editValue}
+                    placeholder="Select or type"
+                    onValueChange={setEditValue}
+                    className="min-w-48"
+                  />
+                ) : row.field === "date_of_birth" ? (
+                  <input type="date" className={inputCls} value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+                ) : (
+                  <input type="text" className={inputCls} value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+                )}
+                <button
+                  type="button"
+                  onClick={saveEdit}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white hover:bg-emerald-600"
+                  aria-label="Save"
+                >
+                  <Check size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
+                  aria-label="Cancel"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{row.value}</p>
+            )}
+          </div>
+        </div>
+        {row.field && !isEditing && (
+          <button
+            type="button"
+            onClick={() => startEdit(row.field!, row.field === "date_of_birth" ? (patient?.date_of_birth ?? "") : row.field === "full_name" ? (user?.full_name ?? "") : row.field === "phone" ? (user?.phone ?? "") : String((patient as any)?.[row.field!] ?? ""))}
+            className="focus-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
+            aria-label={`Edit ${row.label}`}
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+      </div>
+    );
+  });
 
   function startEdit(field: string, current: string) {
     setEditingField(field);
@@ -262,7 +325,9 @@ export default function PatientProfile() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">My profile</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Manage your personal information.</p>
@@ -317,66 +382,7 @@ export default function PatientProfile() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Personal information</h2>
         </div>
         <div className="divide-y divide-[var(--color-border)]">
-          {infoRows.map((row) => {
-            const isEditing = editingField === row.field;
-            const Icon = row.icon;
-            const options = row.field ? selectOptions[row.field] : undefined;
-            return (
-              <div key={row.label} className="flex items-center justify-between gap-3 px-5 py-3.5">
-                <div className="flex min-w-0 items-center gap-3">
-                  <Icon size={16} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
-                  <div className="min-w-0">
-                    <p className="text-xs text-[var(--color-muted-fg)]">{row.label}</p>
-                    {isEditing ? (
-                      <div className="mt-1 flex items-center gap-2">
-                        {options ? (
-                          <Combobox
-                            options={options}
-                            defaultValue={editValue}
-                            placeholder="Select or type"
-                            onValueChange={setEditValue}
-                            className="min-w-48"
-                          />
-                        ) : row.field === "date_of_birth" ? (
-                          <input type="date" className={inputCls} value={editValue} onChange={(e) => setEditValue(e.target.value)} />
-                        ) : (
-                          <input type="text" className={inputCls} value={editValue} onChange={(e) => setEditValue(e.target.value)} />
-                        )}
-                        <button
-                          type="button"
-                          onClick={saveEdit}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white hover:bg-emerald-600"
-                          aria-label="Save"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEdit}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
-                          aria-label="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{row.value}</p>
-                    )}
-                  </div>
-                </div>
-                {row.field && !isEditing && (
-                  <button
-                    type="button"
-                    onClick={() => startEdit(row.field!, row.field === "date_of_birth" ? (patient?.date_of_birth ?? "") : row.field === "full_name" ? (user?.full_name ?? "") : row.field === "phone" ? (user?.phone ?? "") : String((patient as any)?.[row.field!] ?? ""))}
-                    className="focus-ring flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-muted-fg)] hover:bg-slate-50"
-                    aria-label={`Edit ${row.label}`}
-                  >
-                    <Pencil size={14} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
+          {infoList}
         </div>
       </div>
 
@@ -399,6 +405,95 @@ export default function PatientProfile() {
           >
             <LogOut size={15} /> Sign Out
           </button>
+        </div>
+      </div>
+
+      </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="My Profile" meta={patient?.patient_number ? `Patient ${patient.patient_number}` : fullName} />
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+              {success}
+            </p>
+          )}
+
+          {/* Identity card (LB) */}
+          <div className="app-glass rounded-2xl p-5">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full bg-[var(--color-primary-soft)] text-lg font-bold text-[var(--color-primary-dark)] ring-2 ring-[#e0a84a] ring-offset-2 ring-offset-[var(--color-background)]">
+                  {user?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.avatar_url} alt={fullName} className="h-full w-full object-cover" />
+                  ) : (
+                    initials(fullName)
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarBusy}
+                  className="focus-ring absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#e0a84a] to-amber-500 text-[#0a0f1a] shadow-lg disabled:opacity-60"
+                  aria-label="Upload photo"
+                  title="Upload photo"
+                >
+                  {avatarBusy ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-[#0a0f1a]/40 border-t-[#0a0f1a]" /> : <Camera size={14} />}
+                </button>
+                <input ref={avatarInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={handleAvatarUpload} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
+                <p className="text-xs text-[var(--color-muted-fg)]">
+                  {patient?.patient_number ? `${patient.patient_number} · ` : ""}
+                  {user?.email}
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-black/[0.03] px-3 py-1.5">
+              <div className="flex items-center justify-between gap-3 py-1">
+                <span className="text-[10px] font-semibold tracking-wider text-[var(--color-muted-fg)] uppercase">Phone</span>
+                <span className="truncate text-right text-xs font-semibold text-[var(--color-foreground)]">{patient?.phone ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 py-1">
+                <span className="text-[10px] font-semibold tracking-wider text-[var(--color-muted-fg)] uppercase">Date of Birth</span>
+                <span className="truncate text-right text-xs font-semibold text-[var(--color-foreground)]">{fmtDate(patient?.date_of_birth ?? null)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Info rows — same editing behaviour as the web view */}
+          <div className="app-glass-strong overflow-hidden rounded-2xl">
+            <div className="divide-y divide-[var(--color-border)]">{infoList}</div>
+          </div>
+
+          <div className="app-glass-strong rounded-2xl p-4">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setPwOpen(true)}
+                className="focus-ring flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-[var(--color-border)] text-sm font-medium text-[var(--color-foreground)]"
+              >
+                <Lock size={15} aria-hidden="true" /> Change Password
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="focus-ring flex h-10 flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-sm font-semibold text-white"
+              >
+                <LogOut size={15} aria-hidden="true" /> Sign Out
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -453,6 +548,6 @@ export default function PatientProfile() {
           </form>
         </div>
       )}
-    </div>
+    </>
   );
 }

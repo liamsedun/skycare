@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDownToLine, Download, FileUp, FileText } from "lucide-react";
+import { ArrowDownToLine, Download, FileUp, FileText, Upload } from "lucide-react";
 import { ActionDropdown } from "@/components/ui/action-dropdown";
 import CsvImportModal, { type ImportResult } from "@/components/ui/csv-import-modal";
 import type { ExportCell } from "@/lib/export";
@@ -20,6 +20,8 @@ interface ImportExportMenuProps {
   disabled?: boolean;
   importExtra?: React.ReactNode;
   allowImport?: boolean;
+  compact?: boolean;
+  iconOnly?: boolean;
 }
 
 /**
@@ -40,17 +42,30 @@ export default function ImportExportMenu({
   disabled = false,
   importExtra,
   allowImport = true,
+  compact = false,
+  iconOnly = false,
 }: ImportExportMenuProps) {
   const [importOpen, setImportOpen] = useState(false);
+
+  const triggerIcon = iconOnly ? (
+    <span className="flex flex-col items-center leading-none" aria-hidden="true">
+      <Download size={13} />
+      <Upload size={13} />
+    </span>
+  ) : (
+    <ArrowDownToLine size={compact ? 14 : 16} aria-hidden="true" />
+  );
 
   return (
     <div className="relative">
       <ActionDropdown
         label="Import & Export"
         variant="outline"
-        icon={<ArrowDownToLine size={16} aria-hidden="true" />}
+        icon={triggerIcon}
         ariaLabel={`Import & export ${entityLabel}`}
         className={disabled ? "opacity-50" : ""}
+        buttonClassName={iconOnly ? "px-2 py-1.5" : compact ? "px-3 py-2 text-xs" : undefined}
+        iconOnly={iconOnly}
         items={[
           {
             label: "Export (CSV)",

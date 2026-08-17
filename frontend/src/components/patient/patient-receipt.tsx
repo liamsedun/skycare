@@ -116,7 +116,8 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
           </div>
 
           <div className="px-6 py-5">
-            <table className="w-full text-sm">
+            <div className="-mx-6 overflow-x-auto px-6">
+            <table className="w-full min-w-[420px] text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                   <th className="pb-2 font-medium">Item</th>
@@ -128,7 +129,7 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
               <tbody className="divide-y divide-[var(--color-border)]">
                 {invoice.invoice_items.map((item) => (
                   <tr key={item.id}>
-                    <td className="py-2.5 text-[var(--color-foreground)]">
+                    <td className="py-2.5 break-words text-[var(--color-foreground)]">
                       {item.description}
                       {item.vat_amount ? <span className="ml-1 text-xs text-[var(--color-muted-fg)]">(+VAT {ngn(item.vat_amount)})</span> : null}
                     </td>
@@ -139,6 +140,7 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
                 ))}
               </tbody>
             </table>
+          </div>
 
             <div className="mt-4 flex justify-end text-right text-sm">
               <div className="space-y-1">
@@ -159,10 +161,10 @@ export default function PatientReceipt({ params }: { params: Promise<{ id: strin
                 </div>
                 <div className="mt-2 space-y-1.5">
                   {invoice.payments.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
-                      <span className="text-[var(--color-muted-fg)]">
-                        {p.reference ?? "—"} · {p.payment_method?.replace(/_/g, " ") ?? "—"}
-                        {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleString("en-NG")}` : ""}
+                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
+                      <span className="min-w-0 flex-1 text-[var(--color-muted-fg)]">
+                        <span className="block truncate sm:inline">{p.reference ?? "—"} · {p.payment_method?.replace(/_/g, " ") ?? "—"}</span>
+                        {p.paid_at ? <span className="block text-xs sm:ml-1 sm:inline">· {new Date(p.paid_at).toLocaleString("en-NG")}</span> : null}
                       </span>
                       <span className="font-semibold text-[var(--color-foreground)]">{ngn(Number(p.amount))}</span>
                     </div>

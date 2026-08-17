@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Pill } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import {
+  AppHeader,
+  AppSkeletonList,
+  AppStatusChip,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 interface RxItem {
   id: string;
@@ -73,7 +78,9 @@ export default function PatientPrescriptions() {
   const visible = prescriptions.filter((rx) => inDateRange(rx.issued_date, from, to));
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Prescriptions</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Medications prescribed for you and your family.</p>
@@ -163,5 +170,100 @@ export default function PatientPrescriptions() {
         </div>
       )}
     </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="Prescriptions" meta={`${visible.length} total`} />
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={3} />
+          ) : visible.length === 0 ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <Pill size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No prescriptions yet.</p>
+              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Your doctor&apos;s prescriptions will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visible.map((rx) => {
+                const open = expanded === rx.id;
+                return (
+                  <div key={rx.id} className="app-glass rounded-2xl p-4">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(open ? null : rx.id)}
+                      aria-expanded={open}
+                      className="flex w-full items-start gap-3 text-left"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e0a84a]/20 to-[#e0a84a]/5 text-[#e0a84a]">
+                        <Pill size={18} aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
+                            {rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : "Prescription"}
+                          </p>
+                          <AppStatusChip status={rx.status} />
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-[var(--color-muted-fg)]">
+                          {rx.users?.full_name ? `Dr. ${rx.users.full_name} · ` : ""}Issued{" "}
+                          {new Date(rx.issued_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                        <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+                          {rx.prescription_items.length} medication{rx.prescription_items.length === 1 ? "" : "s"}
+                          {rx.diagnosis ? ` · ${rx.diagnosis}` : ""}
+                        </p>
+                      </div>
+                    </button>
+
+                    {open && (
+                      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                        <ul className="space-y-2">
+                          {rx.prescription_items.map((item) => (
+                            <li key={item.id} className="rounded-xl border border-[var(--color-border)] p-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-[var(--color-foreground)]">{item.medication_name}</p>
+                                {item.dispensed_qty != null && (
+                                  <span className="text-[11px] text-[var(--color-muted-fg)]">
+                                    Dispensed {item.dispensed_qty}
+                                    {item.quantity ? ` of ${item.quantity}` : ""}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                                {item.dosage} · {item.frequency}
+                                {item.route ? ` · ${item.route}` : ""}
+                                {item.duration ? ` · for ${item.duration}` : ""}
+                              </p>
+                              {item.instructions && (
+                                <p className="mt-1 text-[11px] italic text-[var(--color-muted-fg)]">{item.instructions}</p>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                        {rx.notes && (
+                          <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
+                            <span className="font-medium text-[var(--color-foreground)]">Notes: </span>
+                            {rx.notes}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

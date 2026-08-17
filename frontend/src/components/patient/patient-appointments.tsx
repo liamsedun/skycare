@@ -2,9 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus } from "lucide-react";
+import { Calendar, CalendarPlus, Check, Clock, Plus, X } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import {
+  AppFab,
+  AppHeader,
+  AppSegmented,
+  AppSkeletonList,
+  AppSheet,
+  AppStatusChip,
+  GhostButton,
+  cn,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 interface Appointment {
   id: string;
@@ -52,6 +62,8 @@ export default function PatientAppointments() {
   const [family, setFamily] = useState<FamilyMember[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [mobileTab, setMobileTab] = useState<"upcoming" | "past">("upcoming");
+  const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,7 +86,7 @@ export default function PatientAppointments() {
         const res = await fetch("/api/patients/me", { cache: "no-store" });
         if (res.ok) {
           const body = await res.json();
-          setFamily(body.family ?? []);
+          setFamily(body.data?.family ?? []);
         }
       } catch {
         // picker falls back to "Myself" disabled state below
@@ -102,7 +114,6 @@ export default function PatientAppointments() {
   }
 
   async function cancelAppointment(id: string) {
-    if (!confirm("Cancel this appointment?")) return;
     setBusy(true);
     setError(null);
     try {
@@ -158,94 +169,207 @@ export default function PatientAppointments() {
 
   const visible = appointments.filter((a) => inDateRange(a.scheduled_date, from, to));
 
+  const mobileAppts = (visible: Appointment[]) =>
+    mobileTab === "upcoming"
+      ? visible.filter((a) => ["scheduled", "confirmed", "in_progress"].includes(a.status))
+      : visible.filter((a) => ["completed", "cancelled", "no_show"].includes(a.status));
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
-            Appointments
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-            Your appointments and those of your family members.
-          </p>
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+                Appointments
+              </h1>
+              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+                Your appointments and those of your family members.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowBook(true)}
+              className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
+            >
+              <CalendarPlus size={16} aria-hidden="true" /> Book Appointment
+            </button>
+          </div>
+
+          <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
+
+          {error && (
+            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading appointments…</p>
+          ) : visible.length === 0 ? (
+            <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
+              <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No appointments yet.</p>
+              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Book your first appointment with the button above.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visible.map((a) => (
+                <div key={a.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-[var(--color-foreground)]">
+                        {new Date(`${a.scheduled_date}T${a.start_time || "00:00"}`).toLocaleDateString("en-NG", {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}{" "}
+                        · <span className="font-semibold">{a.start_time}</span>
+                      </p>
+                      <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                        {a.patients ? `${a.patients.first_name} ${a.patients.last_name}` : ""} ·{" "}
+                        {a.type.replace(/_/g, " ")}
+                        {a.users?.full_name ? ` · Dr. ${a.users.full_name}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass(a.status)}`}>
+                        {statusLabel(a.status)}
+                      </span>
+                      {confirmable(a) && (
+                        <button
+                          type="button"
+                          onClick={() => confirmAppointment(a.id)}
+                          disabled={busy}
+                          className="focus-ring rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-medium text-sky-700 transition-colors duration-200 hover:bg-sky-100 disabled:opacity-60"
+                        >
+                          Confirm
+                        </button>
+                      )}
+                      {cancellable(a) && (
+                        <button
+                          type="button"
+                          onClick={() => cancelAppointment(a.id)}
+                          disabled={busy}
+                          className="focus-ring rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {a.reason && <p className="mt-2 text-sm text-[var(--color-muted-fg)]">Reason: {a.reason}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={() => setShowBook(true)}
-          className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)]"
-        >
-          <CalendarPlus size={16} aria-hidden="true" /> Book Appointment
-        </button>
       </div>
 
-      <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="Appointments" meta={`${mobileAppts(visible).length} total`} />
 
-      {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
-          {error}
-        </p>
-      )}
+          <AppSegmented<"upcoming" | "past">
+            tabs={[
+              { key: "upcoming", label: "Upcoming" },
+              { key: "past", label: "Past" },
+            ]}
+            active={mobileTab}
+            onChange={setMobileTab}
+          />
 
-      {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading appointments…</p>
-      ) : visible.length === 0 ? (
-        <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
-          <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No appointments yet.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Book your first appointment with the button above.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {visible.map((a) => (
-            <div key={a.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-medium text-[var(--color-foreground)]">
-                    {new Date(`${a.scheduled_date}T${a.start_time || "00:00"}`).toLocaleDateString("en-NG", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}{" "}
-                    · <span className="font-semibold">{a.start_time}</span>
-                  </p>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
-                    {a.patients ? `${a.patients.first_name} ${a.patients.last_name}` : ""} ·{" "}
-                    {a.type.replace(/_/g, " ")}
-                    {a.users?.full_name ? ` · Dr. ${a.users.full_name}` : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass(a.status)}`}>
-                    {statusLabel(a.status)}
-                  </span>
-                  {confirmable(a) && (
-                    <button
-                      type="button"
-                      onClick={() => confirmAppointment(a.id)}
-                      disabled={busy}
-                      className="focus-ring rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-medium text-sky-700 transition-colors duration-200 hover:bg-sky-100 disabled:opacity-60"
-                    >
-                      Confirm
-                    </button>
-                  )}
-                  {cancellable(a) && (
-                    <button
-                      type="button"
-                      onClick={() => cancelAppointment(a.id)}
-                      disabled={busy}
-                      className="focus-ring rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-60"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-              {a.reason && <p className="mt-2 text-sm text-[var(--color-muted-fg)]">Reason: {a.reason}</p>}
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={3} />
+          ) : mobileAppts(visible).length === 0 ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+                No {mobileTab} appointments.
+              </p>
+              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                {mobileTab === "upcoming" ? "Book your next visit with the + button." : "Completed and cancelled visits will show here."}
+              </p>
             </div>
-          ))}
+          ) : (
+            <div className="space-y-3">
+              {mobileAppts(visible).map((a) => (
+                <div key={a.id} className="app-glass rounded-2xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e0a84a]/20 to-[#e0a84a]/5 text-sm font-bold text-[#e0a84a]">
+                      {a.users?.full_name
+                        ? a.users.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join("")
+                        : "DR"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="truncate text-sm font-semibold text-[var(--color-foreground)]">
+                            {a.users?.full_name ? `Dr. ${a.users.full_name}` : "Doctor"}
+                          </h4>
+                          <p className="truncate text-xs text-[var(--color-muted-fg)]">
+                            {a.patients ? `${a.patients.first_name} ${a.patients.last_name}` : ""} · {a.type.replace(/_/g, " ")}
+                          </p>
+                        </div>
+                        <AppStatusChip status={a.status} />
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--color-muted-fg)]">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={14} aria-hidden="true" />
+                          {new Date(`${a.scheduled_date}T${a.start_time || "00:00"}`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} aria-hidden="true" />
+                          {a.start_time}
+                        </span>
+                      </div>
+                      {a.reason && (
+                        <p className="mt-2 text-xs text-[var(--color-muted-fg)]">Reason: {a.reason}</p>
+                      )}
+                      {mobileTab === "upcoming" && (confirmable(a) || cancellable(a)) && (
+                        <div className="mt-3 flex gap-2 border-t border-[var(--color-border)] pt-3">
+                          {confirmable(a) && (
+                            <button
+                              type="button"
+                              onClick={() => confirmAppointment(a.id)}
+                              disabled={busy}
+                              className="h-9 flex-1 rounded-xl border border-sky-500/20 text-xs font-medium text-sky-600 transition-colors hover:bg-sky-50 disabled:opacity-60"
+                            >
+                              Confirm
+                            </button>
+                          )}
+                          {cancellable(a) && (
+                            <button
+                              type="button"
+                              onClick={() => setCancelTarget(a)}
+                              disabled={busy}
+                              className="h-9 flex-1 rounded-xl border border-rose-500/20 text-xs font-medium text-rose-500 transition-colors hover:bg-rose-50 disabled:opacity-60"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <AppFab onClick={() => setShowBook(true)} label="Book an appointment">
+            <Plus size={26} />
+          </AppFab>
         </div>
-      )}
+      </div>
 
       {showBook && (
         <BookModal
@@ -258,7 +382,50 @@ export default function PatientAppointments() {
           error={error}
         />
       )}
-    </div>
+
+      <AppSheet
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        title={
+          <h3 className="text-base font-semibold text-[var(--color-foreground)]">Cancel Appointment</h3>
+        }
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-500">
+            <X size={22} aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-[var(--color-foreground)]">
+              {cancelTarget?.users?.full_name ? `Dr. ${cancelTarget.users.full_name}` : "Your appointment"}
+            </p>
+            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+              {cancelTarget?.scheduled_date
+                ? `Cancel the visit on ${new Date(`${cancelTarget.scheduled_date}T${cancelTarget.start_time || "00:00"}`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at ${cancelTarget?.start_time ?? ""}?`
+                : "Cancel this appointment?"}
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 flex gap-3">
+          <GhostButton className="flex-1" onClick={() => setCancelTarget(null)}>
+            Keep
+          </GhostButton>
+          <button
+            type="button"
+            onClick={() => {
+              const id = cancelTarget?.id;
+              setCancelTarget(null);
+              if (id) void cancelAppointment(id);
+            }}
+            disabled={busy}
+            className={cn(
+              "h-10 flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-sm font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50"
+            )}
+          >
+            {busy ? "Cancelling…" : "Yes, Cancel"}
+          </button>
+        </div>
+      </AppSheet>
+    </>
   );
 }
 
@@ -314,7 +481,7 @@ function BookModal({
               )}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className={labelCls} htmlFor="pbm-date">Date</label>
               <input id="pbm-date" name="scheduledDate" type="date" required min={new Date().toISOString().slice(0, 10)} className={inputCls} />

@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ClipboardList, FileText, Loader2, PenLine, Stethoscope } from "lucide-react";
+import {
+  AppHeader,
+  AppSegmented,
+  AppSkeletonList,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 interface MedicalRecord {
   id: string;
@@ -375,7 +380,9 @@ export default function PatientRecords() {
   const hasAnything = records.length > 0 || notes.length > 0 || reports.length > 0;
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Medical Records</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your clinical records, doctor notes and reports.</p>
@@ -620,5 +627,217 @@ export default function PatientRecords() {
         />
       )}
     </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="Medical Records" meta={`${records.length + notes.length + reports.length} entries`} />
+
+          <AppSegmented<"records" | "notes" | "reports">
+            tabs={[
+              { key: "records", label: "Records" },
+              { key: "notes", label: "Notes" },
+              { key: "reports", label: "Reports" },
+            ]}
+            active={tab}
+            onChange={setTab}
+          />
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={3} />
+          ) : !hasAnything ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <ClipboardList size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No records yet.</p>
+              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Your visits will appear here.</p>
+            </div>
+          ) : (
+            <div className="relative ml-1.5 space-y-4 border-l-2 border-[#e0a84a]/30 pl-4">
+              {tab === "records" &&
+                (records.length === 0 ? (
+                  <p className="app-glass rounded-2xl py-8 text-center text-xs text-[var(--color-muted-fg)]">No medical records yet.</p>
+                ) : (
+                  records.map((rec) => {
+                    const open = expanded[`r-${rec.id}`];
+                    return (
+                      <div key={rec.id} className="relative">
+                        <span aria-hidden="true" className="absolute -left-[21px] top-4 h-2.5 w-2.5 rounded-full bg-[#e0a84a] shadow-[0_0_0_3px_rgba(224,168,74,0.25)]" />
+                        <button
+                          type="button"
+                          onClick={() => toggle(`r-${rec.id}`)}
+                          aria-expanded={open}
+                          className="app-glass w-full rounded-2xl p-4 text-left"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                                {recordTypeLabels[rec.record_type] ?? rec.record_type.replace(/_/g, " ")}
+                              </p>
+                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                                {fmtDate(rec.created_at)}
+                                {rec.users ? ` · ${rec.users.full_name}` : ""}
+                              </p>
+                            </div>
+                            {rec.title ? (
+                              <span className="shrink-0 rounded-full bg-[#e0a84a]/10 px-2 py-0.5 text-[10px] font-medium text-[#e0a84a]">
+                                {rec.title}
+                              </span>
+                            ) : null}
+                          </div>
+                          {open && rec.content && (
+                            <p className="mt-3 whitespace-pre-wrap border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-foreground)]">
+                              {rec.content}
+                            </p>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })
+                ))}
+
+              {tab === "notes" &&
+                (notes.length === 0 ? (
+                  <p className="app-glass rounded-2xl py-8 text-center text-xs text-[var(--color-muted-fg)]">No clinical notes yet.</p>
+                ) : (
+                  notes.map((note) => {
+                    const open = expanded[`n-${note.id}`];
+                    const diag = (note.diagnosis ?? {}) as Record<string, unknown>;
+                    const meds = note.medications ?? [];
+                    const vitals = note.vitals ?? {};
+                    return (
+                      <div key={note.id} className="relative">
+                        <span aria-hidden="true" className="absolute -left-[21px] top-4 h-2.5 w-2.5 rounded-full bg-[#e0a84a] shadow-[0_0_0_3px_rgba(224,168,74,0.25)]" />
+                        <div className="app-glass rounded-2xl p-4">
+                          <div className="flex items-start gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggle(`n-${note.id}`)}
+                              aria-expanded={open}
+                              className="min-w-0 flex-1 text-left"
+                            >
+                              <p className="text-sm font-semibold text-[var(--color-foreground)]">Visit · {fmtDate(note.visit_date)}</p>
+                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                                {note.users?.full_name ?? "Doctor"}
+                                {note.next_visit_date ? ` · Next visit: ${fmtDate(note.next_visit_date)}` : ""}
+                              </p>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingNote(note)}
+                              className="focus-ring shrink-0 rounded-lg p-1.5 text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]/60 hover:text-[#e0a84a]"
+                              aria-label="Edit note"
+                              title="Edit note"
+                            >
+                              <PenLine size={15} />
+                            </button>
+                          </div>
+                          {open && (
+                            <div className="mt-3 space-y-3 border-t border-[var(--color-border)] pt-3 text-xs">
+                              {Object.keys(vitals).length > 0 && (
+                                <div>
+                                  <p className="font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Vitals</p>
+                                  <p className="mt-1 text-[var(--color-foreground)]">
+                                    {Object.entries(vitals).map(([k, v]) => `${k.replace(/_/g, " ")}: ${String(v)}`).join(" · ")}
+                                  </p>
+                                </div>
+                              )}
+                              {note.clinical_findings && (
+                                <div>
+                                  <p className="font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Findings</p>
+                                  <p className="mt-1 whitespace-pre-wrap text-[var(--color-foreground)]">{note.clinical_findings}</p>
+                                </div>
+                              )}
+                              {Object.keys(diag).length > 0 && (
+                                <div>
+                                  <p className="font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Diagnosis</p>
+                                  <p className="mt-1 text-[var(--color-foreground)]">
+                                    {Object.entries(diag).map(([k, v]) => `${k.replace(/_/g, " ")}: ${String(v)}`).join(" · ")}
+                                  </p>
+                                </div>
+                              )}
+                              {meds.length > 0 && (
+                                <div>
+                                  <p className="font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Medications</p>
+                                  <ul className="mt-1 space-y-1 text-[var(--color-foreground)]">
+                                    {meds.map((m, i) => (
+                                      <li key={i}>
+                                        {String(m.name ?? m.medication ?? "Medication")}
+                                        {m.dosage ? ` — ${m.dosage}` : ""}
+                                        {m.frequency ? ` (${m.frequency})` : ""}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {note.treatment_recommendations && (
+                                <div>
+                                  <p className="font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Recommendations</p>
+                                  <p className="mt-1 whitespace-pre-wrap text-[var(--color-foreground)]">{note.treatment_recommendations}</p>
+                                </div>
+                              )}
+                              {note.next_visit_reason && (
+                                <p className="text-[var(--color-muted-fg)]">Next visit reason: {note.next_visit_reason}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ))}
+
+              {tab === "reports" &&
+                (reports.length === 0 ? (
+                  <p className="app-glass rounded-2xl py-8 text-center text-xs text-[var(--color-muted-fg)]">No medical reports yet.</p>
+                ) : (
+                  reports.map((rep) => {
+                    const open = expanded[`p-${rep.id}`];
+                    return (
+                      <div key={rep.id} className="relative">
+                        <span aria-hidden="true" className="absolute -left-[21px] top-4 h-2.5 w-2.5 rounded-full bg-[#e0a84a] shadow-[0_0_0_3px_rgba(224,168,74,0.25)]" />
+                        <button
+                          type="button"
+                          onClick={() => toggle(`p-${rep.id}`)}
+                          aria-expanded={open}
+                          className="app-glass w-full rounded-2xl p-4 text-left"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate font-mono text-sm font-semibold text-[var(--color-foreground)]">
+                                {rep.reference_number}
+                              </p>
+                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                                {fmtDate(rep.report_date)}
+                                {rep.author_name ? ` · ${rep.author_name}` : ""}
+                              </p>
+                            </div>
+                            <ChevronDown
+                              size={16}
+                              aria-hidden="true"
+                              className={`shrink-0 text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+                            />
+                          </div>
+                          {open && (
+                            <p className="mt-3 whitespace-pre-wrap border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-foreground)]">
+                              {rep.content}
+                            </p>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })
+                ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

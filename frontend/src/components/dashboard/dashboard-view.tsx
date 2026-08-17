@@ -10,9 +10,11 @@ import {
   CalendarPlus,
   FlaskConical,
   Loader,
+  MoonStar,
   ReceiptText,
   Sparkles,
   Stethoscope,
+  Sun,
   TrendingDown,
   TrendingUp,
   UserPlus,
@@ -156,6 +158,7 @@ export default function DashboardView({
     20: "Good evening", 21: "Good evening", 22: "Good evening", 23: "Good evening",
   };
   const greeting = greetingMap[new Date().getHours()] ?? "Hello";
+  const isNight = new Date().getHours() >= 17 || new Date().getHours() < 5;
   const firstName = useMemo(() => (fullName || "there").split(/\s+/)[0], [fullName]);
   const roleLabel = (myRole && ROLE_LABELS[myRole as keyof typeof ROLE_LABELS]) || myRole || "Staff";
 
@@ -175,8 +178,13 @@ export default function DashboardView({
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/80">
               <Sparkles size={14} aria-hidden="true" /> Staff Dashboard
             </p>
-            <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
-              {greeting}, {firstName} 👋
+            <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold sm:text-3xl">
+              {greeting}, {firstName}
+              {isNight ? (
+                <MoonStar className="inline-block text-white/90" size={26} aria-hidden="true" />
+              ) : (
+                <Sun className="inline-block text-white/90" size={26} aria-hidden="true" />
+              )}
             </h1>
             <p className="mt-1 max-w-md text-sm text-white/85">
               Welcome back — here&apos;s a live overview of patients, appointments, revenue and
@@ -185,7 +193,8 @@ export default function DashboardView({
             <div className="mt-4 flex flex-wrap gap-2.5">
               <Link
                 href="/app/patients"
-                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[#075985] shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+                style={{ color: "var(--color-primary-dark)" }}
+                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
               >
                 <UserPlus size={16} aria-hidden="true" /> Register Patient
               </Link>

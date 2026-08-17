@@ -27,21 +27,22 @@ export async function loadTenant(host?: string | null) {
   const ctx = resolveTenantSlug(host);
   const supabase = await createClient();
 
+  // Anonymous callers read the curated public profile view (migration 0088);
+  // the raw `tenants` table (incl. `settings` with Paystack keys) is never
+  // exposed to anon — the view whitelists brand/contact/website content only.
   if (ctx.customDomain) {
     const { data } = await supabase
-      .from("tenants")
+      .from("tenant_public_profile")
       .select("*")
       .eq("domain", ctx.slug)
-      .eq("is_active", true)
       .maybeSingle();
     return { ctx, tenant: data ?? null };
   }
   if (!ctx.isRoot && ctx.slug) {
     const { data } = await supabase
-      .from("tenants")
+      .from("tenant_public_profile")
       .select("*")
       .eq("slug", ctx.slug)
-      .eq("is_active", true)
       .maybeSingle();
     return { ctx, tenant: data ?? null };
   }

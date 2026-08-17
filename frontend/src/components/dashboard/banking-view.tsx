@@ -623,7 +623,7 @@ export default function BankingView() {
               </p>
             )}
 
-            <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
+            <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white">
               {ledgerLoading ? (
                 <div className="flex justify-center py-12">
                   <Loader2 size={20} className="animate-spin text-[var(--color-muted-fg)]" />

@@ -382,6 +382,7 @@ export default function BedMapView({ canManage, accessLevel = "full" }: { canMan
               onImport={importBeds}
               onImported={() => void refreshAll()}
               allowImport={!viewOnly}
+              iconOnly
             />
           </div>
         </div>

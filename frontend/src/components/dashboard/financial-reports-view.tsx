@@ -249,13 +249,13 @@ export default function FinancialReportsView() {
       ["Generated", new Date().toLocaleString()],
       ["Period", `From ${fmtPeriodDate(summary.range.from)} to ${fmtPeriodDate(summary.range.to)}`],
       [""],
-      ["INCOME BY MODULE"],
-      ["Module", "Invoiced", "Collected", "Outstanding", "Count"],
+      ["INCOME BY SERVICES"],
+      ["Service", "Invoiced", "Collected", "Outstanding", "Count"],
       ...MODULE_META.map((m) => {
         const d = summary.income[m.key];
         return [m.label, String(d.invoiced), String(d.collected), String(d.outstanding), String(d.count)];
       }),
-      ["All modules", String(summary.income.totals.invoiced), String(summary.income.totals.collected), String(summary.income.totals.outstanding), String(summary.income.totals.count)],
+      ["All services", String(summary.income.totals.invoiced), String(summary.income.totals.collected), String(summary.income.totals.outstanding), String(summary.income.totals.count)],
       [""],
       ["EXPENSES"],
       ["Category", "Amount"],
@@ -298,7 +298,7 @@ export default function FinancialReportsView() {
     const buildTable = (header: string[], rowsHtml: string) =>
       `<h2 class="sec">${header[0]}</h2><table><thead><tr>${header.slice(1).map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
     const incomeTable = buildTable(
-      ["A. INCOME BY MODULE", "Module", "Invoiced (N)", "Collected (N)", "Outstanding (N)"],
+      ["A. INCOME BY SERVICES", "Service", "Invoiced (N)", "Collected (N)", "Outstanding (N)"],
       incomeRows.map((r) => `<tr><td>${r[0]}</td><td class="amt">${ngn(r[1])}</td><td class="amt">${ngn(r[2])}</td><td class="amt">${ngn(r[3])}</td></tr>`).join("") +
         `<tr class="b"><td>Total</td><td class="amt">${ngn(summary.income.totals.invoiced)}</td><td class="amt">${ngn(summary.income.totals.collected)}</td><td class="amt">${ngn(summary.income.totals.outstanding)}</td></tr>`
     );
@@ -435,16 +435,56 @@ export default function FinancialReportsView() {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--color-foreground)]">
-                    <Layers size={16} aria-hidden="true" className="text-[var(--color-primary)]" /> Income by Module
+                    <Layers size={16} aria-hidden="true" className="text-[var(--color-primary)]" /> Income by Services
                   </h2>
                   <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Collected vs invoiced vs outstanding, per revenue stream</p>
                 </div>
               </div>
-              <div className="overflow-x-auto">
+              <div className="space-y-2.5 md:hidden">
+                {moduleRows.map((r) => {
+                  const Icon = r.icon ?? Stethoscope;
+                  return (
+                    <div key={r.key} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/20 p-3 transition-transform active:scale-[0.98]">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${r.tint}`}>
+                          <Icon size={15} aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-medium text-[var(--color-foreground)]">{r.label}</span>
+                        <span className="rounded-full bg-[var(--color-muted)]/60 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-fg)]">{r.count}</span>
+                      </div>
+                      <div className="mt-2.5 grid grid-cols-3 gap-2">
+                        <div>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Invoiced</p>
+                          <p className="mt-0.5 truncate text-sm font-medium text-[var(--color-foreground)]">{ngn(r.invoiced)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Collected</p>
+                          <p className="mt-0.5 truncate text-sm font-semibold text-emerald-600">{ngn(r.collected)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">Outstanding</p>
+                          <p className="mt-0.5 truncate text-sm text-[var(--color-muted-fg)]">{ngn(r.outstanding)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="flex items-center justify-between rounded-xl bg-[var(--color-muted)]/40 px-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-[var(--color-foreground)]">All Services</p>
+                    <p className="truncate text-[11px] text-[var(--color-muted-fg)]">{ngn(summary.income.totals.invoiced)} invoiced</p>
+                  </div>
+                  <div className="min-w-0 text-right">
+                    <p className="truncate text-sm font-bold text-emerald-600">{ngn(summary.income.totals.collected)}</p>
+                    <p className="truncate text-[11px] text-[var(--color-muted-fg)]">{ngn(summary.income.totals.outstanding)} outstanding</p>
+                  </div>
+                </div>
+              </div>
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[520px] text-sm">
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                      <th className="py-2.5 pr-3 font-semibold">Module</th>
+                      <th className="py-2.5 pr-3 font-semibold">Service</th>
                       <th className="py-2.5 pr-3 text-right font-semibold">Invoiced</th>
                       <th className="py-2.5 pr-3 text-right font-semibold">Collected</th>
                       <th className="py-2.5 text-right font-semibold">Outstanding</th>
@@ -471,7 +511,7 @@ export default function FinancialReportsView() {
                       );
                     })}
                     <tr className="bg-[var(--color-muted)]/40 font-bold">
-                      <td className="px-2 py-3 text-[var(--color-foreground)]">All Modules</td>
+                      <td className="px-2 py-3 text-[var(--color-foreground)]">All Services</td>
                       <td className="px-2 py-3 text-right text-[var(--color-foreground)]">{ngn(summary.income.totals.invoiced)}</td>
                       <td className="px-2 py-3 text-right text-emerald-600">{ngn(summary.income.totals.collected)}</td>
                       <td className="px-2 py-3 text-right text-[var(--color-muted-fg)]">{ngn(summary.income.totals.outstanding)}</td>
@@ -483,7 +523,7 @@ export default function FinancialReportsView() {
 
             <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
               <h2 className="mb-1 text-base font-semibold text-[var(--color-foreground)]">Income split</h2>
-              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">Collected share by module</p>
+              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">Collected share by service</p>
               <div className="h-64">
                 {incomePie.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-fg)]">No income recorded yet.</div>
@@ -506,7 +546,7 @@ export default function FinancialReportsView() {
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
               <h2 className="mb-1 text-base font-semibold text-[var(--color-foreground)]">Collected vs Invoiced</h2>
-              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">How much was billed vs actually received, by module</p>
+              <p className="mb-2 text-xs text-[var(--color-muted-fg)]">How much was billed vs actually received, by service</p>
               <div className="h-64">
                 {collectedVsInvoiced.every((d) => d.collected === 0 && d.invoiced === 0) ? (
                   <div className="flex h-full items-center justify-center text-sm text-[var(--color-muted-fg)]">No data for this period.</div>

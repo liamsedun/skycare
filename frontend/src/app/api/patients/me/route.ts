@@ -39,13 +39,25 @@ export const GET = withAuth(async (req, ctx) => {
 
   const { data: family } = await ctx.svc
     .from("patients")
-    .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, dependant_relationship, is_primary_account, status, user_id, marital_status, blood_group, genotype, medical_plan, address, city, state, emergency_contact_name, emergency_contact_phone")
+    .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, dependant_relationship, is_primary_account, status, user_id, marital_status, blood_group, genotype, allergies, chronic_conditions, medical_plan, address, city, state, emergency_contact_name, emergency_contact_phone, avatar_url, created_at, users(avatar_url)")
     .eq("tenant_id", tenantId)
     .or(`id.eq.${rootId},primary_account_id.eq.${rootId}`)
     .order("is_primary_account", { ascending: false })
     .order("created_at", { ascending: true });
 
-  return ok({ selfId: self.id, rootId, family: family ?? [] });
+  // Portal profile photos live on users.avatar_url (uploaded via /api/uploads/avatar);
+  // patients.avatar_url wins when set (family-page uploads), else fall back to the
+  // linked portal account's photo so the primary's card shows their photo, not initials.
+  const familyRows = (family ?? []).map((row) => {
+    const r = row as Record<string, unknown> & { users?: { avatar_url?: string | null } | null };
+    const { users: linkedUser, ...rest } = r;
+    return {
+      ...rest,
+      avatar_url: (rest.avatar_url as string | null | undefined) ?? linkedUser?.avatar_url ?? null,
+    };
+  });
+
+  return ok({ selfId: self.id, rootId, family: familyRows });
 });
 
 // PUT /api/patients/me — the caller updates their own patient record fields

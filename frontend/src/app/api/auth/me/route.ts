@@ -11,7 +11,7 @@ export const GET = withAuth(async (req, ctx) => {
   const [userRes, tenantRes, patientRes, staffRes] = await Promise.all([
     supabase.from("users").select("*").eq("id", ctx.user.id).maybeSingle(),
     ctx.tenantId
-      ? supabase.from("tenants").select("id, name, slug, logo_url, brand_color, settings").eq("id", ctx.tenantId).maybeSingle()
+      ? supabase.from("tenants").select("id, name, slug, logo_url, brand_color, website_url").eq("id", ctx.tenantId).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase
       .from("patients")

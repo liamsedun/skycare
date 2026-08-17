@@ -19,6 +19,8 @@ interface ActionDropdownProps {
   align?: "left" | "right";
   ariaLabel?: string;
   className?: string;
+  buttonClassName?: string;
+  iconOnly?: boolean;
 }
 
 export function ActionDropdown({
@@ -29,6 +31,8 @@ export function ActionDropdown({
   align = "right",
   ariaLabel,
   className,
+  buttonClassName,
+  iconOnly = false,
 }: ActionDropdownProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -62,15 +66,17 @@ export function ActionDropdown({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={ariaLabel ?? label}
-        className={`focus-ring inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${base}`}
+        className={`focus-ring inline-flex items-center gap-2 rounded-lg font-semibold transition-colors duration-200 ${buttonClassName ?? "px-4 py-2.5 text-sm"} ${base}`}
       >
         {icon}
-        {label}
-        <ChevronDown
-          size={14}
-          aria-hidden="true"
-          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-        />
+        {!iconOnly && label}
+        {!iconOnly && (
+          <ChevronDown
+            size={14}
+            aria-hidden="true"
+            className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
 
       {open && (

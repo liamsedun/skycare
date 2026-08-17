@@ -62,6 +62,7 @@ export default function PatientShell({
 
   return (
     <div className="flex min-h-screen w-full">
+      <div aria-hidden="true" className="app-mobile-bg md:hidden" />
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <button

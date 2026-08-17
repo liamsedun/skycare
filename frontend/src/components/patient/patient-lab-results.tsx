@@ -4,6 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, FlaskConical } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import {
+  AppHeader,
+  AppSkeletonList,
+  AppStatusChip,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 interface LabResult {
   id: string;
@@ -72,7 +77,9 @@ export default function PatientLabResults() {
   const visible = orders.filter((order) => inDateRange(order.requested_at, from, to));
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Lab results</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Laboratory orders and completed results for your family.</p>
@@ -127,15 +134,16 @@ export default function PatientLabResults() {
 
                 {open && (
                   <div className="border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                          <th className="pb-2 font-medium">Test</th>
-                          <th className="pb-2 font-medium">Sample</th>
-                          <th className="pb-2 text-right font-medium">Result</th>
-                          <th className="pb-2 text-right font-medium">Status</th>
-                        </tr>
-                      </thead>
+                    <div className="-mx-4 overflow-x-auto px-4">
+                      <table className="w-full min-w-[440px] text-sm">
+                        <thead>
+                          <tr className="text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
+                            <th className="pb-2 font-medium">Test</th>
+                            <th className="pb-2 font-medium">Sample</th>
+                            <th className="pb-2 text-right font-medium">Result</th>
+                            <th className="pb-2 text-right font-medium">Status</th>
+                          </tr>
+                        </thead>
                       <tbody className="divide-y divide-[var(--color-border)]">
                         {order.lab_order_tests.map((t) => {
                           const result = t.lab_results[0];
@@ -167,7 +175,8 @@ export default function PatientLabResults() {
                           );
                         })}
                       </tbody>
-                    </table>
+                      </table>
+                    </div>
                     {allReady && order.completed_at && (
                       <p className="mt-3 text-right text-xs text-[var(--color-muted-fg)]">
                         Reported {new Date(order.completed_at).toLocaleString("en-NG")}
@@ -181,5 +190,108 @@ export default function PatientLabResults() {
         </div>
       )}
     </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="Lab Results" meta={`${visible.length} order${visible.length === 1 ? "" : "s"}`} />
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={3} />
+          ) : visible.length === 0 ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <FlaskConical size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No lab orders yet.</p>
+              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Tests requested by your doctor will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {visible.map((order) => {
+                const open = expanded === order.id;
+                const allReady = order.status === "completed";
+                return (
+                  <div key={order.id} className="app-glass rounded-2xl p-4">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(open ? null : order.id)}
+                      aria-expanded={open}
+                      className="flex w-full items-start gap-3 text-left"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e0a84a]/20 to-[#e0a84a]/5 text-[#e0a84a]">
+                        <FlaskConical size={18} aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
+                            {order.patients ? `${order.patients.first_name} ${order.patients.last_name}` : "Lab order"}
+                          </p>
+                          <AppStatusChip status={order.status} />
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-[var(--color-muted-fg)]">
+                          {order.users?.full_name ? `Dr. ${order.users.full_name} · ` : ""}
+                          {new Date(order.requested_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                        <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+                          {order.lab_order_tests.length} test{order.lab_order_tests.length === 1 ? "" : "s"}
+                          {order.notes ? ` · ${order.notes}` : ""}
+                        </p>
+                      </div>
+                    </button>
+
+                    {open && (
+                      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                        <ul className="space-y-2">
+                          {order.lab_order_tests.map((t) => {
+                            const result = t.lab_results[0];
+                            return (
+                              <li key={t.id} className="rounded-xl border border-[var(--color-border)] p-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-sm font-semibold text-[var(--color-foreground)]">{t.test_name}</p>
+                                  {allReady && result ? (
+                                    <span
+                                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                                        result.is_abnormal ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-700"
+                                      }`}
+                                    >
+                                      {result.is_abnormal ? "Abnormal" : "Normal"}
+                                    </span>
+                                  ) : (
+                                    <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">Pending</span>
+                                  )}
+                                </div>
+                                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{t.sample_type ?? "—"}</p>
+                                {allReady && result && (
+                                  <p className={`mt-1.5 text-sm font-medium ${result.is_abnormal ? "text-rose-600" : "text-[var(--color-foreground)]"}`}>
+                                    {result.result}
+                                    {result.unit ? ` ${result.unit}` : ""}
+                                    {result.is_abnormal ? " ⚠" : ""}
+                                  </p>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        {allReady && order.completed_at && (
+                          <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
+                            Reported {new Date(order.completed_at).toLocaleString("en-US")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

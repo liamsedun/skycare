@@ -3,15 +3,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   ArrowUpRight,
   CalendarClock,
   CalendarPlus,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
   FlaskConical,
+  HeartPulse,
+  IdCard,
+  MoonStar,
   ReceiptText,
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  Sun,
+  User as UserIcon,
+  Users,
   Wallet,
 } from "lucide-react";
 import {
@@ -22,6 +32,27 @@ import {
   Tooltip,
 } from "recharts";
 import { ngn, initials } from "@/lib/auth";
+
+interface FamilyMember {
+  id: string;
+  patient_number: string;
+  first_name: string;
+  last_name: string;
+  gender: string | null;
+  date_of_birth: string | null;
+  phone: string | null;
+  dependant_relationship: string | null;
+  is_primary_account: boolean;
+  status: string;
+  medical_plan: string | null;
+}
+
+interface OrgProfile {
+  name: string;
+  logo_url: string | null;
+  address: string | null;
+  email: string | null;
+}
 
 interface Appointment {
   id: string;
@@ -68,27 +99,50 @@ function statusClass(status: string): string {
 const CARD =
   "rounded-2xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]";
 
-export default function PatientDashboard({ fullName }: { fullName: string }) {
+export default function PatientDashboard({
+  fullName,
+  avatarUrl,
+}: {
+  fullName: string;
+  avatarUrl?: string | null;
+}) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [labOrders, setLabOrders] = useState<LabOrder[]>([]);
+  const [family, setFamily] = useState<FamilyMember[]>([]);
+  const [patientMe, setPatientMe] = useState<FamilyMember | null>(null);
+  const [org, setOrg] = useState<OrgProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
         const today = new Date().toISOString().slice(0, 10);
-        const [apptRes, invRes, labRes] = await Promise.all([
+        const [apptRes, invRes, labRes, meRes, orgRes] = await Promise.all([
           fetch(`/api/appointments?from=${today}&pageSize=50`, { cache: "no-store" }),
           fetch("/api/invoices?pageSize=100", { cache: "no-store" }),
           fetch("/api/lab-orders?pageSize=50", { cache: "no-store" }),
+          fetch("/api/patients/me", { cache: "no-store" }),
+          fetch("/api/tenant/branding", { cache: "no-store" }),
         ]);
         const apptBody = await apptRes.json();
         const invBody = await invRes.json();
         const labBody = await labRes.json();
+        const meBody = await meRes.json();
+        const orgBody = await orgRes.json();
         if (apptRes.ok) setAppointments(apptBody.data ?? []);
         if (invRes.ok) setInvoices(invBody.data ?? []);
         if (labRes.ok) setLabOrders(labBody.data ?? []);
+        if (meRes.ok) {
+          const familyList = meBody.data?.family ?? [];
+          setFamily(familyList);
+          setPatientMe(
+            familyList.find((m: FamilyMember) => m.is_primary_account) ??
+              familyList[0] ??
+              null
+          );
+        }
+        if (orgRes.ok) setOrg(orgBody.data ?? null);
       } finally {
         setLoading(false);
       }
@@ -131,6 +185,8 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
       ).length,
     [labOrders]
   );
+
+  const dependants = useMemo(() => family.filter((m) => !m.is_primary_account), [family]);
 
   const donutData = useMemo(() => {
     const paid = totalBilled - totalOutstanding;
@@ -177,6 +233,7 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
     23: "Good evening",
   };
   const greeting = greetingMap[new Date().getHours()] ?? "Hello";
+  const isNight = new Date().getHours() >= 17 || new Date().getHours() < 5;
 
   if (loading) {
     return (
@@ -189,7 +246,9 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       {/* Hero banner */}
       <div className="relative overflow-hidden rounded-2xl border border-[var(--color-primary)] bg-gradient-to-br from-[var(--color-primary)] via-[#d99a3f] to-[var(--color-primary-dark)] p-6 text-white sm:p-8">
         <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl" aria-hidden="true" />
@@ -199,8 +258,13 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-white/80">
               <Sparkles size={14} aria-hidden="true" /> Patient Overview
             </p>
-            <h1 className="mt-2 text-2xl font-bold sm:text-3xl">
-              {greeting}, {first} 👋
+            <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold sm:text-3xl">
+              {greeting}, {first}
+              {isNight ? (
+                <MoonStar className="inline-block text-white/90" size={26} aria-hidden="true" />
+              ) : (
+                <Sun className="inline-block text-white/90" size={26} aria-hidden="true" />
+              )}
             </h1>
             <p className="mt-1 max-w-md text-sm text-white/85">
               Here&apos;s a quick look at your care — appointments, bills and results all in one place.
@@ -208,7 +272,7 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
             <div className="mt-4 flex flex-wrap gap-2.5">
               <Link
                 href="/patient/appointments"
-                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[#8a5a1a] shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
+                className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-background)] px-3.5 py-2 text-sm font-semibold text-[var(--color-foreground)] shadow-sm ring-1 ring-white/40 transition-transform duration-200 hover:-translate-y-0.5"
               >
                 <CalendarPlus size={16} aria-hidden="true" /> Book Appointment
               </Link>
@@ -227,8 +291,14 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-lg font-bold ring-2 ring-white/40">
-              {initials(fullName)}
+            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-white/20 ring-2 ring-white/40">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-lg font-bold">
+                  {initials(fullName)}
+                </div>
+              )}
             </div>
             <div>
               <p className="text-sm font-semibold">{fullName}</p>
@@ -497,6 +567,266 @@ export default function PatientDashboard({ fullName }: { fullName: string }) {
           </ul>
         </section>
       </div>
-    </div>
+        </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-muted-fg)]">
+                Patient Overview
+              </p>
+              <h1 className="mt-0.5 flex items-center gap-1.5 truncate text-xl font-bold text-[var(--color-foreground)]">
+                {greeting}, {first}
+                {isNight ? (
+                  <MoonStar className="inline-block shrink-0 text-amber-500" size={20} aria-hidden="true" />
+                ) : (
+                  <Sun className="inline-block shrink-0 text-amber-500" size={20} aria-hidden="true" />
+                )}
+              </h1>
+            </div>
+            <span className="shrink-0 rounded-full border border-[var(--color-border)] bg-slate-100 px-3 py-1.5 text-xs font-medium text-[var(--color-muted-fg)]">
+              {new Date().toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" })}
+            </span>
+          </div>
+
+          {/* Summary 2-col cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href="/patient/appointments"
+              className="app-glass group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 text-amber-600">
+                <CalendarClock size={20} aria-hidden="true" />
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-muted-fg)]">Upcoming</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-foreground)]">
+                {loading ? "…" : upcoming.length === 1 ? "1 appointment" : `${upcoming.length} appointments`}
+              </p>
+              <p className="mt-0.5 line-clamp-1 text-xs text-[var(--color-muted-fg)]">
+                {upcoming[0] ? new Date(`${upcoming[0].scheduled_date}T${upcoming[0].start_time || "00:00"}`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "Book a visit"}
+              </p>
+            </Link>
+            <Link
+              href="/patient/billing"
+              className="app-glass group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 text-rose-600">
+                <CreditCard size={20} aria-hidden="true" />
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-muted-fg)]">Outstanding</p>
+              <p className="mt-0.5 truncate text-sm font-bold text-[var(--color-foreground)]">{loading ? "…" : ngn(outstanding)}</p>
+              <p className="mt-0.5 line-clamp-1 text-xs text-[var(--color-muted-fg)]">
+                {loading ? "" : `${invoices.filter((i) => ["pending", "partially_paid"].includes(i.status)).length} pending bill(s)`}
+              </p>
+            </Link>
+            <Link
+              href="/patient/family"
+              className="app-glass group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 text-sky-600">
+                <Users size={20} aria-hidden="true" />
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-muted-fg)]">Family</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-foreground)]">
+                {loading ? "…" : `${dependants.length} dependant${dependants.length === 1 ? "" : "s"}`}
+              </p>
+              <p className="mt-0.5 line-clamp-1 text-xs text-[var(--color-muted-fg)]">Manage family members under your care</p>
+            </Link>
+            <Link
+              href="/patient/lab-results"
+              className="app-glass group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:-translate-y-0.5"
+            >
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 text-emerald-600">
+                <FlaskConical size={20} aria-hidden="true" />
+              </div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--color-muted-fg)]">Results Ready</p>
+              <p className="mt-0.5 text-sm font-bold text-[var(--color-foreground)]">{loading ? "…" : resultsReady}</p>
+              <p className="mt-0.5 line-clamp-1 text-xs text-[var(--color-muted-fg)]">Lab tests with results</p>
+            </Link>
+          </div>
+
+          {/* Quick actions */}
+          <div className="app-glass relative overflow-hidden rounded-2xl p-4">
+            <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Quick Actions</h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                { label: "Book", href: "/patient/appointments", g: "from-[#e0a84a] to-amber-500" },
+                { label: "Pay", href: "/patient/billing", g: "from-emerald-500 to-teal-400" },
+                { label: "Prescription", href: "/patient/prescriptions", g: "from-cyan-500 to-sky-400" },
+                { label: "Chat", href: "/patient/chats", g: "from-blue-500 to-indigo-400" },
+                { label: "Records", href: "/patient/records", g: "from-violet-500 to-purple-400" },
+                { label: "Bills", href: "/patient/billing", g: "from-orange-500 to-amber-400" },
+                { label: "Results", href: "/patient/lab-results", g: "from-rose-500 to-pink-400" },
+              ].map((a) => (
+                <Link
+                  key={a.label}
+                  href={a.href}
+                  className={`inline-flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r px-4 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 active:scale-[0.98] ${a.g}`}
+                >
+                  {a.label}
+                  <ArrowRight size={14} aria-hidden="true" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Family chips */}
+          {dependants.length > 0 && (
+            <div className="app-glass relative overflow-hidden rounded-2xl p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <Link href="/patient/family" className="flex items-center gap-0.5 text-sm font-semibold text-[var(--color-foreground)] hover:underline">
+                  Family <ChevronRight size={14} className="text-[#e0a84a]" aria-hidden="true" />
+                </Link>
+                <Link href="/patient/family" className="flex items-center gap-0.5 text-xs text-[#e0a84a] hover:underline">
+                  Manage <ChevronRight size={14} aria-hidden="true" />
+                </Link>
+              </div>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {dependants.map((d) => (
+                  <Link
+                    key={d.id}
+                    href="/patient/family"
+                    className="flex h-10 shrink-0 items-center gap-2 rounded-xl border border-[var(--color-border)] bg-slate-100 pr-3 pl-2 transition-all hover:border-[#e0a84a]/40"
+                  >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#e0a84a]/25 bg-[#e0a84a]/15 text-[10px] font-bold text-[#e0a84a]">
+                      {d.first_name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="text-xs font-medium whitespace-nowrap text-[var(--color-foreground)]">{d.first_name}</span>
+                    {d.status === "inactive" && <AlertTriangle size={12} className="text-amber-500" aria-hidden="true" />}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Identity card */}
+          <div className="app-glass relative overflow-hidden rounded-2xl">
+            <div className="flex items-center gap-2 px-4 pt-4">
+              <IdCard size={16} className="text-[#e0a84a]" aria-hidden="true" />
+              <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Identity Card</h3>
+            </div>
+            <div className="m-3 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0b2a4a] via-[#0e3a63] to-[#0d5f7a]">
+              <div className="flex items-center gap-2.5 px-4 pt-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-md">
+                  {org?.logo_url ? (
+                    <img src={org.logo_url} alt="" className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-xs font-bold text-[#0a0f1a]">SC</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-white">{org?.name ?? "SkyCare"}</p>
+                  {org?.address && <p className="truncate text-[10px] text-white/60">{org.address}</p>}
+                  {org?.email && <p className="truncate text-[10px] text-white/60">{org.email}</p>}
+                </div>
+              </div>
+              <div className="flex gap-3 px-4 pt-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.06] ring-1 ring-[#e0a84a]/30">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-bold text-[#e0a84a]">{initials(fullName)}</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-bold text-white">{fullName}</p>
+                  <p className="mt-0.5 text-[11px] font-semibold text-[#e0a84a]">
+                    Patient No: {patientMe?.patient_number ?? "—"}
+                  </p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#e0a84a]/25 bg-[#e0a84a]/15 px-2 py-0.5 text-[10px] font-semibold text-[#e0a84a] capitalize">
+                      <HeartPulse size={12} aria-hidden="true" />
+                      {patientMe?.medical_plan ?? "individual"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium capitalize text-white/70">
+                      <UserIcon size={12} aria-hidden="true" />
+                      {patientMe?.gender ?? "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 pt-3 pb-1">
+                <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5">
+                  <div className="flex items-center justify-between gap-3 py-1">
+                    <span className="text-[10px] font-semibold tracking-wider text-white/45 uppercase">Phone</span>
+                    <span className="truncate text-right text-xs font-semibold text-white">{patientMe?.phone ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 py-1">
+                    <span className="text-[10px] font-semibold tracking-wider text-white/45 uppercase">Date of Birth</span>
+                    <span className="truncate text-right text-xs font-semibold text-white">
+                      {patientMe?.date_of_birth
+                        ? new Date(patientMe.date_of_birth).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 bg-[#e0a84a] px-4 py-2.5">
+                <p className="text-center text-[11px] leading-snug font-semibold text-[#0a0f1a]">
+                  Your Health, Our Priority — Where Care Meets Cure.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent activity */}
+          <div className="app-glass relative overflow-hidden rounded-2xl p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Recent Activity</h3>
+              <ChevronRight size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+            </div>
+            {loading ? (
+              <p className="text-xs text-[var(--color-muted-fg)]">Loading…</p>
+            ) : (
+              <div className="space-y-3">
+                {upcoming.length > 0 && (
+                  <div className="flex gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 text-blue-600">
+                      <CalendarClock size={16} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[var(--color-foreground)]">Upcoming appointment</p>
+                      <p className="truncate text-xs text-[var(--color-muted-fg)]">
+                        {new Date(`${upcoming[0].scheduled_date}T${upcoming[0].start_time || "00:00"}`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+                        {" · "}
+                        {upcoming[0].type.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {resultsReady > 0 && (
+                  <div className="flex gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500 text-emerald-600">
+                      <CheckCircle2 size={16} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[var(--color-foreground)]">Lab results ready</p>
+                      <p className="text-xs text-[var(--color-muted-fg)]">{resultsReady} completed test(s) with results</p>
+                    </div>
+                  </div>
+                )}
+                {invoices.filter((i) => ["pending", "partially_paid"].includes(i.status)).length > 0 && (
+                  <div className="flex gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#e0a84a]/10 text-[#e0a84a]">
+                      <ReceiptText size={16} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[var(--color-foreground)]">Outstanding bills</p>
+                      <p className="text-xs text-[var(--color-muted-fg)]">{ngn(outstanding)} pending</p>
+                    </div>
+                  </div>
+                )}
+                {upcoming.length === 0 && resultsReady === 0 && invoices.length === 0 && (
+                  <p className="text-xs text-[var(--color-muted-fg)]">No recent activity yet.</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }

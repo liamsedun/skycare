@@ -11,9 +11,14 @@ export default async function PatientHomePage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("full_name")
+    .select("full_name, avatar_url")
     .eq("id", user?.id ?? "")
     .maybeSingle();
 
-  return <PatientDashboard fullName={profile?.full_name ?? user?.email ?? "there"} />;
+  return (
+    <PatientDashboard
+      fullName={profile?.full_name ?? user?.email ?? "there"}
+      avatarUrl={profile?.avatar_url ?? null}
+    />
+  );
 }

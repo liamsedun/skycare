@@ -3,9 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, Landmark, ReceiptText } from "lucide-react";
+import { ChevronDown, Landmark, ReceiptText, Wallet } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import {
+  AppHeader,
+  AppSegmented,
+  AppSkeletonList,
+  AppStatusChip,
+} from "@/components/patient/mobile/mobile-app-ui";
 
 interface InvoiceItem {
   id: string;
@@ -71,6 +77,7 @@ export default function PatientBilling() {
   const [onlineEnabled, setOnlineEnabled] = useState(false);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [mobileTab, setMobileTab] = useState<"outstanding" | "paid">("outstanding");
   const searchParams = useSearchParams();
   const paystackStatus = searchParams.get("paystack");
 
@@ -119,6 +126,11 @@ export default function PatientBilling() {
 
   const visible = invoices.filter((inv) => inDateRange(inv.issue_date, from, to));
 
+  const mobileBills =
+    mobileTab === "outstanding"
+      ? visible.filter((i) => ["pending", "partially_paid"].includes(i.status))
+      : visible.filter((i) => i.status === "paid");
+
   async function declarePayment(invoiceId: string, amount: number, method: string) {
     setBusy(true);
     setError(null);
@@ -158,7 +170,9 @@ export default function PatientBilling() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="hidden md:block">
+        <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Bills & payments</h1>
         <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
@@ -236,29 +250,31 @@ export default function PatientBilling() {
 
                 {open && (
                   <div className="border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                          <th className="pb-2 font-medium">Item</th>
-                          <th className="pb-2 text-right font-medium">Qty</th>
-                          <th className="pb-2 text-right font-medium">Unit</th>
-                          <th className="pb-2 text-right font-medium">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--color-border)]">
-                        {inv.invoice_items.map((item) => (
-                          <tr key={item.id}>
-                            <td className="py-2 text-[var(--color-foreground)]">
-                              {item.description}
-                              {item.vat_amount ? <span className="ml-1 text-xs text-[var(--color-muted-fg)]">(+VAT {ngn(item.vat_amount)})</span> : null}
-                            </td>
-                            <td className="py-2 text-right text-[var(--color-muted-fg)]">{item.quantity}</td>
-                            <td className="py-2 text-right text-[var(--color-muted-fg)]">{ngn(item.unit_price)}</td>
-                            <td className="py-2 text-right font-medium text-[var(--color-foreground)]">{ngn(item.total_price)}</td>
+                    <div className="-mx-4 overflow-x-auto px-4">
+                      <table className="w-full min-w-[420px] text-sm">
+                        <thead>
+                          <tr className="text-left text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
+                            <th className="pb-2 font-medium">Item</th>
+                            <th className="pb-2 text-right font-medium">Qty</th>
+                            <th className="pb-2 text-right font-medium">Unit</th>
+                            <th className="pb-2 text-right font-medium">Total</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-[var(--color-border)]">
+                          {inv.invoice_items.map((item) => (
+                            <tr key={item.id}>
+                              <td className="py-2 break-words text-[var(--color-foreground)]">
+                                {item.description}
+                                {item.vat_amount ? <span className="ml-1 text-xs text-[var(--color-muted-fg)]">(+VAT {ngn(item.vat_amount)})</span> : null}
+                              </td>
+                              <td className="py-2 text-right text-[var(--color-muted-fg)]">{item.quantity}</td>
+                              <td className="py-2 text-right text-[var(--color-muted-fg)]">{ngn(item.unit_price)}</td>
+                              <td className="py-2 text-right font-medium text-[var(--color-foreground)]">{ngn(item.total_price)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
                     <div className="mt-3 flex justify-end space-y-1 text-right text-sm">
                       <div>
@@ -333,6 +349,173 @@ export default function PatientBilling() {
         />
       )}
     </div>
+      </div>
+
+      {/* ── Mobile app view (Life Blossom parity, <md) ─────────────────── */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          <AppHeader title="Bills & Payments" meta={`${ngn(outstanding)} outstanding`} />
+
+          <div className="app-glass rounded-2xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e0a84a]/25 to-[#e0a84a]/10 text-[#e0a84a]">
+                <Wallet size={20} aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-[var(--color-muted-fg)]">Total outstanding balance</p>
+                <p className="text-lg font-bold text-[var(--color-foreground)]">{ngn(outstanding)}</p>
+              </div>
+              <AppStatusChip status={outstanding > 0 ? "pending" : "paid"} />
+            </div>
+          </div>
+
+          <AppSegmented<"outstanding" | "paid">
+            tabs={[
+              { key: "outstanding", label: "Outstanding" },
+              { key: "paid", label: "Paid" },
+            ]}
+            active={mobileTab}
+            onChange={setMobileTab}
+          />
+
+          {error && (
+            <p role="alert" className="rounded-xl bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p role="status" className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+              {success}
+            </p>
+          )}
+          {paystackStatus && (
+            <p
+              role="status"
+              className={`rounded-xl px-3 py-2 text-sm font-medium ${
+                paystackStatus === "success"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : paystackStatus === "processing"
+                  ? "bg-sky-50 text-sky-700"
+                  : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              {paystackStatus === "success"
+                ? "Payment received — thank you! Refreshing your bills…"
+                : paystackStatus === "processing"
+                  ? "Payment is being confirmed… this may take a few seconds."
+                  : "Online payment did not complete. You can try again below."}
+            </p>
+          )}
+
+          {loading ? (
+            <AppSkeletonList rows={3} />
+          ) : mobileBills.length === 0 ? (
+            <div className="app-glass rounded-2xl py-10 text-center">
+              <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
+              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+                No {mobileTab === "outstanding" ? "outstanding" : "paid"} bills.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {mobileBills.map((inv) => {
+                const due = Number(inv.total_amount) - Number(inv.paid_amount);
+                const open = expanded === inv.id;
+                return (
+                  <div key={inv.id} className="app-glass rounded-2xl p-4">
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(open ? null : inv.id)}
+                      aria-expanded={open}
+                      className="flex w-full items-start gap-3 text-left"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#e0a84a]/20 to-[#e0a84a]/5 text-[#e0a84a]">
+                        <ReceiptText size={18} aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate font-mono text-sm font-semibold text-[var(--color-foreground)]">
+                            {inv.invoice_number}
+                          </p>
+                          <AppStatusChip status={inv.status} />
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-[var(--color-muted-fg)]">
+                          {inv.patients ? `${inv.patients.first_name} ${inv.patients.last_name}` : ""} ·{" "}
+                          {new Date(inv.issue_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <p className="text-sm font-bold text-[var(--color-foreground)]">{ngn(Number(inv.total_amount))}</p>
+                          {due > 0 ? (
+                            <p className="text-xs font-medium text-amber-600">{ngn(due)} due</p>
+                          ) : (
+                            <p className="text-xs font-medium text-emerald-600">Paid</p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    {open && (
+                      <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                        <ul className="space-y-1.5">
+                          {inv.invoice_items.map((item) => (
+                            <li key={item.id} className="flex items-start justify-between gap-2 text-xs">
+                              <span className="min-w-0 text-[var(--color-foreground)]">
+                                {item.description}
+                                {item.vat_amount ? (
+                                  <span className="ml-1 text-[var(--color-muted-fg)]">(+VAT {ngn(item.vat_amount)})</span>
+                                ) : null}
+                                <span className="block text-[var(--color-muted-fg)]">
+                                  {item.quantity} × {ngn(item.unit_price)}
+                                </span>
+                              </span>
+                              <span className="shrink-0 font-medium text-[var(--color-foreground)]">{ngn(item.total_price)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-2 text-xs text-[var(--color-muted-fg)]">
+                          Subtotal {ngn(Number(inv.subtotal))}
+                          {inv.discount_amount ? ` · Discount −${ngn(inv.discount_amount)}` : ""}
+                          {inv.tax_amount ? ` · Tax ${ngn(inv.tax_amount)}` : ""}
+                          {" · "}Paid {ngn(Number(inv.paid_amount))}
+                        </p>
+                        {inv.payments.length > 0 && (
+                          <ul className="mt-2 space-y-1 border-t border-[var(--color-border)] pt-2">
+                            {inv.payments.map((p) => (
+                              <li key={p.id} className="flex items-center justify-between gap-2 text-xs">
+                                <span className="text-[var(--color-muted-fg)]">
+                                  {p.reference ?? "—"} · {p.payment_method?.replace(/_/g, " ") ?? "—"}
+                                </span>
+                                <span className="font-medium text-[var(--color-foreground)]">{ngn(Number(p.amount))}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <Link
+                          href={`/patient/receipt/${inv.id}`}
+                          className="focus-ring mt-2 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-primary)]"
+                        >
+                          <ReceiptText size={13} aria-hidden="true" /> View Receipt
+                        </Link>
+                      </div>
+                    )}
+
+                    {due > 0 && !open && (
+                      <button
+                        type="button"
+                        onClick={() => setDeclareInvoice(inv)}
+                        className="focus-ring mt-3 flex h-10 w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#e0a84a] to-amber-500 text-sm font-semibold text-[#0a0f1a] shadow-lg shadow-[#e0a84a]/20 transition-all active:scale-[0.98]"
+                      >
+                        <Landmark size={15} aria-hidden="true" className="mr-1.5" /> Declare Payment
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 

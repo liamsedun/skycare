@@ -15,7 +15,7 @@ import FilterBar from "@/components/filters/filter-bar";
 import type { AccessLevel } from "@/lib/nav";
 
 // ============================================================================
-// Pharmacy Admin — catalogue administration for hospital admins:
+// Pharmacy Admin â€” catalogue administration for hospital admins:
 //   Drugs     : search / add / edit / archive catalogue entries
 //   Suppliers : add local vendors
 //   Prices    : branch-specific retail price overrides
@@ -28,7 +28,7 @@ const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
-const ngn = (v: number | null | undefined) => `₦${Number(v ?? 0).toLocaleString()}`;
+const ngn = (v: number | null | undefined) => `â‚¦${Number(v ?? 0).toLocaleString()}`;
 
 type Tab = "stock" | "drugs" | "suppliers" | "branches" | "prices" | "import";
 
@@ -168,10 +168,10 @@ export function DrugsTab() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Catalogue entries" value={summary?.drugs ?? "—"} />
-        <Stat label="Active" value={summary?.activeDrugs ?? "—"} />
-        <Stat label="Low stock" value={summary?.lowStock ?? "—"} tone={(summary?.lowStock ?? 0) > 0 ? "warn" : "ok"} />
-        <Stat label="Categories" value={summary?.categories ?? "—"} />
+        <Stat label="Catalogue entries" value={summary?.drugs ?? "â€”"} />
+        <Stat label="Active" value={summary?.activeDrugs ?? "â€”"} />
+        <Stat label="Low stock" value={summary?.lowStock ?? "â€”"} tone={(summary?.lowStock ?? 0) > 0 ? "warn" : "ok"} />
+        <Stat label="Categories" value={summary?.categories ?? "â€”"} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -180,7 +180,7 @@ export function DrugsTab() {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search name, generic, brand or SKU…"
+            placeholder="Search name, generic, brand or SKUâ€¦"
             className={`${inputCls} pl-9`}
           />
         </div>
@@ -199,7 +199,7 @@ export function DrugsTab() {
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
@@ -213,7 +213,7 @@ export function DrugsTab() {
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : rows.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No drugs found.</td></tr>
             ) : (
@@ -222,8 +222,8 @@ export function DrugsTab() {
                   <td className="px-4 py-2.5">
                     <p className="font-medium text-[var(--color-foreground)]">{d.name}</p>
                     <p className="text-xs text-[var(--color-muted-fg)]">
-                      {[d.form, d.dosage].filter(Boolean).join(" · ")}
-                      {d.genericName ? ` · ${d.genericName}` : ""}
+                      {[d.form, d.dosage].filter(Boolean).join(" Â· ")}
+                      {d.genericName ? ` Â· ${d.genericName}` : ""}
                       {d.isControlled && (
                         <span className="ml-1 rounded bg-red-100 px-1 py-0.5 text-[9px] font-bold uppercase text-red-700">controlled</span>
                       )}
@@ -240,7 +240,7 @@ export function DrugsTab() {
                     {d.effectivePrice !== d.unitPrice ? (
                       <span className="font-semibold text-[var(--color-primary)]">{ngn(d.effectivePrice)}</span>
                     ) : (
-                      <span className="text-[var(--color-muted-fg)]">—</span>
+                      <span className="text-[var(--color-muted-fg)]">â€”</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -435,21 +435,21 @@ export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: Dr
           <div className={field}>
             <label className={lbl} htmlFor="ad-supplier">Primary supplier</label>
             <select id="ad-supplier" value={form.supplierId} onChange={(e) => set("supplierId", e.target.value)} className={inputCls}>
-              <option value="">— None —</option>
+              <option value="">â€” None â€”</option>
               {suppliers.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
             <p className="mt-1 text-[10px] text-[var(--color-muted-fg)]">
-              Tags this drug to a supplier — it then pins to the top of the New purchase order list and appears in the import template.
+              Tags this drug to a supplier â€” it then pins to the top of the New purchase order list and appears in the import template.
             </p>
           </div>
           <div className={field}>
-            <label className={lbl} htmlFor="ad-wholesale">Wholesale (₦)</label>
+            <label className={lbl} htmlFor="ad-wholesale">Wholesale (â‚¦)</label>
             <input id="ad-wholesale" type="number" min={0} value={form.wholesalePrice} onChange={(e) => set("wholesalePrice", e.target.value)} className={inputCls} />
           </div>
           <div className={field}>
-            <label className={lbl} htmlFor="ad-price">Retail price (₦)</label>
+            <label className={lbl} htmlFor="ad-price">Retail price (â‚¦)</label>
             <input id="ad-price" type="number" min={0} value={form.unitPrice} onChange={(e) => set("unitPrice", e.target.value)} className={inputCls} />
           </div>
           <div className={field}>
@@ -477,7 +477,7 @@ export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: Dr
         <div className="mt-5 flex gap-3">
           <button type="button" onClick={onClose} className={btnGhost + " flex-1 justify-center py-2.5"}>Cancel</button>
           <button type="button" onClick={submit} disabled={busy} className={btnPrimary + " flex-1 justify-center py-2.5"}>
-            {busy ? "Saving…" : drug ? "Save changes" : "Add drug"}
+            {busy ? "Savingâ€¦" : drug ? "Save changes" : "Add drug"}
           </button>
         </div>
       </div>
@@ -550,12 +550,12 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
     ]);
 
   function exportCsv() {
-    if (visible.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export â€” there are no suppliers yet."); return; }
     downloadCsv(`suppliers-${dateStamp()}.csv`, SUPPLIER_COLUMNS, supplierRows());
   }
 
   function exportPdf() {
-    if (visible.length === 0) { alert("Nothing to export — there are no suppliers yet."); return; }
+    if (visible.length === 0) { alert("Nothing to export â€” there are no suppliers yet."); return; }
     printTable("Suppliers & Procurement", SUPPLIER_COLUMNS, supplierRows());
   }
 
@@ -597,7 +597,7 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
           onFromChange={setFrom}
           onToChange={setTo}
           onClear={() => { setSearch(""); setFrom(""); setTo(""); }}
-          searchPlaceholder="Search name, code, contact…"
+          searchPlaceholder="Search name, code, contactâ€¦"
           searchWidth={240}
         />
         <div className="flex flex-wrap items-center gap-2">
@@ -620,7 +620,7 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-[var(--color-border)]">
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
@@ -634,7 +634,7 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loading…</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : visible.length === 0 ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">No suppliers match these filters.</td></tr>
             ) : (
@@ -645,11 +645,11 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
                     {s.code && <p className="text-xs text-[var(--color-muted-fg)]">{s.code}</p>}
                   </td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
-                    {[s.contactPerson, s.email].filter(Boolean).join(" · ") || "—"}
+                    {[s.contactPerson, s.email].filter(Boolean).join(" Â· ") || "â€”"}
                   </td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.phone ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.nafdacLicense ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.paymentTerms ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.phone ?? "â€”"}</td>
+                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.nafdacLicense ?? "â€”"}</td>
+                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.paymentTerms ?? "â€”"}</td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex justify-end gap-1">
                       {!viewOnly && (
@@ -757,7 +757,7 @@ function SupplierFormModal({ supplier, onClose, onSaved }: { supplier: SupplierR
         <div className="mt-5 flex gap-3">
           <button type="button" onClick={onClose} className={btnGhost + " flex-1 justify-center py-2.5"}>Cancel</button>
           <button type="button" onClick={submit} disabled={busy} className={btnPrimary + " flex-1 justify-center py-2.5"}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? "Savingâ€¦" : "Save"}
           </button>
         </div>
       </div>
@@ -854,7 +854,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Set a branch price</h3>
         <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
-          Applies an override for one branch — leave branch on “All branches” for a base price used everywhere else.
+          Applies an override for one branch â€” leave branch on â€œAll branchesâ€ for a base price used everywhere else.
         </p>
 
         <div className="relative mt-4">
@@ -866,7 +866,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
               value={drugName || search}
               onChange={(e) => { setSearch(e.target.value); setDrugId(null); setDrugName(""); }}
               onFocus={() => { if (search.trim().length >= 2) setOpen(true); }}
-              placeholder="Search the catalogue…"
+              placeholder="Search the catalogueâ€¦"
               className={`${inputCls} pl-9`}
             />
           </div>
@@ -881,7 +881,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   >
                     <span className="block font-medium">{d.name}</span>
                     <span className="block text-xs text-[var(--color-muted-fg)]">
-                      {[d.dosage, d.category].filter(Boolean).join(" · ")} · {ngn(d.unitPrice)}
+                      {[d.dosage, d.category].filter(Boolean).join(" Â· ")} Â· {ngn(d.unitPrice)}
                     </span>
                   </button>
                 </li>
@@ -900,7 +900,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={lbl} htmlFor="pr-price">Price (₦)</label>
+            <label className={lbl} htmlFor="pr-price">Price (â‚¦)</label>
             <input id="pr-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} className={inputCls} />
           </div>
           <div>
@@ -912,7 +912,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
         {error && <p role="alert" className="mt-3 rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
 
         <button type="button" onClick={save} disabled={busy || !drugId} className={btnPrimary + " mt-4"}>
-          <Tag size={14} aria-hidden="true" /> {busy ? "Saving…" : "Save override"}
+          <Tag size={14} aria-hidden="true" /> {busy ? "Savingâ€¦" : "Save override"}
         </button>
       </div>
       )}
@@ -920,11 +920,11 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Active overrides</h3>
         {loading ? (
-          <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">Loading…</p>
+          <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</p>
         ) : overrides.length === 0 ? (
           <div className="py-6 text-center">
             <CheckCircle2 size={28} aria-hidden="true" className="mx-auto text-emerald-500" />
-            <p className="mt-2 text-xs text-[var(--color-muted-fg)]">No overrides yet — all branches use the retail price.</p>
+            <p className="mt-2 text-xs text-[var(--color-muted-fg)]">No overrides yet â€” all branches use the retail price.</p>
           </div>
         ) : (
           <ul className="mt-3 space-y-2">
@@ -933,7 +933,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{o.drugName}</p>
                   <p className="text-xs text-[var(--color-muted-fg)]">
-                    {o.branchName}{o.note ? ` · ${o.note}` : ""}
+                    {o.branchName}{o.note ? ` Â· ${o.note}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -1035,7 +1035,7 @@ export function ImportTab() {
     }
   }
 
-  // 2) the user chose how to handle existing drugs — perform the real import
+  // 2) the user chose how to handle existing drugs â€” perform the real import
   async function doImport(action: "replace" | "keep") {
     setPendingConfirm(null);
     setConfirming(action);
@@ -1066,7 +1066,7 @@ export function ImportTab() {
           </button>
         </div>
         <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
-          Columns: <code className="rounded bg-slate-100 px-1">name*, category*, form*</code>, generic_name, brand, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, nafdac_number, <code className="rounded bg-slate-100 px-1">supplier</code> (optional — the supplier&apos;s exact name; it must already exist on the Suppliers tab). Max 1000 rows.
+          Columns: <code className="rounded bg-slate-100 px-1">name*, category*, form*</code>, generic_name, brand, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, nafdac_number, <code className="rounded bg-slate-100 px-1">supplier</code> (optional â€” the supplier&apos;s exact name; it must already exist on the Suppliers tab). Max 1000 rows.
         </p>
 
         <div className="mt-4">
@@ -1101,7 +1101,7 @@ export function ImportTab() {
         )}
 
         <button type="button" onClick={run} disabled={busy || !csv.trim()} className={btnPrimary + " mt-4"}>
-          <Upload size={14} aria-hidden="true" /> {busy ? "Uploading…" : "Import"}
+          <Upload size={14} aria-hidden="true" /> {busy ? "Uploadingâ€¦" : "Import"}
         </button>
       </div>
 
@@ -1136,13 +1136,13 @@ export function ImportTab() {
                 <ul className="space-y-0.5">
                   {report.errors.slice(0, 60).map((e: { row: number | null; reason: string }, i: number) => (
                     <li key={i} className="px-1 text-xs text-red-700">
-                      Row {e.row || "—"}: {e.reason}
+                      Row {e.row || "â€”"}: {e.reason}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <p className="text-[11px] text-[var(--color-muted-fg)]">{report.total} row(s) processed · {report.skipped} skipped.</p>
+            <p className="text-[11px] text-[var(--color-muted-fg)]">{report.total} row(s) processed Â· {report.skipped} skipped.</p>
           </div>
         )}
       </div>
@@ -1169,10 +1169,10 @@ export function ImportTab() {
                 Cancel
               </button>
               <button type="button" onClick={() => void doImport("keep")} disabled={confirming !== null} className={btnGhost}>
-                {confirming === "keep" ? "Importing…" : "Keep existing (add new only)"}
+                {confirming === "keep" ? "Importingâ€¦" : "Keep existing (add new only)"}
               </button>
               <button type="button" onClick={() => void doImport("replace")} disabled={confirming !== null} className={btnPrimary}>
-                {confirming === "replace" ? "Replacing…" : "Replace them"}
+                {confirming === "replace" ? "Replacingâ€¦" : "Replace them"}
               </button>
             </div>
           </div>
@@ -1186,7 +1186,7 @@ export function ImportTab() {
 // BRANCHES TAB
 // ---------------------------------------------------------------------------
 // Branch administration (prices + branch manager) lives on /app/pharmacy/prices
-// — admin-gated, and the natural home for everything branch-related.
+// â€” admin-gated, and the natural home for everything branch-related.
 export function BranchAdminTabs({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
   const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<"prices" | "branches">("prices");
@@ -1355,12 +1355,12 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
       )}
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading branches…</p>
+        <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading branchesâ€¦</p>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-12 text-center shadow-[var(--shadow-sm)]">
           <Store size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
           <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
-            No branches yet — add your first one.
+            No branches yet â€” add your first one.
           </p>
         </div>
       ) : (
@@ -1467,7 +1467,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
         >
           <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">{modal.branch ? `Edit — ${modal.branch.name}` : "Add branch"}</h3>
+              <h3 className="text-lg font-bold">{modal.branch ? `Edit â€” ${modal.branch.name}` : "Add branch"}</h3>
               <button
                 type="button"
                 onClick={() => setModal({ open: false })}
@@ -1589,7 +1589,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   disabled={busy}
                   className={btnPrimary + " flex-1 justify-center"}
                 >
-                  {busy ? "Saving…" : modal.branch ? "Save changes" : "Create branch"}
+                  {busy ? "Savingâ€¦" : modal.branch ? "Save changes" : "Create branch"}
                 </button>
               </div>
             </form>
