@@ -3,6 +3,7 @@ import Script from "next/script";
 import localFont from "next/font/local";
 import { Inter, Noto_Sans } from "next/font/google";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
+import ThemeSync from "@/components/theme-sync";
 import "./globals.css";
 
 const figtree = localFont({
@@ -100,6 +101,7 @@ export default function RootLayout({
           {`(function(){try{document.documentElement.dataset.theme=(localStorage.getItem("skycare-theme")||"light")}catch(e){}})();`}
         </Script>
         <PwaWrapper>{children}</PwaWrapper>
+        <ThemeSync />
       </body>
     </html>
   );
