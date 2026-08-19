@@ -804,8 +804,8 @@ export default function RosterView() {
               <span>
                 Notify staff (in-app + push + Internal Mail):{" "}
                 <span className="font-medium text-[var(--color-foreground)]">
-                  "DATE: {form.fromDate && form.toDate ? (formDays > 1 ? `${form.fromDate} – ${form.toDate}` : form.fromDate) : "…"}, TIME: FROM{" "}
-                  {fmtTime(form.fromTime)} UNTIL {fmtTime(form.untilTime)}"
+                  &quot;DATE: {form.fromDate && form.toDate ? (formDays > 1 ? `${form.fromDate} – ${form.toDate}` : form.fromDate) : "…"}, TIME: FROM{" "}
+                  {fmtTime(form.fromTime)} UNTIL {fmtTime(form.untilTime)}&quot;
                 </span>
               </span>
             </label>

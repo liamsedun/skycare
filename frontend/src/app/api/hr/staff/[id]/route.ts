@@ -106,7 +106,7 @@ export const PUT = withStaff(async (req, ctx) => {
     if (body?.[key] !== undefined) profilePatch[key] = String(body[key] ?? "").trim() || null;
   }
 
-  let { data, error } = await ctx.svc
+  const { data, error } = await ctx.svc
     .from("staff_profiles")
     .upsert(
       [

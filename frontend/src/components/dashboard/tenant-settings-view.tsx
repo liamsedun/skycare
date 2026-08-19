@@ -422,7 +422,7 @@ export default function TenantSettingsView() {
                 <option value="">None</option>
                 <option value="twilio">Twilio</option>
                 <option value="termii">Termii</option>
-                <option value="africastalking">Africa's Talking</option>
+                <option value="africastalking">Africa&apos;s Talking</option>
               </select>
             </div>
             <label className="flex items-start gap-3 rounded-lg border border-[var(--color-border)] p-3">

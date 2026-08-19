@@ -978,7 +978,7 @@ export default function BankingView() {
                     </div>
                     <div className="pb-1 text-sm">
                       {reconciliation === null && (
-                        <p className="font-medium text-[var(--color-muted-fg)]">Enter the balance on the bank's own statement to compare.</p>
+                        <p className="font-medium text-[var(--color-muted-fg)]">Enter the balance on the bank&apos;s own statement to compare.</p>
                       )}
                       {reconciliation && reconciliation.valid && (
                         <p className={`font-semibold ${reconciliation.balanced ? "text-emerald-700" : "text-amber-700"}`}>

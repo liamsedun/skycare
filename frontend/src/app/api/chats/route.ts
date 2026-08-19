@@ -37,18 +37,19 @@ export const GET = withAuth(async (req, ctx) => {
   const role = ctx.role;
   const isPatient = role === "patient_api";
 
-  let { data: chats, error: chatError } = await svc
+  const { data: chatsRaw, error: chatError } = await svc
     .from("chats")
     .select("*")
     .eq("tenant_id", tenantId)
     .order("updated_at", { ascending: false });
   if (chatError) throw new ValidationError(chatError.message);
 
+  let chats = chatsRaw ?? [];
   if (isPatient) {
     const ids = await familyIds(ctx);
-    chats = (chats ?? []).filter((c: any) => c.staff_user_id != null && ids.includes(c.patient_id));
+    chats = chats.filter((c: any) => c.staff_user_id != null && ids.includes(c.patient_id));
   } else {
-    chats = (chats ?? []).filter(
+    chats = chats.filter(
       (c: any) => c.staff_user_id === ctx.user.id || c.other_staff_user_id === ctx.user.id
     );
   }

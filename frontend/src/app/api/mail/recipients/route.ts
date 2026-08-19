@@ -33,7 +33,7 @@ export const GET = withAuth(async (req, ctx) => {
     if (depErr) throw new ValidationError(depErr.message);
     if (deps?.length) {
       const primIds = [...new Set(deps.map((d: any) => d.primary_account_id).filter(Boolean))];
-      let primaryMap = new Map<string, { first_name: string; last_name: string; user_id: string | null }>();
+      const primaryMap = new Map<string, { first_name: string; last_name: string; user_id: string | null }>();
       if (primIds.length) {
         const { data: prims } = await ctx.svc
           .from("patients")

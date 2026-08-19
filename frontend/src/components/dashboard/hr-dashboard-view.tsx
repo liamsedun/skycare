@@ -469,7 +469,7 @@ export default function HrDashboardView() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <h3 className="font-semibold text-[var(--color-foreground)]">Annual leave entitlements</h3>
-              <p className="text-xs text-[var(--color-muted-fg)]">Set how many days each staff member can claim per leave type per year. Saving re-syncs every staff member's balances (used days are kept).</p>
+              <p className="text-xs text-[var(--color-muted-fg)]">Set how many days each staff member can claim per leave type per year. Saving re-syncs every staff member&apos;s balances (used days are kept).</p>
             </div>
             {policyMsg && (
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${policyMsg.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{policyMsg.text}</span>
