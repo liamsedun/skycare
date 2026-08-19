@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/sidebar";
 import Topbar from "@/components/dashboard/topbar";
 import MobileNav from "@/components/dashboard/mobile-nav";
@@ -14,6 +15,7 @@ export default function AppShell({
   userName,
   tenantLogoUrl,
   avatarUrl,
+  websiteProvisioned,
   children,
 }: Readonly<{
   role: StaffRole;
@@ -22,9 +24,28 @@ export default function AppShell({
   userName: string;
   tenantLogoUrl: string | null;
   avatarUrl: string | null;
+  websiteProvisioned: boolean | null;
   children: React.ReactNode;
 }>) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+
+  // Phase 4 first-run flow: admins whose tenant has NOT provisioned their
+  // default website are routed to the onboarding wizard once on the staff
+  // portal (unless already there). Non-admin staff skip it entirely.
+  const isAdmin = role === "hospital_admin" || role === "super_admin";
+  useEffect(() => {
+    if (
+      websiteProvisioned === false &&
+      isAdmin &&
+      websiteProvisioned !== null &&
+      pathname !== "/app/onboarding"
+    ) {
+      router.replace("/app/onboarding");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [websiteProvisioned, pathname]);
 
   return (
     <div className="flex min-h-screen w-full">

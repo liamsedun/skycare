@@ -254,9 +254,11 @@ html {
   font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 .sky-gradient {
@@ -268,6 +270,37 @@ a {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* ===== Tenant website template (Life Blossom parity) =====
+   The tenant landing pages ([slug]/*) render the Life Blossom hospital
+   template: navy primary + green accent, soft card shadows and the hero
+   slow-zoom. Hard-coded hexes are used in the components so the template
+   is identical for every tenant regardless of theme/brand_color. */
+
+@keyframes heroZoom {
+  0%,
+  100% {
+    transform: scale(1.05);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.card-shadow {
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-shadow-hover {
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Accessible focus ring shared by all interactive dashboard controls */
@@ -661,6 +694,60 @@ a {
 }
 .animate-chip-in { animation: chip-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+/* ===== Tenant public pages: character + scene motion ===== */
+
+@keyframes tenant-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+  50% { transform: translateY(-10px) rotate(6deg); opacity: 1; }
+}
+.tenant-floaty { animation: tenant-float 3.2s ease-in-out infinite; }
+.tenant-floaty-d2 { animation-delay: 0.45s; }
+.tenant-floaty-d3 { animation-delay: 0.9s; }
+
+@keyframes tenant-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.tenant-bob { animation: tenant-bob 4s ease-in-out infinite; }
+
+@keyframes tenant-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  93%, 96% { transform: scaleY(0.1); }
+}
+.tenant-blink { animation: tenant-blink 4.5s ease-in-out infinite; transform-origin: center; }
+
+@keyframes tenant-draw {
+  0% { stroke-dashoffset: 160; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -160; }
+}
+.tenant-pulse-line {
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: tenant-draw 2.8s ease-in-out infinite;
+}
+
+/* Tenant public forms: entrance, success pop, error shake */
+@keyframes tenant-form-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tenant-form-in { animation: tenant-form-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes tenant-success-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.tenant-success-pop { animation: tenant-success-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes tenant-error-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.tenant-error-shake { animation: tenant-error-shake 0.4s ease-in-out; }
+
 /* -------- Mobile bottom-nav: LIGHT MODE gets a BLUE footer bar --------
    In light mode the docked footer card is a blue gradient so the
    colorized tab icons switch to bright 300-level tints (data-key rules
@@ -718,4 +805,6 @@ html:not([data-theme="dark"]) .mobile-nav-icon[data-key="profile"] { color: #f9a
   .animate-tab-shine, .animate-fab-halo, .animate-tile-in, .animate-chip-in {
     animation: none;
   }
+  .tenant-floaty, .tenant-bob, .tenant-blink, .tenant-pulse-line { animation: none; }
+  .tenant-form-in, .tenant-success-pop, .tenant-error-shake { animation: none; }
 }

@@ -27,7 +27,7 @@ export function PageHeader({
 }) {
   return (
     <section className={brandClass}>
-      <div className="mx-auto max-w-6xl px-4 py-16 text-center">
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-24 text-center md:pb-20 md:pt-28">
         <h1 className="text-3xl font-extrabold text-white md:text-4xl">{title}</h1>
         {subtitle && <p className="mx-auto mt-3 max-w-2xl text-white/85">{subtitle}</p>}
       </div>

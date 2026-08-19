@@ -2,6 +2,9 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "skycare.app";
+// Local-development subdomain suffix (.test is reserved, never HSTS-preloaded) so
+// tenant sites can be viewed in a browser without hitting the .app HTTPS lock.
+const LOCAL_DOMAIN = process.env.NEXT_PUBLIC_LOCAL_DOMAIN ?? "skycare.test";
 
 export type TenantContext = {
   slug: string | null;      // subdomain or custom domain
@@ -11,14 +14,15 @@ export type TenantContext = {
 
 export function resolveTenantSlug(host?: string | null): TenantContext {
   const h = (host ?? "").replace(/^https?:\/\//, "").split(":")[0].toLowerCase();
-  if (!h || h === ROOT_DOMAIN || h === `www.${ROOT_DOMAIN}`) {
+  if (!h || h === ROOT_DOMAIN || h === `www.${ROOT_DOMAIN}` || h === LOCAL_DOMAIN || h === `www.${LOCAL_DOMAIN}`) {
     return { slug: null, isRoot: true, customDomain: false };
   }
   // custom domain set by tenant → resolve via DB (handled in loadTenant)
-  if (!h.endsWith(`.${ROOT_DOMAIN}`)) {
+  if (!h.endsWith(`.${ROOT_DOMAIN}`) && !h.endsWith(`.${LOCAL_DOMAIN}`)) {
     return { slug: h, isRoot: false, customDomain: true };
   }
-  const slug = h.replace(`.${ROOT_DOMAIN}`, "");
+  const suffix = h.endsWith(`.${LOCAL_DOMAIN}`) ? LOCAL_DOMAIN : ROOT_DOMAIN;
+  const slug = h.replace(`.${suffix}`, "");
   return { slug, isRoot: false, customDomain: false };
 }
 

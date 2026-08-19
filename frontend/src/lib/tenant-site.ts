@@ -9,6 +9,56 @@ import type { LucideIcon } from "lucide-react";
  * every row is tenant-scoped.
  */
 
+/** Public tenant profile as exposed by `tenant_public_profile` (migration 0088/0091).
+ * The template renders a fixed Life Blossom-branded look; only content swaps. */
+export type TenantSiteProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  domain: string | null;
+  logo_url: string | null;
+  brand_color: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  website_url: string | null;
+  is_active: boolean;
+  subscription_status: string | null;
+  website_enabled: boolean;
+  tagline: string | null;
+  about: string | null;
+  hero_image: string | null;
+  about_story_image: string | null;
+  facility_image: string | null;
+  emergency_phone: string | null;
+  opening_hours: Record<string, string> | null;
+  social: Record<string, string | null> | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  favicon_url: string | null;
+};
+
+export function tenantAddress(tenant: TenantSiteProfile): string | null {
+  return [tenant.address, tenant.city, tenant.state].filter(Boolean).join(", ") || null;
+}
+
+/** `${slug}/book` / `${slug}`-relative hrefs used across template components. */
+export function tenantHome(tenant: TenantSiteProfile): string {
+  return `/${tenant.slug}`;
+}
+
+export function tenantWhatsApp(tenant: TenantSiteProfile): string | null {
+  const wa = tenant.social?.whatsapp;
+  if (wa && /^https?:\/\//.test(wa)) return wa;
+  const raw = wa ?? tenant.emergency_phone ?? tenant.phone;
+  if (!raw) return null;
+  const digits = raw.replace(/[^\d]/g, "");
+  return digits ? `https://wa.me/${digits}` : null;
+}
+
 export const DEFAULT_SERVICES = [
   "General Consultation",
   "Cardiology",

@@ -13,6 +13,7 @@ import {
   LayoutGrid,
   Loader2,
   Palette,
+  Rocket,
   Save,
   Stethoscope,
   Trash2,
@@ -25,6 +26,7 @@ import WebsiteCmsSection from "@/components/dashboard/website-cms-section";
 import TenantDomainsSection from "@/components/dashboard/tenant-domains-section";
 import SystemBackupSection from "@/components/dashboard/system-backup-section";
 import UsersRolesSection from "@/components/dashboard/users-roles-section";
+import WebsiteOnboardingSection from "@/components/dashboard/website-onboarding-section";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -67,6 +69,7 @@ const SECTIONS = [
   { id: "payments", label: "Online Payments (Paystack)", icon: CreditCard },
   { id: "bank-accounts", label: "Bank Accounts", icon: Landmark },
   { id: "users", label: "Users & Roles", icon: UserCog },
+  { id: "website-onboarding", label: "Website Setup", icon: Rocket },
   { id: "doctors", label: "Website Doctors", icon: Stethoscope },
   { id: "website-cms", label: "Website Content", icon: LayoutGrid },
   { id: "domains", label: "Custom Domains", icon: Globe },
@@ -522,6 +525,7 @@ export default function TenantSettingsView() {
 
       {activeSection === "bank-accounts" && <BankAccountsSection />}
       {activeSection === "users" && <UsersRolesSection />}
+      {activeSection === "website-onboarding" && <WebsiteOnboardingSection />}
       {activeSection === "doctors" && <WebsiteDoctorsSection />}
       {activeSection === "website-cms" && <WebsiteCmsSection />}
       {activeSection === "domains" && <TenantDomainsSection />}

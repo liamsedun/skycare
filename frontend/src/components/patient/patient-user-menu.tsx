@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChevronDown, Download, LogOut, SlidersHorizontal, UserRound } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
 import { initials } from "@/lib/auth";
+import { tenantHomeUrl } from "@/lib/tenant-link";
 import ThemeToggle from "@/components/theme-toggle";
 
 const navigateCls =
@@ -14,9 +15,11 @@ const navigateCls =
 export default function PatientUserMenu({
   userName,
   avatarUrl,
+  tenantSlug,
 }: {
   userName: string;
   avatarUrl: string | null;
+  tenantSlug?: string | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -45,9 +48,19 @@ export default function PatientUserMenu({
     } catch {
       /* best effort */
     }
-    router.push("/login");
-    router.refresh();
-  }, [router]);
+    try {
+      await getSupabase().auth.signOut();
+    } catch {
+      /* best effort */
+    }
+    if (tenantSlug) {
+      // Land back on the hospital's website, not the SaaS marketing root.
+      window.location.href = tenantHomeUrl(tenantSlug);
+    } else {
+      router.push("/login");
+      router.refresh();
+    }
+  }, [router, tenantSlug]);
 
   return (
     <div ref={wrapRef} className="relative">

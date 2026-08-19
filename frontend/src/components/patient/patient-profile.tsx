@@ -22,6 +22,8 @@ import {
 import { useRouter } from "next/navigation";
 import { Combobox } from "@/components/ui/combobox";
 import { AppHeader } from "@/components/patient/mobile/mobile-app-ui";
+import { tenantHomeUrl } from "@/lib/tenant-link";
+import { getSupabase } from "@/lib/supabase/client";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -83,6 +85,7 @@ function fmtDate(iso: string | null): string {
 export default function PatientProfile() {
   const router = useRouter();
   const [user, setUser] = useState<MeUser | null>(null);
+  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
   const [patient, setPatient] = useState<PatientRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -113,6 +116,7 @@ export default function PatientProfile() {
       const pat = await patRes.json();
       if (!meRes.ok) throw new Error(me.error ?? "Failed to load profile");
       setUser(me.data?.user ?? null);
+      setTenantSlug(me.data?.tenant?.slug ?? null);
       if (patRes.ok && pat.data) {
         const family = pat.data.family ?? [];
         const own = family.find((f: { id: string }) => f.id === pat.data.selfId) ?? family[0];
@@ -316,8 +320,17 @@ export default function PatientProfile() {
     } catch {
       /* best effort */
     }
-    router.push("/login");
-    router.refresh();
+    try {
+      await getSupabase().auth.signOut();
+    } catch {
+      /* best effort */
+    }
+    if (tenantSlug) {
+      window.location.href = tenantHomeUrl(tenantSlug);
+    } else {
+      router.push("/login");
+      router.refresh();
+    }
   }
 
   if (loading) {

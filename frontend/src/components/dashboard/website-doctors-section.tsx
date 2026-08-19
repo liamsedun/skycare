@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2, Pencil, Plus, Stethoscope, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ImagePlus, Loader2, Pencil, Plus, Stethoscope, Trash2, Upload, X } from "lucide-react";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -36,6 +36,8 @@ export default function WebsiteDoctorsSection() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,6 +57,24 @@ export default function WebsiteDoctorsSection() {
   useEffect(() => {
     load();
   }, [load]);
+
+  async function uploadPhoto(file: File) {
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+      const res = await fetch("/api/uploads/doctor-photo", { method: "POST", body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to upload photo");
+      setForm((f) => ({ ...f, image_url: body.data.photo_url }));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to upload photo");
+    } finally {
+      setUploading(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -265,8 +285,52 @@ export default function WebsiteDoctorsSection() {
               <input id="ld-availability" className={inputCls} value={form.availability} onChange={(e) => setForm((f) => ({ ...f, availability: e.target.value }))} placeholder="e.g. Mon–Fri, 9am–4pm" />
             </div>
             <div>
-              <label className={labelCls} htmlFor="ld-image">Photo URL (optional)</label>
-              <input id="ld-image" className={inputCls} value={form.image_url} onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))} placeholder="https://…" />
+              <label className={labelCls} htmlFor="ld-image">Photo (optional)</label>
+              <div className="flex items-center gap-3">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-xs font-semibold text-[var(--color-muted-fg)]">
+                  {uploading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : form.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={form.image_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImagePlus size={18} />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <input
+                    id="ld-image"
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void uploadPhoto(f);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploading}
+                    className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    <Upload size={13} />
+                    {uploading ? "Uploading…" : form.image_url ? "Replace photo" : "Upload photo"}
+                  </button>
+                  {form.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                      className="focus-ring inline-flex items-center gap-1 rounded-lg px-1 text-xs font-medium text-[var(--color-muted-fg)] hover:text-[var(--color-destructive)]"
+                    >
+                      <X size={12} /> Remove photo
+                    </button>
+                  )}
+                  <p className="text-xs text-[var(--color-muted-fg)]">PNG, JPG, WEBP or GIF · max 2 MB</p>
+                </div>
+              </div>
             </div>
             <div>
               <label className={labelCls} htmlFor="ld-order">Sort order</label>

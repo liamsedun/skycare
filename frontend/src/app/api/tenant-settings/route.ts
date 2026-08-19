@@ -44,6 +44,51 @@ const TIMEZONES = [
 
 const PAYSTACK_KEYS = ["publicKey", "secretKey", "webhookSecret"] as const;
 
+// Website content keys stored in tenants.website JSONB (Phase 4). These are
+// the safe, site-facing keys (mirrors tenant_public_profile's whitelist).
+const WEBSITE_STRINGS = [
+  "tagline",
+  "about",
+  "hero_image",
+  "about_story_image",
+  "facility_image",
+  "emergency_phone",
+  "seo_title",
+  "seo_description",
+  "favicon_url",
+] as const;
+const WEBSITE_OBJECTS = ["opening_hours", "social"] as const;
+
+function sanitizeWebsite(raw: Record<string, unknown>): Record<string, unknown> {
+  const website: Record<string, unknown> = {};
+  for (const key of WEBSITE_STRINGS) {
+    if (!(key in raw)) continue;
+    const value = raw[key];
+    if (value === null || value === "") {
+      website[key] = null; // explicit clear
+      continue;
+    }
+    if (typeof value !== "string") {
+      throw new ValidationError(`website.${key} must be a string`);
+    }
+    const trimmed = value.trim();
+    website[key] = trimmed.length > 4000 ? trimmed.slice(0, 4000) : trimmed;
+  }
+  for (const key of WEBSITE_OBJECTS) {
+    if (!(key in raw)) continue;
+    const value = raw[key];
+    if (value === null) {
+      website[key] = null;
+      continue;
+    }
+    if (typeof value !== "object" || Array.isArray(value)) {
+      throw new ValidationError(`website.${key} must be an object`);
+    }
+    website[key] = value;
+  }
+  return website;
+}
+
 function sanitizePaystackKeys(raw: Record<string, unknown>): Record<string, string | null> | null {
   const out: Record<string, string | null> = {};
   for (const key of PAYSTACK_KEYS) {
@@ -110,7 +155,7 @@ export const GET = withStaff(async (req, ctx) => {
 
   const { data: tenant } = await ctx.svc
     .from("tenants")
-    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings, logo_url")
+    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings, logo_url, website, website_enabled, website_provisioned")
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant) throw new ValidationError("Tenant not found");
@@ -118,12 +163,20 @@ export const GET = withStaff(async (req, ctx) => {
   const settings = tenant.settings ?? {};
   const redacted = { ...settings };
   if (redacted.paystack) redacted.paystack = redactPaystack(redacted.paystack);
-  return ok({ ...tenant, settings: redacted });
+  return ok({
+    ...tenant,
+    settings: redacted,
+    website: tenant.website ?? {},
+    website_enabled: tenant.website_enabled ?? true,
+    website_provisioned: tenant.website_provisioned ?? false,
+  });
 });
 
 export interface UpdateTenantSettingsBody {
   profile?: Partial<Record<(typeof PROFILED_FIELDS)[number], string | null>>;
   settings?: Record<string, unknown>;
+  website?: Record<string, unknown>;
+  website_enabled?: boolean;
 }
 
 // PUT /api/tenant-settings — update profile fields + merge settings JSONB
@@ -168,7 +221,15 @@ export const PUT = withStaff(async (req, ctx) => {
     if (paystack) settingsPatch = { ...(settingsPatch ?? {}), paystack };
   }
 
-  if (Object.keys(patch).length === 0 && !settingsPatch) {
+  // Phase 4: website JSONB content + visibility toggle.
+  let websitePatch: Record<string, unknown> | null = null;
+  const websiteEnabledChanged = typeof body.website_enabled === "boolean";
+  if (body.website || websiteEnabledChanged) {
+    const website = sanitizeWebsite(body.website ?? {});
+    if (Object.keys(website).length > 0 || websiteEnabledChanged) websitePatch = website;
+  }
+
+  if (Object.keys(patch).length === 0 && !settingsPatch && !websitePatch) {
     throw new ValidationError("Nothing to update");
   }
 
@@ -190,11 +251,31 @@ export const PUT = withStaff(async (req, ctx) => {
     patch.settings = merged;
   }
 
+  // Merge website content into the existing website JSONB, preserving unknown keys.
+  if (websitePatch) {
+    const { data: currentWebsite } = await ctx.svc
+      .from("tenants")
+      .select("website")
+      .eq("id", tenantId)
+      .maybeSingle();
+    const existingWebsite = (currentWebsite?.website ?? {}) as Record<string, unknown>;
+    // Each website patch value is used when present (null clears a key).
+    const mergedWebsite: Record<string, unknown> = { ...existingWebsite };
+    for (const [key, value] of Object.entries(websitePatch)) {
+      if (value === null) delete mergedWebsite[key];
+      else mergedWebsite[key] = value;
+    }
+    patch.website = mergedWebsite;
+  }
+  if (websiteEnabledChanged && typeof body.website_enabled === "boolean") {
+    patch.website_enabled = body.website_enabled;
+  }
+
   const { data: updated, error } = await ctx.svc
     .from("tenants")
     .update(patch)
     .eq("id", tenantId)
-    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings, logo_url")
+    .select("name, email, phone, address, city, state, country, brand_color, currency, timezone, settings, logo_url, website, website_enabled, website_provisioned")
     .single();
   if (error) throw new ValidationError(error.message);
 

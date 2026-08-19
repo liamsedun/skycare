@@ -23,7 +23,7 @@ export default async function PatientLayout({
   const [profileRes, tenantRes] = await Promise.all([
     supabase.from("users").select("full_name, is_active, avatar_url").eq("id", user.id).maybeSingle(),
     claims.tenantId
-      ? supabase.from("tenants").select("name, logo_url").eq("id", claims.tenantId).maybeSingle()
+      ? supabase.from("tenants").select("name, logo_url, slug").eq("id", claims.tenantId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -37,6 +37,7 @@ export default async function PatientLayout({
   const userName = profileRes.data?.full_name ?? user.email ?? "Patient";
   const tenantName = tenantRes.data?.name ?? null;
   const tenantLogoUrl = tenantRes.data?.logo_url ?? null;
+  const tenantSlug = tenantRes.data?.slug ?? null;
   const avatarUrl = profileRes.data?.avatar_url ?? null;
 
   // First-login gate: staff set a welcome password; patient must set their own.
@@ -45,7 +46,7 @@ export default async function PatientLayout({
   }
 
   return (
-    <PatientShell tenantName={tenantName} userName={userName} tenantLogoUrl={tenantLogoUrl} avatarUrl={avatarUrl}>
+    <PatientShell tenantName={tenantName} userName={userName} tenantLogoUrl={tenantLogoUrl} avatarUrl={avatarUrl} tenantSlug={tenantSlug}>
       {children}
     </PatientShell>
   );

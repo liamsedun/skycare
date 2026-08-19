@@ -25,7 +25,7 @@ enable_confirmations = true
 verify_jwt = true
 
 [functions.booking-public]
-verify_jwt = true
+verify_jwt = false      # anonymous booking from public hospital websites
 
 [storage]
 enabled = true

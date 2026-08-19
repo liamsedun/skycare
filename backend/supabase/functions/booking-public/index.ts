@@ -79,6 +79,54 @@ Deno.serve(async (req) => {
       .single();
     if (ae) return json({ error: ae.message }, 500);
 
+    // Notify the hospital's admins via Internal Mail (admin-only inbox).
+    // Best effort: failures never fail the booking itself.
+    try {
+      const { data: admins } = await svc
+        .from("users")
+        .select("id")
+        .eq("tenant_id", tenant.id)
+        .in("role", ["hospital_admin", "super_admin"]);
+      const { data: sender } = await svc
+        .from("users")
+        .select("id")
+        .eq("email", "platform@skycare.app")
+        .maybeSingle();
+      if (sender && admins && admins.length > 0) {
+        const lines = [
+          `A new appointment was booked on the ${tenant.name} website.`,
+          "",
+          `Patient: ${firstName} ${lastName}`,
+          `Phone: ${phone}`,
+          `Date: ${date}`,
+          `Time: ${time}`,
+        ];
+        if (branchId) lines.push(`Branch: ${branchId}`);
+        if (reason) lines.push(`Reason: ${reason}`);
+
+        const { data: msg } = await svc
+          .from("internal_messages")
+          .insert({
+            tenant_id: tenant.id,
+            sender_id: sender.id,
+            subject: `New appointment booking — ${firstName} ${lastName}`,
+            body: lines.join("\n"),
+            is_broadcast: false,
+            broadcast_scope: "staff",
+          })
+          .select("id")
+          .single();
+
+        if (msg) {
+          await svc.from("internal_message_recipients").insert(
+            admins.map((a: { id: string }) => ({ message_id: msg.id, recipient_id: a.id }))
+          );
+        }
+      }
+    } catch {
+      /* mail fan-out is best-effort */
+    }
+
     return json({ ok: true, appointment, patientId }, 201);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

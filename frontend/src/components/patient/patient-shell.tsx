@@ -15,12 +15,14 @@ export default function PatientShell({
   userName,
   tenantLogoUrl,
   avatarUrl,
+  tenantSlug,
   children,
 }: Readonly<{
   tenantName: string | null;
   userName: string;
   tenantLogoUrl: string | null;
   avatarUrl: string | null;
+  tenantSlug: string | null;
   children: React.ReactNode;
 }>) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -142,7 +144,7 @@ export default function PatientShell({
               Patient
             </span>
             <NotificationsBell basePath="/patient" />
-            <PatientUserMenu userName={userName} avatarUrl={avatarUrl} />
+            <PatientUserMenu userName={userName} avatarUrl={avatarUrl} tenantSlug={tenantSlug} />
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 pb-28 sm:px-6 md:pb-6 lg:px-8">{children}</main>

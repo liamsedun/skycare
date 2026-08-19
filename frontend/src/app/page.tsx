@@ -28,6 +28,7 @@ import { MobileNav } from "@/components/landing/mobile-nav";
 import { Gallery } from "@/components/landing/gallery";
 import { TeamShowcase } from "@/components/landing/team-showcase";
 import { LiveChat } from "@/components/landing/live-chat";
+import { SkyBlueBackdrop } from "@/components/landing/hero-slides";
 import { SkyCareLogo, SkyCareMark } from "@/components/landing/skycare-logo";
 import {
   FacebookIcon,
@@ -35,27 +36,6 @@ import {
   XIcon,
   YouTubeIcon,
 } from "@/components/landing/social-icons";
-
-const heroPhotos = [
-  "/images/landing-page-images-skyblue-backgr/team-male-female-african-american-medical-staff-discussing-diagnostic-results.jpg",
-  "/images/landing-page-images-skyblue-backgr/black-professional-team-people-explaining-x-ray.jpg",
-];
-
-function SkyBlueBackdrop() {
-  return (
-    <>
-      <div aria-hidden="true" className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2">
-        <div className="relative">
-          <Image src={heroPhotos[0]} alt="" fill sizes="50vw" className="object-cover" />
-        </div>
-        <div className="relative hidden sm:block">
-          <Image src={heroPhotos[1]} alt="" fill sizes="50vw" className="object-cover" />
-        </div>
-      </div>
-      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-sky-600/85 via-sky-600/75 to-blue-800/90" />
-    </>
-  );
-}
 
 const features = [
   {
