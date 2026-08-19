@@ -1,21 +1,26 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { cookieDomainForHost } from "@/lib/cookie-domain";
 
 export async function createClient() {
   const cookieStore = await cookies();
+  const headerStore = await headers();
+
+  const domain = cookieDomainForHost(headerStore.get("x-forwarded-host") ?? headerStore.get("host"));
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: domain ? { domain } : undefined,
       cookies: {
         getAll() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
+            cookieStore.set(name, value, { ...options, ...(domain ? { domain } : {}) })
           );
         },
       },
