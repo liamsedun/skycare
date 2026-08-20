@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Calendar,
-  CalendarDays,
   CalendarPlus,
   CalendarRange,
   CheckCircle2,
@@ -13,109 +11,37 @@ import {
   Loader2,
   Plus,
   Trash2,
-  Users,
-  X,
   XCircle,
 } from "lucide-react";
+import { AssignShiftModal } from "./hr-roster/hr-roster-assign-modal";
+import { BulkAssignModal } from "./hr-roster/hr-roster-bulk-modal";
+import { ShiftFormModal } from "./hr-roster/hr-roster-shift-modal";
+import { ShiftTemplatesModal } from "./hr-roster/hr-roster-shifts-modal";
+import {
+  type Shift,
+  type Assignment,
+  type StaffOpt,
+  type TabKey,
+  STATUS_CLASS,
+  TXT,
+  TABS,
+  addDays,
+  fmtDay,
+  fmtDayLong,
+  inputCls,
+  isToday,
+  labelCls,
+  mondayOf,
+  monthGrid,
+  parseLocal,
+  toLocalStr,
+} from "./hr-roster/hr-roster-shared";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import FilterBar from "@/components/filters/filter-bar";
 import { downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
-import { mutedXs, flexBetween, divideBorder, flexGap2, mutedXsMt, flexWrapGap2, mutedSmPlain, spinner } from "@/lib/ui-constants";
-
-const inputCls =
-  "rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
-const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
-
-interface Shift {
-  id: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  department: string | null;
-  ward_id: string | null;
-  ward: { name: string } | null;
-  color: string;
-  is_active: boolean;
-}
-
-interface Assignment {
-  id: string;
-  staff_id: string;
-  shift_id: string | null;
-  shift_date: string;
-  status: string;
-  notes: string | null;
-  ward: { name: string } | null;
-  staff: { department: string | null; users: { full_name: string; role: string } | null } | null;
-  shift: { name: string; start_time: string; end_time: string; color: string } | null;
-}
-
-interface StaffOpt {
-  id: string;
-  staff_number: string;
-  department: string | null;
-  users: { full_name: string; role: string; is_active: boolean } | null;
-}
-
-type TabKey = "list" | "staff" | "day" | "week" | "month";
-
-const STATUS_CLASS: Record<string, string> = {
-  scheduled: "bg-sky-100 text-sky-700",
-  completed: "bg-emerald-100 text-emerald-700",
-  missed: "bg-rose-100 text-rose-700",
-  cancelled: "bg-slate-100 text-slate-500",
-};
-
-const TXT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function toLocalStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-function parseLocal(s: string): Date {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-function addDays(s: string, n: number): string {
-  const d = parseLocal(s);
-  d.setDate(d.getDate() + n);
-  return toLocalStr(d);
-}
-function mondayOf(s: string): string {
-  const d = parseLocal(s);
-  const back = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - back);
-  return toLocalStr(d);
-}
-function fmtDay(s: string): string {
-  return parseLocal(s).toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" });
-}
-function fmtDayLong(s: string): string {
-  return parseLocal(s).toLocaleDateString("en-NG", { weekday: "long", day: "numeric", month: "short", year: "numeric" });
-}
-function isToday(s: string): boolean {
-  return s === toLocalStr(new Date());
-}
-function monthGrid(month: string): { key: string; date: string; inMonth: boolean }[] {
-  const [y, m] = month.split("-").map(Number);
-  const first = new Date(y, m - 1, 1);
-  const start = mondayOf(toLocalStr(first));
-  const cells: { key: string; date: string; inMonth: boolean }[] = [];
-  for (let i = 0; i < 42; i++) {
-    const date = addDays(start, i);
-    cells.push({ key: date, date, inMonth: date.slice(0, 7) === month });
-  }
-  return cells;
-}
-
-const TABS: { key: TabKey; label: string; icon: typeof List }[] = [
-  { key: "list", label: "List", icon: List },
-  { key: "staff", label: "Per Staff", icon: Users },
-  { key: "day", label: "Per Day", icon: CalendarDays },
-  { key: "week", label: "Per Week", icon: CalendarRange },
-  { key: "month", label: "Per Month", icon: Calendar },
-];
+import { mutedXs, flexBetween, divideBorder, flexWrapGap2, mutedSmPlain, spinner } from "@/lib/ui-constants";
 
 export default function HrRosterView() {
   const [tab, setTab] = useState<TabKey>("month");
@@ -460,16 +386,6 @@ export default function HrRosterView() {
     return map;
   }, [visible]);
 
-  const bulkCandidates = staff.filter((s) => s.users?.is_active !== false).filter((s) => !bulkDept || s.department === bulkDept).filter((s) => !bulkRole || s.users?.role === bulkRole);
-  const bulkDeptOptions = [...new Set(staff.map((s) => s.department).filter(Boolean))].sort() as string[];
-  const bulkRoleOptions = [...new Set(staff.map((s) => s.users?.role).filter(Boolean))].sort() as string[];
-  const bulkDays = !bulkFrom || !bulkTo || bulkTo < bulkFrom ? 0 : Math.floor((Date.parse(bulkTo) - Date.parse(bulkFrom)) / 86400000) + 1;
-  const toggleStaff = (id: string) =>
-    setBulkStaffIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  const selectAllCandidates = () =>
-    setBulkStaffIds((prev) => [...new Set([...prev, ...bulkCandidates.map((s) => s.id)])]);
-  const clearCandidates = () =>
-    setBulkStaffIds((prev) => prev.filter((id) => !bulkCandidates.some((s) => s.id === id)));
 
   const HR_ROSTER_EXPORT_COLUMNS = ["shift_date", "staff", "role", "department", "shift", "time", "status", "notes"];
 
@@ -1034,206 +950,48 @@ export default function HrRosterView() {
         </>
       )}
 
+
       {showAssign && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowAssign(false)}>
-          <form className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={assign}>
-            <div className="mb-4 flex items-start justify-between">
-              <h3 className="text-lg font-semibold">Assign shift</h3>
-              <button type="button" className="rounded-lg p-1.5 hover:bg-[var(--color-muted)]" onClick={() => setShowAssign(false)}><X className="h-4 w-4" /></button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className={labelCls}>Staff member</label>
-                <select className={inputCls + " w-full"} value={staffId} onChange={(e) => setStaffId(e.target.value)} required>
-                  <option value="">Select staff…</option>
-                  {staff.map((s) => (
-                    <option key={s.id} value={s.id}>{s.users?.full_name} · {s.users?.role}{s.users?.is_active === false ? " (disabled)" : ""}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Shift</label>
-                <select className={inputCls + " w-full"} value={shiftId} onChange={(e) => setShiftId(e.target.value)} required>
-                  <option value="">Select shift…</option>
-                  {shifts.filter((s) => s.is_active).map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} · {String(s.start_time).slice(0, 5)}–{String(s.end_time).slice(0, 5)}{s.department ? ` · ${s.department}` : ""}{s.ward?.name ? ` · ${s.ward.name}` : ""}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Date</label>
-                <input type="date" className={inputCls + " w-full"} value={shiftDate} onChange={(e) => setShiftDate(e.target.value)} required />
-              </div>
-              <div>
-                <label className={labelCls}>Notes</label>
-                <input className={inputCls + " w-full"} placeholder="Optional" value={notes} onChange={(e) => setNotes(e.target.value)} />
-              </div>
-              {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-              <button type="submit" disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy && <Loader2 className={spinner} />} Assign
-              </button>
-            </div>
-          </form>
-        </div>
+        <AssignShiftModal
+          setShowAssign={setShowAssign} staffId={staffId} setStaffId={setStaffId}
+          staff={staff} shiftId={shiftId} setShiftId={setShiftId}
+          shifts={shifts} shiftDate={shiftDate} setShiftDate={setShiftDate}
+          notes={notes} setNotes={setNotes} error={error} busy={busy}
+          assign={assign}
+        />
       )}
 
       {showBulk && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowBulk(false)}>
-          <form className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={bulkAssign}>
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">Bulk assign shifts</h3>
-                <p className={mutedXsMt}>Assign one shift template to many staff across a date range.</p>
-              </div>
-              <button type="button" className="rounded-lg p-1.5 hover:bg-[var(--color-muted)]" onClick={() => { setShowBulk(false); setBulkMsg(null); }}><X className="h-4 w-4" /></button>
-            </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <label className={labelCls}>Shift</label>
-                  <select className={inputCls + " w-full"} value={bulkShiftId} onChange={(e) => setBulkShiftId(e.target.value)} required>
-                    <option value="">Select shift…</option>
-                    {shifts.filter((s) => s.is_active).map((s) => (
-                      <option key={s.id} value={s.id}>{s.name} · {String(s.start_time).slice(0, 5)}–{String(s.end_time).slice(0, 5)}{s.department ? ` · ${s.department}` : ""}{s.ward?.name ? ` · ${s.ward.name}` : ""}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>From</label>
-                  <input type="date" className={inputCls + " w-full"} value={bulkFrom} onChange={(e) => setBulkFrom(e.target.value)} required />
-                </div>
-                <div>
-                  <label className={labelCls}>To</label>
-                  <input type="date" className={inputCls + " w-full"} value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} required />
-                </div>
-              </div>
-              <div>
-                <label className={labelCls}>Notes</label>
-                <input className={inputCls + " w-full"} placeholder="Optional — applied to every assigned shift" value={bulkNotes} onChange={(e) => setBulkNotes(e.target.value)} />
-              </div>
-              <div>
-                <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-[var(--color-foreground)]">Staff</span>
-                  <select className={inputCls + " max-w-[220px]"} value={bulkDept} onChange={(e) => setBulkDept(e.target.value)} aria-label="Narrow by department">
-                    <option value="">All departments</option>
-                    {bulkDeptOptions.map((d) => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                  <select className={inputCls + " max-w-[220px]"} value={bulkRole} onChange={(e) => setBulkRole(e.target.value)} aria-label="Narrow by role">
-                    <option value="">All roles</option>
-                    {bulkRoleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                  <button type="button" className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]" onClick={selectAllCandidates}>Select all {bulkCandidates.length}</button>
-                  <button type="button" className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]" onClick={clearCandidates}>Clear</button>
-                </div>
-                <div className="max-h-56 overflow-y-auto rounded-xl border border-[var(--color-border)]">
-                  {bulkCandidates.length === 0 ? (
-                    <div className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">No active staff match these filters.</div>
-                  ) : (
-                    <div className={divideBorder}>
-                      {bulkCandidates.map((s) => (
-                        <label key={s.id} className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--color-muted)]">
-                          <input type="checkbox" className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]" checked={bulkStaffIds.includes(s.id)} onChange={() => toggleStaff(s.id)} />
-                          <span className="font-medium">{s.users?.full_name}</span>
-                          <span className={mutedXs}>{s.users?.role}{s.department ? ` · ${s.department}` : ""}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="rounded-xl bg-sky-50 px-4 py-2.5 text-sm font-medium text-sky-800">
-                {bulkStaffIds.length} staff × {bulkDays} day{bulkDays === 1 ? "" : "s"} = {bulkStaffIds.length * bulkDays} shift{bulkStaffIds.length * bulkDays === 1 ? "" : "s"}
-              </div>
-              {bulkMsg?.kind === "ok" && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{bulkMsg.text}</div>}
-              {bulkMsg?.kind === "err" && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{bulkMsg.text}</div>}
-              <button type="submit" disabled={busy || bulkStaffIds.length === 0 || !bulkShiftId || !bulkFrom || !bulkTo} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy && <Loader2 className={spinner} />} Assign {bulkStaffIds.length * bulkDays} shift{bulkStaffIds.length * bulkDays === 1 ? "" : "s"}
-              </button>
-            </div>
-          </form>
-        </div>
+        <BulkAssignModal
+          setShowBulk={setShowBulk} setBulkMsg={setBulkMsg}
+          bulkShiftId={bulkShiftId} setBulkShiftId={setBulkShiftId}
+          shifts={shifts} bulkFrom={bulkFrom} setBulkFrom={setBulkFrom}
+          bulkTo={bulkTo} setBulkTo={setBulkTo} bulkNotes={bulkNotes} setBulkNotes={setBulkNotes}
+          bulkDept={bulkDept} setBulkDept={setBulkDept} bulkRole={bulkRole} setBulkRole={setBulkRole}
+          bulkStaffIds={bulkStaffIds} setBulkStaffIds={setBulkStaffIds}
+          bulkMsg={bulkMsg} busy={busy} bulkAssign={bulkAssign} staff={staff}
+        />
       )}
 
       {showShift && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowShift(false)}>
-          <form className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={createShift}>
-            <div className="mb-4 flex items-start justify-between">
-              <h3 className="text-lg font-semibold">{editingShift ? "Edit shift template" : "New shift template"}</h3>
-              <button type="button" className="rounded-lg p-1.5 hover:bg-[var(--color-muted)]" onClick={() => setShowShift(false)}><X className="h-4 w-4" /></button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className={labelCls}>Name</label>
-                <input className={inputCls + " w-full"} placeholder="Morning" value={shiftName} onChange={(e) => setShiftName(e.target.value)} required />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Start</label>
-                  <input type="time" className={inputCls + " w-full"} value={shiftStart} onChange={(e) => setShiftStart(e.target.value)} required />
-                </div>
-                <div>
-                  <label className={labelCls}>End</label>
-                  <input type="time" className={inputCls + " w-full"} value={shiftEnd} onChange={(e) => setShiftEnd(e.target.value)} required />
-                </div>
-              </div>
-              <div>
-                <label className={labelCls}>Department</label>
-                <input className={inputCls + " w-full"} placeholder="Nursing" value={shiftDept} onChange={(e) => setShiftDept(e.target.value)} />
-              </div>
-              <div>
-                <label className={labelCls}>Colour</label>
-                <input type="color" className={inputCls + " h-11 w-full"} value={shiftColor} onChange={(e) => setShiftColor(e.target.value)} />
-              </div>
-              {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-              <button type="submit" disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy && <Loader2 className={spinner} />} {editingShift ? "Save changes" : "Create"}
-              </button>
-            </div>
-          </form>
-        </div>
+        <ShiftFormModal
+          setShowShift={setShowShift} editingShift={editingShift}
+          shiftName={shiftName} setShiftName={setShiftName}
+          shiftStart={shiftStart} setShiftStart={setShiftStart}
+          shiftEnd={shiftEnd} setShiftEnd={setShiftEnd}
+          shiftDept={shiftDept} setShiftDept={setShiftDept}
+          shiftColor={shiftColor} setShiftColor={setShiftColor}
+          error={error} busy={busy} createShift={createShift}
+        />
       )}
 
       {showShifts && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowShifts(false)}>
-          <div className="flex max-h-[80vh] w-full max-w-xl flex-col rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4 flex items-start justify-between">
-              <h3 className="text-lg font-semibold">Shift templates</h3>
-              <button type="button" className="rounded-lg p-1.5 hover:bg-[var(--color-muted)]" onClick={() => setShowShifts(false)}><X className="h-4 w-4" /></button>
-            </div>
-            <div className="flex-1 space-y-2 overflow-auto">
-              {shifts.length === 0 && (
-                <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">No shift templates yet — create one with <span className="font-medium">New shift template</span>.</p>
-              )}
-              {shifts.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] px-3 py-2.5">
-                  <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: s.color || "#0ea5e9" }} aria-hidden="true" />
-                  <div className="min-w-0 flex-1">
-                    <div className={flexGap2}>
-                      <span className="truncate text-sm font-semibold text-[var(--color-foreground)]">{s.name}</span>
-                      {s.is_active ? (
-                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">Active</span>
-                      ) : (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">Inactive</span>
-                      )}
-                    </div>
-                    <div className="truncate text-xs text-[var(--color-muted-fg)]">
-                      {String(s.start_time).slice(0, 5)} – {String(s.end_time).slice(0, 5)}
-                      {s.department ? ` · ${s.department}` : ""}
-                      {s.ward?.name ? ` · ${s.ward.name}` : ""}
-                    </div>
-                  </div>
-                  <button type="button" className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]" onClick={() => openEditShift(s)}>
-                    Edit
-                  </button>
-                  <button type="button" className="rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50" onClick={() => deleteShift(s)}>
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ShiftTemplatesModal
+          setShowShifts={setShowShifts} shifts={shifts}
+          openEditShift={openEditShift} deleteShift={deleteShift}
+        />
       )}
+
     </div>
   );
 }
