@@ -1,9 +1,10 @@
-import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
+﻿import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel, parseBody } from "@/lib/api-utils";
 import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
-import type { NextRequest } from "next/server";
+import { validateWith } from "@/lib/schemas";
+import { appointmentCreateSchema } from "@/lib/schemas/appointment-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -104,11 +105,7 @@ export interface CreateAppointmentBody {
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "appointments", "full");
-  const body = (await req.json()) as CreateAppointmentBody;
-
-  if (!body.patientId || !body.scheduledDate || !body.startTime) {
-    throw new ValidationError("Patient, date and start time are required");
-  }
+  const body = validateWith(appointmentCreateSchema, await parseBody<unknown>(req));
 
   const { data: patient } = await ctx.svc
     .from("patients")
@@ -164,7 +161,7 @@ export const POST = withAuth(async (req, ctx) => {
         userIds: [user.user_id],
         type: "appointment_reminder",
         title: "Appointment booked",
-        message: `${body.scheduledDate} at ${body.startTime} — ${patient.first_name} ${patient.last_name}`,
+        message: `${body.scheduledDate} at ${body.startTime} â€” ${patient.first_name} ${patient.last_name}`,
         referenceType: "appointments",
         referenceId: appointment.id,
       });

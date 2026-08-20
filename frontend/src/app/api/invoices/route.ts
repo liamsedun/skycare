@@ -1,10 +1,11 @@
-import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
+﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel, parseBody } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyInvoiceIssued } from "@/lib/notify";
 import { getTenantSettings, generateInvoiceNumber } from "@/lib/tenant-settings";
-import type { NextRequest } from "next/server";
+import { validateWith } from "@/lib/schemas";
+import { invoiceCreateSchema } from "@/lib/schemas/invoice-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -76,19 +77,7 @@ export interface CreateInvoiceBody {
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "billing", "full");
-  const body = (await req.json()) as CreateInvoiceBody;
-
-  if (!body.patientId || body.subtotal == null || body.totalAmount == null) {
-    throw new ValidationError("Patient, subtotal and total are required");
-  }
-  if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new ValidationError("At least one invoice item is required");
-  }
-  for (const item of body.items) {
-    if (!item.description?.trim() || item.quantity <= 0 || item.unit_price < 0) {
-      throw new ValidationError("Each item needs a description, quantity and unit price");
-    }
-  }
+  const body = validateWith(invoiceCreateSchema, await parseBody<unknown>(req));
 
   const { data: patient } = await ctx.svc
     .from("patients")

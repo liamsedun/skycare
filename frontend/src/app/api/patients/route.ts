@@ -1,8 +1,9 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, requireModuleLevel } from "@/lib/api-utils";
+﻿import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, requireModuleLevel, parseBody } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
-import type { NextRequest } from "next/server";
+import { validateWith } from "@/lib/schemas";
+import { patientCreateSchema } from "@/lib/schemas/patient-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export interface CreatePatientBody {
 }
 
 /**
- * Normalizes a blood group: "0+" → "O+", lowercase → uppercase, trims whitespace.
+ * Normalizes a blood group: "0+" â†’ "O+", lowercase â†’ uppercase, trims whitespace.
  * Unlike a strict validator, unknown custom values are kept (the form supports
  * "add others" entries that are not in the canonical ABO list).
  */
@@ -75,15 +76,11 @@ export function normalizeBloodGroup(value: string | null | undefined): string | 
   return value.trim().toUpperCase().replace(/0/g, "O");
 }
 
-// POST /api/patients — register a patient (staff). Optional portal login.
+// POST /api/patients â€” register a patient (staff). Optional portal login.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "patients", "full");
-  const body = (await req.json()) as CreatePatientBody;
-
-  if (!body.firstName?.trim() || !body.lastName?.trim()) {
-    throw new ValidationError("First and last name are required");
-  }
+  const body = validateWith(patientCreateSchema, await parseBody<unknown>(req));
 
   const normalizedBloodGroup = normalizeBloodGroup(body.bloodGroup);
 
@@ -183,7 +180,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "patients",
     entityId: patient.id,
-    description: `Registered patient ${patientNumber} — ${patient.first_name} ${patient.last_name} (${tenantName})`,
+    description: `Registered patient ${patientNumber} â€” ${patient.first_name} ${patient.last_name} (${tenantName})`,
   });
 
   return ok(patient);

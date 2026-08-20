@@ -1,8 +1,9 @@
-import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, parseBody } from "@/lib/api-utils";
 import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { pushNotifyUsers } from "@/lib/push-send";
-import type { NextRequest } from "next/server";
+import { validateWith } from "@/lib/schemas";
+import { labRequestCreateSchema } from "@/lib/schemas/lab-request-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,7 @@ export interface CreateLabRequestBody {
   }>;
 }
 
-// POST /api/lab-requests — in-house or external-lab request with line items.
+// POST /api/lab-requests â€” in-house or external-lab request with line items.
 // The insert itself runs in a single transaction via the create_lab_request
 // RPC (validates tenant-anchored patient/doctor/services, inserts request +
 // items). Messaging is fired by the deferred AFTER INSERT trigger at COMMIT
@@ -100,11 +101,7 @@ export interface CreateLabRequestBody {
 // know who to web-push.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const body = (await req.json()) as CreateLabRequestBody;
-
-  if (!body.patientId || !Array.isArray(body.items) || body.items.length === 0) {
-    throw new ValidationError("Patient and at least one service are required");
-  }
+  const body = validateWith(labRequestCreateSchema, await parseBody<unknown>(req));
 
   const { data: patient } = await ctx.svc
     .from("patients")
@@ -138,7 +135,7 @@ export const POST = withStaff(async (req, ctx) => {
     lab_request_items?: Array<{ service_name: string }>;
   };
 
-  // The trigger already wrote in-app notifications at COMMIT — read them back
+  // The trigger already wrote in-app notifications at COMMIT â€” read them back
   // to web-push the same recipients.
   const { data: notifRows } = await ctx.svc
     .from("notifications")
@@ -167,7 +164,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "lab_requests",
     entityId: request.id,
-    description: `Lab request (${request.lab_request_items?.length ?? body.items.length} item(s)) for ${patient.first_name} ${patient.last_name}${body.isExternal ? " — external lab" : ""}`,
+    description: `Lab request (${request.lab_request_items?.length ?? body.items.length} item(s)) for ${patient.first_name} ${patient.last_name}${body.isExternal ? " â€” external lab" : ""}`,
   });
 
   return ok(request, 201);

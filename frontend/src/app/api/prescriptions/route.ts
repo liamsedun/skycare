@@ -1,8 +1,9 @@
-import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, parseBody } from "@/lib/api-utils";
 import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import type { NextRequest } from "next/server";
+import { validateWith } from "@/lib/schemas";
+import { prescriptionCreateSchema } from "@/lib/schemas/prescription-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -117,14 +118,7 @@ export interface CreatePrescriptionBody {
 // POST /api/prescriptions
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const body = (await req.json()) as CreatePrescriptionBody;
-
-  if (!body.patientId || !body.doctorId) {
-    throw new ValidationError("Patient and doctor are required");
-  }
-  if (!Array.isArray(body.items) || body.items.length === 0) {
-    throw new ValidationError("At least one medication is required");
-  }
+  const body = validateWith(prescriptionCreateSchema, await parseBody<unknown>(req));
   const pharmacyType = body.pharmacyType === "external" ? "external" : "in_house";
 
   const { data: patient } = await ctx.svc
