@@ -8,6 +8,14 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
       // React Compiler-era rules (react-hooks v6 via eslint-config-next 16.2.12).
       // The codebase predates them; its behavior is pinned by API smokes, not by
       // these static rules. Kept visible as warnings so new code avoids the

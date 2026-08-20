@@ -8,54 +8,81 @@ PWA — from a single Supabase-backed codebase.
 
 ```
 skycare-saas/
-├── backend/                  # Supabase: database, RLS, edge functions, service layer
-│   ├── supabase/
-│   │   ├── migrations/       # versioned SQL (tenant schema → RLS → analytics → seed)
-│   │   ├── functions/        # Supabase Edge Functions (Deno)
-│   │   └── config.toml
-│   └── src/                  # service-layer reference (Supabase client patterns)
-├── frontend/                 # Next.js App Router + Tailwind + PWA (Netlify)
-├── docs/                     # architecture, ADRs, API map
-└── README.md
+├── backend/                  # Supabase: SQL migrations, RLS, edge functions
+│   └── supabase/
+│       ├── migrations/       # versioned SQL (tenant schema → RLS → analytics → seed)
+│       └── functions/        # Supabase Edge Functions (Deno)
+├── frontend/                 # Next.js App Router + Tailwind + PWA
+│   ├── src/
+│   │   ├── app/              # pages + API routes (/app/* staff, /patient portal, /[slug] sites)
+│   │   ├── components/       # shared + dashboard + patient + tenant UI
+│   │   └── lib/              # auth, tenancy, calculators, exports, API utils
+│   └── vitest.config.ts      # unit/component test runner (+ coverage gate)
+├── .github/workflows/        # CI (lint, typecheck, test, build)
+└── docs/                     # architecture, ADRs, API map
 ```
 
 ## High-level architecture
 
 ```
-Public hospital website (tenant.skycare.app)   Patient PWA (patient portal)
+Public hospital website (<slug>.skycare.app)    Patient PWA (/patient)
         │                                              │
         └──────────────┬───────────────────────────────┘
                  Next.js App Router (frontend/)
-                 subdomain → tenant routing
+                 subdomain → tenant routing (proxy + host headers)
         │
-   Supabase Auth (JWT: tenant_id, role, branch_id)
+   Supabase Auth (JWT claims: tenant_id, role, branch_id)
         │
-   API layer — Supabase Edge Functions + RLS-scoped table access
+   API layer — REST routes + PostgREST with RLS as the safety net
         │
-   PostgreSQL multi-tenant (tenant_id scoping + branch_id) + Storage
+   PostgreSQL multi-tenant (RLS + tenant_id scoping) + Storage (avatars)
 ```
 
-- **Tenant isolation** at the DB level via RLS (`auth.jwt()`-derived `tenant_id`).
-- **Branch isolation** as a sub-tenancy: staff scoped to branch, admin sees all.
-- **Role-based access**: `super_admin`, `hospital_admin`, `doctor`, `nurse`,
-  `pharmacist`, `lab_tech`, `cashier`.
+- **Tenant isolation** at the DB level via RLS (`auth.jwt()`-derived `tenant_id`);
+  the API layer (`withAuth`/`withStaff` + service client) is the authoritative guard.
+- **Roles**: `super_admin`, `hospital_admin`, `doctor`, `nurse`, `pharmacist`,
+  `lab_tech`, `cashier`, `receptionist`, `patient_api` — with per-user module
+  grants (`users.module_access`).
 
 ## Modules
 
-Patients/EHR · Appointments · Visits/Encounters · Billing & Payments ·
-Pharmacy & Inventory · Lab & Diagnostics · Ward & Bed · Staff/HR · Stores &
-Supply Chain · Notifications · Reports/Analytics · Hospital Websites · Patient PWA
+Patients/EHR · Appointments · Billing & Payments · Pharmacy & Inventory (+ suppliers,
+procurement, branch pricing, compliance) · Lab & Diagnostics · Wards & Bed Map ·
+Staff & HR (profiles, shifts/roster, attendance, leave, credentials) · Payroll
+(runs, PAYE/Pension schedules, payslips, SkyBooks engine) · Banking (accounts,
+ledger, transfers, statements, reconciliation) · Expenses & Other Income · Internal
+Mail · Chats · Medical Records & Reports · Financial Reports · Notifications ·
+Hospital Websites (per-tenant branding, landing pages) · Patient PWA — plus a
+per-tenant admin Settings suite and a first-run onboarding wizard.
 
 ## Local dev
 
-1. `cd frontend && npm install && npm run dev`
-2. Supabase CLI for backend: `cd backend && supabase start`
-3. Deploy frontend to Netlify; run Supabase migrations in the hosted project.
+1. `cd frontend`
+2. `cp .env.example .env.local` and fill in the Supabase + feature keys.
+3. `npm install`
+4. `npm run dev` → http://localhost:3001
+
+For tenant subdomains locally, the proxy resolves `<slug>.skycare.test` via the
+`x-forwarded-host` header; route your browser/HTTP client at
+`http://<slug>.skycare.test:3001` or pass the header to curl.
+
+## Tests
+
+The suite is Vitest 4 + React Testing Library; coverage runs in CI with a
+30% global threshold.
+
+```bash
+npm test            # run once
+npm run test:watch  # watch mode
+npm run test:coverage
+npm run lint        # ESLint (0 errors gates CI)
+npm run typecheck   # tsc --noEmit
+npm run build       # Next production build (compiles all API routes)
+```
 
 ## Branch strategy
 
 - `main` — production deploy branch
-- `dev` — integration branch (default working branch)
 - `feature/*` — per-module work
 
 License: proprietary — Skyhouse Technologies.

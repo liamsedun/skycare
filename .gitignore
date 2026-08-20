@@ -15,6 +15,13 @@ build/
 npm-debug.log*
 pnpm-debug.log*
 
+# test output
+coverage/
+
+# ad-hoc working scripts
+temp/
+frontend/temp/
+
 # env
 .env
 .env.local

@@ -1,0 +1,17 @@
+.next
+node_modules
+npm-debug.log
+.git
+.gitignore
+.coverage
+coverage
+dist
+Dockerfile
+.dockerignore
+README.md
+.github
+temp
+scripts
+*.pid
+.env*.local
+.env*.production

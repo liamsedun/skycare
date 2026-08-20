@@ -13,6 +13,6 @@ const LOCAL_DOMAIN = process.env.NEXT_PUBLIC_LOCAL_DOMAIN ?? "skycare.test";
 export function tenantHomeUrl(slug: string): string {
   const { protocol, hostname, port } = window.location;
   const h = hostname.toLowerCase();
-  if (h.endsWith(`.${ROOT_DOMAIN}`)) return `https://${slug}.${ROOT_DOMAIN}/`;
+  if (h === ROOT_DOMAIN || h.endsWith(`.${ROOT_DOMAIN}`)) return `https://${slug}.${ROOT_DOMAIN}/`;
   return `${protocol}//${slug}.${LOCAL_DOMAIN}${port ? `:${port}` : ""}/`;
 }
