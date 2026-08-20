@@ -1,3 +1,4 @@
+import { flexGap2 } from "@/lib/ui-constants";
 export default function TenantClinicBanner() {
   return (
     <section className="relative h-[400px] overflow-hidden md:h-[500px]">
@@ -23,15 +24,15 @@ export default function TenantClinicBanner() {
             medical facilities and compassionate professionals.
           </p>
           <div className="mt-6 flex gap-4">
-            <div className="flex items-center gap-2">
+            <div className={flexGap2}>
               <div className="h-2 w-2 rounded-full bg-[#16A34A]" />
               <span className="text-sm text-white/75">24/7 Emergency</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={flexGap2}>
               <div className="h-2 w-2 rounded-full bg-[#16A34A]" />
               <span className="text-sm text-white/75">Expert Team</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={flexGap2}>
               <div className="h-2 w-2 rounded-full bg-[#16A34A]" />
               <span className="text-sm text-white/75">Modern Facilities</span>
             </div>

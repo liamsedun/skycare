@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Camera, KeyRound, Loader2, Save, ShieldCheck } from "lucide-react";
 import { ROLE_LABELS, initials } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
+import { mutedFg, errorBanner, cardTitle, mutedSm, flexGap2, mutedXsMt1, pageTitle, emptyState } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)] disabled:bg-slate-50 disabled:text-[var(--color-muted-fg)]";
@@ -125,11 +126,11 @@ export default function ProfileView() {
   }
 
   if (loading) {
-    return <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading profile…</p>;
+    return <p className={emptyState}>Loading profile…</p>;
   }
   if (!me?.user) {
     return (
-      <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+      <p role="alert" className={errorBanner}>
         Could not load profile.
       </p>
     );
@@ -138,8 +139,8 @@ export default function ProfileView() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">My profile</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your account details and password.</p>
+        <h1 className={pageTitle}>My profile</h1>
+        <p className={mutedSm}>Your account details and password.</p>
       </div>
 
       <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
@@ -219,9 +220,9 @@ export default function ProfileView() {
       </section>
 
       <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-        <header className="flex items-center gap-2">
-          <KeyRound size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Change password</h2>
+        <header className={flexGap2}>
+          <KeyRound size={16} aria-hidden="true" className={mutedFg} />
+          <h2 className={cardTitle}>Change password</h2>
         </header>
 
         {pwMsg && (
@@ -239,7 +240,7 @@ export default function ProfileView() {
             <div>
               <label className={labelCls} htmlFor="p-new">New password</label>
               <input id="p-new" type="password" autoComplete="new-password" className={inputCls} value={newPw} onChange={(e) => setNewPw(e.target.value)} required minLength={8} />
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">At least 8 characters.</p>
+              <p className={mutedXsMt1}>At least 8 characters.</p>
             </div>
             <div>
               <label className={labelCls} htmlFor="p-confirm">Confirm new password</label>

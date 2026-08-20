@@ -1,5 +1,6 @@
 "use client";
 
+import { cardTitle, fgMedium, mutedXsMt1 } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -90,7 +91,7 @@ export default function WebsiteOnboardingSection() {
     <section className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
       <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-5 py-3">
         <Rocket size={16} aria-hidden="true" className="text-[var(--color-primary)]" />
-        <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Website setup</h2>
+        <h2 className={cardTitle}>Website setup</h2>
         {status?.website_provisioned ? (
           <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
             Provisioned
@@ -119,10 +120,10 @@ export default function WebsiteOnboardingSection() {
             <Rocket size={17} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--color-foreground)]">
+            <p className={cardTitle}>
               {status?.website_provisioned ? "Your website content is ready" : "Set up your hospital website"}
             </p>
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt1}>
               {status?.website_provisioned
                 ? `${status.counts.services} service(s), ${status.counts.departments} department(s) and ${status.counts.pages} page(s) are live on your public site.`
                 : "Guided step-by-step setup: profile, branding, website content and services — the default content is created for you."}
@@ -158,7 +159,7 @@ export default function WebsiteOnboardingSection() {
             className="focus-ring mt-0.5 h-4 w-4 accent-[var(--color-primary)] disabled:opacity-60"
           />
           <span className="text-sm">
-            <span className="font-medium text-[var(--color-foreground)]">Public website visible</span>
+            <span className={fgMedium}>Public website visible</span>
             <span className="block text-xs text-[var(--color-muted-fg)]">
               When off, visitors see a short notice with your contact details instead of the full site.
             </span>

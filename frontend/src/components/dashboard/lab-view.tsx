@@ -10,6 +10,7 @@ import { ActionDropdown } from "@/components/ui/action-dropdown";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, mutedFg, errorBanner, btnBase, cardTitle, flexBetween, mutedSm, divideBorder, mutedXsMt, flexWrapGap2, fgMedium, mutedXsMt1, fgSemibold, sectionTitle, mutedSmPlain, pageTitle, ghostIconBtn, rowStart, modalBackdrop, tableHeadCell } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface LabService {
@@ -298,8 +299,8 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Laboratory</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <h1 className={pageTitle}>Laboratory</h1>
+          <p className={mutedSm}>
             Lab &amp; imaging requests, service catalog and custom services.
           </p>
         </div>
@@ -358,14 +359,14 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {tab === "requests" ? (
         <>
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter lab requests">
+          <div className={flexWrapGap2} role="group" aria-label="Filter lab requests">
             {STATUS_FILTERS.map((item) => (
               <button
                 key={item}
@@ -407,7 +408,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
           ) : visibleRequests.length === 0 ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
               <FlaskConical size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No lab requests found.</p>
+              <p className={sectionTitle}>No lab requests found.</p>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -418,7 +419,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
                       <p className="truncate font-medium text-[var(--color-foreground)]">
                         {req.patients ? `${req.patients.first_name} ${req.patients.last_name}` : "Unknown"}
                       </p>
-                      <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXsMt}>
                         {req.patients?.patient_number ?? ""} · {new Date(req.requested_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -674,7 +675,7 @@ function ServicesTab({
   return (
     <div className="space-y-5">
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -775,7 +776,7 @@ function ServicesTab({
       ) : grouped.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <TestTube size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             {services.length === 0 ? "No services in the catalog yet." : "No services match your search."}
           </p>
         </div>
@@ -790,7 +791,7 @@ function ServicesTab({
                 </span>
               </h2>
               <div className="mt-2 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-                <ul className="divide-y divide-[var(--color-border)]">
+                <ul className={divideBorder}>
                   {items.map((s) => (
                     <li key={s.id} className="flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm">
                       {canManageCatalog && (
@@ -816,7 +817,7 @@ function ServicesTab({
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-[var(--color-muted-fg)]">
+                        <p className={mutedXs}>
                           {s.type} · ₦{Number(s.price).toLocaleString()}
                           {s.reference_range ? ` · ${s.reference_range}` : ""}
                         </p>
@@ -920,30 +921,30 @@ function ViewServiceModal({ service, onClose }: { service: LabService; onClose: 
       <div className="mt-5 space-y-4 text-sm">
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
           <div>
-            <dt className="text-xs text-[var(--color-muted-fg)]">Type</dt>
+            <dt className={mutedXs}>Type</dt>
             <dd className="font-medium capitalize text-[var(--color-foreground)]">{service.type}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[var(--color-muted-fg)]">Price</dt>
-            <dd className="font-medium text-[var(--color-foreground)]">₦{Number(service.price).toLocaleString()}</dd>
+            <dt className={mutedXs}>Price</dt>
+            <dd className={fgMedium}>₦{Number(service.price).toLocaleString()}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[var(--color-muted-fg)]">Group / category</dt>
-            <dd className="font-medium text-[var(--color-foreground)]">{service.lab_categories?.name ?? "Uncategorized"}</dd>
+            <dt className={mutedXs}>Group / category</dt>
+            <dd className={fgMedium}>{service.lab_categories?.name ?? "Uncategorized"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[var(--color-muted-fg)]">Availability</dt>
+            <dt className={mutedXs}>Availability</dt>
             <dd className={`font-medium ${service.is_active ? "text-emerald-600" : "text-[var(--color-muted-fg)]"}`}>
               {service.is_active ? "Active" : "Inactive"}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-[var(--color-muted-fg)]">Reference range</dt>
-            <dd className="font-medium text-[var(--color-foreground)]">{service.reference_range ?? "—"}</dd>
+            <dt className={mutedXs}>Reference range</dt>
+            <dd className={fgMedium}>{service.reference_range ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-[var(--color-muted-fg)]">External lab ID</dt>
-            <dd className="font-medium text-[var(--color-foreground)]">{service.external_lab_id ?? "—"}</dd>
+            <dt className={mutedXs}>External lab ID</dt>
+            <dd className={fgMedium}>{service.external_lab_id ?? "—"}</dd>
           </div>
         </dl>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -1064,7 +1065,7 @@ function EditServiceModal({
             ))}
           </select>
           {canCreateCategories && (
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt1}>
               New groups can be created from the &quot;Add Service&quot; form.
             </p>
           )}
@@ -1082,7 +1083,7 @@ function EditServiceModal({
           Available for ordering (active)
         </label>
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -1179,7 +1180,7 @@ function BulkPriceModal({
               className={`${inputCls} pl-9`}
             />
           </div>
-          <p className="text-xs text-[var(--color-muted-fg)]">
+          <p className={mutedXs}>
             {changed.length} changed · {rows.length} shown
           </p>
         </div>
@@ -1188,13 +1189,13 @@ function BulkPriceModal({
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="sticky top-0 bg-[var(--color-muted)]">
               <tr className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <th scope="col" className="px-4 py-2.5 font-semibold">Service</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Group</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Current</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Amount (₦)</th>
+                <th scope="col" className={btnBase}>Service</th>
+                <th scope="col" className={btnBase}>Group</th>
+                <th scope="col" className={btnBase}>Current</th>
+                <th scope="col" className={btnBase}>Amount (₦)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {rows.map((s) => {
                 const edited = Number(prices[s.id] ?? 0) !== Number(s.price ?? 0);
                 return (
@@ -1203,7 +1204,7 @@ function BulkPriceModal({
                       <p className={`font-medium ${s.is_active ? "text-[var(--color-foreground)]" : "text-[var(--color-muted-fg)]"}`}>
                         {s.name}
                       </p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXs}>
                         {s.type} · {s.approval_status}
                       </p>
                     </td>
@@ -1235,7 +1236,7 @@ function BulkPriceModal({
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -1373,7 +1374,7 @@ function AddServiceModal({ canManageCatalog, onClose, onAdded }: { canManageCata
             : "Your service will be pending approval and available once a hospital admin approves it."}
         </p>
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -1573,7 +1574,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
               <input id="wi-phone" name="wiPhone" className={inputCls} placeholder="e.g. 0803 000 0000" />
             </div>
             <div>
-              <label className={labelCls} htmlFor="wi-email">Email {payMethod === "paystack" && <span className="text-[var(--color-muted-fg)]">(required for Paystack)</span>}</label>
+              <label className={labelCls} htmlFor="wi-email">Email {payMethod === "paystack" && <span className={mutedFg}>(required for Paystack)</span>}</label>
               <input id="wi-email" name="wiEmail" type="email" required={payMethod === "paystack"} className={inputCls} placeholder="customer@example.com" />
             </div>
             <div className="sm:col-span-2">
@@ -1654,7 +1655,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
                         }}
                         className="h-4 w-4 accent-[var(--color-primary)]"
                       />
-                      <span className="font-medium text-[var(--color-foreground)]">{s.label}</span>
+                      <span className={fgMedium}>{s.label}</span>
                     </label>
                   );
                 })}
@@ -1696,7 +1697,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
                           className="mt-1 h-4 w-4 accent-[var(--color-primary)]"
                         />
                         <span className="flex-1">
-                          <span className="font-medium text-[var(--color-foreground)]">{svc.name}</span>
+                          <span className={fgMedium}>{svc.name}</span>
                           <span className="ml-2 text-xs text-[var(--color-muted-fg)]">
                             {svc.type === "imaging" ? "imaging" : "lab"} · ₦{Number(svc.price).toLocaleString()}
                           </span>
@@ -1784,7 +1785,7 @@ function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCre
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -1943,7 +1944,7 @@ function RequestDetailModal({
       wide
     >
       <div className="mt-5 space-y-6">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(request.status)}`}>
             {request.status.replace(/_/g, " ")}
           </span>
@@ -1957,7 +1958,7 @@ function RequestDetailModal({
               Walk-in{request.referrer ? ` · ${request.referrer}` : ""}
             </span>
           )}
-          <span className="text-sm text-[var(--color-muted-fg)]">
+          <span className={mutedSmPlain}>
             Requested {new Date(request.requested_at).toLocaleString()}
             {request.users ? ` · by ${request.users.full_name}` : ""}
           </span>
@@ -2057,8 +2058,8 @@ function RequestDetailModal({
         </div>
 
         {request.notes && (
-          <p className="text-sm text-[var(--color-muted-fg)]">
-            <span className="font-semibold text-[var(--color-foreground)]">Notes: </span>
+          <p className={mutedSmPlain}>
+            <span className={fgSemibold}>Notes: </span>
             {request.notes}
           </p>
         )}
@@ -2075,22 +2076,22 @@ function RequestDetailModal({
         )}
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
 
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <th scope="col" className="px-4 py-2.5 font-semibold">Service</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Priority</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Sample</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Result</th>
+              <tr className={tableHeadCell}>
+                <th scope="col" className={btnBase}>Service</th>
+                <th scope="col" className={btnBase}>Priority</th>
+                <th scope="col" className={btnBase}>Sample</th>
+                <th scope="col" className={btnBase}>Result</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {request.lab_request_items.map((item) => (
                 <tr key={item.id}>
                   <td className="px-4 py-2.5 font-medium text-[var(--color-foreground)]">{item.service_name}</td>
@@ -2104,7 +2105,7 @@ function RequestDetailModal({
                         {item.is_abnormal ? " ⚠" : ""}
                       </span>
                     ) : (
-                      <span className="text-[var(--color-muted-fg)]">—</span>
+                      <span className={mutedFg}>—</span>
                     )}
                   </td>
                 </tr>
@@ -2115,8 +2116,8 @@ function RequestDetailModal({
 
         {canWork && canEnterResults && !request.is_external && ["sample_collected", "in_progress"].includes(request.status) && (
           <div className="rounded-xl border border-[var(--color-border)] bg-slate-50/60 p-4">
-            <p className="text-sm font-semibold text-[var(--color-foreground)]">Enter lab results</p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={cardTitle}>Enter lab results</p>
+            <p className={mutedXsMt}>
               Fill in the result of each test below — sending will mark the request completed and mail the results to the requesting staff with the patient in copy.
             </p>
             <div className="mt-3 space-y-3">
@@ -2338,7 +2339,7 @@ function ScheduleAppointmentModal({
           </div>
 
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            <p role="alert" className={errorBanner}>
               {error}
             </p>
           )}
@@ -2359,15 +2360,15 @@ function ScheduleAppointmentModal({
 function ModalShell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div className={`my-4 w-full rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-2xl" : "max-w-md"}`}>
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">{title}</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             ✕
           </button>
         </div>

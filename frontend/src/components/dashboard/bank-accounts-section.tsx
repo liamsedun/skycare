@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedFg, errorBanner, cardTitle, flexGap2 } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import { Landmark, Loader2, Plus, Trash2 } from "lucide-react";
 
@@ -106,9 +107,9 @@ export default function BankAccountsSection() {
   return (
     <section className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
       <header className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Landmark size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Bank accounts</h2>
+        <div className={flexGap2}>
+          <Landmark size={16} aria-hidden="true" className={mutedFg} />
+          <h2 className={cardTitle}>Bank accounts</h2>
         </div>
         {!showForm && accounts.length < 5 && (
           <button
@@ -123,7 +124,7 @@ export default function BankAccountsSection() {
 
       <div className="space-y-3 p-4">
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}

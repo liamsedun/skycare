@@ -5,6 +5,7 @@ import { Calendar, CheckCircle2, Clock, Loader2, Search, Stethoscope, User, X, X
 import { NewAppointmentButton } from "@/components/dashboard/appointment-actions";
 import { formatDate } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
+import { cardTitle, mutedSm, flexGap2, flexWrapGap2, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 type DisplayStatus = "Scheduled" | "Confirmed" | "In Progress" | "Completed" | "Cancelled";
@@ -188,8 +189,8 @@ export default function AppointmentsPage() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Appointments</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Schedule and manage patient appointments</p>
+          <h1 className={pageTitle}>Appointments</h1>
+          <p className={mutedSm}>Schedule and manage patient appointments</p>
         </div>
         <NewAppointmentButton onBooked={load} />
       </div>
@@ -307,13 +308,13 @@ export default function AppointmentsPage() {
                     <span className={`flex h-9 w-9 items-center justify-center rounded-full ${style.circle}`}>
                       <Icon size={18} aria-hidden="true" />
                     </span>
-                    <span className="text-sm font-semibold text-[var(--color-foreground)]">
+                    <span className={cardTitle}>
                       {fmtTime(apt.start_time)}
                     </span>
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className={flexWrapGap2}>
                       <span className="truncate font-semibold text-[var(--color-foreground)]">{patientName}</span>
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${style.badge}`}>
                         {style.label}
@@ -394,7 +395,7 @@ export default function AppointmentsPage() {
               : "border-rose-500/30 bg-rose-50 text-rose-700"
           }`}
         >
-          <span className="flex items-center gap-2">
+          <span className={flexGap2}>
             {toast.type === "success" ? (
               <CheckCircle2 size={16} aria-hidden="true" />
             ) : (

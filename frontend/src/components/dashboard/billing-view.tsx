@@ -24,6 +24,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, mutedFg, errorBanner, btnBase, cardTitle, flexBetween, mutedSm, divideBorder, flexGap2, flexWrapGap2, fgMedium, fgSemibold, sectionTitle, mutedSmPlain, pageTitle, ghostIconBtn, emptyState, rowStart, modalBackdrop, tableHeadCell } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 async function fetchAllPatients() {
@@ -298,15 +299,15 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className={pageTitle}>
             Billing
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             Every income stream — medical services, lab, pharmacy and ward bills.
           </p>
         </div>
         {!viewOnly && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <ImportExportMenu
               entityLabel="Invoices"
               exportCsv={exportCsv}
@@ -329,7 +330,7 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -376,10 +377,10 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
             {pending.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm shadow-sm">
                 <div>
-                  <p className="font-medium text-[var(--color-foreground)]">
+                  <p className={fgMedium}>
                     {p.patients ? `${p.patients.first_name} ${p.patients.last_name}` : "Patient"} — {ngn(Number(p.amount))}
                   </p>
-                  <p className="text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXs}>
                     {p.reference} · {p.payment_method.replace(/_/g, " ")}
                   </p>
                 </div>
@@ -463,7 +464,7 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
               className={`${inputCls} pl-9`}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <DateRangeBar
               from={from}
               to={to}
@@ -485,7 +486,7 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <span className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Source</span>
           {SOURCE_FILTERS.map((item) => (
             <button
@@ -523,11 +524,11 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
 
       {/* Invoice list */}
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading invoices…</p>
+        <p className={emptyState}>Loading invoices…</p>
       ) : visibleInvoices.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             No invoices found.
           </p>
         </div>
@@ -541,7 +542,7 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
               <div key={`${inv.kind}-${inv.id}`} className="flex flex-col rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className={flexGap2}>
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${sourceMeta.cls}`}>
                         <SourceIcon size={11} aria-hidden="true" /> {sourceMeta.label}
                       </span>
@@ -560,15 +561,15 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
                 </div>
                 <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <dt className="text-[var(--color-muted-fg)]">Total</dt>
-                    <dd className="font-semibold text-[var(--color-foreground)]">{ngn(Number(inv.total_amount))}</dd>
+                    <dt className={mutedFg}>Total</dt>
+                    <dd className={fgSemibold}>{ngn(Number(inv.total_amount))}</dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--color-muted-fg)]">Paid</dt>
+                    <dt className={mutedFg}>Paid</dt>
                     <dd className="font-semibold text-emerald-600">{ngn(Number(inv.paid_amount))}</dd>
                   </div>
                   <div>
-                    <dt className="text-[var(--color-muted-fg)]">Balance</dt>
+                    <dt className={mutedFg}>Balance</dt>
                     <dd className="font-semibold text-amber-600">{ngn(outstanding)}</dd>
                   </div>
                 </dl>
@@ -737,7 +738,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-semibold text-[var(--color-foreground)]">Items</span>
+            <span className={cardTitle}>Items</span>
             <button
               type="button"
               onClick={() => setItems([...items, { description: "", quantity: 1, unitPrice: 0, vatPercent: 0 }])}
@@ -814,7 +815,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
         </div>
 
         <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[var(--color-muted)]/40 px-4 py-3 text-sm">
-          <span className="text-[var(--color-muted-fg)]">Discount (₦)</span>
+          <span className={mutedFg}>Discount (₦)</span>
           <input
             type="number"
             min={0}
@@ -824,7 +825,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
             className={`${inputCls} w-32`}
           />
           <div className="ml-auto text-right">
-            <p className="text-[var(--color-muted-fg)]">Subtotal {ngn(subtotal)} · Tax {ngn(tax)}</p>
+            <p className={mutedFg}>Subtotal {ngn(subtotal)} · Tax {ngn(tax)}</p>
             <p className="text-lg font-bold text-[var(--color-foreground)]">Total {ngn(total)}</p>
           </div>
         </div>
@@ -835,7 +836,7 @@ function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCre
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -941,14 +942,14 @@ function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = false }: {
   return (
     <ModalShell title={`${invoice.invoice_number} — ${invoice.patients ? `${invoice.patients.first_name} ${invoice.patients.last_name}` : "Walk-in customer"}`} onClose={onClose} wide>
       <div className="mt-5 space-y-6">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${sourceMeta.cls}`}>
             <SourceIcon size={12} aria-hidden="true" /> {sourceMeta.label}
           </span>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(invoice.status)}`}>
             {invoice.status.replace(/_/g, " ")}
           </span>
-          <span className="text-sm text-[var(--color-muted-fg)]">
+          <span className={mutedSmPlain}>
             Issued {invoice.issue_date}
             {invoice.due_date ? ` · Due ${invoice.due_date}` : ""}
           </span>
@@ -975,23 +976,23 @@ function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = false }: {
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
 
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <th scope="col" className="px-4 py-2.5 font-semibold">{isPharmacy ? "Drug" : "Description"}</th>
+              <tr className={tableHeadCell}>
+                <th scope="col" className={btnBase}>{isPharmacy ? "Drug" : "Description"}</th>
                 <th scope="col" className="px-4 py-2.5 text-right font-semibold">Qty</th>
                 <th scope="col" className="px-4 py-2.5 text-right font-semibold">Unit</th>
                 {!isPharmacy && <th scope="col" className="px-4 py-2.5 text-right font-semibold">VAT</th>}
                 <th scope="col" className="px-4 py-2.5 text-right font-semibold">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {invoice.invoice_items.map((item) => (
                 <tr key={item.id}>
                   <td className="px-4 py-2.5 font-medium text-[var(--color-foreground)]">{item.description}</td>
@@ -1102,15 +1103,15 @@ function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = false }: {
 function ModalShell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div className={`my-4 w-full rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-2xl" : "max-w-md"}`}>
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">{title}</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             ✕
           </button>
         </div>

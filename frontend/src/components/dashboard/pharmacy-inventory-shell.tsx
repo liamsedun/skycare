@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Package, Upload, Download, CheckCircle2, ChevronDown } from "lucide-react";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedSm, flexGap2, pageTitle } from "@/lib/ui-constants";
 import PharmacyStockView from "@/components/dashboard/pharmacy-stock-view";
 import { ImportTab } from "@/components/dashboard/pharmacy-admin-view";
 
@@ -67,12 +68,12 @@ export default function PharmacyInventoryShell({ accessLevel = "full", myRole }:
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Drug Inventory</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <h1 className={pageTitle}>Drug Inventory</h1>
+          <p className={mutedSm}>
             Stock levels, batch tracking, catalogue, bulk import and export.
           </p>
         </div>
-        <div className="flex items-center gap-2" role="group" aria-label="Inventory section">
+        <div className={flexGap2} role="group" aria-label="Inventory section">
           <button
             type="button"
             onClick={() => setTab("stock")}

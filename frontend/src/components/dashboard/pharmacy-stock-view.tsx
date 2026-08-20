@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, mutedFg, divideBorder, fgSemibold, emptyState } from "@/lib/ui-constants";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, RefreshCcw, PackagePlus, ArrowLeftRight, Pill, X, AlertTriangle,
@@ -201,7 +202,7 @@ export default function PharmacyStockView() {
                 <th className="px-4 py-2.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {loading && (
                 <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading inventory…</td></tr>
               )}
@@ -231,7 +232,7 @@ export default function PharmacyStockView() {
           </table>
         </div>
         <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-2.5">
-          <p className="text-xs text-[var(--color-muted-fg)]">Showing {visible.length} of {total} drugs — page {page}/{totalPages}</p>
+          <p className={mutedXs}>Showing {visible.length} of {total} drugs — page {page}/{totalPages}</p>
           <div className="flex gap-1.5">
             <button type="button" className={btnGhost} disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}><ChevronLeft size={14} /> Prev</button>
             <button type="button" className={btnGhost} disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Next <ChevronRight size={14} /></button>
@@ -288,7 +289,7 @@ function StockRow({ row, onOpen, onRestock, onTransfer, onDispense, onEdit, onTo
     <tr className={`transition-colors duration-150 hover:bg-slate-50 ${row.isActive ? "" : "opacity-50"}`}>
       <td className="px-4 py-3">
         <button type="button" onClick={onOpen} className="focus-ring text-left">
-          <span className="font-semibold text-[var(--color-foreground)]">{row.name}</span>
+          <span className={fgSemibold}>{row.name}</span>
           {row.brand && <span className="ml-1 text-xs text-[var(--color-muted-fg)]">({row.brand})</span>}
           {row.genericName && <span className="block text-xs text-[var(--color-muted-fg)]">{row.genericName}</span>}
           {row.isControlled && (
@@ -300,14 +301,14 @@ function StockRow({ row, onOpen, onRestock, onTransfer, onDispense, onEdit, onTo
       <td className="px-4 py-3 text-xs text-[var(--color-muted-fg)]">{row.category}</td>
       <td className="px-4 py-3 text-xs">{row.form}{row.dosage ? ` · ${row.dosage}` : ""}</td>
       <td className="px-4 py-3">
-        <span className="text-xs text-[var(--color-foreground)]">{row.supplierName ?? <span className="text-[var(--color-muted-fg)]">—</span>}</span>
+        <span className="text-xs text-[var(--color-foreground)]">{row.supplierName ?? <span className={mutedFg}>—</span>}</span>
       </td>
       <td className="px-4 py-3 text-right">{ngnv(row.unitPrice)}</td>
       <td className="px-4 py-3 text-right">
         {row.effectivePrice !== row.unitPrice ? (
           <span className="font-semibold text-[var(--color-primary)]">{ngnv(row.effectivePrice)}</span>
         ) : (
-          <span className="text-[var(--color-muted-fg)]">—</span>
+          <span className={mutedFg}>—</span>
         )}
       </td>
       <td className={`px-4 py-3 text-right font-bold ${severity ? severity.text : "text-[var(--color-foreground)]"}`}>{row.stock}</td>
@@ -373,7 +374,7 @@ function BatchDrawer({ drugId, onClose, onRestock, onToast }: { drugId: string; 
           <button type="button" onClick={onClose} className="focus-ring rounded-lg border border-[var(--color-border)] p-2 text-[var(--color-muted-fg)] hover:bg-slate-50" aria-label="Close"><X size={16} /></button>
         </div>
 
-        {loading && <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading batches…</p>}
+        {loading && <p className={emptyState}>Loading batches…</p>}
 
         {data && (
           <>
@@ -407,7 +408,7 @@ function BatchDrawer({ drugId, onClose, onRestock, onToast }: { drugId: string; 
                     <th className="px-3 py-2 text-right">Qty</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
+                <tbody className={divideBorder}>
                   {data.batches.length === 0 && <tr><td colSpan={4} className="px-3 py-4 text-center text-[var(--color-muted-fg)]">No batches yet.</td></tr>}
                   {data.batches.map((b) => (
                     <tr key={b.id}>
@@ -425,13 +426,13 @@ function BatchDrawer({ drugId, onClose, onRestock, onToast }: { drugId: string; 
 
             <h4 className="mb-2 mt-5 text-xs font-bold uppercase tracking-wide text-[var(--color-muted-fg)]">Last receipt / movements</h4>
             <div className="space-y-1.5">
-              {data.movements.length === 0 && <p className="text-xs text-[var(--color-muted-fg)]">No movements recorded.</p>}
+              {data.movements.length === 0 && <p className={mutedXs}>No movements recorded.</p>}
               {data.movements.map((m) => (
                 <p key={m.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs">
                   <span>
                     <Chip cls={SUBTLE[mapType(m.type)].chip}>{m.type}</Chip>
                     {" "}<span className="font-medium">{m.quantity} units</span>
-                    {m.branchId && <span className="text-[var(--color-muted-fg)]"> · branch {m.branchId.slice(0, 8)}</span>}
+                    {m.branchId && <span className={mutedFg}> · branch {m.branchId.slice(0, 8)}</span>}
                     {m.notes && <span className="ml-1 text-[var(--color-muted-fg)]">— {m.notes}</span>}
                   </span>
                   <span className="shrink-0 text-[var(--color-muted-fg)]">{new Date(m.createdAt).toLocaleDateString()}</span>

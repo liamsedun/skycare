@@ -32,6 +32,7 @@ import {
   Tooltip,
 } from "recharts";
 import { ngn, initials } from "@/lib/auth";
+import { mutedXs, mutedFg, cardTitle, flexBetween, fgSemibold, mutedSmPlain, emptyState } from "@/lib/ui-constants";
 
 interface FamilyMember {
   id: string;
@@ -238,7 +239,7 @@ export default function PatientDashboard({
   if (loading) {
     return (
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-8 shadow-[var(--shadow-sm)]">
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">
+        <p className={emptyState}>
           Loading your dashboard…
         </p>
       </div>
@@ -316,7 +317,7 @@ export default function PatientDashboard({
           href="/patient/appointments"
           className={`${CARD} group p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-md`}
         >
-          <div className="flex items-center justify-between">
+          <div className={flexBetween}>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
               <CalendarClock size={19} aria-hidden="true" />
             </span>
@@ -329,7 +330,7 @@ export default function PatientDashboard({
           href="/patient/billing"
           className={`${CARD} group p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-md`}
         >
-          <div className="flex items-center justify-between">
+          <div className={flexBetween}>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
               <ReceiptText size={19} aria-hidden="true" />
             </span>
@@ -342,7 +343,7 @@ export default function PatientDashboard({
           href="/patient/lab-results"
           className={`${CARD} group p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:shadow-md`}
         >
-          <div className="flex items-center justify-between">
+          <div className={flexBetween}>
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
               <FlaskConical size={19} aria-hidden="true" />
             </span>
@@ -357,8 +358,8 @@ export default function PatientDashboard({
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Donut: paid vs outstanding */}
         <section className={`${CARD} p-5 lg:col-span-1`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Your balance</h2>
+          <div className={flexBetween}>
+            <h2 className={cardTitle}>Your balance</h2>
             <Link href="/patient/billing" className="focus-ring text-xs font-medium text-[var(--color-primary)] hover:underline">
               View bills
             </Link>
@@ -402,13 +403,13 @@ export default function PatientDashboard({
               <span className="flex items-center gap-2 text-[var(--color-muted-fg)]">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden="true" /> Paid
               </span>
-              <span className="font-semibold text-[var(--color-foreground)]">{ngn(Math.max(totalBilled - totalOutstanding, 0))}</span>
+              <span className={fgSemibold}>{ngn(Math.max(totalBilled - totalOutstanding, 0))}</span>
             </div>
             <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm">
               <span className="flex items-center gap-2 text-[var(--color-muted-fg)]">
                 <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-primary)]" aria-hidden="true" /> Outstanding
               </span>
-              <span className="font-semibold text-[var(--color-foreground)]">{ngn(outstanding)}</span>
+              <span className={fgSemibold}>{ngn(outstanding)}</span>
             </div>
             {overdue.length > 0 && (
               <div className="flex items-center justify-between rounded-lg bg-rose-50 px-3 py-2 text-sm">
@@ -423,8 +424,8 @@ export default function PatientDashboard({
 
         {/* Upcoming appointments */}
         <section className={`${CARD} p-5 lg:col-span-2`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Upcoming appointments</h2>
+          <div className={flexBetween}>
+            <h2 className={cardTitle}>Upcoming appointments</h2>
             <Link href="/patient/appointments" className="focus-ring text-xs font-medium text-[var(--color-primary)] hover:underline">
               Book / view all
             </Link>
@@ -432,7 +433,7 @@ export default function PatientDashboard({
           {upcoming.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
               <Stethoscope size={34} className="text-[var(--color-muted)]" aria-hidden="true" />
-              <p className="text-sm text-[var(--color-muted-fg)]">No upcoming appointments.</p>
+              <p className={mutedSmPlain}>No upcoming appointments.</p>
               <Link
                 href="/patient/appointments"
                 className="focus-ring inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-3.5 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
@@ -486,8 +487,8 @@ export default function PatientDashboard({
       {/* Recent bills */}
       <div className="grid gap-6 lg:grid-cols-2">
         <section className={`${CARD} p-5`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Recent bills</h2>
+          <div className={flexBetween}>
+            <h2 className={cardTitle}>Recent bills</h2>
             <Link href="/patient/billing" className="focus-ring text-xs font-medium text-[var(--color-primary)] hover:underline">
               View all
             </Link>
@@ -513,7 +514,7 @@ export default function PatientDashboard({
                         </p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="font-semibold text-[var(--color-foreground)]">{ngn(total)}</p>
+                        <p className={fgSemibold}>{ngn(total)}</p>
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusClass(inv.status)}`}>
                           {inv.status.replace(/_/g, " ")}
                         </span>
@@ -539,8 +540,8 @@ export default function PatientDashboard({
 
         {/* Health snapshot */}
         <section className={`${CARD} p-5`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Care snapshot</h2>
+          <div className={flexBetween}>
+            <h2 className={cardTitle}>Care snapshot</h2>
             <Link href="/patient/records" className="focus-ring text-xs font-medium text-[var(--color-primary)] hover:underline">
               My records
             </Link>
@@ -650,7 +651,7 @@ export default function PatientDashboard({
 
           {/* Quick actions */}
           <div className="app-glass relative overflow-hidden rounded-2xl p-4">
-            <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Quick Actions</h3>
+            <h3 className={cardTitle}>Quick Actions</h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {[
                 { label: "Book", href: "/patient/appointments", g: "from-[#e0a84a] to-amber-500" },
@@ -706,7 +707,7 @@ export default function PatientDashboard({
           <div className="app-glass relative overflow-hidden rounded-2xl">
             <div className="flex items-center gap-2 px-4 pt-4">
               <IdCard size={16} className="text-[#e0a84a]" aria-hidden="true" />
-              <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Identity Card</h3>
+              <h3 className={cardTitle}>Identity Card</h3>
             </div>
             <div className="m-3 mt-2 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0b2a4a] via-[#0e3a63] to-[#0d5f7a]">
               <div className="flex items-center gap-2.5 px-4 pt-4">
@@ -775,11 +776,11 @@ export default function PatientDashboard({
           {/* Recent activity */}
           <div className="app-glass relative overflow-hidden rounded-2xl p-4">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Recent Activity</h3>
-              <ChevronRight size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <h3 className={cardTitle}>Recent Activity</h3>
+              <ChevronRight size={16} className={mutedFg} aria-hidden="true" />
             </div>
             {loading ? (
-              <p className="text-xs text-[var(--color-muted-fg)]">Loading…</p>
+              <p className={mutedXs}>Loading…</p>
             ) : (
               <div className="space-y-3">
                 {upcoming.length > 0 && (
@@ -804,7 +805,7 @@ export default function PatientDashboard({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-[var(--color-foreground)]">Lab results ready</p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">{resultsReady} completed test(s) with results</p>
+                      <p className={mutedXs}>{resultsReady} completed test(s) with results</p>
                     </div>
                   </div>
                 )}
@@ -815,12 +816,12 @@ export default function PatientDashboard({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-[var(--color-foreground)]">Outstanding bills</p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">{ngn(outstanding)} pending</p>
+                      <p className={mutedXs}>{ngn(outstanding)} pending</p>
                     </div>
                   </div>
                 )}
                 {upcoming.length === 0 && resultsReady === 0 && invoices.length === 0 && (
-                  <p className="text-xs text-[var(--color-muted-fg)]">No recent activity yet.</p>
+                  <p className={mutedXs}>No recent activity yet.</p>
                 )}
               </div>
             )}

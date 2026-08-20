@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BadgeCheck, Loader2, ShieldCheck, Trash2 } from "lucide-react";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, divideBorder, labelSm, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -143,7 +144,7 @@ export default function HrCredentialsView() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-lg font-semibold"><ShieldCheck className="h-5 w-5 text-[var(--color-primary)]" /> Staff credentials</div>
-          <p className="text-sm text-[var(--color-muted-fg)]">Clinical staff need a verified, unexpired credential to be rostered on shifts.</p>
+          <p className={mutedSmPlain}>Clinical staff need a verified, unexpired credential to be rostered on shifts.</p>
         </div>
         {isAdmin && (
           <button className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white hover:opacity-90" onClick={() => setShowAdd(true)}>
@@ -165,7 +166,7 @@ export default function HrCredentialsView() {
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead className="border-b border-[var(--color-border)] text-xs uppercase text-[var(--color-muted-fg)]">
             <tr>
               <th className="px-4 py-3">Staff</th>
@@ -177,12 +178,12 @@ export default function HrCredentialsView() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {visible.map((c) => (
               <tr key={c.id}>
                 <td className="px-4 py-3">
                   <div className="font-medium">{c.staff?.users?.full_name}</div>
-                  <div className="text-xs text-[var(--color-muted-fg)]">{c.staff?.users?.role} · {c.staff?.staff_number}</div>
+                  <div className={mutedXs}>{c.staff?.users?.role} · {c.staff?.staff_number}</div>
                 </td>
                 <td className="px-4 py-3 font-mono text-xs">{c.license_number}</td>
                 <td className="px-4 py-3">{c.category}</td>
@@ -218,7 +219,7 @@ export default function HrCredentialsView() {
             <h3 className="mb-4 text-lg font-semibold">Add credential</h3>
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-sm font-medium">Staff</label>
+                <label className={labelSm}>Staff</label>
                 <select className={inputCls} value={form.staff_id} onChange={(e) => setForm({ ...form, staff_id: e.target.value })} required>
                   <option value="">Select staff…</option>
                   {staffList.map((s) => (
@@ -227,20 +228,20 @@ export default function HrCredentialsView() {
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="mb-1 block text-sm font-medium">License number</label>
+                <div><label className={labelSm}>License number</label>
                   <input className={inputCls} value={form.license_number} onChange={(e) => setForm({ ...form, license_number: e.target.value })} required /></div>
-                <div><label className="mb-1 block text-sm font-medium">Category</label>
+                <div><label className={labelSm}>Category</label>
                   <input className={inputCls} placeholder="e.g. RN / MDCN" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} required /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="mb-1 block text-sm font-medium">Issue date</label>
+                <div><label className={labelSm}>Issue date</label>
                   <input type="date" className={inputCls} value={form.issue_date} onChange={(e) => setForm({ ...form, issue_date: e.target.value })} /></div>
-                <div><label className="mb-1 block text-sm font-medium">Expiry date</label>
+                <div><label className={labelSm}>Expiry date</label>
                   <input type="date" className={inputCls} value={form.expiry_date} onChange={(e) => setForm({ ...form, expiry_date: e.target.value })} /></div>
               </div>
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
               <button type="submit" disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />} Save credential
+                {busy ? <Loader2 className={spinner} /> : <BadgeCheck className="h-4 w-4" />} Save credential
               </button>
             </div>
           </form>

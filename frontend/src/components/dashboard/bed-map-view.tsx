@@ -21,6 +21,7 @@ import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import FilterBar from "@/components/filters/filter-bar";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedFg, flexGap2, mutedXsMt, spinner } from "@/lib/ui-constants";
 
 const EXPORT_COLUMNS = [
   "ward",
@@ -346,7 +347,7 @@ export default function BedMapView({ canManage, accessLevel = "full" }: { canMan
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <MapPin className="h-5 w-5 text-[var(--color-primary)]" /> Bed Map
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Live ward layout. Updates automatically when a bed changes status.
               {managing && " Managing wards, beds and daily rates."}
             </p>
@@ -369,7 +370,7 @@ export default function BedMapView({ canManage, accessLevel = "full" }: { canMan
               </button>
             )}
             <button onClick={() => void refreshAll()} className={btnPrimary} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />}
+              {loading ? <Loader2 className={spinner} /> : <RefreshCw size={14} />}
               Refresh
             </button>
             <ImportExportMenu
@@ -461,7 +462,7 @@ export default function BedMapView({ canManage, accessLevel = "full" }: { canMan
                       )}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className={flexGap2}>
                     {managing && !viewOnly && (
                       <>
                         <span
@@ -482,7 +483,7 @@ export default function BedMapView({ canManage, accessLevel = "full" }: { canMan
                         </button>
                       </>
                     )}
-                    <Users size={16} className="text-[var(--color-muted-fg)]" />
+                    <Users size={16} className={mutedFg} />
                   </div>
                 </div>
 

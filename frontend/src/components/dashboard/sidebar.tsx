@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, X } from "lucide-react";
 import { navForRole, type NavItem, type ModuleAccess } from "@/lib/nav";
 import type { StaffRole } from "@/lib/auth";
+import { mutedFg, flexGap2 } from "@/lib/ui-constants";
 import UnreadMailBadge from "@/components/dashboard/unread-mail-badge";
 import { SkyCareMark } from "@/components/landing/skycare-logo";
 
@@ -26,7 +27,7 @@ export default function Sidebar({
   return (
     <aside className="flex h-full w-64 flex-col border-r border-[var(--color-border)] bg-white">
       <div className="flex h-16 items-center justify-between border-b border-[var(--color-border)] px-4">
-        <Link href="/app" className="flex items-center gap-2" onClick={onClose}>
+        <Link href="/app" className={flexGap2} onClick={onClose}>
           <SkyCareMark size={36} rounded="rounded-xl" />
           <span className="text-lg font-bold">
             <span className="text-slate-900">Sky</span><span className="text-sky-600">Care</span>
@@ -158,7 +159,7 @@ function NavRow({
                     : "text-[var(--color-foreground)] hover:bg-slate-50"
                 }`}
               >
-                <ChildIcon size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
+                <ChildIcon size={16} aria-hidden="true" className={mutedFg} />
                 <span className="flex-1">{child.label}</span>
               </Link>
             );

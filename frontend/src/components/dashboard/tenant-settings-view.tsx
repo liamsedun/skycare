@@ -20,6 +20,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { DEFAULT_TENANT_SETTINGS, PREFIX_PATTERN } from "@/lib/tenant-settings";
+import { mutedXs, mutedFg, errorBanner, cardTitle, mutedSm, flexGap2, fgMedium, mutedXsMt1, pageTitle, emptyState } from "@/lib/ui-constants";
 import BankAccountsSection from "@/components/dashboard/bank-accounts-section";
 import WebsiteDoctorsSection from "@/components/dashboard/website-doctors-section";
 import WebsiteCmsSection from "@/components/dashboard/website-cms-section";
@@ -217,11 +218,11 @@ export default function TenantSettingsView() {
   }
 
   if (loading) {
-    return <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading settings…</p>;
+    return <p className={emptyState}>Loading settings…</p>;
   }
   if (!form) {
     return (
-      <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+      <p role="alert" className={errorBanner}>
         Could not load settings.
       </p>
     );
@@ -241,12 +242,12 @@ export default function TenantSettingsView() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Settings</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Hospital profile, branding and number prefixes.</p>
+        <h1 className={pageTitle}>Settings</h1>
+        <p className={mutedSm}>Hospital profile, branding and number prefixes.</p>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -277,7 +278,7 @@ export default function TenantSettingsView() {
 
       <div className="flex items-center gap-2 border-b border-[var(--color-border)] pb-2">
         <ActiveIcon size={16} aria-hidden="true" className="text-[var(--color-primary)]" />
-        <span className="text-sm font-semibold text-[var(--color-foreground)]">{activeSectionDef.label}</span>
+        <span className={cardTitle}>{activeSectionDef.label}</span>
       </div>
 
       {activeSection === "profile" && (
@@ -331,7 +332,7 @@ export default function TenantSettingsView() {
                   </span>
                 )}
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
+                  <div className={flexGap2}>
                     <button
                       type="button"
                       onClick={() => logoRef.current?.click()}
@@ -360,11 +361,11 @@ export default function TenantSettingsView() {
                   />
                 </div>
               </div>
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Shown next to your hospital name in the portals. Max 2 MB.</p>
+              <p className={mutedXsMt1}>Shown next to your hospital name in the portals. Max 2 MB.</p>
             </div>
             <div>
               <label className={labelCls} htmlFor="s-color">Brand color</label>
-              <div className="flex items-center gap-2">
+              <div className={flexGap2}>
                 <input
                   id="s-color"
                   type="color"
@@ -374,7 +375,7 @@ export default function TenantSettingsView() {
                 />
                 <input className={inputCls} value={form.brand_color} onChange={(e) => set("brand_color", e.target.value)} />
               </div>
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Used on your landing page and buttons.</p>
+              <p className={mutedXsMt1}>Used on your landing page and buttons.</p>
             </div>
             <div>
               <label className={labelCls} htmlFor="s-currency">Currency</label>
@@ -406,7 +407,7 @@ export default function TenantSettingsView() {
                   value={form.settings[key] ?? ""}
                   onChange={(e) => setSetting(key, e.target.value)}
                 />
-                <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXsMt1}>
                   e.g. {form.settings[key] || "PT-"}0001 — the hyphen is added automatically if missing.
                 </p>
               </div>
@@ -433,7 +434,7 @@ export default function TenantSettingsView() {
                 className="focus-ring mt-0.5 h-4 w-4 accent-[var(--color-primary)]"
               />
               <span className="text-sm">
-                <span className="font-medium text-[var(--color-foreground)]">Auto-fill lab results</span>
+                <span className={fgMedium}>Auto-fill lab results</span>
                 <span className="block text-xs text-[var(--color-muted-fg)]">Pre-fill test result values from the previous result.</span>
               </span>
             </label>
@@ -444,8 +445,8 @@ export default function TenantSettingsView() {
       {activeSection === "payments" && (
         <section className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
           <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-5 py-3">
-            <CreditCard size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Online payments (Paystack)</h2>
+            <CreditCard size={16} aria-hidden="true" className={mutedFg} />
+            <h2 className={cardTitle}>Online payments (Paystack)</h2>
             {form.settings.paystack?.configured ? (
               <span className="ml-auto rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                 Active
@@ -457,7 +458,7 @@ export default function TenantSettingsView() {
             )}
           </div>
           <div className="space-y-4 p-5">
-            <p className="text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXs}>
               Enter your Paystack API keys so patients can pay invoices online with a card. When keys are active, patients
               see a <strong>Pay online</strong> option on their billing page. Leave a field blank to keep the current
               value; save a blank field to remove that key. Keys are stored per hospital and never shown again after
@@ -515,7 +516,7 @@ export default function TenantSettingsView() {
                 spellCheck={false}
               />
             </div>
-            <p className="text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXs}>
               In Paystack, set the webhook URL to <code className="rounded bg-slate-100 px-1 py-0.5 font-mono">https://your-hospital-domain/api/payments/webhook</code>{" "}
               and paste the webhook signature secret above so payments are confirmed automatically.
             </p>

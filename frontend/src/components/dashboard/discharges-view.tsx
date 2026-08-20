@@ -9,6 +9,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedFg, mutedXsMt, flexWrapGap2, spinner, rowStart } from "@/lib/ui-constants";
 
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
@@ -187,13 +188,13 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <FileText className="h-5 w-5 text-[var(--color-primary)]" /> Discharges
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Discharge summaries with one-click PDF printout.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <button onClick={() => void load()} className={btnGhost} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />} Refresh
+              {loading ? <Loader2 className={spinner} /> : <RefreshCw size={14} />} Refresh
             </button>
             <ImportExportMenu
               entityLabel="Discharges"
@@ -229,7 +230,7 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
           <p className="py-12 text-center text-sm text-[var(--color-muted-fg)]">No discharges yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className={rowStart}>
               <thead>
                 <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                   <th className="px-4 py-3 font-semibold">Patient</th>
@@ -272,12 +273,12 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
                             {billing === d.admission_id ? "Posting…" : "Post bill"}
                           </button>
                         ) : (
-                          <span className="text-[var(--color-muted-fg)]">—</span>
+                          <span className={mutedFg}>—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => void openPdf(d.admission_id)} className={btnGhost} disabled={pdfing === d.admission_id} title="Print discharge summary">
-                          {pdfing === d.admission_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download size={14} />}
+                          {pdfing === d.admission_id ? <Loader2 className={spinner} /> : <Download size={14} />}
                         </button>
                       </td>
                     </tr>

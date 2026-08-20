@@ -5,6 +5,7 @@ import { ChevronDown, FileText, Loader2, Plus } from "lucide-react";
 import { formatDate } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
+import { errorBanner, mutedSm, divideBorder, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -135,8 +136,8 @@ export default function ReportsView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Medical reports</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Narrative reports written by doctors, per patient.</p>
+          <h1 className={pageTitle}>Medical reports</h1>
+          <p className={mutedSm}>Narrative reports written by doctors, per patient.</p>
         </div>
         {canWrite && (
           <button
@@ -150,7 +151,7 @@ export default function ReportsView() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -198,7 +199,7 @@ export default function ReportsView() {
               <h2 className="border-b border-[var(--color-border)] bg-slate-50 px-4 py-2.5 text-sm font-semibold text-[var(--color-foreground)]">
                 {formatDate(g.date)} · {g.reports.length} report(s)
               </h2>
-              <ul className="divide-y divide-[var(--color-border)]">
+              <ul className={divideBorder}>
                 {g.reports.map((r) => (
                   <li key={r.id}>
                     <details className="group">

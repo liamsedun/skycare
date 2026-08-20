@@ -10,6 +10,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, mutedFg, mutedXsMt, flexWrapGap2, fgSemibold, spinner, rowStart } from "@/lib/ui-constants";
 
 const EXPORT_COLUMNS = [
   "patient",
@@ -257,13 +258,13 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <Stethoscope className="h-5 w-5 text-[var(--color-primary)]" /> Ward Admissions
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Admit, transfer and discharge patients across wards.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <button onClick={() => void load()} className={btnGhost} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />}
+              {loading ? <Loader2 className={spinner} /> : <RefreshCw size={14} />}
               Refresh
             </button>
             {!viewOnly && (
@@ -322,7 +323,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className={rowStart}>
               <thead>
                 <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                   <th className="px-4 py-3 font-semibold">Patient</th>
@@ -337,12 +338,12 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
                 {filtered.map((a) => (
                   <tr key={a.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-slate-50/60">
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-[var(--color-foreground)]">{patientName(a)}</p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">{patientNo(a)}</p>
+                      <p className={fgSemibold}>{patientName(a)}</p>
+                      <p className={mutedXs}>{patientNo(a)}</p>
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {a.beds?.ward?.name ?? "—"}
-                      <span className="text-[var(--color-muted-fg)]"> · Bed {a.beds?.bed_number ?? "—"}</span>
+                      <span className={mutedFg}> · Bed {a.beds?.bed_number ?? "—"}</span>
                     </td>
                     <td className="px-4 py-3 text-xs">{a.diagnosis_at_admission ?? "—"}</td>
                     <td className="px-4 py-3 text-xs">
@@ -421,7 +422,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setShowAdmit(false)} className={btnGhost} disabled={busy}>Cancel</button>
               <button onClick={() => void submitAdmit()} className={btnPrimary} disabled={busy || !form.patientId || !form.bedId}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={14} />} Admit
+                {busy ? <Loader2 className={spinner} /> : <Plus size={14} />} Admit
               </button>
             </div>
           </div>
@@ -459,7 +460,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setTransferFor(null)} className={btnGhost} disabled={busy}>Cancel</button>
               <button onClick={() => void submitTransfer()} className={btnPrimary} disabled={busy || !toBedId}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft size={14} />} Transfer
+                {busy ? <Loader2 className={spinner} /> : <ArrowRightLeft size={14} />} Transfer
               </button>
             </div>
           </div>
@@ -493,7 +494,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setDischargeFor(null)} className={btnGhost} disabled={busy}>Cancel</button>
               <button onClick={() => void submitDischarge()} className={btnPrimary} disabled={busy || !summary.trim()}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <DoorOpen size={14} />} Discharge
+                {busy ? <Loader2 className={spinner} /> : <DoorOpen size={14} />} Discharge
               </button>
             </div>
           </div>

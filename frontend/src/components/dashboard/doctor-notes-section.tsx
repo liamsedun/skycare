@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, errorBanner, flexBetween, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, FileText, Loader2, PenLine, Plus, ShieldAlert, Trash2 } from "lucide-react";
 
@@ -115,7 +116,7 @@ function timeAgo(iso: string): string {
 
 function ErrorNote({ error }: { error: string }) {
   return (
-    <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+    <p role="alert" className={errorBanner}>
       {error}
     </p>
   );
@@ -132,18 +133,18 @@ function Modal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div className="my-4 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+            className={ghostIconBtn}
             aria-label="Close"
           >
             ✕
@@ -342,7 +343,7 @@ export default function DoctorNotesSection({ patientId }: { patientId: string })
                           </span>
                         )}
                       </p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXs}>
                         {note.users?.full_name ?? "Doctor"} · {timeAgo(note.created_at)}
                         {note.next_visit_date ? ` · Next visit: ${fmtDate(note.next_visit_date)}` : ""}
                       </p>
@@ -424,7 +425,7 @@ export default function DoctorNotesSection({ patientId }: { patientId: string })
                       </div>
                     )}
                     {note.next_visit_reason && (
-                      <p className="text-xs text-[var(--color-muted-fg)]">Next visit reason: {note.next_visit_reason}</p>
+                      <p className={mutedXs}>Next visit reason: {note.next_visit_reason}</p>
                     )}
                   </div>
                 )}

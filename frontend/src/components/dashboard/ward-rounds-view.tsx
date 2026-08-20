@@ -8,6 +8,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, cardTitle, mutedXsMt, spinner } from "@/lib/ui-constants";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -194,13 +195,13 @@ export default function WardRoundsView({ accessLevel = "full", myRole }: { acces
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <ClipboardList className="h-5 w-5 text-[var(--color-primary)]" /> Ward Rounds
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Clinical observations and notes recorded during ward rounds.
             </p>
           </div>
           <div className="flex gap-2">
             <button onClick={() => void load()} className={btnGhost} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={14} />} Refresh
+              {loading ? <Loader2 className={spinner} /> : <RefreshCw size={14} />} Refresh
             </button>
             {!viewOnly && (
               <button onClick={openAdd} className={btnPrimary}><Plus size={14} /> New round entry</button>
@@ -243,10 +244,10 @@ export default function WardRoundsView({ accessLevel = "full", myRole }: { acces
           {visible.map((r) => (
             <div key={r.id} className="rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                <p className={cardTitle}>
                   {patientOf(r)} <span className="font-normal text-[var(--color-muted-fg)]">· Bed {bedOf(r)}</span>
                 </p>
-                <p className="text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXs}>
                   {new Date(r.round_time).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
@@ -300,7 +301,7 @@ export default function WardRoundsView({ accessLevel = "full", myRole }: { acces
             <div className="mt-5 flex justify-end gap-2">
               <button onClick={() => setShowAdd(false)} className={btnGhost} disabled={busy}>Cancel</button>
               <button onClick={() => void submit()} className={btnPrimary} disabled={busy || !admissionId || !notes.trim()}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={14} />} Save entry
+                {busy ? <Loader2 className={spinner} /> : <Plus size={14} />} Save entry
               </button>
             </div>
           </div>

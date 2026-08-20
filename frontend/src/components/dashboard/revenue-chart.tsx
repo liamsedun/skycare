@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { ngn } from "@/lib/auth";
+import { emptyState } from "@/lib/ui-constants";
 
 export interface RevenuePoint {
   month: string;
@@ -19,7 +20,7 @@ export interface RevenuePoint {
 export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
   if (data.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">
+      <p className={emptyState}>
         No revenue data yet.
       </p>
     );

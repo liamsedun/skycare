@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, flexGap2, spinner } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import { Globe, Loader2, Plus, Star, Trash2 } from "lucide-react";
 
@@ -132,7 +133,7 @@ export default function TenantDomainsSection() {
           disabled={busy || !value.trim()}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-50"
         >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          {busy ? <Loader2 className={spinner} /> : <Plus className="h-4 w-4" />}
           Add
         </button>
       </form>
@@ -145,7 +146,7 @@ export default function TenantDomainsSection() {
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-8 text-sm text-[var(--color-muted-fg)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          <Loader2 className={spinner} /> Loading…
         </div>
       ) : domains.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] py-10 text-[var(--color-muted-fg)]">
@@ -163,7 +164,7 @@ export default function TenantDomainsSection() {
                 <Globe className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
                     {d.domain}
                   </p>
@@ -177,7 +178,7 @@ export default function TenantDomainsSection() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXs}>
                   Added {new Date(d.created_at).toLocaleDateString()}
                   {d.ssl_status ? ` · SSL ${d.ssl_status}` : ""}
                 </p>

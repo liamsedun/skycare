@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { ngn } from "@/lib/auth";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXsMt, flexWrapGap2 } from "@/lib/ui-constants";
 
 // ============================================================================
 // Lab Dashboard — income, patients served and request metrics for a month
@@ -102,11 +103,11 @@ export default function LabDashboardView({ accessLevel = "full", myRole }: { acc
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <BarChart3 className="h-5 w-5 text-[var(--color-primary)]" /> Lab Dashboard
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Monthly income from lab services, patients attended and request metrics.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
               <CalendarRange size={13} /> From
               <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inputCls} />

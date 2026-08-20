@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, CalendarPlus, Check, Clock, Plus, X } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, errorBanner, cardTitle, flexBetween, mutedSm, flexGap2, mutedXsMt, fgMedium, mutedXsMt1, sectionTitle, pageTitle, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import {
   AppFab,
@@ -180,10 +181,10 @@ export default function PatientAppointments() {
         <div className="space-y-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+              <h1 className={pageTitle}>
                 Appointments
               </h1>
-              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+              <p className={mutedSm}>
                 Your appointments and those of your family members.
               </p>
             </div>
@@ -199,18 +200,18 @@ export default function PatientAppointments() {
           <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            <p role="alert" className={errorBanner}>
               {error}
             </p>
           )}
 
           {loading ? (
-            <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading appointments…</p>
+            <p className={emptyState}>Loading appointments…</p>
           ) : visible.length === 0 ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
               <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No appointments yet.</p>
-              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Book your first appointment with the button above.</p>
+              <p className={sectionTitle}>No appointments yet.</p>
+              <p className={mutedSm}>Book your first appointment with the button above.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -218,7 +219,7 @@ export default function PatientAppointments() {
                 <div key={a.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="font-medium text-[var(--color-foreground)]">
+                      <p className={fgMedium}>
                         {new Date(`${a.scheduled_date}T${a.start_time || "00:00"}`).toLocaleDateString("en-NG", {
                           weekday: "long",
                           day: "numeric",
@@ -227,13 +228,13 @@ export default function PatientAppointments() {
                         })}{" "}
                         · <span className="font-semibold">{a.start_time}</span>
                       </p>
-                      <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXsMt}>
                         {a.patients ? `${a.patients.first_name} ${a.patients.last_name}` : ""} ·{" "}
                         {a.type.replace(/_/g, " ")}
                         {a.users?.full_name ? ` · Dr. ${a.users.full_name}` : ""}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className={flexGap2}>
                       <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass(a.status)}`}>
                         {statusLabel(a.status)}
                       </span>
@@ -292,10 +293,10 @@ export default function PatientAppointments() {
           ) : mobileAppts(visible).length === 0 ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <CalendarPlus size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+              <p className={sectionTitle}>
                 No {mobileTab} appointments.
               </p>
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+              <p className={mutedXsMt1}>
                 {mobileTab === "upcoming" ? "Book your next visit with the + button." : "Completed and cancelled visits will show here."}
               </p>
             </div>
@@ -395,10 +396,10 @@ export default function PatientAppointments() {
             <X size={22} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--color-foreground)]">
+            <p className={cardTitle}>
               {cancelTarget?.users?.full_name ? `Dr. ${cancelTarget.users.full_name}` : "Your appointment"}
             </p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               {cancelTarget?.scheduled_date
                 ? `Cancel the visit on ${new Date(`${cancelTarget.scheduled_date}T${cancelTarget.start_time || "00:00"}`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} at ${cancelTarget?.start_time ?? ""}?`
                 : "Cancel this appointment?"}
@@ -444,15 +445,15 @@ function BookModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label="Book Appointment"
     >
       <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">Book Appointment</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             ✕
           </button>
         </div>
@@ -504,11 +505,11 @@ function BookModal({
             <label className={labelCls} htmlFor="pbm-reason">Reason</label>
             <input id="pbm-reason" name="reason" className={inputCls} placeholder="Why are you visiting?" />
           </div>
-          <p className="text-xs text-[var(--color-muted-fg)]">
+          <p className={mutedXs}>
             Your request will be submitted to the hospital — the reception team will confirm it.
           </p>
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            <p role="alert" className={errorBanner}>
               {error}
             </p>
           )}

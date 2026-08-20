@@ -20,6 +20,7 @@ import type { LucideIcon } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { mutedXs, errorBanner, flexBetween, mutedSm, fgMedium, fgSemibold, sectionTitle, pageTitle, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -509,10 +510,10 @@ export default function RosterView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className={pageTitle}>
             Duty Roster
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             Schedule staff for duty across the week. Notifications + Internal Mail are sent automatically.
           </p>
         </div>
@@ -547,7 +548,7 @@ export default function RosterView() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -616,7 +617,7 @@ export default function RosterView() {
       ) : filtered.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <CalendarRange size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             No shifts scheduled in this range.
           </p>
           {isAdmin && (
@@ -669,7 +670,7 @@ export default function RosterView() {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-[var(--color-foreground)]">{name}</p>
-                    <p className="text-xs text-[var(--color-muted-fg)]">{first.staff?.department ?? "—"}</p>
+                    <p className={mutedXs}>{first.staff?.department ?? "—"}</p>
                   </div>
                 </div>
                 <div className="space-y-1.5">
@@ -714,17 +715,17 @@ export default function RosterView() {
       {/* Schedule Duty modal */}
       {showSchedule && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label="Schedule duty"
         >
           <form onSubmit={saveSchedule} className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--color-foreground)]">
                 <CalendarClock size={18} className="text-[var(--color-primary)]" /> Schedule Duty
               </h2>
-              <button type="button" onClick={() => setShowSchedule(false)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+              <button type="button" onClick={() => setShowSchedule(false)} className={ghostIconBtn} aria-label="Close">
                 <X size={18} />
               </button>
             </div>
@@ -803,7 +804,7 @@ export default function RosterView() {
               />
               <span>
                 Notify staff (in-app + push + Internal Mail):{" "}
-                <span className="font-medium text-[var(--color-foreground)]">
+                <span className={fgMedium}>
                   &quot;DATE: {form.fromDate && form.toDate ? (formDays > 1 ? `${form.fromDate} – ${form.toDate}` : form.fromDate) : "…"}, TIME: FROM{" "}
                   {fmtTime(form.fromTime)} UNTIL {fmtTime(form.untilTime)}&quot;
                 </span>
@@ -813,7 +814,7 @@ export default function RosterView() {
             <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
               {totalShifts > 0 ? (
                 <>
-                  <span className="font-semibold text-[var(--color-foreground)]">{totalShifts} shift(s)</span> across{" "}
+                  <span className={fgSemibold}>{totalShifts} shift(s)</span> across{" "}
                   {formDays} day(s) for {form.staffIds.length} staff member(s)
                 </>
               ) : (
@@ -845,21 +846,21 @@ export default function RosterView() {
       {/* Edit shift modal */}
       {editShift && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label="Edit shift"
         >
           <form onSubmit={saveEdit} className="max-h-[92vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--color-foreground)]">
                 <CalendarClock size={18} className="text-[var(--color-primary)]" /> Edit Shift
               </h2>
-              <button type="button" onClick={() => setEditShift(null)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+              <button type="button" onClick={() => setEditShift(null)} className={ghostIconBtn} aria-label="Close">
                 <X size={18} />
               </button>
             </div>
-            <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">{shiftName(editShift)}</p>
+            <p className={sectionTitle}>{shiftName(editShift)}</p>
             <div className="mt-3 space-y-3">
               <div>
                 <label className={labelCls} htmlFor="es-date">Date</label>

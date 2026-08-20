@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowLeft, Printer, ReceiptText } from "lucide-react";
 import TenantLetterhead from "@/components/print/tenant-letterhead";
 import { useTenantBranding } from "@/lib/use-tenant-branding";
+import { mutedXs, mutedFg, mutedSm, divideBorder, mutedXsMt, fgSemibold, sectionTitle, pageTitle, emptyState } from "@/lib/ui-constants";
 
 interface PrintItem {
   id: string;
@@ -124,8 +125,8 @@ export default function InvoicePrintView({ params }: { params: Promise<{ id: str
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Invoice</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <h1 className={pageTitle}>Invoice</h1>
+          <p className={mutedSm}>
             {kind === "pharmacy" ? "Pharmacy sale bill" : "Bill"} · print it or save as PDF from the print dialog.
           </p>
         </div>
@@ -146,11 +147,11 @@ export default function InvoicePrintView({ params }: { params: Promise<{ id: str
       </Link>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading invoice…</p>
+        <p className={emptyState}>Loading invoice…</p>
       ) : !invoice ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">{error ?? "Invoice not found."}</p>
+          <p className={sectionTitle}>{error ?? "Invoice not found."}</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
@@ -163,14 +164,14 @@ export default function InvoicePrintView({ params }: { params: Promise<{ id: str
               <div>
                 <p className="text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">{branding?.name ?? "SkyCare HMS"}</p>
                 <p className="font-mono text-lg font-bold text-[var(--color-foreground)]">{invoice.invoice_number}</p>
-                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Issued: {fmtDate(invoice.issue_date)}</p>
+                <p className={mutedXsMt}>Issued: {fmtDate(invoice.issue_date)}</p>
               </div>
               <div className="text-right">
                 <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass}`}>
                   {invoice.status.replace(/_/g, " ")}
                 </span>
                 <p className="mt-1.5 text-sm font-medium text-[var(--color-foreground)]">{invoice.patient_name}</p>
-                {invoice.patient_number && <p className="text-xs text-[var(--color-muted-fg)]">Patient № {invoice.patient_number}</p>}
+                {invoice.patient_number && <p className={mutedXs}>Patient № {invoice.patient_number}</p>}
               </div>
             </div>
           </div>
@@ -185,7 +186,7 @@ export default function InvoicePrintView({ params }: { params: Promise<{ id: str
                   <th className="pb-2 text-right font-medium">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className={divideBorder}>
                 {invoice.items.map((item) => (
                   <tr key={item.id}>
                     <td className="py-2.5 text-[var(--color-foreground)]">{item.description}</td>
@@ -199,9 +200,9 @@ export default function InvoicePrintView({ params }: { params: Promise<{ id: str
 
             <div className="mt-4 flex justify-end text-right text-sm">
               <div className="space-y-1">
-                <p className="text-[var(--color-muted-fg)]">Subtotal: {ngn(Number(invoice.subtotal))}</p>
-                {invoice.discount_amount ? <p className="text-[var(--color-muted-fg)]">Discount: −{ngn(Number(invoice.discount_amount))}</p> : null}
-                {invoice.tax_amount ? <p className="text-[var(--color-muted-fg)]">Tax: {ngn(Number(invoice.tax_amount))}</p> : null}
+                <p className={mutedFg}>Subtotal: {ngn(Number(invoice.subtotal))}</p>
+                {invoice.discount_amount ? <p className={mutedFg}>Discount: −{ngn(Number(invoice.discount_amount))}</p> : null}
+                {invoice.tax_amount ? <p className={mutedFg}>Tax: {ngn(Number(invoice.tax_amount))}</p> : null}
                 <p className="pt-1 text-base font-bold text-[var(--color-foreground)]">Total: {ngn(Number(invoice.total_amount))}</p>
                 <p className="text-emerald-600">Paid: {ngn(Number(invoice.paid_amount))}</p>
                 <p className="text-amber-600">Balance: {ngn(Number(invoice.total_amount) - Number(invoice.paid_amount))}</p>
@@ -216,11 +217,11 @@ export default function InvoicePrintView({ params }: { params: Promise<{ id: str
                 <div className="mt-2 space-y-1.5">
                   {invoice.payments.map((p) => (
                     <div key={p.id} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2.5 text-sm">
-                      <span className="text-[var(--color-muted-fg)]">
+                      <span className={mutedFg}>
                         {p.reference ?? "—"} · {p.payment_method?.replace(/_/g, " ") ?? "—"}
                         {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleString("en-NG")}` : ""}
                       </span>
-                      <span className="font-semibold text-[var(--color-foreground)]">{ngn(Number(p.amount))}</span>
+                      <span className={fgSemibold}>{ngn(Number(p.amount))}</span>
                     </div>
                   ))}
                 </div>

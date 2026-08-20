@@ -6,6 +6,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, mutedSm, divideBorder, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -170,7 +171,7 @@ export default function HrAttendanceView() {
           onImport={importAttendance}
           onImported={() => load()}
         />
-        <span className="text-sm text-[var(--color-muted-fg)]">{visibleRows.length} records</span>
+        <span className={mutedSmPlain}>{visibleRows.length} records</span>
       </div>
 
       <div className="rounded-2xl border border-[var(--color-border)] bg-white p-5">
@@ -178,23 +179,23 @@ export default function HrAttendanceView() {
           <div>
             <div className="flex items-center gap-2 text-lg font-semibold"><Clock className="h-5 w-5 text-[var(--color-primary)]" /> My attendance</div>
             {myRow ? (
-              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+              <p className={mutedSm}>
                 Checked in at {fmtTime(myRow.check_in)} · checked out at {fmtTime(myRow.check_out)} ·{" "}
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CLASS[myRow.status] ?? ""}`}>{myRow.status}</span>
               </p>
             ) : (
-              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Not clocked in today.</p>
+              <p className={mutedSm}>Not clocked in today.</p>
             )}
           </div>
           <div className="flex gap-2">
             {(!myRow || !myRow.check_in) && (
               <button className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50" onClick={() => clock("in")} disabled={clocking}>
-                {clocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />} Clock in
+                {clocking ? <Loader2 className={spinner} /> : <LogIn className="h-4 w-4" />} Clock in
               </button>
             )}
             {myRow?.check_in && !myRow.check_out && (
               <button className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50" onClick={() => clock("out")} disabled={clocking}>
-                {clocking ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />} Clock out
+                {clocking ? <Loader2 className={spinner} /> : <LogOut className="h-4 w-4" />} Clock out
               </button>
             )}
           </div>
@@ -204,7 +205,7 @@ export default function HrAttendanceView() {
       {error && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead className="border-b border-[var(--color-border)] text-xs uppercase text-[var(--color-muted-fg)]">
             <tr>
               <th className="px-4 py-3">Staff</th>
@@ -215,12 +216,12 @@ export default function HrAttendanceView() {
               <th className="px-4 py-3">Notes</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {visibleRows.map((r) => (
               <tr key={r.id}>
                 <td className="px-4 py-3">
                   <div className="font-medium">{r.users?.full_name}</div>
-                  <div className="text-xs text-[var(--color-muted-fg)]">{r.users?.role}</div>
+                  <div className={mutedXs}>{r.users?.role}</div>
                 </td>
                 <td className="px-4 py-3">{r.staff?.department ?? "—"}</td>
                 <td className="px-4 py-3">

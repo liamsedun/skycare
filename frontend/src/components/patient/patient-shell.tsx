@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
+import { flexGap2 } from "@/lib/ui-constants";
 import { PatientMobileNav } from "@/components/dashboard/mobile-nav";
 import NotificationsBell from "@/components/notifications-bell";
 import PatientUserMenu from "@/components/patient/patient-user-menu";
@@ -54,7 +55,7 @@ export default function PatientShell({
   );
 
   const brand = (
-    <Link href="/patient" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
+    <Link href="/patient" className={flexGap2} onClick={() => setMobileOpen(false)}>
       <SkyCareMark size={36} rounded="rounded-xl" />
       <span className="text-lg font-bold">
         <span className="text-slate-900">Sky</span><span className="text-sky-600">Care</span>

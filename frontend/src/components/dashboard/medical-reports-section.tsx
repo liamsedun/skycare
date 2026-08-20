@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, FileText, Loader2, Plus, Printer } from "lucide-react";
 import { formatDate } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
+import { cardTitle } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -188,7 +189,7 @@ export default function MedicalReportsSection({
       )}
 
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-[var(--color-foreground)]">
+        <p className={cardTitle}>
           Medical Reports <span className="text-xs font-normal text-[var(--color-muted-fg)]">({reports.length})</span>
         </p>
         {canWrite && (

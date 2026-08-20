@@ -7,6 +7,7 @@ import { ChevronDown, Download, LogOut, SlidersHorizontal, UserRound } from "luc
 import { getSupabase } from "@/lib/supabase/client";
 import { initials } from "@/lib/auth";
 import { tenantHomeUrl } from "@/lib/tenant-link";
+import { mutedFg, mutedXsMt } from "@/lib/ui-constants";
 import ThemeToggle from "@/components/theme-toggle";
 
 const navigateCls =
@@ -89,20 +90,20 @@ export default function PatientUserMenu({
         <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-xl)]">
           <div className="border-b border-[var(--color-border)] px-4 py-3">
             <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{userName}</p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Patient</p>
+            <p className={mutedXsMt}>Patient</p>
           </div>
 
           <div className="space-y-0.5 p-2">
             <Link href="/patient/profile" onClick={() => setOpen(false)} className={navigateCls}>
-              <UserRound size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <UserRound size={16} className={mutedFg} aria-hidden="true" />
               Profile
             </Link>
             <Link href="/patient/account" onClick={() => setOpen(false)} className={navigateCls}>
-              <SlidersHorizontal size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <SlidersHorizontal size={16} className={mutedFg} aria-hidden="true" />
               Account
             </Link>
             <Link href="/patient/download" onClick={() => setOpen(false)} className={navigateCls}>
-              <Download size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <Download size={16} className={mutedFg} aria-hidden="true" />
               Download SkyCare app
             </Link>
             <div className="flex items-center justify-between gap-3 px-3 py-1.5">

@@ -22,6 +22,7 @@ import DateRangeBar from "@/components/filters/date-range-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, mutedFg, errorBanner, btnBase, cardTitle, flexGap2, flexWrapGap2, fgMedium, mutedXsMt1, fgSemibold, rowStart } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -473,7 +474,7 @@ export default function BankingView() {
             Every receipt lands in Cash or a bank; every payment leaves from one. Banks added in Settings appear here automatically.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <ImportExportMenu
             entityLabel="Banking Ledger"
             exportCsv={exportCsv}
@@ -502,7 +503,7 @@ export default function BankingView() {
       </header>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -549,9 +550,9 @@ export default function BankingView() {
                     aria-label={`Filter transactions for ${acc.label}`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        {acc.account_id ? <Landmark size={16} className="text-[var(--color-muted-fg)]" /> : <Banknote size={16} className="text-[var(--color-muted-fg)]" />}
-                        <span className="text-sm font-semibold text-[var(--color-foreground)]">{acc.label}</span>
+                      <div className={flexGap2}>
+                        {acc.account_id ? <Landmark size={16} className={mutedFg} /> : <Banknote size={16} className={mutedFg} />}
+                        <span className={cardTitle}>{acc.label}</span>
                       </div>
                       {!acc.is_active && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-500">Inactive</span>}
                     </div>
@@ -559,7 +560,7 @@ export default function BankingView() {
                       {acc.account_name ? `${acc.account_name} · ••${acc.account_number?.slice(-4) ?? ""}` : "Hospital cash drawer"}
                     </p>
                     <p className="mt-3 text-2xl font-bold text-[var(--color-foreground)]">{naira(acc.balance)}</p>
-                    <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                    <p className={mutedXsMt1}>
                       <span className="font-semibold text-emerald-700">+{naira(acc.month_in)}</span>
                       <span className="mx-1.5">·</span>
                       <span className="font-semibold text-rose-700">−{naira(acc.month_out)}</span>
@@ -619,7 +620,7 @@ export default function BankingView() {
 
             {selectedAccount && accountFilter !== "all" && (
               <p className="mb-3 text-xs font-medium text-[var(--color-muted-fg)]">
-                Showing <span className="font-semibold text-[var(--color-foreground)]">{selectedAccount.label}</span> transactions only.
+                Showing <span className={fgSemibold}>{selectedAccount.label}</span> transactions only.
               </p>
             )}
 
@@ -631,11 +632,11 @@ export default function BankingView() {
               ) : visibleLedger.length === 0 ? (
                 <p className="py-12 text-center text-sm text-[var(--color-muted-fg)]">No transactions match these filters.</p>
               ) : (
-                <table className="w-full text-left text-sm">
+                <table className={rowStart}>
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                      <th className="px-4 py-2.5 font-semibold">Date</th>
-                      <th className="px-4 py-2.5 font-semibold">Details</th>
+                      <th className={btnBase}>Date</th>
+                      <th className={btnBase}>Details</th>
                       <th className="hidden px-4 py-2.5 font-semibold sm:table-cell">Account</th>
                       <th className="hidden px-4 py-2.5 font-semibold sm:table-cell">Method</th>
                       <th className="px-4 py-2.5 text-right font-semibold">Amount</th>
@@ -649,7 +650,7 @@ export default function BankingView() {
                           {new Date(item.recorded_at).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
                         </td>
                         <td className="px-4 py-2.5">
-                          <p className="font-medium text-[var(--color-foreground)]">{SOURCE_LABELS[item.source] ?? item.source}</p>
+                          <p className={fgMedium}>{SOURCE_LABELS[item.source] ?? item.source}</p>
                           <p className="truncate text-xs text-[var(--color-muted-fg)]">
                             {[item.source_ref, item.reference, item.notes].filter(Boolean).join(" · ") || "—"}
                           </p>
@@ -686,7 +687,7 @@ export default function BankingView() {
 
               {pages > 1 && (
                 <div className="flex items-center justify-between border-t border-[var(--color-border)] px-4 py-2.5">
-                  <p className="text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXs}>
                     Page {page} of {pages} · {total.toLocaleString()} transactions
                   </p>
                   <div className="flex items-center gap-1">
@@ -772,7 +773,7 @@ export default function BankingView() {
               </div>
 
               {error && (
-                <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+                <p role="alert" className={errorBanner}>
                   {error}
                 </p>
               )}
@@ -844,7 +845,7 @@ export default function BankingView() {
               </div>
 
               {error && (
-                <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+                <p role="alert" className={errorBanner}>
                   {error}
                 </p>
               )}
@@ -873,7 +874,7 @@ export default function BankingView() {
             </div>
 
             <div className="space-y-4">
-              <p className="text-xs text-[var(--color-muted-fg)]">
+              <p className={mutedXs}>
                 The money this account held before the ledger started. It is added to the balance and statements, but not counted as a period receipt.
                 One opening balance per account — delete it from the transaction list to change it.
               </p>
@@ -891,7 +892,7 @@ export default function BankingView() {
               </div>
 
               {error && (
-                <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+                <p role="alert" className={errorBanner}>
                   {error}
                 </p>
               )}
@@ -919,7 +920,7 @@ export default function BankingView() {
                 <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
                   <CalendarDays size={18} className="text-[var(--color-primary)]" /> Statement — {stmtAccount.label}
                 </h2>
-                <p className="text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXs}>
                   {stmtAccount.account_name ? `${stmtAccount.account_name} · ••${stmtAccount.account_number?.slice(-4) ?? ""}` : "Hospital cash drawer"}
                 </p>
               </div>
@@ -996,7 +997,7 @@ export default function BankingView() {
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">Daily summary</h3>
                   <div className="overflow-x-auto rounded-lg border border-[var(--color-border)]">
-                    <table className="w-full text-left text-sm">
+                    <table className={rowStart}>
                       <thead>
                         <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                           <th className="px-3 py-2 font-semibold">Day</th>
@@ -1028,7 +1029,7 @@ export default function BankingView() {
                 <div>
                   <h3 className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">Entries ({stmt.rows.length})</h3>
                   <div className="max-h-80 overflow-y-auto rounded-lg border border-[var(--color-border)]">
-                    <table className="w-full text-left text-sm">
+                    <table className={rowStart}>
                       <thead className="sticky top-0 bg-white">
                         <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                           <th className="px-3 py-2 font-semibold">Date</th>

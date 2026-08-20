@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2, Megaphone, Trash2 } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
+import { errorBanner, mutedSm, flexWrapGap2, sectionTitle, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -122,10 +123,10 @@ export default function NotificationsView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Notifications</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Updates from your hospital.</p>
+          <h1 className={pageTitle}>Notifications</h1>
+          <p className={mutedSm}>Updates from your hospital.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <DateRangeBar
             from={from}
             to={to}
@@ -184,7 +185,7 @@ export default function NotificationsView() {
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -196,7 +197,7 @@ export default function NotificationsView() {
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Bell size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No notifications.</p>
+          <p className={sectionTitle}>No notifications.</p>
         </div>
       ) : visibleItems.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">

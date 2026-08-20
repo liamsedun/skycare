@@ -1,5 +1,6 @@
 "use client";
 
+import { errorBanner, cardTitle, flexBetween, flexGap2, fgMedium, mutedXsMt1 } from "@/lib/ui-constants";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -355,13 +356,13 @@ export default function OnboardingWizard() {
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {/* Stepper */}
-      <div className="flex items-center gap-2">
+      <div className={flexGap2}>
         {STEPS.map((s, i) => (
           <div key={s.id} className="flex flex-1 items-center gap-2">
             <button
@@ -388,8 +389,8 @@ export default function OnboardingWizard() {
       {/* STEP 0 — PROFILE */}
       {step === 0 && (
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Hospital profile</h2>
-          <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+          <h2 className={cardTitle}>Hospital profile</h2>
+          <p className={mutedXsMt1}>
             Shown across your website footer, receipts and the portals.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -432,8 +433,8 @@ export default function OnboardingWizard() {
       {/* STEP 1 — BRANDING */}
       {step === 1 && (
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Branding & locale</h2>
-          <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Your logo and colours show on the website and patient dashboards.</p>
+          <h2 className={cardTitle}>Branding & locale</h2>
+          <p className={mutedXsMt1}>Your logo and colours show on the website and patient dashboards.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <div className="sm:col-span-3">
               <label className={labelCls}>Hospital logo</label>
@@ -462,7 +463,7 @@ export default function OnboardingWizard() {
             </div>
             <div>
               <label className={labelCls} htmlFor="w-color">Brand colour</label>
-              <div className="flex items-center gap-2">
+              <div className={flexGap2}>
                 <input id="w-color" type="color" value={branding.brand_color} onChange={(e) => setBranding((b) => ({ ...b, brand_color: e.target.value }))} className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-[var(--color-border)] bg-white p-1" />
                 <input className={inputCls} value={branding.brand_color} onChange={(e) => setBranding((b) => ({ ...b, brand_color: e.target.value }))} />
               </div>
@@ -486,13 +487,13 @@ export default function OnboardingWizard() {
       {/* STEP 2 — WEBSITE CONTENT */}
       {step === 2 && (
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Website content</h2>
-          <p className="mt-1 text-xs text-[var(--color-muted-fg)]">The tagline and about text power your homepage hero and every page&apos;s SEO.</p>
+          <h2 className={cardTitle}>Website content</h2>
+          <p className={mutedXsMt1}>The tagline and about text power your homepage hero and every page&apos;s SEO.</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className={labelCls} htmlFor="w-tagline">Tagline</label>
               <input id="w-tagline" className={inputCls} value={website.tagline} onChange={(e) => setWebsite((w) => ({ ...w, tagline: e.target.value }))} />
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">e.g. “Quality care, close to home.”</p>
+              <p className={mutedXsMt1}>e.g. “Quality care, close to home.”</p>
             </div>
             <div className="sm:col-span-2">
               <label className={labelCls} htmlFor="w-about">About your hospital</label>
@@ -551,11 +552,11 @@ export default function OnboardingWizard() {
       {/* STEP 3 — SERVICES */}
       {step === 3 && (
         <section className="rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]">
-          <div className="flex items-center gap-2">
+          <div className={flexGap2}>
             <LayoutTemplate size={16} className="text-[var(--color-primary)]" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Services on your website</h2>
+            <h2 className={cardTitle}>Services on your website</h2>
           </div>
-          <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+          <p className={mutedXsMt1}>
             These eight services are published on your site. Toggle off any you don&apos;t offer yet — you can change this
             anytime in Settings → Website Content.
           </p>
@@ -569,7 +570,7 @@ export default function OnboardingWizard() {
                   className="focus-ring mt-0.5 h-4 w-4 accent-[var(--color-primary)]"
                 />
                 <span className="text-sm">
-                  <span className="font-medium text-[var(--color-foreground)]">{name}</span>
+                  <span className={fgMedium}>{name}</span>
                   <span className="block text-xs text-[var(--color-muted-fg)]">{services[name] ? "Published on your site" : "Hidden from your site"}</span>
                 </span>
               </label>
@@ -579,7 +580,7 @@ export default function OnboardingWizard() {
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between">
+      <div className={flexBetween}>
         <button
           type="button"
           onClick={() => step > 0 && setStep((s) => s - 1)}

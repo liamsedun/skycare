@@ -8,6 +8,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, errorBanner, mutedSm, flexWrapGap2, mutedXsMt1, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 export type FinanceKind = "expense" | "income";
@@ -285,14 +286,14 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className={pageTitle}>
             {isExpense ? "Expenses" : "Other income"}
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             {isExpense ? "Track hospital operating expenses." : "Record non-invoice income such as donations and sales."}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
             From
             <input
@@ -347,7 +348,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
                 <Icon size={18} aria-hidden="true" />
               </span>
               <div>
-                <p className="text-xs text-[var(--color-muted-fg)]">{card.label} · {monthLabel}</p>
+                <p className={mutedXs}>{card.label} · {monthLabel}</p>
                 <p className={`text-lg font-bold ${card.tone}`}>{card.value}</p>
               </div>
             </div>
@@ -356,7 +357,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -521,7 +522,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
                     <option key={b.id} value={b.id}>{b.bank_name} • {b.account_name} ({b.account_number})</option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXsMt1}>
                   {isExpense
                     ? "Choose the bank (or cash till) this expense is paid from."
                     : "Choose the bank (or cash till) this income is deposited into."}

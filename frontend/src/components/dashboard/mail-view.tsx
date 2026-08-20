@@ -5,6 +5,7 @@ import { Inbox, Loader2, MailPlus, Paperclip, Search, Send, Trash2 } from "lucid
 import { initials, ROLE_LABELS } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, errorBanner, mutedSm, divideBorder, fgMedium, mutedXsMt1, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -202,8 +203,8 @@ export default function MailView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Internal mail</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Messaging between hospital staff.</p>
+        <h1 className={pageTitle}>Internal mail</h1>
+        <p className={mutedSm}>Messaging between hospital staff.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -238,7 +239,7 @@ export default function MailView() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -260,7 +261,7 @@ export default function MailView() {
                 className="h-4 w-4 accent-[var(--color-primary)]"
               />
               <span className="text-sm">
-                <span className="font-medium text-[var(--color-foreground)]">Broadcast to all staff</span>
+                <span className={fgMedium}>Broadcast to all staff</span>
                 <span className="block text-xs text-[var(--color-muted-fg)]">Every staff member in this hospital receives the message.</span>
               </span>
             </label>
@@ -272,7 +273,7 @@ export default function MailView() {
                 className="h-4 w-4 accent-[var(--color-primary)]"
               />
               <span className="text-sm">
-                <span className="font-medium text-[var(--color-foreground)]">Broadcast to all patients</span>
+                <span className={fgMedium}>Broadcast to all patients</span>
                 <span className="block text-xs text-[var(--color-muted-fg)]">Every patient (and their dependants with portal access) receives the message.</span>
               </span>
             </label>
@@ -358,7 +359,7 @@ export default function MailView() {
                     )}
                   </select>
                 </div>
-                <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Tip: type in the search bar to find staff or patients quickly — or use the dropdown.</p>
+                <p className={mutedXsMt1}>Tip: type in the search bar to find staff or patients quickly — or use the dropdown.</p>
               </div>
             )}
 
@@ -387,7 +388,7 @@ export default function MailView() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-          <ul className="divide-y divide-[var(--color-border)]">
+          <ul className={divideBorder}>
             {(tab === "inbox" ? visibleInbox : visibleSent).length === 0 && (
               <li className="px-4 py-12 text-center text-sm text-[var(--color-muted-fg)]">
                 {(tab === "inbox" ? inbox : sent).length === 0
@@ -415,7 +416,7 @@ export default function MailView() {
                             {m.subject}
                           </span>
                           <span className="flex shrink-0 items-center gap-2">
-                            <span className="text-xs text-[var(--color-muted-fg)]">{timeAgo(m.created_at)}</span>
+                            <span className={mutedXs}>{timeAgo(m.created_at)}</span>
                             {tab === "sent" && (
                               <span className={`text-xs text-[var(--color-muted-fg)] transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true">▾</span>
                             )}

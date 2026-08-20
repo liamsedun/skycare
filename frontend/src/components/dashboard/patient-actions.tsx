@@ -8,6 +8,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { AddPatientModal, type PatientRow } from "@/components/dashboard/patient-dialog";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
+import { flexWrapGap2 } from "@/lib/ui-constants";
 
 const EXPORT_COLUMNS = [
   "patient_number",
@@ -105,7 +106,7 @@ export default function PatientActions({ patients }: { patients: PatientRow[] })
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={flexWrapGap2}>
       <ActionDropdown
         label="New"
         icon={<Plus size={16} aria-hidden="true" />}

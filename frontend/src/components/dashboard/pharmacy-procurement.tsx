@@ -5,6 +5,7 @@ import { Building2, Landmark, Package, ReceiptText, Zap } from "lucide-react";
 import { SuppliersTab } from "@/components/dashboard/pharmacy-admin-view";
 import PharmacyAiView from "@/components/dashboard/pharmacy-ai-view";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedSm, pageTitle } from "@/lib/ui-constants";
 import {
   BalancesTab,
   PurchaseOrdersTab,
@@ -33,8 +34,8 @@ export default function PharmacySuppliersProcurement({ accessLevel = "full", myR
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Suppliers &amp; Procurement</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <h1 className={pageTitle}>Suppliers &amp; Procurement</h1>
+        <p className={mutedSm}>
           Order drugs from suppliers, pay by bank transfer or on credit, and track what each
           supplier is owed.
         </p>

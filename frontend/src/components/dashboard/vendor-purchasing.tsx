@@ -8,6 +8,7 @@ import {
 import { ngn, formatDate } from "@/lib/auth";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, errorBanner, btnBase, flexBetween, mutedSm, flexWrapGap2, mutedXsMt1, fgSemibold, sectionTitle, ghostIconBtn, rowStart, modalBackdrop } from "@/lib/ui-constants";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import FilterBar from "@/components/filters/filter-bar";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
@@ -216,23 +217,23 @@ export function BalancesTab() {
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
           <Building2 size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No supplier activity yet.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={sectionTitle}>No supplier activity yet.</p>
+          <p className={mutedSm}>
             Balances appear once goods are received from suppliers or payments are recorded.
           </p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)]/50 text-[10px] uppercase tracking-wider text-[var(--color-muted-fg)]">
-                <th className="px-4 py-2.5 font-semibold">Supplier</th>
-                <th className="px-4 py-2.5 font-semibold">Total bought</th>
-                <th className="px-4 py-2.5 font-semibold">Total paid</th>
-                <th className="px-4 py-2.5 font-semibold">Outstanding</th>
-                <th className="px-4 py-2.5 font-semibold">POs</th>
-                <th className="px-4 py-2.5 font-semibold">Payments</th>
-                <th className="px-4 py-2.5 font-semibold">Last activity</th>
+                <th className={btnBase}>Supplier</th>
+                <th className={btnBase}>Total bought</th>
+                <th className={btnBase}>Total paid</th>
+                <th className={btnBase}>Outstanding</th>
+                <th className={btnBase}>POs</th>
+                <th className={btnBase}>Payments</th>
+                <th className={btnBase}>Last activity</th>
               </tr>
             </thead>
             <tbody>
@@ -488,7 +489,7 @@ export function PurchaseOrdersTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <FilterBar
             query={search}
             onQueryChange={setSearch}
@@ -558,7 +559,7 @@ export function PurchaseOrdersTab() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -570,8 +571,8 @@ export function PurchaseOrdersTab() {
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
           <Package size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No purchase orders found.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Order drugs from your suppliers — choose instant payment or credit.</p>
+          <p className={sectionTitle}>No purchase orders found.</p>
+          <p className={mutedSm}>Order drugs from your suppliers — choose instant payment or credit.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -582,8 +583,8 @@ export function PurchaseOrdersTab() {
               <div key={po.id} className="rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-[var(--color-foreground)]">{po.poNumber}</span>
+                    <div className={flexWrapGap2}>
+                      <span className={fgSemibold}>{po.poNumber}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusStyle}`}>
                         {po.status}
                       </span>
@@ -597,7 +598,7 @@ export function PurchaseOrdersTab() {
                       <span className="flex items-center gap-1"><Building2 size={13} aria-hidden="true" /> {po.supplierName}</span>
                       <span>{po.items.length} drug line(s) · {po.items.reduce((a, i) => a + i.quantityOrdered, 0)} units</span>
                       {po.expectedBy && <span>Expected {formatDate(po.expectedBy)}</span>}
-                      <span className="font-semibold text-[var(--color-foreground)]">{ngn(po.totalCost)}</span>
+                      <span className={fgSemibold}>{ngn(po.totalCost)}</span>
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -805,7 +806,7 @@ function CreateOrderModal({
             ))}
           </select>
           {supplierId && offers.length === 0 && (
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt1}>
               No pricing offers on file for this supplier — enter unit costs manually.
             </p>
           )}
@@ -901,7 +902,7 @@ function CreateOrderModal({
                 })}
               </div>
               {supplierId && supplierDrugIds.size === 0 && (
-                <p className="text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXs}>
                   None of your catalog drugs are tagged to this supplier yet — tag them in Pharmacy → Admin → Drugs so they pin to the top here. You can still order any drug manually.
                 </p>
               )}
@@ -928,7 +929,7 @@ function CreateOrderModal({
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+          <p role="alert" className={errorBanner}>{error}</p>
         )}
 
         <div className="flex gap-3 pt-1">
@@ -1059,7 +1060,7 @@ function ReceiveGoodsModal({
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+          <p role="alert" className={errorBanner}>{error}</p>
         )}
 
         <div className="flex gap-3 pt-1">
@@ -1243,7 +1244,7 @@ export function PaymentsTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <FilterBar
             query={search}
             onQueryChange={setSearch}
@@ -1293,7 +1294,7 @@ export function PaymentsTab() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -1305,21 +1306,21 @@ export function PaymentsTab() {
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-14 text-center shadow-[var(--shadow-sm)]">
           <Wallet size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No payments recorded.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Pay by instant bank transfer, cash or POS — or buy on credit and settle later.</p>
+          <p className={sectionTitle}>No payments recorded.</p>
+          <p className={mutedSm}>Pay by instant bank transfer, cash or POS — or buy on credit and settle later.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)]/50 text-[10px] uppercase tracking-wider text-[var(--color-muted-fg)]">
-                <th className="px-4 py-2.5 font-semibold">Date</th>
-                <th className="px-4 py-2.5 font-semibold">Supplier</th>
-                <th className="px-4 py-2.5 font-semibold">PO</th>
-                <th className="px-4 py-2.5 font-semibold">Method</th>
-                <th className="px-4 py-2.5 font-semibold">Amount</th>
-                <th className="px-4 py-2.5 font-semibold">Reference</th>
-                <th className="px-4 py-2.5 font-semibold">Recorded by</th>
+                <th className={btnBase}>Date</th>
+                <th className={btnBase}>Supplier</th>
+                <th className={btnBase}>PO</th>
+                <th className={btnBase}>Method</th>
+                <th className={btnBase}>Amount</th>
+                <th className={btnBase}>Reference</th>
+                <th className={btnBase}>Recorded by</th>
               </tr>
             </thead>
             <tbody>
@@ -1519,7 +1520,7 @@ function RecordPaymentModal({
             })}
           </div>
           {method === "credit_note" && (
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt1}>
               A credit note reduces what you owe the supplier — no money leaves the hospital.
             </p>
           )}
@@ -1534,7 +1535,7 @@ function RecordPaymentModal({
                 <option key={a.account_id} value={a.account_id ?? ""}>{a.label}</option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt1}>
               The payment posts to the Banking ledger as money leaving the hospital.
             </p>
           </div>
@@ -1552,7 +1553,7 @@ function RecordPaymentModal({
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+          <p role="alert" className={errorBanner}>{error}</p>
         )}
 
         <div className="flex gap-3 pt-1">
@@ -1575,15 +1576,15 @@ function RecordPaymentModal({
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div className="my-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">{title}</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={18} aria-hidden="true" />
           </button>
         </div>

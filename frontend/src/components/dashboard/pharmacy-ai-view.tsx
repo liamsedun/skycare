@@ -1,5 +1,6 @@
 "use client";
 
+import { cardTitle, divideBorder, mutedXsMt1, mutedSmPlain, rowStart } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import {
   Brain, Zap, RefreshCw, AlertTriangle, PackageSearch, TrendingUp, Sparkles,
@@ -133,7 +134,7 @@ export default function PharmacyAiView() {
           </span>
           <div>
             <h2 className="text-xl font-bold text-[var(--color-foreground)]">AI insights</h2>
-            <p className="text-sm text-[var(--color-muted-fg)]">
+            <p className={mutedSmPlain}>
               Demand forecasting, anomaly detection and reorder automation.
             </p>
           </div>
@@ -177,7 +178,7 @@ export default function PharmacyAiView() {
             <section className="rounded-xl border border-[var(--color-border)] bg-slate-50/60 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <TrendingUp size={15} className="text-violet-600" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Forecast vs on-hand</h3>
+                <h3 className={cardTitle}>Forecast vs on-hand</h3>
               </div>
               {forecasts.length === 0 ? (
                 <EmptyState message="Run the AI sweep to generate forecasts" />
@@ -206,7 +207,7 @@ export default function PharmacyAiView() {
             <div className="rounded-xl border border-[var(--color-border)] bg-slate-50/60 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <AlertTriangle size={15} className="text-amber-600" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Anomaly engine</h3>
+                <h3 className={cardTitle}>Anomaly engine</h3>
               </div>
               {!lastRun || lastRun.anomalies.length === 0 ? (
                 <EmptyState message="No anomalies fired in the last sweep" />
@@ -220,10 +221,10 @@ export default function PharmacyAiView() {
             <div className="rounded-xl border border-[var(--color-border)] bg-slate-50/60 p-4">
               <div className="mb-3 flex items-center gap-2">
                 <PackageSearch size={15} className="text-emerald-600" aria-hidden="true" />
-                <h3 className="text-sm font-semibold text-[var(--color-foreground)]">Reorder suggestions</h3>
+                <h3 className={cardTitle}>Reorder suggestions</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
+                <table className={rowStart}>
                   <thead>
                     <tr className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                       <th className="pb-2 pr-4 font-semibold">Supplier</th>
@@ -234,7 +235,7 @@ export default function PharmacyAiView() {
                       <th className="pb-2 pr-4 font-semibold">PO</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--color-border)]">
+                  <tbody className={divideBorder}>
                     {lastRun.reorder.map((r, i) => (
                       <tr key={i}>
                         <td className="py-2 pr-4 text-[var(--color-foreground)]">{r.supplierName}</td>
@@ -280,7 +281,7 @@ function StatCard({ label, value, sub, unit, warning }: { label: string; value: 
         {value}
         {unit && <span className="ml-1 text-sm font-medium text-[var(--color-muted-fg)]">{unit}</span>}
       </p>
-      {sub && <p className="mt-1 text-xs text-[var(--color-muted-fg)]">{sub}</p>}
+      {sub && <p className={mutedXsMt1}>{sub}</p>}
     </div>
   );
 }

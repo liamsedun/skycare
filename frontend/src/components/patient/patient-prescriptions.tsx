@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Pill } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, errorBanner, cardTitle, mutedSm, mutedXsMt, fgMedium, mutedXsMt1, sectionTitle, pageTitle, emptyState } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import {
   AppHeader,
@@ -82,25 +83,25 @@ export default function PatientPrescriptions() {
       <div className="hidden md:block">
         <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Prescriptions</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Medications prescribed for you and your family.</p>
+        <h1 className={pageTitle}>Prescriptions</h1>
+        <p className={mutedSm}>Medications prescribed for you and your family.</p>
       </div>
 
       <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading prescriptions…</p>
+        <p className={emptyState}>Loading prescriptions…</p>
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Pill size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No prescriptions yet.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your doctor&apos;s prescriptions will appear here.</p>
+          <p className={sectionTitle}>No prescriptions yet.</p>
+          <p className={mutedSm}>Your doctor&apos;s prescriptions will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -116,11 +117,11 @@ export default function PatientPrescriptions() {
                   <div className="flex items-center gap-3">
                     <ChevronDown size={16} aria-hidden="true" className={`text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
                     <div>
-                      <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                      <p className={cardTitle}>
                         {rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : ""}
                         {rx.users?.full_name ? <span className="font-normal text-[var(--color-muted-fg)]"> · Dr. {rx.users.full_name}</span> : null}
                       </p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXs}>
                         Issued {new Date(rx.issued_date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                         {rx.expires_date ? ` · expires ${new Date(rx.expires_date).toLocaleDateString("en-NG")}` : ""}
                         {rx.diagnosis ? ` · ${rx.diagnosis}` : ""}
@@ -139,15 +140,15 @@ export default function PatientPrescriptions() {
                       {rx.prescription_items.map((item) => (
                         <li key={item.id} className="rounded-lg border border-[var(--color-border)] bg-white p-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-[var(--color-foreground)]">{item.medication_name}</p>
+                            <p className={cardTitle}>{item.medication_name}</p>
                             {item.dispensed_qty != null && (
-                              <span className="text-xs text-[var(--color-muted-fg)]">
+                              <span className={mutedXs}>
                                 Dispensed: {item.dispensed_qty}
                                 {item.quantity ? ` of ${item.quantity}` : ""}
                               </span>
                             )}
                           </div>
-                          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+                          <p className={mutedSm}>
                             {item.dosage} · {item.frequency}
                             {item.route ? ` · ${item.route}` : ""}
                             {item.duration ? ` · for ${item.duration}` : ""}
@@ -158,7 +159,7 @@ export default function PatientPrescriptions() {
                     </ul>
                     {rx.notes && (
                       <p className="mt-3 text-sm text-[var(--color-muted-fg)]">
-                        <span className="font-medium text-[var(--color-foreground)]">Notes: </span>
+                        <span className={fgMedium}>Notes: </span>
                         {rx.notes}
                       </p>
                     )}
@@ -188,8 +189,8 @@ export default function PatientPrescriptions() {
           ) : visible.length === 0 ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <Pill size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No prescriptions yet.</p>
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Your doctor&apos;s prescriptions will appear here.</p>
+              <p className={sectionTitle}>No prescriptions yet.</p>
+              <p className={mutedXsMt1}>Your doctor&apos;s prescriptions will appear here.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -230,7 +231,7 @@ export default function PatientPrescriptions() {
                           {rx.prescription_items.map((item) => (
                             <li key={item.id} className="rounded-xl border border-[var(--color-border)] p-3">
                               <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-semibold text-[var(--color-foreground)]">{item.medication_name}</p>
+                                <p className={cardTitle}>{item.medication_name}</p>
                                 {item.dispensed_qty != null && (
                                   <span className="text-[11px] text-[var(--color-muted-fg)]">
                                     Dispensed {item.dispensed_qty}
@@ -238,7 +239,7 @@ export default function PatientPrescriptions() {
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                              <p className={mutedXsMt}>
                                 {item.dosage} · {item.frequency}
                                 {item.route ? ` · ${item.route}` : ""}
                                 {item.duration ? ` · for ${item.duration}` : ""}
@@ -251,7 +252,7 @@ export default function PatientPrescriptions() {
                         </ul>
                         {rx.notes && (
                           <p className="mt-3 text-xs text-[var(--color-muted-fg)]">
-                            <span className="font-medium text-[var(--color-foreground)]">Notes: </span>
+                            <span className={fgMedium}>Notes: </span>
                             {rx.notes}
                           </p>
                         )}

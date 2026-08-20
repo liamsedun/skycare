@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedFg, flexBetween, flexGap2, mutedSmPlain, spinner } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import {
   FileText,
@@ -120,7 +121,7 @@ export default function WebsiteCmsSection() {
 
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-[var(--color-muted-fg)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          <Loader2 className={spinner} /> Loading…
         </div>
       ) : tab === "services" ? (
         <CmsManager
@@ -244,8 +245,8 @@ function CmsManager({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-[var(--color-muted-fg)]">
+      <div className={flexBetween}>
+        <p className={mutedSmPlain}>
           Shown on your public website&apos;s {kind === "services" ? "services" : "departments"} grid.
         </p>
         <button
@@ -274,7 +275,7 @@ function CmsManager({
                 )}
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
                     {r.name}
                   </p>
@@ -406,7 +407,7 @@ function CmsManager({
                 disabled={busy}
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-60"
               >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {busy && <Loader2 className={spinner} />}
                 {editing ? "Save changes" : `Add ${noun}`}
               </button>
             </div>
@@ -485,7 +486,7 @@ function PagesManager({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-[var(--color-muted-fg)]">
+      <p className={mutedSmPlain}>
         Content pages on your website. Each page is one paragraph per line.
       </p>
       {rows.length === 0 ? (
@@ -501,7 +502,7 @@ function PagesManager({
                 <FileText className="h-5 w-5" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">
                     {r.title}
                   </p>
@@ -543,7 +544,7 @@ function PagesManager({
             className="w-full max-w-md space-y-4 rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-xl"
           >
             <h3 className="text-base font-semibold text-[var(--color-foreground)]">
-              Edit page <span className="text-[var(--color-muted-fg)]">/{editing.slug}</span>
+              Edit page <span className={mutedFg}>/{editing.slug}</span>
             </h3>
             <div>
               <label className={labelCls}>Title *</label>
@@ -585,7 +586,7 @@ function PagesManager({
                 disabled={busy}
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-60"
               >
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {busy && <Loader2 className={spinner} />}
                 Save page
               </button>
             </div>

@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { formatDate, ngn } from "@/lib/auth";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, mutedXsMt, flexWrapGap2 } from "@/lib/ui-constants";
 
 // ============================================================================
 // Pharmacy Analytics — sales analytics, financial insights and reporting
@@ -127,11 +128,11 @@ export default function PharmacyAnalyticsView({ accessLevel = "full", myRole }: 
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <BarChart3 className="h-5 w-5 text-[var(--color-primary)]" /> Sales Analytics &amp; Financial Insights
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Top sellers, profit margins, monthly performance, payment mix and stock losses.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
               From
               <input
@@ -242,7 +243,7 @@ export default function PharmacyAnalyticsView({ accessLevel = "full", myRole }: 
           <h3 className={cardTitle}><PackageX className="h-4 w-4 text-red-600" /> Stock Losses / Wastage</h3>
           <div className="mt-4 space-y-2">
             {(data?.wastage_now ?? []).length === 0 ? (
-              <p className="text-xs text-[var(--color-muted-fg)]">No write-offs recorded in this window.</p>
+              <p className={mutedXs}>No write-offs recorded in this window.</p>
             ) : (
               (data?.wastage_now ?? []).map((w) => (
                 <div key={w.recorded_at + w.drug_name} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">

@@ -10,6 +10,7 @@ import FilterBar from "@/components/filters/filter-bar";
 import { dateStamp, downloadCsv, printTable, type ExportCell } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, divideBorder, flexWrapGap2, fgSemibold, emptyState, rowStart } from "@/lib/ui-constants";
 
 // ============================================================================
 // Pharmacy Compliance — NAFDAC controlled-drug register, hash-chained
@@ -222,10 +223,10 @@ function AlertsTab({ viewOnly = false }: { viewOnly?: boolean }) {
     <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-[var(--color-foreground)]">Regulatory alerts</h3>
-          <p className="text-xs text-[var(--color-muted-fg)]">Low controlled stock, expiring stock, invalid registration and suspicious dispensing patterns.</p>
+          <h3 className={fgSemibold}>Regulatory alerts</h3>
+          <p className={mutedXs}>Low controlled stock, expiring stock, invalid registration and suspicious dispensing patterns.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <div className="flex gap-1">
             {["open", "acknowledged", "resolved", ""].map((s) => (
               <button key={s || "all"} type="button" onClick={() => setStatus(s)}
@@ -259,11 +260,11 @@ function AlertsTab({ viewOnly = false }: { viewOnly?: boolean }) {
         />
       </div>
       {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}
-      {loading ? <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading alerts…</p> : visible.length === 0 ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No alerts match this filter.</p>
+      {loading ? <p className={emptyState}>Loading alerts…</p> : visible.length === 0 ? (
+        <p className={emptyState}>No alerts match this filter.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
               <tr>
                 <th className="py-2 pr-3 font-semibold">Type</th>
@@ -275,7 +276,7 @@ function AlertsTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 <th className="py-2 font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {visible.map((a) => (
                 <tr key={a.id}>
                   <td className="py-2.5 pr-3 font-medium text-[var(--color-foreground)]">{a.alert_type}</td>
@@ -372,10 +373,10 @@ function RegisterTab({ viewOnly = false }: { viewOnly?: boolean }) {
     <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-[var(--color-foreground)]">Controlled drug register</h3>
-          <p className="text-xs text-[var(--color-muted-fg)]">Append-only ledger — every controlled movement with running balance. Corrections are new rows.</p>
+          <h3 className={fgSemibold}>Controlled drug register</h3>
+          <p className={mutedXs}>Append-only ledger — every controlled movement with running balance. Corrections are new rows.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <select className={inputCls + " w-auto"} value={drugId} onChange={(e) => setDrugId(e.target.value)}>
             <option value="">All controlled drugs</option>
             {drugs.map((d) => (
@@ -407,12 +408,12 @@ function RegisterTab({ viewOnly = false }: { viewOnly?: boolean }) {
         />
       </div>
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading register…</p>
+        <p className={emptyState}>Loading register…</p>
       ) : visible.length === 0 ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No register entries yet.</p>
+        <p className={emptyState}>No register entries yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
               <tr>
                 <th className="py-2 pr-3 font-semibold">When</th>
@@ -425,7 +426,7 @@ function RegisterTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 <th className="py-2 font-semibold">Logged by</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {visible.map((r) => (
                 <tr key={r.id}>
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{fmt(r.created_at)}</td>
@@ -507,10 +508,10 @@ function AuditTab({ viewOnly = false }: { viewOnly?: boolean }) {
     <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-[var(--color-foreground)]">H dispensing audit trail</h3>
-          <p className="text-xs text-[var(--color-muted-fg)]">Every stock movement is appended with a linked SHA-256 hash. Rows cannot be edited or deleted.</p>
+          <h3 className={fgSemibold}>H dispensing audit trail</h3>
+          <p className={mutedXs}>Every stock movement is appended with a linked SHA-256 hash. Rows cannot be edited or deleted.</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <button type="button" onClick={() => void verifyChain()} disabled={checking} className={btnGhost}>
             {checking ? "Verifying…" : <><ShieldAlert size={13} />Verify full chain</>}
           </button>
@@ -544,12 +545,12 @@ function AuditTab({ viewOnly = false }: { viewOnly?: boolean }) {
         </div>
       )}
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading audit trail…</p>
+        <p className={emptyState}>Loading audit trail…</p>
       ) : visible.length === 0 ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No movements logged yet.</p>
+        <p className={emptyState}>No movements logged yet.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="border-b border-[var(--color-border)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
               <tr>
                 <th className="py-2 pr-3 font-semibold">#</th>
@@ -561,7 +562,7 @@ function AuditTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 <th className="py-2 font-semibold">Hash (truncated)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {visible.map((r) => (
                 <tr key={r.id}>
                   <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">#{r.id}</td>
@@ -697,7 +698,7 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
       <div className={`grid gap-5 ${viewOnly ? "lg:grid-cols-1" : "lg:grid-cols-2"}`}>
       {!viewOnly && (
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-        <h3 className="font-semibold text-[var(--color-foreground)]">Prescribed controlled doses</h3>
+        <h3 className={fgSemibold}>Prescribed controlled doses</h3>
         <p className="mb-4 text-xs text-[var(--color-muted-fg)]">Enforced: NAFDAC registration, Rx must be active and match the patient, per-dispense cap, and auto-logs the chain.</p>
 
         <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Controlled drug</label>
@@ -729,7 +730,7 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
             {patients.map((p) => (
               <li key={p.id}>
                 <button type="button" className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50" onClick={() => void pickPatient(p.id)}>
-                  {p.first_name} {p.last_name} <span className="text-xs text-[var(--color-muted-fg)]">#{p.patient_number}</span>
+                  {p.first_name} {p.last_name} <span className={mutedXs}>#{p.patient_number}</span>
                 </button>
               </li>
             ))}
@@ -764,7 +765,7 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-semibold text-[var(--color-foreground)]">Controlled formulary health</h3>
+          <h3 className={fgSemibold}>Controlled formulary health</h3>
           <ImportExportMenu
             entityLabel="Controlled Formulary"
             exportCsv={() => {
@@ -791,7 +792,7 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
           </div>
         )}
         <div className="max-h-[480px] overflow-y-auto">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="sticky top-0 border-b border-[var(--color-border)] bg-white text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
               <tr>
                 <th className="py-2 pr-3 font-semibold">Drug</th>
@@ -801,7 +802,7 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
                 <th className="py-2 font-semibold">Register</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {visibleDrugs.map((d) => (
                 <tr key={d.id} className={d.low ? "bg-red-50" : undefined}>
                   <td className="py-2.5 pr-3">{d.name}</td>
@@ -823,13 +824,13 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
-        <h3 className="font-semibold text-[var(--color-foreground)]">Recent controlled dispensing</h3>
+        <h3 className={fgSemibold}>Recent controlled dispensing</h3>
         <p className="mb-3 text-xs text-[var(--color-muted-fg)]">Latest out-movements from the NAFDAC register — filtered by the search and date range above.</p>
         {visibleHistory.length === 0 ? (
           <p className="py-8 text-center text-sm text-[var(--color-muted-fg)]">No dispensing activity in this period.</p>
         ) : (
           <div className="max-h-[400px] overflow-auto">
-            <table className="w-full text-left text-sm">
+            <table className={rowStart}>
               <thead className="sticky top-0 border-b border-[var(--color-border)] bg-white text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
                 <tr>
                   <th className="py-2 pr-3 font-semibold">When</th>
@@ -840,7 +841,7 @@ function DispenseTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   <th className="py-2 font-semibold">Dispensed by</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className={divideBorder}>
                 {visibleHistory.map((h) => (
                   <tr key={h.id}>
                     <td className="py-2.5 pr-3 text-xs text-[var(--color-muted-fg)]">{fmt(h.created_at)}</td>
@@ -936,7 +937,7 @@ function ReportsTab({ viewOnly = false }: { viewOnly?: boolean }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h3 className="font-semibold text-[var(--color-foreground)]">NAFDAC statutory reports</h3>
+        <h3 className={fgSemibold}>NAFDAC statutory reports</h3>
         <div className="ml-auto flex flex-wrap gap-2">
           {(["usage", "movements", "expiry", "supplier"] as const).map((r) => (
             <button key={r} type="button" onClick={() => setReport(r)}
@@ -976,16 +977,16 @@ function ReportsTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
       {msg && <p className="mb-3 text-sm text-red-600">{msg}</p>}
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Running {report} report…</p>
+        <p className={emptyState}>Running {report} report…</p>
       ) : visibleRows.length === 0 ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No rows for this report / window.</p>
+        <p className={emptyState}>No rows for this report / window.</p>
       ) : (
         <div className="max-h-[480px] overflow-auto">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="sticky top-0 border-b border-[var(--color-border)] bg-white text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
               <tr>{columns.map((c) => <th key={c} className="py-2 pr-3 font-semibold">{c}</th>)}</tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {visibleRows.map((r, i) => (
                 <tr key={i}>{columns.map((c) => <td key={c} className="py-2 pr-3 text-[var(--color-muted-fg)]">{String(r[c] ?? "—")}</td>)}</tr>
               ))}

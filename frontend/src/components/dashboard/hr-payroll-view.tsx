@@ -6,6 +6,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { downloadCsv, printTable } from "@/lib/export";
+import { mutedXs, divideBorder, labelSm, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -447,7 +448,7 @@ export default function HrPayrollView() {
         {isAdmin && (
           <>
             <button className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50" onClick={openRunModal} disabled={running}>
-              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run payroll
+              {running ? <Loader2 className={spinner} /> : <Play className="h-4 w-4" />} Run payroll
             </button>
             <ImportExportMenu
               entityLabel="Payroll"
@@ -517,29 +518,29 @@ export default function HrPayrollView() {
           <div className="mt-1 text-xl font-bold">{visibleRows.length}</div>
         </div>
         <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-          <div className="text-sm text-[var(--color-muted-fg)]">Gross</div>
+          <div className={mutedSmPlain}>Gross</div>
           <div className="mt-1 text-xl font-bold">{fmtN(totals.base)}</div>
         </div>
         <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-          <div className="text-sm text-[var(--color-muted-fg)]">PAYE</div>
+          <div className={mutedSmPlain}>PAYE</div>
           <div className="mt-1 text-xl font-bold text-sky-600">{fmtN(totals.paye)}</div>
         </div>
         <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-          <div className="text-sm text-[var(--color-muted-fg)]">Pension (EE)</div>
+          <div className={mutedSmPlain}>Pension (EE)</div>
           <div className="mt-1 text-xl font-bold text-violet-600">{fmtN(totals.pension)}</div>
         </div>
         <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-          <div className="text-sm text-[var(--color-muted-fg)]">NHF</div>
+          <div className={mutedSmPlain}>NHF</div>
           <div className="mt-1 text-xl font-bold text-amber-600">{fmtN(totals.nhf)}</div>
         </div>
         <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4">
-          <div className="text-sm text-[var(--color-muted-fg)]">Net payable</div>
+          <div className={mutedSmPlain}>Net payable</div>
           <div className="mt-1 text-xl font-bold text-emerald-600">{fmtN(totals.net)}</div>
         </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead className="border-b border-[var(--color-border)] text-xs uppercase text-[var(--color-muted-fg)]">
             <tr>
               {isAdmin && (
@@ -563,7 +564,7 @@ export default function HrPayrollView() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {visibleRows.map((r) => (
               <tr key={r.id}>
                 {isAdmin && (
@@ -582,7 +583,7 @@ export default function HrPayrollView() {
                 )}
                 <td className="px-4 py-3">
                   <div className="font-medium">{r.staff?.users?.full_name}</div>
-                  <div className="text-xs text-[var(--color-muted-fg)]">{r.staff?.users?.role} · {r.staff?.staff_number}{r.run_number ? ` · ${r.run_number}` : ""}</div>
+                  <div className={mutedXs}>{r.staff?.users?.role} · {r.staff?.staff_number}{r.run_number ? ` · ${r.run_number}` : ""}</div>
                 </td>
                 <td className="px-4 py-3">{fmtN(r.base_salary)}</td>
                 <td className="px-4 py-3 text-sky-600">{fmtN(r.paye || 0)}</td>
@@ -634,11 +635,11 @@ export default function HrPayrollView() {
           <input type="number" min={2000} max={2100} className={inputCls + " max-w-[110px]"} value={summaryYear} onChange={(e) => setSummaryYear(Number(e.target.value))} />
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className="text-xs text-[var(--color-muted-fg)]">Gross</div><div className="font-bold">{fmtN(summaryAnnual.gross)}</div></div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className="text-xs text-[var(--color-muted-fg)]">PAYE</div><div className="font-bold text-sky-600">{fmtN(summaryAnnual.paye)}</div></div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className="text-xs text-[var(--color-muted-fg)]">Pension</div><div className="font-bold text-violet-600">{fmtN(summaryAnnual.pension)}</div></div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className="text-xs text-[var(--color-muted-fg)]">NHF</div><div className="font-bold text-amber-600">{fmtN(summaryAnnual.nhf)}</div></div>
-          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className="text-xs text-[var(--color-muted-fg)]">Net</div><div className="font-bold text-emerald-600">{fmtN(summaryAnnual.net)}</div></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className={mutedXs}>Gross</div><div className="font-bold">{fmtN(summaryAnnual.gross)}</div></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className={mutedXs}>PAYE</div><div className="font-bold text-sky-600">{fmtN(summaryAnnual.paye)}</div></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className={mutedXs}>Pension</div><div className="font-bold text-violet-600">{fmtN(summaryAnnual.pension)}</div></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className={mutedXs}>NHF</div><div className="font-bold text-amber-600">{fmtN(summaryAnnual.nhf)}</div></div>
+          <div className="rounded-xl bg-slate-50 p-3 dark:bg-[var(--color-muted)]"><div className={mutedXs}>Net</div><div className="font-bold text-emerald-600">{fmtN(summaryAnnual.net)}</div></div>
         </div>
         <div className="mt-4 h-56">
           <ResponsiveContainer width="100%" height="100%">
@@ -660,7 +661,7 @@ export default function HrPayrollView() {
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-semibold">Payslip — {slip.pay_period}{slip.run_number ? ` · ${slip.run_number}` : ""}</h3>
-                <p className="text-sm text-[var(--color-muted-fg)]">{slip.staff?.users?.full_name} · {slip.staff?.users?.role}{slip.pay_date ? ` · pay date ${slip.pay_date}` : ""}</p>
+                <p className={mutedSmPlain}>{slip.staff?.users?.full_name} · {slip.staff?.users?.role}{slip.pay_date ? ` · pay date ${slip.pay_date}` : ""}</p>
               </div>
               <div className="flex items-center gap-1.5">
                 <button className="rounded-lg border border-[var(--color-border)] p-1.5 text-[var(--color-muted-fg)] hover:bg-[var(--color-muted)]" title="Print payslip" onClick={() => printPayslip(slip)}>
@@ -728,15 +729,15 @@ export default function HrPayrollView() {
             <h3 className="mb-1 text-lg font-semibold">Edit {selDraftIds.length} draft record(s)</h3>
             <p className="mb-4 text-sm text-[var(--color-muted-fg)]">Fields left blank keep their current value. Net salary is recomputed per record from its calculated base.</p>
             <div className="space-y-3">
-              <div><label className="mb-1 block text-sm font-medium">Allowances (₦)</label>
+              <div><label className={labelSm}>Allowances (₦)</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkAllow} onChange={(e) => setBulkAllow(e.target.value)} /></div>
-              <div><label className="mb-1 block text-sm font-medium">Bonus (₦)</label>
+              <div><label className={labelSm}>Bonus (₦)</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkBonus} onChange={(e) => setBulkBonus(e.target.value)} /></div>
-              <div><label className="mb-1 block text-sm font-medium">Deductions (₦)</label>
+              <div><label className={labelSm}>Deductions (₦)</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkDed} onChange={(e) => setBulkDed(e.target.value)} /></div>
-              <div><label className="mb-1 block text-sm font-medium">Overtime pay (₦)</label>
+              <div><label className={labelSm}>Overtime pay (₦)</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkOt} onChange={(e) => setBulkOt(e.target.value)} /></div>
-              <div><label className="mb-1 block text-sm font-medium">Notes</label>
+              <div><label className={labelSm}>Notes</label>
                 <input type="text" className={inputCls} placeholder="Leave blank to keep" value={bulkNotes} onChange={(e) => setBulkNotes(e.target.value)} /></div>
               {bulkBug && <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">{bulkBug}</div>}
               <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90">
@@ -753,7 +754,7 @@ export default function HrPayrollView() {
             <h3 className="mb-1 text-lg font-semibold">Run payroll — {period}</h3>
             <p className="mb-4 text-sm text-[var(--color-muted-fg)]">Computes gross → statutory (pension, NHIS, NHF, PAYE) → net for every active staff member. Re-running an existing draft recalculates it; paid periods are locked.</p>
             <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium">Pay date</label>
+              <label className={labelSm}>Pay date</label>
               <input type="date" className={inputCls} value={payDate} onChange={(e) => setPayDate(e.target.value)} />
             </div>
             <div className="mb-4">
@@ -790,7 +791,7 @@ export default function HrPayrollView() {
               onClick={runPayroll}
               disabled={running}
             >
-              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />} Run payroll
+              {running ? <Loader2 className={spinner} /> : <Play className="h-4 w-4" />} Run payroll
             </button>
           </div>
         </div>
@@ -801,15 +802,15 @@ export default function HrPayrollView() {
           <form className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={saveEdit}>
             <h3 className="mb-4 text-lg font-semibold">Adjust {editing.staff?.users?.full_name}</h3>
             <div className="space-y-3">
-              <div><label className="mb-1 block text-sm font-medium">Allowances (₦)</label>
+              <div><label className={labelSm}>Allowances (₦)</label>
                 <input type="number" min="0" className={inputCls} value={editAllow} onChange={(e) => setEditAllow(Number(e.target.value))} /></div>
-              <div><label className="mb-1 block text-sm font-medium">Bonus (₦)</label>
+              <div><label className={labelSm}>Bonus (₦)</label>
                 <input type="number" min="0" className={inputCls} value={editBonus} onChange={(e) => setEditBonus(Number(e.target.value))} /></div>
-              <div><label className="mb-1 block text-sm font-medium">Deductions (₦)</label>
+              <div><label className={labelSm}>Deductions (₦)</label>
                 <input type="number" min="0" className={inputCls} value={editDed} onChange={(e) => setEditDed(Number(e.target.value))} /></div>
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
               <button type="submit" disabled={running} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {running && <Loader2 className="h-4 w-4 animate-spin" />} Save
+                {running && <Loader2 className={spinner} />} Save
               </button>
             </div>
           </form>

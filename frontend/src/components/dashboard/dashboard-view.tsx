@@ -36,6 +36,7 @@ import {
   YAxis,
 } from "recharts";
 import { ngn, formatTime, initials, ROLE_LABELS } from "@/lib/auth";
+import { errorBanner, flexGap2, mutedXsMt } from "@/lib/ui-constants";
 import StatusBadge from "@/components/dashboard/status-badge";
 import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
 
@@ -268,7 +269,7 @@ export default function DashboardView({
       {error && !loading && (
         <p
           role="alert"
-          className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+          className={errorBanner}
         >
           {error} —{" "}
           <button type="button" className="underline" onClick={load}>
@@ -401,14 +402,14 @@ function LoadingState() {
 function CardHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className={flexGap2}>
         <span
           className="h-4 w-1 shrink-0 rounded-full bg-gradient-to-b from-[var(--color-primary)] to-[var(--color-accent)]"
           aria-hidden="true"
         />
         <h2 className="text-base font-semibold text-[var(--color-foreground)]">{title}</h2>
       </div>
-      {subtitle && <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{subtitle}</p>}
+      {subtitle && <p className={mutedXsMt}>{subtitle}</p>}
     </div>
   );
 }

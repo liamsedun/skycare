@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Download, ShieldAlert } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/auth";
+import { mutedFg, errorBanner, mutedSm, divideBorder, fgMedium, sectionTitle, pageTitle, emptyState } from "@/lib/ui-constants";
 
 const inputCls =
   "rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -181,10 +182,10 @@ export default function AuditLogsView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className={pageTitle}>
             Audit & security
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             Append-only activity log and security anomaly events for your hospital.
           </p>
         </div>
@@ -279,23 +280,23 @@ export default function AuditLogsView() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading…</p>
+        <p className={emptyState}>Loading…</p>
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ShieldAlert size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             {tab === "audit" ? "No audit entries match these filters." : "No security events match these filters."}
           </p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
-          <ul className="divide-y divide-[var(--color-border)]">
+          <ul className={divideBorder}>
             {(rows as Array<AuditRow & SecurityEvent>).map((row) => {
               const isAudit = tab === "audit";
               const open = expanded === row.id;
@@ -335,20 +336,20 @@ export default function AuditLogsView() {
                   {open && (
                     <div className="border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4 pl-11 text-sm">
                       <div className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
-                        <p className="text-[var(--color-muted-fg)]">
-                          <span className="font-medium text-[var(--color-foreground)]">User:</span>{" "}
+                        <p className={mutedFg}>
+                          <span className={fgMedium}>User:</span>{" "}
                           {row.users?.full_name ?? row.users?.email ?? "—"}
                         </p>
-                        <p className="text-[var(--color-muted-fg)]">
-                          <span className="font-medium text-[var(--color-foreground)]">Time:</span>{" "}
+                        <p className={mutedFg}>
+                          <span className={fgMedium}>Time:</span>{" "}
                           {new Date(row.created_at).toLocaleString("en-NG")}
                         </p>
-                        <p className="text-[var(--color-muted-fg)]">
-                          <span className="font-medium text-[var(--color-foreground)]">Entity ID:</span>{" "}
+                        <p className={mutedFg}>
+                          <span className={fgMedium}>Entity ID:</span>{" "}
                           <span className="font-mono">{row.entity_id ?? "—"}</span>
                         </p>
                         <p className="truncate text-[var(--color-muted-fg)]" title={row.user_agent ?? undefined}>
-                          <span className="font-medium text-[var(--color-foreground)]">User agent:</span>{" "}
+                          <span className={fgMedium}>User agent:</span>{" "}
                           {row.user_agent ?? "—"}
                         </p>
                       </div>
@@ -383,7 +384,7 @@ export default function AuditLogsView() {
 
       {total > 0 && (
         <div className="flex items-center justify-between text-sm">
-          <p className="text-[var(--color-muted-fg)]">
+          <p className={mutedFg}>
             Page {page} of {totalPages} · {total} entr{total === 1 ? "y" : "ies"}
           </p>
           <div className="flex gap-2">

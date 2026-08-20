@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, cardTitle, mutedSm, pageTitle } from "@/lib/ui-constants";
 import { useEffect, useState } from "react";
 import {
   AppWindow,
@@ -212,8 +213,8 @@ export default function DownloadView() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Download SkyCare</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <h1 className={pageTitle}>Download SkyCare</h1>
+        <p className={mutedSm}>
           Install SkyCare as an app on your phone, tablet, laptop or desktop — iOS, Android,
           Windows and macOS — then enable push notifications to keep working without opening
           the browser.
@@ -227,14 +228,14 @@ export default function DownloadView() {
               <Download size={20} aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-[var(--color-foreground)]">
+              <p className={cardTitle}>
                 {alreadyStandalone
                   ? "SkyCare is already running as an app on this device"
                   : installed
                     ? "SkyCare is installed on this device"
                     : "Install SkyCare on this device"}
               </p>
-              <p className="text-xs text-[var(--color-muted-fg)]">
+              <p className={mutedXs}>
                 {alreadyStandalone
                   ? "Open it from your home screen or Start menu anytime."
                   : installed
@@ -259,7 +260,7 @@ export default function DownloadView() {
 
       <div className={cardCls}>
         <h2 className="text-base font-bold text-[var(--color-foreground)]">Install steps by device</h2>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <p className={mutedSm}>
           Tap a device to see how to install SkyCare on it.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -291,7 +292,7 @@ export default function DownloadView() {
           <Bell size={18} className="text-[var(--color-primary)]" aria-hidden="true" />
           Enable push notifications
         </h2>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <p className={mutedSm}>
           Register this device to receive alerts even when the app is closed.
         </p>
 

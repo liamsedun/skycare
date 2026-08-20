@@ -33,6 +33,7 @@ import {
   Legend,
 } from "recharts";
 import { ngn } from "@/lib/auth";
+import { mutedXs, errorBanner, cardTitle, mutedSm, divideBorder, flexGap2, mutedXsMt, flexWrapGap2, fgMedium, fgSemibold, pageTitle, emptyState } from "@/lib/ui-constants";
 
 const inputCls =
   "focus-ring h-10 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -357,12 +358,12 @@ export default function FinancialReportsView() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Financial Report</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <h1 className={pageTitle}>Financial Report</h1>
+          <p className={mutedSm}>
             Whole-hospital income &amp; expenses — medical services, ward, lab, pharmacy, other income, payroll and general expenses.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <div className="relative">
             <CalendarRange size={17} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
             <input
@@ -391,7 +392,7 @@ export default function FinancialReportsView() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -437,7 +438,7 @@ export default function FinancialReportsView() {
                   <h2 className="flex items-center gap-2 text-base font-semibold text-[var(--color-foreground)]">
                     <Layers size={16} aria-hidden="true" className="text-[var(--color-primary)]" /> Income by Services
                   </h2>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Collected vs invoiced vs outstanding, per revenue stream</p>
+                  <p className={mutedXsMt}>Collected vs invoiced vs outstanding, per revenue stream</p>
                 </div>
               </div>
               <div className="space-y-2.5 md:hidden">
@@ -490,7 +491,7 @@ export default function FinancialReportsView() {
                       <th className="py-2.5 text-right font-semibold">Outstanding</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--color-border)]">
+                  <tbody className={divideBorder}>
                     {moduleRows.map((r) => {
                       const Icon = r.icon ?? Stethoscope;
                       return (
@@ -500,7 +501,7 @@ export default function FinancialReportsView() {
                               <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${r.tint}`}>
                                 <Icon size={15} aria-hidden="true" />
                               </span>
-                              <span className="font-medium text-[var(--color-foreground)]">{r.label}</span>
+                              <span className={fgMedium}>{r.label}</span>
                               <span className="rounded-full bg-[var(--color-muted)]/60 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-muted-fg)]">{r.count}</span>
                             </div>
                           </td>
@@ -534,7 +535,7 @@ export default function FinancialReportsView() {
                         {incomePie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
                       <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }} formatter={(v) => [ngn(Number(v)), ""]} labelStyle={{ color: "var(--color-foreground)" }} />
-                      <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => <span className="text-xs text-[var(--color-muted-fg)]">{value}</span>} />
+                      <Legend verticalAlign="bottom" iconType="circle" iconSize={8} formatter={(value: string) => <span className={mutedXs}>{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -557,7 +558,7 @@ export default function FinancialReportsView() {
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${(v / 1e6).toFixed(1)}M`} />
                       <Tooltip cursor={{ fill: "var(--color-muted)/20" }} contentStyle={{ borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }} formatter={(v) => [ngn(Number(v)), ""]} labelStyle={{ color: "var(--color-foreground)" }} />
-                      <Legend iconType="circle" iconSize={8} formatter={(value: string) => <span className="text-xs text-[var(--color-muted-fg)]">{value}</span>} />
+                      <Legend iconType="circle" iconSize={8} formatter={(value: string) => <span className={mutedXs}>{value}</span>} />
                       <Bar dataKey="collected" name="Collected" fill="#10b981" radius={[6, 6, 0, 0]} />
                       <Bar dataKey="invoiced" name="Invoiced" fill="#94a3b8" radius={[6, 6, 0, 0]} />
                     </BarChart>
@@ -580,7 +581,7 @@ export default function FinancialReportsView() {
                     <div key={e.label}>
                       <div className="mb-1 flex items-center justify-between text-sm">
                         <span className="text-[var(--color-foreground)]">{e.label}</span>
-                        <span className="font-semibold text-[var(--color-foreground)]">{ngn(e.value)}</span>
+                        <span className={fgSemibold}>{ngn(e.value)}</span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-[var(--color-muted)]/50">
                         <div className={`h-full rounded-full ${e.tint} transition-all duration-500`} style={{ width: `${pct}%` }} />
@@ -599,11 +600,11 @@ export default function FinancialReportsView() {
                         return (
                           <div key={d.department} className="flex items-center justify-between gap-2 text-xs">
                             <span className="truncate text-[var(--color-foreground)]">{d.department}</span>
-                            <span className="flex items-center gap-2">
+                            <span className={flexGap2}>
                               <span className="hidden w-24 rounded-full bg-[var(--color-muted)]/60 sm:block">
                                 <span className="block h-1.5 rounded-full bg-amber-500" style={{ width: `${pct}%` }} />
                               </span>
-                              <span className="font-semibold text-[var(--color-foreground)]">{ngn(d.net)}</span>
+                              <span className={fgSemibold}>{ngn(d.net)}</span>
                             </span>
                           </div>
                         );
@@ -612,7 +613,7 @@ export default function FinancialReportsView() {
                   </div>
                 )}
                 <div className="flex items-center justify-between border-t border-[var(--color-border)] pt-3">
-                  <span className="text-sm font-semibold text-[var(--color-foreground)]">Total Expenses</span>
+                  <span className={cardTitle}>Total Expenses</span>
                   <span className="text-lg font-bold text-rose-600">{ngn(summary.expenses.total)}</span>
                 </div>
               </div>
@@ -624,20 +625,20 @@ export default function FinancialReportsView() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4">
               <div>
                 <h2 className="text-base font-semibold text-[var(--color-foreground)]">Profit &amp; Loss Statement</h2>
-                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXsMt}>
                   From {fmtPeriodDate(summary.range.from)} to {fmtPeriodDate(summary.range.to)} · collected basis
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className={flexGap2}>
                 <input type="date" value={from} onChange={(e) => e.target.value && setFrom(e.target.value)} aria-label="From date" className={inputCls + " max-w-[9.5rem] text-xs"} />
-                <span className="text-xs text-[var(--color-muted-fg)]">to</span>
+                <span className={mutedXs}>to</span>
                 <input type="date" value={to} onChange={(e) => e.target.value && setTo(e.target.value)} aria-label="To date" className={inputCls + " max-w-[9.5rem] text-xs"} />
               </div>
             </div>
             <div className="p-5">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[480px] text-sm">
-                  <tbody className="divide-y divide-[var(--color-border)]">
+                  <tbody className={divideBorder}>
                     <tr className="bg-[var(--color-muted)]/40">
                       <td className="px-2 py-2.5 font-bold text-[var(--color-foreground)]">Total Income (Collected)</td>
                       <td className="px-2 py-2.5 text-right font-bold text-emerald-600">{ngn(summary.pnl.incomeCollected)}</td>
@@ -689,7 +690,7 @@ export default function FinancialReportsView() {
           </div>
         </>
       ) : (
-        <div className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Select a period to view the report.</div>
+        <div className={emptyState}>Select a period to view the report.</div>
       )}
     </div>
   );

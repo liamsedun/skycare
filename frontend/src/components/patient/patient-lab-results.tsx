@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, FlaskConical } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, mutedFg, errorBanner, cardTitle, mutedSm, divideBorder, mutedXsMt, mutedXsMt1, sectionTitle, pageTitle, emptyState } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import {
   AppHeader,
@@ -81,25 +82,25 @@ export default function PatientLabResults() {
       <div className="hidden md:block">
         <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Lab results</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Laboratory orders and completed results for your family.</p>
+        <h1 className={pageTitle}>Lab results</h1>
+        <p className={mutedSm}>Laboratory orders and completed results for your family.</p>
       </div>
 
       <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading lab orders…</p>
+        <p className={emptyState}>Loading lab orders…</p>
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <FlaskConical size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No lab orders yet.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Tests requested by your doctor will appear here.</p>
+          <p className={sectionTitle}>No lab orders yet.</p>
+          <p className={mutedSm}>Tests requested by your doctor will appear here.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -116,11 +117,11 @@ export default function PatientLabResults() {
                   <div className="flex items-center gap-3">
                     <ChevronDown size={16} aria-hidden="true" className={`text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
                     <div>
-                      <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                      <p className={cardTitle}>
                         {order.patients ? `${order.patients.first_name} ${order.patients.last_name}` : ""}
                         {order.users?.full_name ? <span className="font-normal text-[var(--color-muted-fg)]"> · Dr. {order.users.full_name}</span> : null}
                       </p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXs}>
                         {new Date(order.requested_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} ·{" "}
                         {order.lab_order_tests.length} test{order.lab_order_tests.length === 1 ? "" : "s"}
                         {order.notes ? ` · ${order.notes}` : ""}
@@ -144,7 +145,7 @@ export default function PatientLabResults() {
                             <th className="pb-2 text-right font-medium">Status</th>
                           </tr>
                         </thead>
-                      <tbody className="divide-y divide-[var(--color-border)]">
+                      <tbody className={divideBorder}>
                         {order.lab_order_tests.map((t) => {
                           const result = t.lab_results[0];
                           return (
@@ -159,7 +160,7 @@ export default function PatientLabResults() {
                                     {result.is_abnormal ? " ⚠" : ""}
                                   </span>
                                 ) : (
-                                  <span className="text-[var(--color-muted-fg)]">—</span>
+                                  <span className={mutedFg}>—</span>
                                 )}
                               </td>
                               <td className="py-2.5 text-right">
@@ -208,8 +209,8 @@ export default function PatientLabResults() {
           ) : visible.length === 0 ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <FlaskConical size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No lab orders yet.</p>
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Tests requested by your doctor will appear here.</p>
+              <p className={sectionTitle}>No lab orders yet.</p>
+              <p className={mutedXsMt1}>Tests requested by your doctor will appear here.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -253,7 +254,7 @@ export default function PatientLabResults() {
                             return (
                               <li key={t.id} className="rounded-xl border border-[var(--color-border)] p-3">
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="text-sm font-semibold text-[var(--color-foreground)]">{t.test_name}</p>
+                                  <p className={cardTitle}>{t.test_name}</p>
                                   {allReady && result ? (
                                     <span
                                       className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
@@ -266,7 +267,7 @@ export default function PatientLabResults() {
                                     <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--color-muted-fg)]">Pending</span>
                                   )}
                                 </div>
-                                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{t.sample_type ?? "—"}</p>
+                                <p className={mutedXsMt}>{t.sample_type ?? "—"}</p>
                                 {allReady && result && (
                                   <p className={`mt-1.5 text-sm font-medium ${result.is_abnormal ? "text-rose-600" : "text-[var(--color-foreground)]"}`}>
                                     {result.result}

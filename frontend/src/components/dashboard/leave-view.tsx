@@ -6,6 +6,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { errorBanner, cardTitle, flexBetween, mutedSm, flexGap2, mutedXsMt, sectionTitle, mutedSmPlain, pageTitle, ghostIconBtn } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -233,8 +234,8 @@ export default function LeaveView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Leave</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Request and manage staff leave.</p>
+          <h1 className={pageTitle}>Leave</h1>
+          <p className={mutedSm}>Request and manage staff leave.</p>
         </div>
         <DateRangeBar
           from={from}
@@ -273,7 +274,7 @@ export default function LeaveView() {
             )}
           </div>
           {balances.length === 0 ? (
-            <p className="text-sm text-[var(--color-muted-fg)]">No leave balances yet — they appear here once HR sets your entitlements.</p>
+            <p className={mutedSmPlain}>No leave balances yet — they appear here once HR sets your entitlements.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
               {balances.map((b) => {
@@ -311,7 +312,7 @@ export default function LeaveView() {
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -323,7 +324,7 @@ export default function LeaveView() {
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <CalendarDays size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No leave requests.</p>
+          <p className={sectionTitle}>No leave requests.</p>
         </div>
       ) : visibleRows.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
@@ -337,16 +338,16 @@ export default function LeaveView() {
             <div key={row.id} className="rounded-xl border border-[var(--color-border)] bg-white px-4 py-3.5 shadow-[var(--shadow-sm)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                  <p className={cardTitle}>
                     {LEAVE_LABELS[row.leave_type] ?? row.leave_type} leave
                     {tab === "all" && row.users?.full_name ? ` · ${row.users.full_name}` : ""}
                   </p>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXsMt}>
                     {fmtDate(row.start_date)} → {fmtDate(row.end_date)} · {row.days ?? "—"} day(s)
                     {row.reason ? ` · ${row.reason}` : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${STATUS_CLASS[row.status] ?? STATUS_CLASS.pending}`}>
                     {row.status}
                   </span>
@@ -390,9 +391,9 @@ export default function LeaveView() {
       {showNew && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Request leave">
           <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-xl)]">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold text-[var(--color-foreground)]">Request leave</h2>
-              <button type="button" onClick={() => setShowNew(false)} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+              <button type="button" onClick={() => setShowNew(false)} className={ghostIconBtn} aria-label="Close">
                 ✕
               </button>
             </div>

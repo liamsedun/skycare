@@ -15,6 +15,7 @@ import {
   Smile,
 } from "lucide-react";
 import { initials } from "@/lib/auth";
+import { errorBanner, flexBetween, flexGap2 } from "@/lib/ui-constants";
 
 interface OtherUser {
   id: string;
@@ -376,7 +377,7 @@ export default function PatientChats() {
   return (
     <div className="space-y-4">
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -389,7 +390,7 @@ export default function PatientChats() {
         <div className="flex h-[72vh] min-h-[480px] flex-col overflow-hidden rounded-2xl border border-[#E3E9E7] bg-[#F5F7F6] shadow-lg">
           {/* Header */}
           <div style={{ backgroundColor: NAVY }} className="px-5 pb-4 pt-4">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <div>
                 <p className="text-[11px] font-bold tracking-[1.5px] text-[#7FA9A1]">SECURE MESSAGING</p>
                 <h1 className="mt-0.5 text-2xl font-bold text-white">Messages</h1>
@@ -660,7 +661,7 @@ export default function PatientChats() {
                                   mine ? "border-white/25 hover:bg-white/10" : "border-[#E3E9E7] hover:bg-[#F5F7F6]"
                                 }`}
                               >
-                                <span className="flex items-center gap-2">
+                                <span className={flexGap2}>
                                   <FileText size={16} className={mine ? "text-white/80" : "text-[#6B7A77]"} aria-hidden="true" />
                                   <span className="min-w-0">
                                     <span className={`block truncate text-xs font-semibold ${mine ? "text-white" : "text-[#16221F]"}`}>

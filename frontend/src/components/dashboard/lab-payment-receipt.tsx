@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Printer, ReceiptText } from "lucide-react";
 import TenantLetterhead from "@/components/print/tenant-letterhead";
 import { useTenantBranding } from "@/lib/use-tenant-branding";
+import { mutedFg, flexBetween, mutedSm, divideBorder, mutedXsMt, fgSemibold, sectionTitle, pageTitle, emptyState } from "@/lib/ui-constants";
 
 interface ReceiptData {
   tenant_name: string;
@@ -70,10 +71,10 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className={flexBetween}>
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Payment Receipt</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <h1 className={pageTitle}>Payment Receipt</h1>
+          <p className={mutedSm}>
             Proof of payment for walk-in / external lab services.
           </p>
         </div>
@@ -92,11 +93,11 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
       </Link>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading receipt…</p>
+        <p className={emptyState}>Loading receipt…</p>
       ) : !receipt ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">{error ?? "Receipt not found."}</p>
+          <p className={sectionTitle}>{error ?? "Receipt not found."}</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
@@ -108,9 +109,9 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
                 <p className="font-mono text-lg font-bold text-[var(--color-foreground)]">
                   {receipt.payment?.reference ?? `LAB-${receipt.request.id.slice(0, 8)}`}
                 </p>
-                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Paid: {fmtDate(receipt.payment?.paid_at ?? null)}</p>
+                <p className={mutedXsMt}>Paid: {fmtDate(receipt.payment?.paid_at ?? null)}</p>
                 {receipt.request.referrer && (
-                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Referrer: {receipt.request.referrer}</p>
+                  <p className={mutedXsMt}>Referrer: {receipt.request.referrer}</p>
                 )}
               </div>
               <div className="text-right">
@@ -127,11 +128,11 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
           <div className="px-6 py-5">
             {receipt.patient && (
               <div className="mb-4 rounded-lg bg-slate-50 px-4 py-3 text-sm">
-                <p className="font-semibold text-[var(--color-foreground)]">
+                <p className={fgSemibold}>
                   {receipt.patient.first_name} {receipt.patient.last_name}
                   {receipt.patient.is_walk_in ? <span className="ml-2 rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-violet-700">Walk-in</span> : null}
                 </p>
-                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXsMt}>
                   {receipt.patient.patient_number}
                   {receipt.patient.phone ? ` · ${receipt.patient.phone}` : ""}
                   {receipt.patient.email ? ` · ${receipt.patient.email}` : ""}
@@ -146,7 +147,7 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
                   <th className="pb-2 text-right font-medium">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className={divideBorder}>
                 {receipt.items.map((item, i) => (
                   <tr key={i}>
                     <td className="py-2.5 text-[var(--color-foreground)]">{item.service_name}</td>
@@ -158,7 +159,7 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
 
             <div className="mt-4 flex justify-end text-right text-sm">
               <div className="space-y-1">
-                <p className="text-[var(--color-muted-fg)]">Total: {ngn(receipt.total)}</p>
+                <p className={mutedFg}>Total: {ngn(receipt.total)}</p>
                 <p className="text-emerald-600">Amount paid: {ngn(Number(receipt.payment?.amount ?? 0))}</p>
                 <p className="font-medium text-[var(--color-muted-fg)]">Balance: {ngn(Math.max(0, receipt.total - Number(receipt.payment?.amount ?? 0)))}</p>
               </div>

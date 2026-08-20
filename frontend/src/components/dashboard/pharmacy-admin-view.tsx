@@ -13,6 +13,7 @@ import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import FilterBar from "@/components/filters/filter-bar";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, mutedFg, btnBase, flexBetween, mutedSm, divideBorder, labelSm, mutedXsMt, flexWrapGap2, fgMedium, mutedXsMt1, fgSemibold, sectionTitle, mutedSmPlain, ghostIconBtn, rowStart, modalBackdrop, cardShell, tableHeadCell } from "@/lib/ui-constants";
 
 // ============================================================================
 // Pharmacy Admin â€” catalogue administration for hospital admins:
@@ -174,7 +175,7 @@ export function DrugsTab() {
         <Stat label="Categories" value={summary?.categories ?? "â€”"} />
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={flexWrapGap2}>
         <div className="relative min-w-52 flex-1">
           <Search size={14} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
           <input
@@ -200,18 +201,18 @@ export function DrugsTab() {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-              <th scope="col" className="px-4 py-2.5 font-semibold">Drug</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Category</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Stock</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Retail</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Effective</th>
+            <tr className={tableHeadCell}>
+              <th scope="col" className={btnBase}>Drug</th>
+              <th scope="col" className={btnBase}>Category</th>
+              <th scope="col" className={btnBase}>Stock</th>
+              <th scope="col" className={btnBase}>Retail</th>
+              <th scope="col" className={btnBase}>Effective</th>
               <th scope="col" className="px-4 py-2.5 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : rows.length === 0 ? (
@@ -220,8 +221,8 @@ export function DrugsTab() {
               rows.map((d) => (
                 <tr key={d.id} className={d.isActive ? "" : "opacity-50"}>
                   <td className="px-4 py-2.5">
-                    <p className="font-medium text-[var(--color-foreground)]">{d.name}</p>
-                    <p className="text-xs text-[var(--color-muted-fg)]">
+                    <p className={fgMedium}>{d.name}</p>
+                    <p className={mutedXs}>
                       {[d.form, d.dosage].filter(Boolean).join(" Â· ")}
                       {d.genericName ? ` Â· ${d.genericName}` : ""}
                       {d.isControlled && (
@@ -233,14 +234,14 @@ export function DrugsTab() {
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{d.category}</td>
                   <td className="px-4 py-2.5">
                     <span className={`font-semibold ${d.stock <= d.reorderLevel ? "text-amber-600" : "text-emerald-600"}`}>{d.stock}</span>
-                    <span className="text-xs text-[var(--color-muted-fg)]"> / min {d.reorderLevel}</span>
+                    <span className={mutedXs}> / min {d.reorderLevel}</span>
                   </td>
                   <td className="px-4 py-2.5">{ngn(d.unitPrice)}</td>
                   <td className="px-4 py-2.5">
                     {d.effectivePrice !== d.unitPrice ? (
                       <span className="font-semibold text-[var(--color-primary)]">{ngn(d.effectivePrice)}</span>
                     ) : (
-                      <span className="text-[var(--color-muted-fg)]">â€”</span>
+                      <span className={mutedFg}>â€”</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-right">
@@ -384,11 +385,11 @@ export function DrugFormModal({ drug, categories, onClose, onSaved }: { drug: Dr
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className={modalBackdrop} role="dialog" aria-modal="true">
       <div className="my-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h3 className="text-lg font-bold">{drug ? "Edit drug" : "Add drug"}</h3>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={16} />
           </button>
         </div>
@@ -600,7 +601,7 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
           searchPlaceholder="Search name, code, contactâ€¦"
           searchWidth={240}
         />
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <ImportExportMenu
             entityLabel="Suppliers"
             exportCsv={exportCsv}
@@ -621,18 +622,18 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-              <th scope="col" className="px-4 py-2.5 font-semibold">Supplier</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Contact</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Phone</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">NAFDAC</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Terms</th>
+            <tr className={tableHeadCell}>
+              <th scope="col" className={btnBase}>Supplier</th>
+              <th scope="col" className={btnBase}>Contact</th>
+              <th scope="col" className={btnBase}>Phone</th>
+              <th scope="col" className={btnBase}>NAFDAC</th>
+              <th scope="col" className={btnBase}>Terms</th>
               <th scope="col" className="px-4 py-2.5 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : visible.length === 0 ? (
@@ -641,8 +642,8 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
               visible.map((s) => (
                 <tr key={s.id} className={s.isActive ? "" : "opacity-50"}>
                   <td className="px-4 py-2.5">
-                    <p className="font-medium text-[var(--color-foreground)]">{s.name}</p>
-                    {s.code && <p className="text-xs text-[var(--color-muted-fg)]">{s.code}</p>}
+                    <p className={fgMedium}>{s.name}</p>
+                    {s.code && <p className={mutedXs}>{s.code}</p>}
                   </td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
                     {[s.contactPerson, s.email].filter(Boolean).join(" Â· ") || "â€”"}
@@ -724,11 +725,11 @@ function SupplierFormModal({ supplier, onClose, onSaved }: { supplier: SupplierR
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className={modalBackdrop} role="dialog" aria-modal="true">
       <div className="my-4 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h3 className="text-lg font-bold">{supplier ? "Edit supplier" : "Add supplier"}</h3>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={16} />
           </button>
         </div>
@@ -851,9 +852,9 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
   return (
     <div className={`grid gap-5 ${viewOnly ? "lg:grid-cols-1" : "lg:grid-cols-2"}`}>
       {!viewOnly && (
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className={cardShell}>
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Set a branch price</h3>
-        <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+        <p className={mutedXsMt}>
           Applies an override for one branch â€” leave branch on â€œAll branchesâ€ for a base price used everywhere else.
         </p>
 
@@ -917,7 +918,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
       )}
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className={cardShell}>
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Active overrides</h3>
         {loading ? (
           <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</p>
@@ -932,7 +933,7 @@ export function PricesTab({ viewOnly = false }: { viewOnly?: boolean }) {
               <li key={o.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{o.drugName}</p>
-                  <p className="text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXs}>
                     {o.branchName}{o.note ? ` Â· ${o.note}` : ""}
                   </p>
                 </div>
@@ -1058,14 +1059,14 @@ export function ImportTab() {
   return (
     <>
     <div className="grid gap-5 lg:grid-cols-2">
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
-        <div className="flex items-center justify-between">
+      <div className={cardShell}>
+        <div className={flexBetween}>
           <h3 className="text-sm font-bold text-[var(--color-foreground)]">Upload catalogue</h3>
           <button type="button" onClick={downloadTemplate} className={btnGhost}>
             <Download size={13} aria-hidden="true" /> Template
           </button>
         </div>
-        <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+        <p className={mutedXsMt1}>
           Columns: <code className="rounded bg-slate-100 px-1">name*, category*, form*</code>, generic_name, brand, dosage, sku, wholesale_price, unit_price, reorder_level, reorder_qty, requires_rx, nafdac_number, <code className="rounded bg-slate-100 px-1">supplier</code> (optional â€” the supplier&apos;s exact name; it must already exist on the Suppliers tab). Max 1000 rows.
         </p>
 
@@ -1085,7 +1086,7 @@ export function ImportTab() {
             <button type="button" onClick={() => fileRef.current?.click()} className={btnGhost}>
               <Upload size={13} aria-hidden="true" /> Choose .csv file
             </button>
-            <span className="text-xs text-[var(--color-muted-fg)]">
+            <span className={mutedXs}>
               If some drugs already exist you&apos;ll be asked whether to replace them.
             </span>
           </div>
@@ -1105,7 +1106,7 @@ export function ImportTab() {
         </button>
       </div>
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className={cardShell}>
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Import report</h3>
         {!report && !error && (
           <p className="py-8 text-center text-xs text-[var(--color-muted-fg)]">
@@ -1155,8 +1156,8 @@ export function ImportTab() {
               <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
               <div>
                 <h4 className="text-sm font-bold text-[var(--color-foreground)]">Existing drugs found</h4>
-                <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
-                  <span className="font-semibold text-[var(--color-foreground)]">{pendingConfirm}</span> of the drug(s) in
+                <p className={mutedSm}>
+                  <span className={fgSemibold}>{pendingConfirm}</span> of the drug(s) in
                   this file already exist in the catalogue.
                 </p>
               </div>
@@ -1330,7 +1331,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-[var(--color-muted-fg)]">
+        <p className={mutedSmPlain}>
           Branch staff only see their branch&apos;s stock and prices. The main branch always stays.
         </p>
         {!viewOnly && (
@@ -1359,7 +1360,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
       ) : rows.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-12 text-center shadow-[var(--shadow-sm)]">
           <Store size={36} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             No branches yet â€” add your first one.
           </p>
         </div>
@@ -1460,18 +1461,18 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
       {modal.open && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label={modal.branch ? `Edit ${modal.branch.name}` : "Add branch"}
         >
           <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h3 className="text-lg font-bold">{modal.branch ? `Edit â€” ${modal.branch.name}` : "Add branch"}</h3>
               <button
                 type="button"
                 onClick={() => setModal({ open: false })}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 <X size={18} aria-hidden="true" />
@@ -1486,7 +1487,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-name">
+                  <label className={labelSm} htmlFor="b-name">
                     Branch name
                   </label>
                   <input
@@ -1500,7 +1501,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-code">
+                  <label className={labelSm} htmlFor="b-code">
                     Code
                   </label>
                   <input
@@ -1512,7 +1513,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-phone">
+                  <label className={labelSm} htmlFor="b-phone">
                     Phone
                   </label>
                   <input
@@ -1523,7 +1524,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-address">
+                  <label className={labelSm} htmlFor="b-address">
                     Address
                   </label>
                   <input
@@ -1534,7 +1535,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-city">
+                  <label className={labelSm} htmlFor="b-city">
                     City
                   </label>
                   <input
@@ -1545,7 +1546,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-state">
+                  <label className={labelSm} htmlFor="b-state">
                     State
                   </label>
                   <input
@@ -1556,7 +1557,7 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="b-email">
+                  <label className={labelSm} htmlFor="b-email">
                     Email
                   </label>
                   <input

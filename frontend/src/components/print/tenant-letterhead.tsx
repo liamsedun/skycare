@@ -1,6 +1,7 @@
 "use client";
 
 import type { TenantBranding } from "@/lib/use-tenant-branding";
+import { mutedXsMt, mutedXsMt1 } from "@/lib/ui-constants";
 
 /** Single-line org address: "street, city, state, country" (missing parts skipped). */
 export function fullAddress(
@@ -44,8 +45,8 @@ export default function TenantLetterhead({ brand }: { brand: TenantBranding | nu
       )}
       <div className="min-w-0">
         <p className="text-base font-bold leading-snug text-[var(--color-foreground)]">{name}</p>
-        {fullAddress(brand) && <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{fullAddress(brand)}</p>}
-        {contactLine(brand) && <p className="mt-1 text-xs text-[var(--color-muted-fg)]">{contactLine(brand)}</p>}
+        {fullAddress(brand) && <p className={mutedXsMt}>{fullAddress(brand)}</p>}
+        {contactLine(brand) && <p className={mutedXsMt1}>{contactLine(brand)}</p>}
       </div>
     </div>
   );

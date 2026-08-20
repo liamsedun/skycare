@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Download, FileText, Loader2, Printer, Search, Trash2, X } from "lucide-react";
 import { bulkDeleteLines, calcOf, fetchRunDetail, fetchRuns, fmtDate, fmtN, HrRunLine, openPrintWindow, payslipPrintHtml, STATUS_CHIP } from "@/lib/hr-schedules";
 import { dateStamp } from "@/lib/export";
+import { mutedFg, divideBorder, flexGap2, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -233,16 +234,16 @@ export default function HrPayslipsView() {
         </div>
       ) : detailLoading ? (
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-white py-16 text-sm text-[var(--color-muted-fg)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading payslips...
+          <Loader2 className={spinner} /> Loading payslips...
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-[var(--color-border)] bg-white py-16 text-center">
           <AlertCircle className="mx-auto mb-3 h-6 w-6 text-[var(--color-muted-fg)]/40" />
-          <p className="text-sm text-[var(--color-muted-fg)]">{search ? "No matching employees" : "No payslips found in this run."}</p>
+          <p className={mutedSmPlain}>{search ? "No matching employees" : "No payslips found in this run."}</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="border-b border-[var(--color-border)] text-[11px] uppercase text-[var(--color-muted-fg)]">
               <tr>
                 {isAdmin && (
@@ -267,7 +268,7 @@ export default function HrPayslipsView() {
                 <th className="w-40 px-3 py-3 text-left" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {filtered.map((l) => (
                 <tr key={l.id} className="hover:bg-[var(--color-muted)]/50">
                   {isAdmin && (
@@ -335,7 +336,7 @@ export default function HrPayslipsView() {
           <div className="fixed right-0 top-0 z-50 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
             <div className="flex shrink-0 items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
               <h2 className="text-base font-semibold">Payslip</h2>
-              <div className="flex items-center gap-2">
+              <div className={flexGap2}>
                 <button onClick={printOne} className="inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-muted)]">
                   <Printer className="h-3.5 w-3.5" /> Print
                 </button>
@@ -355,19 +356,19 @@ export default function HrPayslipsView() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="rounded-lg bg-[var(--color-muted)]/60 p-3">
-                  <span className="text-[var(--color-muted-fg)]">Employee</span>
+                  <span className={mutedFg}>Employee</span>
                   <p className="mt-0.5 font-semibold">{viewing.line.staff?.users?.full_name}</p>
                 </div>
                 <div className="rounded-lg bg-[var(--color-muted)]/60 p-3">
-                  <span className="text-[var(--color-muted-fg)]">Staff ID</span>
+                  <span className={mutedFg}>Staff ID</span>
                   <p className="mt-0.5 font-semibold">{viewing.line.staff?.staff_number}</p>
                 </div>
                 <div className="rounded-lg bg-[var(--color-muted)]/60 p-3">
-                  <span className="text-[var(--color-muted-fg)]">Department</span>
+                  <span className={mutedFg}>Department</span>
                   <p className="mt-0.5 font-semibold">{viewing.line.staff?.department || "—"}</p>
                 </div>
                 <div className="rounded-lg bg-[var(--color-muted)]/60 p-3">
-                  <span className="text-[var(--color-muted-fg)]">Pay Period</span>
+                  <span className={mutedFg}>Pay Period</span>
                   <p className="mt-0.5 font-semibold">
                     {viewing.run.period || viewing.line.pay_period}
                     {viewing.run.payDate ? ` · ${fmtDate(viewing.run.payDate)}` : ""}
@@ -390,7 +391,7 @@ export default function HrPayslipsView() {
                     <div className="space-y-1">
                       {rows.map(([l, v]) => (
                         <div key={String(l)} className="flex justify-between">
-                          <span className="text-[var(--color-muted-fg)]">{String(l)}</span>
+                          <span className={mutedFg}>{String(l)}</span>
                           <span className="font-mono">{fmtN(Number(v) || 0)}</span>
                         </div>
                       ))}
@@ -412,24 +413,24 @@ export default function HrPayslipsView() {
                   return (
                     <div className="space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-[var(--color-muted-fg)]">PAYE Tax</span>
+                        <span className={mutedFg}>PAYE Tax</span>
                         <span className="font-mono text-rose-600">{fmtN(Number(viewing.line.paye) || 0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--color-muted-fg)]">Pension (EE)</span>
+                        <span className={mutedFg}>Pension (EE)</span>
                         <span className="font-mono text-amber-600">{fmtN(Number(viewing.line.pension_ee) || 0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--color-muted-fg)]">NHIS (5% of Basic)</span>
+                        <span className={mutedFg}>NHIS (5% of Basic)</span>
                         <span className="font-mono text-amber-600">{fmtN(Number(viewing.line.nhis) || 0)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-[var(--color-muted-fg)]">NHF (2.5% of Basic)</span>
+                        <span className={mutedFg}>NHF (2.5% of Basic)</span>
                         <span className="font-mono">{fmtN(Number(viewing.line.nhf) || 0)}</span>
                       </div>
                       {intDedArr.map((d: { description: string; amount: number }, i: number) => (
                         <div key={i} className="flex justify-between">
-                          <span className="text-[var(--color-muted-fg)]">{String(d.description)}</span>
+                          <span className={mutedFg}>{String(d.description)}</span>
                           <span className="font-mono">{fmtN(Number(d.amount) || 0)}</span>
                         </div>
                       ))}

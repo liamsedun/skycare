@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, mutedFg, errorBanner, cardTitle, flexGap2 } from "@/lib/ui-constants";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, Pencil, Plus, Stethoscope, Trash2, Upload, X } from "lucide-react";
 
@@ -167,9 +168,9 @@ export default function WebsiteDoctorsSection() {
   return (
     <section className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
       <header className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Stethoscope size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
-          <h2 className="text-sm font-semibold text-[var(--color-foreground)]">Website doctors</h2>
+        <div className={flexGap2}>
+          <Stethoscope size={16} aria-hidden="true" className={mutedFg} />
+          <h2 className={cardTitle}>Website doctors</h2>
         </div>
         {!showForm && (
           <button
@@ -188,7 +189,7 @@ export default function WebsiteDoctorsSection() {
 
       <div className="space-y-3 p-4">
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -328,7 +329,7 @@ export default function WebsiteDoctorsSection() {
                       <X size={12} /> Remove photo
                     </button>
                   )}
-                  <p className="text-xs text-[var(--color-muted-fg)]">PNG, JPG, WEBP or GIF · max 2 MB</p>
+                  <p className={mutedXs}>PNG, JPG, WEBP or GIF · max 2 MB</p>
                 </div>
               </div>
             </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedFg, errorBanner, cardTitle } from "@/lib/ui-constants";
 import { useRef, useState } from "react";
 import { DatabaseBackup, Download, Loader2, RotateCcw, Upload } from "lucide-react";
 
@@ -98,13 +99,13 @@ export default function SystemBackupSection() {
   return (
     <section className="rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
       <header className="flex items-center gap-2 border-b border-[var(--color-border)] px-4 py-3">
-        <DatabaseBackup size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
-        <h2 className="text-sm font-semibold text-[var(--color-foreground)]">System backup &amp; reset</h2>
+        <DatabaseBackup size={16} aria-hidden="true" className={mutedFg} />
+        <h2 className={cardTitle}>System backup &amp; reset</h2>
       </header>
 
       <div className="space-y-4 p-4">
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -115,7 +116,7 @@ export default function SystemBackupSection() {
         )}
 
         <div className="rounded-lg border border-[var(--color-border)] p-3">
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">Backup</p>
+          <p className={cardTitle}>Backup</p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-fg)]">
             Downloads every table of this hospital (patients, records, billing, pharmacy, lab, HR and configuration) as a JSON file.
           </p>
@@ -131,7 +132,7 @@ export default function SystemBackupSection() {
         </div>
 
         <div className="rounded-lg border border-[var(--color-border)] p-3">
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">Restore</p>
+          <p className={cardTitle}>Restore</p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-muted-fg)]">
             Replaces ALL current hospital data with a backup file. Missing login accounts are recreated with a temporary password.
           </p>

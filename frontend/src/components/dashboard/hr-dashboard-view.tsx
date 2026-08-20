@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, mutedFg, flexBetween, mutedXsMt1, fgSemibold } from "@/lib/ui-constants";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -69,14 +70,14 @@ const LEAVE_TINTS: Record<string, string> = {
 function KpiCard({ icon: Icon, tint, label, value, sub, valueCls = "" }: { icon: typeof Users; tint: string; label: string; value: ReactNode; sub?: ReactNode; valueCls?: string }) {
   return (
     <div className={panelCls}>
-      <div className="flex items-center justify-between">
+      <div className={flexBetween}>
         <span className="text-xs font-medium uppercase tracking-wide text-[var(--color-muted-fg)]">{label}</span>
         <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: `${tint}1a`, color: tint }}>
           <Icon size={18} />
         </span>
       </div>
       <div className={`mt-2 text-2xl font-bold text-[var(--color-foreground)] ${valueCls}`}>{value}</div>
-      {sub && <div className="mt-1 text-xs text-[var(--color-muted-fg)]">{sub}</div>}
+      {sub && <div className={mutedXsMt1}>{sub}</div>}
     </div>
   );
 }
@@ -299,7 +300,7 @@ export default function HrDashboardView() {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className={`${panelCls} lg:col-span-1`}>
-          <h3 className="font-semibold text-[var(--color-foreground)]">Attendance today</h3>
+          <h3 className={fgSemibold}>Attendance today</h3>
           {attTotal > 0 ? (
             <>
               <Donut data={attData} colors={[C.emerald, C.amber, C.rose]} center={String(today?.coverage ?? 0) + "%"} centerSub="coverage" />
@@ -319,14 +320,14 @@ export default function HrDashboardView() {
           <div className="mt-3 flex items-center justify-center gap-6">
             <Ring pct={dash?.shifts?.coverage ?? 0} label="Reports covered" />
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between gap-6"><span className="text-[var(--color-muted-fg)]">Templates</span><b>{dash?.shifts?.templates ?? 0}</b></div>
-              <div className="flex justify-between gap-6"><span className="text-[var(--color-muted-fg)]">Assigned today</span><b>{dash?.shifts?.assigned_today ?? 0}</b></div>
+              <div className="flex justify-between gap-6"><span className={mutedFg}>Templates</span><b>{dash?.shifts?.templates ?? 0}</b></div>
+              <div className="flex justify-between gap-6"><span className={mutedFg}>Assigned today</span><b>{dash?.shifts?.assigned_today ?? 0}</b></div>
             </div>
           </div>
         </div>
 
         <div className={`${panelCls} lg:col-span-1`}>
-          <h3 className="font-semibold text-[var(--color-foreground)]">Departments</h3>
+          <h3 className={fgSemibold}>Departments</h3>
           {deptData.length > 0 ? (
             <div className="mt-3 h-56">
               <ResponsiveContainer width="100%" height="100%">
@@ -350,12 +351,12 @@ export default function HrDashboardView() {
             {depts.slice(0, 10).map(([d, n]) => (
               <span key={d} className="rounded-full bg-[var(--color-muted)] px-2.5 py-0.5 text-[11px] font-medium">{d} · {n}</span>
             ))}
-            {depts.length === 0 && <span className="text-xs text-[var(--color-muted-fg)]">No departments match this search.</span>}
+            {depts.length === 0 && <span className={mutedXs}>No departments match this search.</span>}
           </div>
         </div>
 
         <div className={`${panelCls} lg:col-span-1`}>
-          <h3 className="font-semibold text-[var(--color-foreground)]">Leave usage</h3>
+          <h3 className={fgSemibold}>Leave usage</h3>
           <div className="mt-2">
             {entTotal > 0 ? (
               <>
@@ -384,15 +385,15 @@ export default function HrDashboardView() {
                 </div>
               );
             })}
-            {balances.length === 0 && <div className="text-[var(--color-muted-fg)]">No balances yet.</div>}
+            {balances.length === 0 && <div className={mutedFg}>No balances yet.</div>}
           </div>
         </div>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <div className={panelCls}>
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-[var(--color-foreground)]">Compliance alerts</h3>
+          <div className={flexBetween}>
+            <h3 className={fgSemibold}>Compliance alerts</h3>
             <span className="rounded-full bg-[var(--color-muted)] px-2.5 py-0.5 text-xs font-medium">{(dash?.credentials?.verified ?? 0) + expired.length + expiring.length} credential events</span>
           </div>
           <div className="mt-3 space-y-2">
@@ -435,8 +436,8 @@ export default function HrDashboardView() {
         </div>
 
         <div className={`${panelCls} lg:col-span-1`}>
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-[var(--color-foreground)]">Attendance pulse <span className="text-xs font-normal text-[var(--color-muted-fg)]">· last 14 days</span></h3>
+          <div className={flexBetween}>
+            <h3 className={fgSemibold}>Attendance pulse <span className="text-xs font-normal text-[var(--color-muted-fg)]">· last 14 days</span></h3>
             <CalendarDays className="h-4 w-4 text-[var(--color-muted-fg)]" />
           </div>
           {attSeries.length > 0 ? (
@@ -468,8 +469,8 @@ export default function HrDashboardView() {
         <div className={panelCls}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="font-semibold text-[var(--color-foreground)]">Annual leave entitlements</h3>
-              <p className="text-xs text-[var(--color-muted-fg)]">Set how many days each staff member can claim per leave type per year. Saving re-syncs every staff member&apos;s balances (used days are kept).</p>
+              <h3 className={fgSemibold}>Annual leave entitlements</h3>
+              <p className={mutedXs}>Set how many days each staff member can claim per leave type per year. Saving re-syncs every staff member&apos;s balances (used days are kept).</p>
             </div>
             {policyMsg && (
               <span className={`rounded-full px-3 py-1 text-xs font-medium ${policyMsg.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{policyMsg.text}</span>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, Download, FileText, Loader2, Printer, Trash2 } from "lucide-react";
 import { bulkDeleteLines, calcOf, fetchRunDetail, fetchRuns, fmtDate, fmtN, HrRunLine, printScheduleDoc, STATUS_CHIP } from "@/lib/hr-schedules";
 import { dateStamp } from "@/lib/export";
+import { divideBorder, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -206,16 +207,16 @@ export default function HrPensionScheduleView() {
         </div>
       ) : detailLoading ? (
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--color-border)] bg-white py-16 text-sm text-[var(--color-muted-fg)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+          <Loader2 className={spinner} /> Loading...
         </div>
       ) : lines.length === 0 ? (
         <div className="rounded-2xl border border-[var(--color-border)] bg-white py-16 text-center">
           <AlertCircle className="mx-auto mb-3 h-6 w-6 text-[var(--color-muted-fg)]/40" />
-          <p className="text-sm text-[var(--color-muted-fg)]">No employee lines found in this run.</p>
+          <p className={mutedSmPlain}>No employee lines found in this run.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="border-b border-[var(--color-border)] text-[11px] uppercase text-[var(--color-muted-fg)]">
               <tr>
                 {isAdmin && (
@@ -239,7 +240,7 @@ export default function HrPensionScheduleView() {
                 {isAdmin && <th className="w-16 px-3 py-3 text-left" />}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {lines.map((l) => {
                 const tot = (Number(l.pension_ee) || 0) + (Number(l.pension_employer) || 0);
                 return (

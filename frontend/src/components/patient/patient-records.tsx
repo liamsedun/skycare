@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs, mutedFg, errorBanner, cardTitle, flexBetween, mutedSm, mutedXsMt, mutedXsMt1, sectionTitle, pageTitle, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ClipboardList, FileText, Loader2, PenLine, Stethoscope } from "lucide-react";
 import {
@@ -196,18 +197,18 @@ function NoteEditModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label="Edit Doctor Note"
     >
       <div className="my-4 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">Edit Doctor Note</h2>
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+            className={ghostIconBtn}
             aria-label="Close"
           >
             ✕
@@ -216,7 +217,7 @@ function NoteEditModal({
 
         <form onSubmit={save} className="mt-5 space-y-5">
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            <p role="alert" className={errorBanner}>
               {error}
             </p>
           )}
@@ -384,23 +385,23 @@ export default function PatientRecords() {
       <div className="hidden md:block">
         <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Medical Records</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your clinical records, doctor notes and reports.</p>
+        <h1 className={pageTitle}>Medical Records</h1>
+        <p className={mutedSm}>Your clinical records, doctor notes and reports.</p>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading your records…</p>
+        <p className={emptyState}>Loading your records…</p>
       ) : !hasAnything ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ClipboardList size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No records yet.</p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Your visits will appear here.</p>
+          <p className={sectionTitle}>No records yet.</p>
+          <p className={mutedSm}>Your visits will appear here.</p>
         </div>
       ) : (
         <>
@@ -443,16 +444,16 @@ export default function PatientRecords() {
                       <div className="flex items-center gap-3">
                         <ChevronDown size={16} aria-hidden="true" className={`text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
                         <div>
-                          <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                          <p className={cardTitle}>
                             {recordTypeLabels[rec.record_type] ?? rec.record_type.replace(/_/g, " ")}
                           </p>
-                          <p className="text-xs text-[var(--color-muted-fg)]">
+                          <p className={mutedXs}>
                             {fmtDate(rec.created_at)}
                             {rec.users ? ` · ${rec.users.full_name}` : ""}
                           </p>
                         </div>
                       </div>
-                      {rec.title ? <span className="text-xs text-[var(--color-muted-fg)]">{rec.title}</span> : null}
+                      {rec.title ? <span className={mutedXs}>{rec.title}</span> : null}
                     </button>
                     {open && rec.content && (
                       <div className="border-t border-[var(--color-border)] bg-slate-50/60 px-4 py-4">
@@ -490,10 +491,10 @@ export default function PatientRecords() {
                         <div className="flex items-center gap-3">
                           <Stethoscope size={16} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                           <div>
-                            <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                            <p className={cardTitle}>
                               Visit · {fmtDate(note.visit_date)}
                             </p>
-                            <p className="text-xs text-[var(--color-muted-fg)]">
+                            <p className={mutedXs}>
                               {note.users?.full_name ?? "Doctor"}
                               {note.next_visit_date ? ` · Next visit: ${fmtDate(note.next_visit_date)}` : ""}
                             </p>
@@ -556,7 +557,7 @@ export default function PatientRecords() {
                           </div>
                         )}
                         {note.next_visit_reason && (
-                          <p className="text-xs text-[var(--color-muted-fg)]">
+                          <p className={mutedXs}>
                             Next visit reason: {note.next_visit_reason}
                           </p>
                         )}
@@ -587,10 +588,10 @@ export default function PatientRecords() {
                       className="focus-ring flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
                     >
                       <div className="flex items-center gap-3">
-                        <FileText size={16} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
+                        <FileText size={16} aria-hidden="true" className={mutedFg} />
                         <div>
                           <p className="font-mono text-sm font-semibold text-[var(--color-foreground)]">{rep.reference_number}</p>
-                          <p className="text-xs text-[var(--color-muted-fg)]">
+                          <p className={mutedXs}>
                             {fmtDate(rep.report_date)}
                             {rep.author_name ? ` · ${rep.author_name}` : ""}
                           </p>
@@ -655,8 +656,8 @@ export default function PatientRecords() {
           ) : !hasAnything ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <ClipboardList size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No records yet.</p>
-              <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Your visits will appear here.</p>
+              <p className={sectionTitle}>No records yet.</p>
+              <p className={mutedXsMt1}>Your visits will appear here.</p>
             </div>
           ) : (
             <div className="relative ml-1.5 space-y-4 border-l-2 border-[#e0a84a]/30 pl-4">
@@ -677,10 +678,10 @@ export default function PatientRecords() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                              <p className={cardTitle}>
                                 {recordTypeLabels[rec.record_type] ?? rec.record_type.replace(/_/g, " ")}
                               </p>
-                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                              <p className={mutedXsMt}>
                                 {fmtDate(rec.created_at)}
                                 {rec.users ? ` · ${rec.users.full_name}` : ""}
                               </p>
@@ -722,8 +723,8 @@ export default function PatientRecords() {
                               aria-expanded={open}
                               className="min-w-0 flex-1 text-left"
                             >
-                              <p className="text-sm font-semibold text-[var(--color-foreground)]">Visit · {fmtDate(note.visit_date)}</p>
-                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                              <p className={cardTitle}>Visit · {fmtDate(note.visit_date)}</p>
+                              <p className={mutedXsMt}>
                                 {note.users?.full_name ?? "Doctor"}
                                 {note.next_visit_date ? ` · Next visit: ${fmtDate(note.next_visit_date)}` : ""}
                               </p>
@@ -783,7 +784,7 @@ export default function PatientRecords() {
                                 </div>
                               )}
                               {note.next_visit_reason && (
-                                <p className="text-[var(--color-muted-fg)]">Next visit reason: {note.next_visit_reason}</p>
+                                <p className={mutedFg}>Next visit reason: {note.next_visit_reason}</p>
                               )}
                             </div>
                           )}
@@ -813,7 +814,7 @@ export default function PatientRecords() {
                               <p className="truncate font-mono text-sm font-semibold text-[var(--color-foreground)]">
                                 {rep.reference_number}
                               </p>
-                              <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                              <p className={mutedXsMt}>
                                 {fmtDate(rep.report_date)}
                                 {rep.author_name ? ` · ${rep.author_name}` : ""}
                               </p>

@@ -6,6 +6,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, mutedFg, divideBorder, flexGap2, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 const inputCls =
@@ -389,17 +390,17 @@ export default function HrStaffView() {
           onImport={importHrStaff}
           onImported={() => load()}
         />
-        <span className="text-sm text-[var(--color-muted-fg)]">{visibleRows.length} staff</span>
+        <span className={mutedSmPlain}>{visibleRows.length} staff</span>
       </div>
 
       {error && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--color-muted-fg)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading staff…
+          <Loader2 className={spinner} /> Loading staff…
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border border-[var(--color-border)] bg-white">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead className="border-b border-[var(--color-border)] text-xs uppercase text-[var(--color-muted-fg)]">
               <tr>
                 <th className="px-4 py-3">Staff</th>
@@ -412,14 +413,14 @@ export default function HrStaffView() {
                 <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {visibleRows.map((r) => {
                 const p = r.profiles ?? null;
                 return (
                   <tr key={r.id} className="hover:bg-[var(--color-muted)]">
                     <td className="px-4 py-3">
                       <div className="font-medium">{r.users?.full_name}</div>
-                      <div className="text-xs text-[var(--color-muted-fg)]">{r.users?.role} · {r.staff_number}{r.users?.is_active === false && " · disabled"}</div>
+                      <div className={mutedXs}>{r.users?.role} · {r.staff_number}{r.users?.is_active === false && " · disabled"}</div>
                     </td>
                     <td className="px-4 py-3">{r.department ?? "—"}</td>
                     <td className="px-4 py-3">{r.employment_type ?? "—"}</td>
@@ -456,7 +457,7 @@ export default function HrStaffView() {
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-semibold">{(detail.users as { full_name?: string })?.full_name}</h3>
-                <p className="text-sm text-[var(--color-muted-fg)]">
+                <p className={mutedSmPlain}>
                   {(detail.users as { role?: string })?.role} · {String(detail.staff_number ?? "")} · {String(detail.department ?? "—")}
                 </p>
               </div>
@@ -528,7 +529,7 @@ export default function HrStaffView() {
                           onClick={saveProfile}
                           disabled={saving}
                         >
-                          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
+                          {saving ? <Loader2 className={spinner} /> : <Save className="h-4 w-4" />} Save
                         </button>
                       </div>
                     </div>
@@ -603,7 +604,7 @@ export default function HrStaffView() {
                       {(Array.isArray(payCfg.internal_deductions) ? payCfg.internal_deductions : []).map((d, i) => {
                         const dd = d as { description?: string; amount?: number };
                         return (
-                          <div key={i} className="flex items-center gap-2">
+                          <div key={i} className={flexGap2}>
                             <input className={inputCls + " px-2 py-1.5 text-xs"} placeholder="Description" value={dd.description ?? ""}
                               onChange={(e) => {
                                 const arr = [...(payCfg.internal_deductions as Array<{ description: string; amount: number }>)];
@@ -628,7 +629,7 @@ export default function HrStaffView() {
                       </button>
                     </div>
                     <button className="mt-3 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50" onClick={savePayrollCfg} disabled={saving}>
-                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save payroll settings
+                      {saving ? <Loader2 className={spinner} /> : <Save className="h-4 w-4" />} Save payroll settings
                     </button>
                   </div>
                 ) : (
@@ -649,15 +650,15 @@ export default function HrStaffView() {
               {(detail.credentials as Array<Record<string, unknown>> | undefined)?.map((c) => (
                 <div key={String(c.id)} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
                   <div>
-                    <b>{String(c.certification)}</b> <span className="text-[var(--color-muted-fg)]">· {String(c.license_number ?? "—")}</span>
+                    <b>{String(c.certification)}</b> <span className={mutedFg}>· {String(c.license_number ?? "—")}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--color-muted-fg)]">exp {fmtDate(c.expiry_date as string)}</span>
+                  <div className={flexGap2}>
+                    <span className={mutedXs}>exp {fmtDate(c.expiry_date as string)}</span>
                     {c.verified ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">verified</span> : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">unverified</span>}
                   </div>
                 </div>
               ))}
-              {(detail.credentials as Array<unknown> | undefined)?.length === 0 && <p className="text-sm text-[var(--color-muted-fg)]">No credentials recorded.</p>}
+              {(detail.credentials as Array<unknown> | undefined)?.length === 0 && <p className={mutedSmPlain}>No credentials recorded.</p>}
             </div>
 
             <h4 className="mb-2 mt-5 text-sm font-semibold uppercase text-[var(--color-muted-fg)]">Payroll history</h4>
@@ -668,7 +669,7 @@ export default function HrStaffView() {
                   <b>{fmtN(Number(p.net_salary))}</b>
                 </div>
               ))}
-              {(detail.payroll as Array<unknown> | undefined)?.length === 0 && <p className="text-sm text-[var(--color-muted-fg)]">No payroll yet.</p>}
+              {(detail.payroll as Array<unknown> | undefined)?.length === 0 && <p className={mutedSmPlain}>No payroll yet.</p>}
             </div>
 
             <h4 className="mb-2 mt-5 text-sm font-semibold uppercase text-[var(--color-muted-fg)]">Leave balances</h4>
@@ -679,7 +680,7 @@ export default function HrStaffView() {
                   <b>{Number(b.used_days)}/{Number(b.entitled_days)}</b>
                 </div>
               ))}
-              {(detail.leave_balances as Array<unknown> | undefined)?.length === 0 && <p className="text-sm text-[var(--color-muted-fg)]">No balances yet.</p>}
+              {(detail.leave_balances as Array<unknown> | undefined)?.length === 0 && <p className={mutedSmPlain}>No balances yet.</p>}
             </div>
           </div>
         </div>

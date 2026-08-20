@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bell, CheckCheck, Loader2, Trash2 } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
+import { errorBanner, mutedSm, flexGap2, sectionTitle, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import {
   AppHeader,
@@ -89,10 +90,10 @@ export default function PatientNotifications() {
         <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Notifications</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Updates from your hospital.</p>
+          <h1 className={pageTitle}>Notifications</h1>
+          <p className={mutedSm}>Updates from your hospital.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={flexGap2}>
           <div className="flex rounded-lg border border-[var(--color-border)] bg-white p-0.5">
             {(["all", "unread"] as const).map((f) => (
               <button
@@ -120,7 +121,7 @@ export default function PatientNotifications() {
       <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -132,7 +133,7 @@ export default function PatientNotifications() {
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Bell size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No notifications.</p>
+          <p className={sectionTitle}>No notifications.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -210,7 +211,7 @@ export default function PatientNotifications() {
           ) : visible.length === 0 ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <Bell size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+              <p className={sectionTitle}>
                 {filter === "unread" ? "You're all caught up." : "No notifications."}
               </p>
             </div>

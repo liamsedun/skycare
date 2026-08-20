@@ -24,6 +24,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { AppHeader } from "@/components/patient/mobile/mobile-app-ui";
 import { tenantHomeUrl } from "@/lib/tenant-link";
 import { getSupabase } from "@/lib/supabase/client";
+import { mutedXs, errorBanner, mutedSm, divideBorder, mutedSmPlain, pageTitle, emptyState } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -159,7 +160,7 @@ export default function PatientProfile() {
         <div className="flex min-w-0 items-center gap-3">
           <Icon size={16} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
           <div className="min-w-0">
-            <p className="text-xs text-[var(--color-muted-fg)]">{row.label}</p>
+            <p className={mutedXs}>{row.label}</p>
             {isEditing ? (
               <div className="mt-1 flex items-center gap-2">
                 {options ? (
@@ -334,7 +335,7 @@ export default function PatientProfile() {
   }
 
   if (loading) {
-    return <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading profile…</p>;
+    return <p className={emptyState}>Loading profile…</p>;
   }
 
   return (
@@ -342,12 +343,12 @@ export default function PatientProfile() {
       <div className="hidden md:block">
         <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">My profile</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Manage your personal information.</p>
+        <h1 className={pageTitle}>My profile</h1>
+        <p className={mutedSm}>Manage your personal information.</p>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -382,7 +383,7 @@ export default function PatientProfile() {
           </div>
           <div className="min-w-0">
             <p className="text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
-            <p className="text-sm text-[var(--color-muted-fg)]">
+            <p className={mutedSmPlain}>
               {patient?.patient_number ? `${patient.patient_number} · ` : ""}
               {user?.email}
             </p>
@@ -394,7 +395,7 @@ export default function PatientProfile() {
         <div className="border-b border-[var(--color-border)] px-5 py-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">Personal information</h2>
         </div>
-        <div className="divide-y divide-[var(--color-border)]">
+        <div className={divideBorder}>
           {infoList}
         </div>
       </div>
@@ -466,7 +467,7 @@ export default function PatientProfile() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
-                <p className="text-xs text-[var(--color-muted-fg)]">
+                <p className={mutedXs}>
                   {patient?.patient_number ? `${patient.patient_number} · ` : ""}
                   {user?.email}
                 </p>
@@ -486,7 +487,7 @@ export default function PatientProfile() {
 
           {/* Info rows — same editing behaviour as the web view */}
           <div className="app-glass-strong overflow-hidden rounded-2xl">
-            <div className="divide-y divide-[var(--color-border)]">{infoList}</div>
+            <div className={divideBorder}>{infoList}</div>
           </div>
 
           <div className="app-glass-strong rounded-2xl p-4">
@@ -528,7 +529,7 @@ export default function PatientProfile() {
                 <input id="pw-confirm" type="password" className={inputCls} value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} required />
               </div>
               {pwError && (
-                <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+                <p role="alert" className={errorBanner}>
                   {pwError}
                 </p>
               )}

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClaims, type StaffRole } from "@/lib/auth";
 import { requireModulePage } from "@/lib/module-guard";
+import { mutedSm, pageTitle } from "@/lib/ui-constants";
 import { BranchAdminTabs } from "@/components/dashboard/pharmacy-admin-view";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +21,8 @@ export default async function BranchPricesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Branch Prices</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <h1 className={pageTitle}>Branch Prices</h1>
+        <p className={mutedSm}>
           Per-branch retail price overrides for the pharmacy catalogue.
         </p>
       </div>

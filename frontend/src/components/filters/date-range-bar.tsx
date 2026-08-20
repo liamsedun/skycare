@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedXs } from "@/lib/ui-constants";
 import { useId } from "react";
 import { CalendarRange, X } from "lucide-react";
 
@@ -40,7 +41,7 @@ export default function DateRangeBar({
       <span className="flex items-center gap-1.5 text-xs font-medium text-[var(--color-muted-fg)]">
         <CalendarRange size={14} aria-hidden="true" /> Date
       </span>
-      <label className="text-xs text-[var(--color-muted-fg)]" htmlFor={`${id}-from`}>
+      <label className={mutedXs} htmlFor={`${id}-from`}>
         {fromLabel}
       </label>
       <input
@@ -52,7 +53,7 @@ export default function DateRangeBar({
         className={inputCls}
         aria-label={`${fromLabel} date`}
       />
-      <label className="text-xs text-[var(--color-muted-fg)]" htmlFor={`${id}-to`}>
+      <label className={mutedXs} htmlFor={`${id}-to`}>
         {toLabel}
       </label>
       <input

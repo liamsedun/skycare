@@ -15,6 +15,7 @@ import {
 import { getSupabase } from "@/lib/supabase/client";
 import { ROLE_LABELS, initials } from "@/lib/auth";
 import type { StaffRole } from "@/lib/auth";
+import { mutedFg, mutedXsMt } from "@/lib/ui-constants";
 import ThemeToggle from "@/components/theme-toggle";
 
 const navigateCls =
@@ -89,35 +90,35 @@ export default function UserMenu({
         <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-xl)]">
           <div className="border-b border-[var(--color-border)] px-4 py-3">
             <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{userName}</p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               {ROLE_LABELS[role] ?? role}
             </p>
           </div>
 
           <div className="space-y-0.5 p-2">
             <Link href="/app/profile" onClick={() => setOpen(false)} className={navigateCls}>
-              <UserRound size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <UserRound size={16} className={mutedFg} aria-hidden="true" />
               Profile
             </Link>
             {/* Settings is a tenant-level page for admins; patients use their own portal. */}
             {isAdmin && (
               <Link href="/app/settings" onClick={() => setOpen(false)} className={navigateCls}>
-                <SettingsIcon size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+                <SettingsIcon size={16} className={mutedFg} aria-hidden="true" />
                 Settings
               </Link>
             )}
             <Link href="/app/account" onClick={() => setOpen(false)} className={navigateCls}>
-              <SlidersHorizontal size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <SlidersHorizontal size={16} className={mutedFg} aria-hidden="true" />
               Account
             </Link>
             {isAdmin && (
               <Link href="/app/subscription" onClick={() => setOpen(false)} className={navigateCls}>
-                <CreditCard size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+                <CreditCard size={16} className={mutedFg} aria-hidden="true" />
                 Subscription &amp; billing
               </Link>
             )}
             <Link href="/app/download" onClick={() => setOpen(false)} className={navigateCls}>
-              <Download size={16} className="text-[var(--color-muted-fg)]" aria-hidden="true" />
+              <Download size={16} className={mutedFg} aria-hidden="true" />
               Download SkyCare app
             </Link>
             <div className="flex items-center justify-between gap-3 px-3 py-1.5">

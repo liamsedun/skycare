@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { fileToSquareImage } from "@/lib/square-image";
+import { mutedXs, mutedFg, errorBanner, cardTitle, flexBetween, mutedXsMt, mutedXsMt1, fgSemibold, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 import {
   AppCard,
   AppHeader,
@@ -291,7 +292,7 @@ export default function PatientFamilyDetail() {
     const msg = error ?? "Family member not found";
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center gap-4 text-center">
-        <Users size={40} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
+        <Users size={40} aria-hidden="true" className={mutedFg} />
         <p className="text-sm font-medium text-[var(--color-foreground)]">{msg}</p>
         <Link href="/patient/family" className="focus-ring rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-foreground)] hover:bg-slate-50">
           Back to family
@@ -343,7 +344,7 @@ export default function PatientFamilyDetail() {
           </div>
 
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+            <p role="alert" className={errorBanner}>{error}</p>
           )}
           {success && (
             <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">{success}</p>
@@ -380,7 +381,7 @@ export default function PatientFamilyDetail() {
       {/* ── Mobile app view (LB parity, <md) ───────────────────────────── */}
       <div className="md:hidden">
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className={flexBetween}>
             <Link
               href="/patient/family"
               className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--color-muted-fg)] transition-colors hover:bg-black/5"
@@ -472,8 +473,8 @@ export default function PatientFamilyDetail() {
             <X size={22} aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[var(--color-foreground)]">{member.first_name} {member.last_name}</p>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={cardTitle}>{member.first_name} {member.last_name}</p>
+            <p className={mutedXsMt}>
               Remove them from your family account? Their records remain available to your hospital.
             </p>
           </div>
@@ -759,7 +760,7 @@ function RecordsTab({
                   {rec.content ? (
                     <p className="whitespace-pre-wrap text-xs text-[var(--color-foreground)]">{rec.content}</p>
                   ) : (
-                    <p className="text-xs text-[var(--color-muted-fg)]">No details.</p>
+                    <p className={mutedXs}>No details.</p>
                   )}
                 </div>
               </details>
@@ -874,12 +875,12 @@ function BillsTab({
                 {overdue ? "Overdue" : inv.status.replace(/_/g, " ")}
               </span>
             </div>
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt1}>
               Issued {fmtDate(inv.issue_date ?? inv.created_at)} · {inv.invoice_items.length} item{inv.invoice_items.length === 1 ? "" : "s"}
             </p>
             <div className="mt-3 flex items-center justify-between">
-              <div className="text-xs text-[var(--color-muted-fg)]">
-                <p>Total <span className="font-semibold text-[var(--color-foreground)]">{ngn(inv.total_amount)}</span></p>
+              <div className={mutedXs}>
+                <p>Total <span className={fgSemibold}>{ngn(inv.total_amount)}</span></p>
                 {Number(inv.paid_amount) > 0 && (
                   <p>Paid <span className="font-semibold text-emerald-500">{ngn(inv.paid_amount)}</span></p>
                 )}
@@ -939,7 +940,7 @@ function AppointmentsTab({
         <div key={appt.id} className={cn(mobile ? "app-glass rounded-2xl p-4" : "rounded-2xl border border-[var(--color-border)] bg-white p-5 shadow-[var(--shadow-sm)]")}>
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[var(--color-foreground)]">
+              <p className={cardTitle}>
                 {fmtDate(appt.scheduled_date)} · {appt.start_time ?? "—"}
               </p>
               <p className="mt-0.5 text-xs capitalize text-[var(--color-muted-fg)]">{appt.type} — {appt.users?.full_name ?? "Staff"}</p>
@@ -988,15 +989,15 @@ function EditMemberModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label="Edit Dependant"
     >
       <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">Edit Dependant</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -1168,15 +1169,15 @@ function PayModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label="Pay invoice"
     >
       <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">Pay {invoice.invoice_number}</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -1202,7 +1203,7 @@ function PayModal({
               defaultValue={outstanding}
               className={inputCls}
             />
-            <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Outstanding: {ngn(outstanding)}</p>
+            <p className={mutedXsMt1}>Outstanding: {ngn(outstanding)}</p>
           </div>
           <div>
             <label className={labelCls} htmlFor="pay-method">Payment method</label>

@@ -8,6 +8,7 @@ import {
   Activity, BedDouble, BedSingle, Clock3, HeartPulse, Loader2, ShieldCheck, Users, Wrench,
 } from "lucide-react";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, cardTitle, mutedXsMt, spinner } from "@/lib/ui-constants";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -78,12 +79,12 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <ShieldCheck className="h-5 w-5 text-[var(--color-primary)]" /> Ward Dashboard
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Live bed census, admissions movement and an AI 7-day occupancy outlook.
             </p>
           </div>
           <button onClick={() => void load()} className={btnPrimary} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity size={14} />}
+            {loading ? <Loader2 className={spinner} /> : <Activity size={14} />}
             Refresh
           </button>
         </div>
@@ -103,7 +104,7 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
                   <s.icon size={16} />
                 </div>
                 <p className="mt-3 text-xl font-bold text-[var(--color-foreground)]">{s.value}</p>
-                <p className="text-xs text-[var(--color-muted-fg)]">{s.label}</p>
+                <p className={mutedXs}>{s.label}</p>
               </div>
             ))}
           </div>
@@ -114,7 +115,7 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
                 AI 7-day occupancy outlook
               </h3>
               {occSeries.length === 0 ? (
-                <p className="text-xs text-[var(--color-muted-fg)]">No forecast data yet.</p>
+                <p className={mutedXs}>No forecast data yet.</p>
               ) : (
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -145,10 +146,10 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
                   {forecast.active.map((a) => (
                     <div key={a.admission_id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-border)] p-3">
                       <div>
-                        <p className="text-sm font-semibold text-[var(--color-foreground)]">
+                        <p className={cardTitle}>
                           {a.ward_name} · Bed {a.bed_number}
                         </p>
-                        <p className="text-xs text-[var(--color-muted-fg)]">
+                        <p className={mutedXs}>
                           {a.ward_type ?? "ward"} · {a.days_elapsed} day{a.days_elapsed === 1 ? "" : "s"} elapsed
                         </p>
                       </div>

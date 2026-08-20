@@ -1,3 +1,4 @@
+import { mutedXsMt1 } from "@/lib/ui-constants";
 import type { LucideIcon } from "lucide-react";
 
 export default function StatCard({
@@ -33,7 +34,7 @@ export default function StatCard({
       <p className="mt-2 text-2xl font-bold text-[var(--color-foreground)] sm:text-3xl">
         {value}
       </p>
-      {hint && <p className="mt-1 text-xs text-[var(--color-muted-fg)]">{hint}</p>}
+      {hint && <p className={mutedXsMt1}>{hint}</p>}
     </div>
   );
 }

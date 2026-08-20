@@ -1,5 +1,6 @@
 "use client";
 
+import { cardTitle } from "@/lib/ui-constants";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck } from "lucide-react";
@@ -133,7 +134,7 @@ export default function NotificationsBell({ basePath }: { basePath: string }) {
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-xl)] sm:w-96">
           <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
-            <p className="text-sm font-semibold text-[var(--color-foreground)]">Notifications</p>
+            <p className={cardTitle}>Notifications</p>
             <button
               type="button"
               onClick={markAllRead}

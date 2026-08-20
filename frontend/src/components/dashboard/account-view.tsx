@@ -6,6 +6,7 @@ import { ROLE_LABELS, initials } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
 import { applyTheme } from "@/lib/theme";
 import type { ThemeMode } from "@/lib/theme";
+import { mutedSm, mutedXsMt, mutedSmPlain, pageTitle } from "@/lib/ui-constants";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)] disabled:bg-slate-50 disabled:text-[var(--color-muted-fg)]";
@@ -61,7 +62,7 @@ function SwitchRow({
     <div className="flex items-center justify-between gap-4 py-3">
       <div className="min-w-0">
         <p className="text-sm font-medium text-[var(--color-foreground)]">{label}</p>
-        <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">{description}</p>
+        <p className={mutedXsMt}>{description}</p>
       </div>
       <button
         type="button"
@@ -153,8 +154,8 @@ export default function AccountView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Account</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <h1 className={pageTitle}>Account</h1>
+        <p className={mutedSm}>
           Manage your personal preferences and notification settings.
         </p>
       </div>
@@ -172,7 +173,7 @@ export default function AccountView() {
             <p className="mt-3 text-base font-semibold text-[var(--color-foreground)]">
               {user?.full_name ?? "Staff"}
             </p>
-            <p className="text-sm text-[var(--color-muted-fg)]">{user?.email}</p>
+            <p className={mutedSmPlain}>{user?.email}</p>
             {user && (
               <span className="mt-2 rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)]">
                 {ROLE_LABELS[user.role] ?? user.role}
@@ -191,7 +192,7 @@ export default function AccountView() {
               <div className="flex items-center justify-between gap-4 rounded-lg border border-[var(--color-border)] px-4 py-3">
                 <div>
                   <p className="text-sm font-medium text-[var(--color-foreground)]">Theme</p>
-                  <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXsMt}>
                     Light mode uses the SkyCare sky palette; Dark mode uses the Dusk &amp; Gold scheme.
                   </p>
                 </div>

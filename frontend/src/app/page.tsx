@@ -1,3 +1,4 @@
+import { flexGap2 } from "@/lib/ui-constants";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -203,7 +204,7 @@ export default function HomePage() {
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className={flexGap2}>
             <SkyCareLogo size={36} />
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
@@ -518,7 +519,7 @@ export default function HomePage() {
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
             </div>
             <div className="rounded-b-xl border border-slate-200 p-5">
-              <div className="flex items-center gap-2">
+              <div className={flexGap2}>
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg sky-gradient text-white">
                   <HeartPulse size={18} />
                 </span>

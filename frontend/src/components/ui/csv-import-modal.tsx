@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Download, FileUp, X } from "lucide-react";
 import { downloadCsv, parseCsv, parsePdfRows, type ExportCell } from "@/lib/export";
+import { flexBetween, fgSemibold, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 
 export interface ImportResult {
   created: number;
@@ -92,13 +93,13 @@ export default function CsvImportModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div className="my-4 w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="flex items-center gap-2 text-lg font-bold">
             <FileUp size={18} aria-hidden="true" className="text-[var(--color-primary-dark)]" />
             {title}
@@ -106,7 +107,7 @@ export default function CsvImportModal({
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+            className={ghostIconBtn}
             aria-label="Close"
           >
             <X size={18} aria-hidden="true" />
@@ -177,7 +178,7 @@ export default function CsvImportModal({
 
         {result && (
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-muted)]/40 p-4 text-sm">
-            <p className="font-semibold text-[var(--color-foreground)]">
+            <p className={fgSemibold}>
               Import complete — {result.created} created, {result.failed} failed.
             </p>
             {result.notes && result.notes.length > 0 && (

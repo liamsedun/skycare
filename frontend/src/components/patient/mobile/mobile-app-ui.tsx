@@ -1,3 +1,4 @@
+import { mutedXsMt1, sectionTitle } from "@/lib/ui-constants";
 import type { ReactNode, ComponentType } from "react";
 
 export function cn(...parts: Array<string | false | null | undefined>): string {
@@ -314,8 +315,8 @@ export function AppEmpty({
   return (
     <AppCard className="py-10 text-center">
       <Icon className="mx-auto h-10 w-10 text-[var(--color-muted-fg)]" aria-hidden />
-      <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">{title}</p>
-      {hint && <p className="mt-1 text-xs text-[var(--color-muted-fg)]">{hint}</p>}
+      <p className={sectionTitle}>{title}</p>
+      {hint && <p className={mutedXsMt1}>{hint}</p>}
     </AppCard>
   );
 }

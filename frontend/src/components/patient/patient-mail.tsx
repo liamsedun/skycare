@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Inbox, Loader2, MailPlus, Send, Trash2 } from "lucide-react";
 import { initials } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, errorBanner, mutedSm, sectionTitle, mutedSmPlain, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import {
   AppHeader,
@@ -50,7 +51,7 @@ function timeAgo(iso: string): string {
 const emptyCard = (msg: string) => (
   <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
     <Inbox size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-    <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">{msg}</p>
+    <p className={sectionTitle}>{msg}</p>
   </div>
 );
 
@@ -184,7 +185,7 @@ export default function PatientMail() {
         </label>
         <div className="flex flex-wrap gap-2">
           {recipients.length === 0 ? (
-            <p className="text-sm text-[var(--color-muted-fg)]">No staff available. Please try again later.</p>
+            <p className={mutedSmPlain}>No staff available. Please try again later.</p>
           ) : (
             recipients.map((r) => {
               const selected = to.includes(r.id);
@@ -235,8 +236,8 @@ export default function PatientMail() {
       <div className="hidden md:block">
         <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Messages</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">Internal mail with hospital staff.</p>
+        <h1 className={pageTitle}>Messages</h1>
+        <p className={mutedSm}>Internal mail with hospital staff.</p>
       </div>
 
       <div className="flex gap-2 border-b border-[var(--color-border)]">
@@ -265,7 +266,7 @@ export default function PatientMail() {
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -296,7 +297,7 @@ export default function PatientMail() {
                         {!msg.isRead && <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-primary)]" aria-hidden="true" />}
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{msg.subject}</p>
-                          <p className="text-xs text-[var(--color-muted-fg)]">
+                          <p className={mutedXs}>
                             {msg.sender?.full_name ?? "Hospital"} · {timeAgo(msg.created_at)}
                             {msg.is_broadcast ? " · Broadcast" : ""}
                           </p>
@@ -334,7 +335,7 @@ export default function PatientMail() {
                   <button type="button" onClick={() => toggleOpen(msg.id, msg)} className="focus-ring flex w-full items-center justify-between gap-3 text-left">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-[var(--color-foreground)]">{msg.subject}</p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXs}>
                         To: {(msg.recipients ?? []).map((r) => r.full_name).join(", ") || "Hospital staff"} · {timeAgo(msg.created_at)}
                       </p>
                     </div>
@@ -404,7 +405,7 @@ export default function PatientMail() {
             visibleInbox.length === 0 ? (
               <div className="app-glass rounded-2xl py-10 text-center">
                 <Inbox size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-                <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">Your inbox is empty.</p>
+                <p className={sectionTitle}>Your inbox is empty.</p>
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -461,7 +462,7 @@ export default function PatientMail() {
           ) : visibleSent.length === 0 ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <Send size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">You haven&apos;t sent any messages yet.</p>
+              <p className={sectionTitle}>You haven&apos;t sent any messages yet.</p>
             </div>
           ) : (
             <div className="space-y-2.5">

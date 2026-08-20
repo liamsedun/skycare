@@ -12,6 +12,7 @@ import { ROLE_LABELS, type StaffRole } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, errorBanner, flexBetween, mutedSm, labelSm, flexGap2, flexWrapGap2, fgMedium, mutedXsMt1, sectionTitle, mutedSmPlain, pageTitle, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 
 interface StaffUser {
   id: string;
@@ -527,14 +528,14 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className={pageTitle}>
             Staff & Admins
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             Manage your hospital&apos;s team — admins, doctors, nurses, pharmacists and more.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           {!viewOnly && (
             <ActionDropdown
               label="New"
@@ -550,7 +551,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
             />
           )}
           {viewOnly ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className={flexWrapGap2}>
               <button
                 type="button"
                 onClick={exportStaffCsv}
@@ -586,13 +587,13 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
       {error && (
         <p
           role="alert"
-          className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+          className={errorBanner}
         >
           {error}
         </p>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={flexWrapGap2}>
         <div className="relative max-w-md flex-1 basis-56">
           <input
             type="search"
@@ -669,11 +670,11 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading staff…</p>
+        <p className={emptyState}>Loading staff…</p>
       ) : users.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Users size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             No staff yet. Add your first admin or staff member.
           </p>
         </div>
@@ -846,7 +847,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
 
               <div className="space-y-2 px-5 text-xs text-[var(--color-muted-fg)]">
                 {user.staff?.department && (
-                  <div className="flex items-center gap-2">
+                  <div className={flexGap2}>
                     <Stethoscope size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
                     <span className="truncate font-medium text-[var(--color-foreground)]">
                       {user.staff.department}
@@ -855,14 +856,14 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                   </div>
                 )}
                 {user.branch_id && (
-                  <div className="flex items-center gap-2">
+                  <div className={flexGap2}>
                     <MapPin size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
                     <span className="truncate font-medium text-[var(--color-foreground)]">
                       {user.branches?.name ?? "Branch"}
                     </span>
                   </div>
                 )}
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <Clock size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
                   {dutyStatusOf(user) === "on_leave" ? (
                     <span className="font-medium text-amber-600">
@@ -873,7 +874,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                       Duty: FROM {fmtTime(todayShifts[user.staff.id].from_time)} UNTIL {fmtTime(todayShifts[user.staff.id].until_time)}
                     </span>
                   ) : user.staff?.is_available ? (
-                    <span className="font-medium text-[var(--color-foreground)]">
+                    <span className={fgMedium}>
                       Available: {user.staff.available_from ? fmtTime(user.staff.available_from) : "09:00 AM"}&nbsp;–&nbsp;
                       {user.staff.available_until ? fmtTime(user.staff.available_until) : "05:00 PM"}
                     </span>
@@ -881,7 +882,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                     <span className="font-medium text-[var(--color-muted-fg)]">Not available today</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <Phone size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
                   {user.phone ? (
                     <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${user.phone}`}>
@@ -891,7 +892,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                     <span>—</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={flexGap2}>
                   <Mail size={13} aria-hidden="true" className="shrink-0 text-[var(--color-primary-dark)]" />
                   <a className="focus-ring min-w-0 truncate font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`mailto:${user.email}`}>
                     {user.email}
@@ -939,20 +940,20 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
       {/* Create user modal */}
       {showCreate && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label="Add admin or staff"
         >
           <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">
                 Add Admin / Staff
               </h2>
               <button
                 type="button"
                 onClick={() => setShowCreate(false)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
@@ -967,25 +968,25 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-fullName">
+                  <label className={labelSm} htmlFor="s-fullName">
                     Full name
                   </label>
                   <input id="s-fullName" name="fullName" required className={inputCls} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-email">
+                  <label className={labelSm} htmlFor="s-email">
                     Email
                   </label>
                   <input id="s-email" name="email" type="email" required className={inputCls} />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-phone">
+                  <label className={labelSm} htmlFor="s-phone">
                     Phone
                   </label>
                   <input id="s-phone" name="phone" className={inputCls} />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-role">
+                  <label className={labelSm} htmlFor="s-role">
                     Role
                   </label>
                   <select id="s-role" name="role" className={inputCls} defaultValue="nurse">
@@ -997,7 +998,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-branch">
+                  <label className={labelSm} htmlFor="s-branch">
                     Branch
                   </label>
                   <select id="s-branch" name="branchId" className={inputCls} defaultValue="">
@@ -1010,24 +1011,24 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                       </option>
                     ))}
                   </select>
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXsMt1}>
                     Branch staff see that branch&apos;s stock and prices. Pick later from Edit details.
                   </p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-dept">
+                  <label className={labelSm} htmlFor="s-dept">
                     Department
                   </label>
                   <input id="s-dept" name="department" className={inputCls} placeholder="e.g. Cardiology" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-spec">
+                  <label className={labelSm} htmlFor="s-spec">
                     Specialization
                   </label>
                   <input id="s-spec" name="specialization" className={inputCls} placeholder="e.g. Consultant" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="s-password">
+                  <label className={labelSm} htmlFor="s-password">
                     Login password
                   </label>
                   <div className="relative">
@@ -1050,7 +1051,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
                       {showStaffPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                     </button>
                   </div>
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXsMt1}>
                     The staff member signs in with this email + password at /login.
                   </p>
                 </div>
@@ -1058,7 +1059,7 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {error}
                 </p>
@@ -1090,20 +1091,20 @@ onClick={() => {
       {/* Edit staff details modal */}
       {editTarget?.staff && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label="Edit staff details"
         >
           <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">
                 Edit details — {editTarget.full_name}
               </h2>
               <button
                 type="button"
                 onClick={() => setEditTarget(null)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
@@ -1118,7 +1119,7 @@ onClick={() => {
             >
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-name">
+                  <label className={labelSm} htmlFor="sd-name">
                     Full name
                   </label>
                   <input
@@ -1130,7 +1131,7 @@ onClick={() => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-email">
+                  <label className={labelSm} htmlFor="sd-email">
                     Email
                   </label>
                   <input
@@ -1143,7 +1144,7 @@ onClick={() => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-phone">
+                  <label className={labelSm} htmlFor="sd-phone">
                     Phone
                   </label>
                   <input
@@ -1154,7 +1155,7 @@ onClick={() => {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-role">
+                  <label className={labelSm} htmlFor="sd-role">
                     Role
                   </label>
                   <select
@@ -1171,7 +1172,7 @@ onClick={() => {
                   </select>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-branch">
+                  <label className={labelSm} htmlFor="sd-branch">
                     Branch
                   </label>
                   <select
@@ -1189,12 +1190,12 @@ onClick={() => {
                       </option>
                     ))}
                   </select>
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXsMt1}>
                     Branch staff see that branch&apos;s stock and prices.
                   </p>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-dept">
+                  <label className={labelSm} htmlFor="sd-dept">
                     Department
                   </label>
                   <input
@@ -1206,7 +1207,7 @@ onClick={() => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-spec">
+                  <label className={labelSm} htmlFor="sd-spec">
                     Specialization
                   </label>
                   <input
@@ -1218,7 +1219,7 @@ onClick={() => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-lic">
+                  <label className={labelSm} htmlFor="sd-lic">
                     License number
                   </label>
                   <input
@@ -1229,7 +1230,7 @@ onClick={() => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-qual">
+                  <label className={labelSm} htmlFor="sd-qual">
                     Qualification
                   </label>
                   <input
@@ -1241,7 +1242,7 @@ onClick={() => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-emp">
+                  <label className={labelSm} htmlFor="sd-emp">
                     Employment type
                   </label>
                   <select
@@ -1257,7 +1258,7 @@ onClick={() => {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-years">
+                  <label className={labelSm} htmlFor="sd-years">
                     Years of experience
                   </label>
                   <input
@@ -1270,7 +1271,7 @@ onClick={() => {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="mb-1 block text-sm font-medium" htmlFor="sd-salary">
+                  <label className={labelSm} htmlFor="sd-salary">
                     Base salary (₦)
                   </label>
                   <input
@@ -1296,7 +1297,7 @@ onClick={() => {
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {error}
                 </p>
@@ -1325,20 +1326,20 @@ onClick={() => {
       {/* Availability modal */}
       {availTarget?.staff && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label={`Availability for ${availTarget.full_name}`}
         >
           <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">
                 Availability — {availTarget.full_name}
               </h2>
               <button
                 type="button"
                 onClick={() => setAvailTarget(null)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
@@ -1357,7 +1358,7 @@ onClick={() => {
               {availForm.is_available && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-1 block text-sm font-medium" htmlFor="av-from">
+                    <label className={labelSm} htmlFor="av-from">
                       From
                     </label>
                     <input
@@ -1369,7 +1370,7 @@ onClick={() => {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium" htmlFor="av-until">
+                    <label className={labelSm} htmlFor="av-until">
                       Until
                     </label>
                     <input
@@ -1385,7 +1386,7 @@ onClick={() => {
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {error}
                 </p>
@@ -1415,13 +1416,13 @@ onClick={() => {
       {/* Leave modal */}
       {leaveTarget?.staff && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label={`Leave for ${leaveTarget.full_name}`}
         >
           <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">
                 {dutyStatusOf(leaveTarget) === "on_leave"
                   ? `Return to duty — ${leaveTarget.full_name}`
@@ -1430,7 +1431,7 @@ onClick={() => {
               <button
                 type="button"
                 onClick={() => setLeaveTarget(null)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
@@ -1438,17 +1439,17 @@ onClick={() => {
             </div>
             <div className="mt-5 space-y-4">
               {dutyStatusOf(leaveTarget) === "on_leave" ? (
-                <p className="text-sm text-[var(--color-muted-fg)]">
+                <p className={mutedSmPlain}>
                   {leaveTarget.full_name} is currently on leave until{" "}
                   {leaveTarget.staff.on_leave_until ? fmtDate(leaveTarget.staff.on_leave_until) : ""}. Clear the date
                   below to return them to duty.
                 </p>
               ) : (
-                <p className="text-sm text-[var(--color-muted-fg)]">
+                <p className={mutedSmPlain}>
                   They will show as &quot;On Leave&quot; and not appear as available until this date.
                 </p>
               )}
-              <label className="mb-1 block text-sm font-medium" htmlFor="lv-date">
+              <label className={labelSm} htmlFor="lv-date">
                 Leave until
               </label>
               <input
@@ -1470,7 +1471,7 @@ onClick={() => {
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {error}
                 </p>
@@ -1500,27 +1501,27 @@ onClick={() => {
       {/* Change role modal */}
       {roleTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label={`Change role for ${roleTarget.full_name}`}
         >
           <div className="my-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">
                 Change role — {roleTarget.full_name}
               </h2>
               <button
                 type="button"
                 onClick={() => setRoleTarget(null)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
               </button>
             </div>
             <div className="mt-5 space-y-4">
-              <label className="mb-1 block text-sm font-medium" htmlFor="cr-role">
+              <label className={labelSm} htmlFor="cr-role">
                 New role
               </label>
               <select
@@ -1535,13 +1536,13 @@ onClick={() => {
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-[var(--color-muted-fg)]">
+              <p className={mutedXs}>
                 This controls what {roleTarget.full_name.split(" ")[0] ?? "they"} can see and do in the dashboard.
               </p>
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {error}
                 </p>

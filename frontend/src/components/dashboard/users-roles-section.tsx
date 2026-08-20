@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, ChevronDown, Loader2, Lock, Plus, ShieldCheck, Trash2, X } from "lucide-react";
 import { ROLE_LABELS, STAFF_ROLES, type StaffRole } from "@/lib/auth";
 import { NAV_ITEMS, type AccessLevel, type ModuleAccess } from "@/lib/nav";
+import { mutedXs, errorBanner, cardTitle, flexBetween, flexGap2, mutedXsMt1, sectionTitle, emptyState } from "@/lib/ui-constants";
 
 interface UserRow {
   id: string;
@@ -150,17 +151,17 @@ export default function UsersRolesSection() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading users…</p>
+        <p className={emptyState}>Loading users…</p>
       ) : users.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ShieldCheck size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No users found.</p>
+          <p className={sectionTitle}>No users found.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white shadow-[var(--shadow-sm)]">
@@ -287,9 +288,9 @@ function UserRowView({
               <Lock size={12} aria-hidden="true" /> Platform-wide
             </span>
           ) : grantedCount === null ? (
-            <span className="text-xs text-[var(--color-muted-fg)]">Role default (all)</span>
+            <span className={mutedXs}>Role default (all)</span>
           ) : grantedCount === 0 ? (
-            <span className="text-xs text-[var(--color-muted-fg)]">No modules</span>
+            <span className={mutedXs}>No modules</span>
           ) : (
             <span className="text-xs font-medium text-[var(--color-primary-dark)]">{grantedCount} module(s)</span>
           )}
@@ -343,8 +344,8 @@ function UserRowView({
           <td colSpan={5} className="px-4 py-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">Module access for {u.full_name || u.email}</p>
-                <div className="flex items-center gap-2">
+                <p className={cardTitle}>Module access for {u.full_name || u.email}</p>
+                <div className={flexGap2}>
                   <button
                     type="button"
                     onClick={() => setCustom(false)}
@@ -371,7 +372,7 @@ function UserRowView({
               </div>
               {custom && (
                 <div className="space-y-2">
-                  <p className="text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXs}>
                     Submenus are configured individually — but setting a module to <span className="font-semibold">Full access</span> grants all its submenus, and <span className="font-semibold">None</span> hides them all. <span className="font-semibold">View only</span> leaves submenus as they are.
                   </p>
                   <div className="space-y-1.5">
@@ -501,19 +502,19 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Add user">
       <button type="button" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
       <div className="relative w-full max-w-md rounded-xl bg-white p-5 shadow-[var(--shadow-xl)]">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h3 className="text-lg font-bold text-[var(--color-foreground)]">Add User</h3>
           <button type="button" onClick={onClose} className="focus-ring -mr-1 rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+        <p className={mutedXsMt1}>
           Creates a login for this staff member. You can fine-tune module access afterwards.
         </p>
 
         <div className="mt-4 space-y-3">
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+            <p role="alert" className={errorBanner}>
               {error}
             </p>
           )}

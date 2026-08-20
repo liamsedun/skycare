@@ -5,6 +5,7 @@ import { formatDate, getClaims } from "@/lib/auth";
 import StatusBadge from "@/components/dashboard/status-badge";
 import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
 import { patientGradient, patientInitials } from "@/lib/patient-avatar";
+import { mutedXs, mutedFg, mutedSm, divideBorder, fgMedium, sectionTitle, pageTitle, tableHeadCell } from "@/lib/ui-constants";
 import PatientActions from "@/components/dashboard/patient-actions";
 
 export const dynamic = "force-dynamic";
@@ -95,10 +96,10 @@ export default async function PatientsPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
+          <h1 className={pageTitle}>
             Patients
           </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             {query ? `${patients.length} result(s) for "${query}"` : `${patients.length} ${catLabel} on record`}
           </p>
         </div>
@@ -142,7 +143,7 @@ export default async function PatientsPage({
           />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <label className="text-xs text-[var(--color-muted-fg)]" htmlFor="patient-from">From</label>
+          <label className={mutedXs} htmlFor="patient-from">From</label>
           <input
             id="patient-from"
             type="date"
@@ -150,7 +151,7 @@ export default async function PatientsPage({
             defaultValue={fromDate}
             className="focus-ring h-9 rounded-lg border border-[var(--color-border)] bg-white px-2 text-xs outline-none"
           />
-          <label className="text-xs text-[var(--color-muted-fg)]" htmlFor="patient-to">To</label>
+          <label className={mutedXs} htmlFor="patient-to">To</label>
           <input
             id="patient-to"
             type="date"
@@ -172,10 +173,10 @@ export default async function PatientsPage({
             aria-hidden="true"
             className="mx-auto text-[var(--color-muted-fg)]"
           />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+          <p className={sectionTitle}>
             {query ? "No patients match your search." : "No patients yet."}
           </p>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <p className={mutedSm}>
             Patients are added at registration, or via the booking link on your website.
           </p>
         </div>
@@ -206,19 +207,19 @@ export default async function PatientsPage({
               </div>
               <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                 <div>
-                  <dt className="text-[var(--color-muted-fg)]">DOB</dt>
-                  <dd className="font-medium text-[var(--color-foreground)]">
+                  <dt className={mutedFg}>DOB</dt>
+                  <dd className={fgMedium}>
                     {formatDate(patient.date_of_birth)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[var(--color-muted-fg)]">Gender</dt>
+                  <dt className={mutedFg}>Gender</dt>
                   <dd className="font-medium capitalize text-[var(--color-foreground)]">
                     {patient.gender ?? "—"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[var(--color-muted-fg)]">Contact</dt>
+                  <dt className={mutedFg}>Contact</dt>
                   <dd>
                     <a
                       href={`tel:${patient.phone}`}
@@ -229,14 +230,14 @@ export default async function PatientsPage({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[var(--color-muted-fg)]">Location</dt>
+                  <dt className={mutedFg}>Location</dt>
                   <dd className="truncate font-medium text-[var(--color-foreground)]">
                     {[patient.city, patient.state].filter(Boolean).join(", ") || "—"}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[var(--color-muted-fg)]">Registered</dt>
-                  <dd className="font-medium text-[var(--color-foreground)]">
+                  <dt className={mutedFg}>Registered</dt>
+                  <dd className={fgMedium}>
                     {formatDate(patient.created_at)}
                   </dd>
                 </div>
@@ -254,7 +255,7 @@ export default async function PatientsPage({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead>
-                <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
+                <tr className={tableHeadCell}>
                   <th scope="col" className="px-4 py-3 font-semibold">Patient</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Number</th>
                   <th scope="col" className="px-4 py-3 font-semibold">Date of birth</th>
@@ -265,7 +266,7 @@ export default async function PatientsPage({
                   <th scope="col" className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className={divideBorder}>
                 {patients.map((patient) => (
                   <tr key={patient.id} className="transition-colors duration-150 hover:bg-[var(--color-muted)]">
                     <td className="px-4 py-3">
@@ -276,7 +277,7 @@ export default async function PatientsPage({
                           {patientInitials(patient.first_name, patient.last_name)}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-medium text-[var(--color-foreground)]">
+                          <p className={fgMedium}>
                             {patient.last_name}, {patient.first_name}
                           </p>
                           <p className="text-xs capitalize text-[var(--color-muted-fg)]">

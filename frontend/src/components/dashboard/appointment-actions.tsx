@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
+import { errorBanner, flexBetween, flexWrapGap2, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 
 interface PatientOption {
   id: string;
@@ -69,7 +70,7 @@ export function AppointmentActions({ appointment }: AppointmentActionProps) {
   if (actions.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={flexWrapGap2}>
       {error && (
         <span role="alert" className="text-xs font-medium text-[var(--color-destructive)]">
           {error}
@@ -175,18 +176,18 @@ export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label="New Appointment"
         >
           <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">New Appointment</h2>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
@@ -254,7 +255,7 @@ export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
               {error && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {error}
                 </p>

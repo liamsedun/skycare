@@ -1,5 +1,6 @@
 "use client";
 
+import { mutedSm, divideBorder, mutedSmPlain, pageTitle } from "@/lib/ui-constants";
 import { useEffect, useState } from "react";
 import { Building2, Loader2, ShieldX } from "lucide-react";
 
@@ -210,8 +211,8 @@ export default function SubscriptionView() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Subscription &amp; billing</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <h1 className={pageTitle}>Subscription &amp; billing</h1>
+        <p className={mutedSm}>
           Your hospital&apos;s SkyCare SaaS plan and payment history.
         </p>
       </div>
@@ -237,7 +238,7 @@ export default function SubscriptionView() {
               <h2 className="text-lg font-bold text-[var(--color-foreground)]">
                 {tenant?.name ?? "Hospital"}
               </h2>
-              <p className="text-sm text-[var(--color-muted-fg)]">
+              <p className={mutedSmPlain}>
                 {tenant?.email ?? "—"} · {tenant?.slug ?? "your-hospital"}.skycare.app
               </p>
             </div>
@@ -378,7 +379,7 @@ export default function SubscriptionView() {
                   <th className="pb-2 font-semibold">Reference</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className={divideBorder}>
                 {invoices.map((inv) => (
                   <tr key={inv.id}>
                     <td className="py-3 pr-4 text-[var(--color-foreground)]">

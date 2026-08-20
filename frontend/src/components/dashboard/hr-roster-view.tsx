@@ -22,6 +22,7 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import FilterBar from "@/components/filters/filter-bar";
 import { downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, flexBetween, divideBorder, flexGap2, mutedXsMt, flexWrapGap2, mutedSmPlain, spinner } from "@/lib/ui-constants";
 
 const inputCls =
   "rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -623,10 +624,10 @@ export default function HrRosterView() {
           onImport={importHrRoster}
           onImported={() => load()}
         />
-        <span className="text-sm text-[var(--color-muted-fg)]">{visible.length} assignments · {shifts.filter((s) => s.is_active).length} shift templates</span>
+        <span className={mutedSmPlain}>{visible.length} assignments · {shifts.filter((s) => s.is_active).length} shift templates</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={flexWrapGap2}>
         <select className={inputCls + " max-w-[180px]"} value={fRole} onChange={(e) => setFRole(e.target.value)} aria-label="Filter by role">
           <option value="">All roles</option>
           {roleOptions.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -672,7 +673,7 @@ export default function HrRosterView() {
       {error && <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
       {loading ? (
         <div className="flex items-center justify-center gap-2 py-16 text-sm text-[var(--color-muted-fg)]">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading roster…
+          <Loader2 className={spinner} /> Loading roster…
         </div>
       ) : (
         <>
@@ -743,7 +744,7 @@ export default function HrRosterView() {
                       {byDate.get(d)!.length} on duty
                     </span>
                   </div>
-                  <div className="divide-y divide-[var(--color-border)]">
+                  <div className={divideBorder}>
                     {byDate.get(d)!.map((r) => (
                       <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
                         {isAdmin && (
@@ -758,11 +759,11 @@ export default function HrRosterView() {
                         <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.shift?.color ?? "#94a3b8" }} />
                         <div className="min-w-[140px]">
                           <div className="font-medium">{r.staff?.users?.full_name}</div>
-                          <div className="text-xs text-[var(--color-muted-fg)]">{r.staff?.users?.role}{r.staff?.department ? ` · ${r.staff.department}` : ""}</div>
+                          <div className={mutedXs}>{r.staff?.users?.role}{r.staff?.department ? ` · ${r.staff.department}` : ""}</div>
                         </div>
                         <div className="min-w-[120px]">
                           <div className="font-medium">{r.shift?.name ?? "—"}</div>
-                          <div className="text-xs text-[var(--color-muted-fg)]">
+                          <div className={mutedXs}>
                             {r.shift ? `${String(r.shift.start_time).slice(0, 5)}–${String(r.shift.end_time).slice(0, 5)}` : ""}{r.ward?.name ? ` · ${r.ward.name}` : ""}
                           </div>
                         </div>
@@ -805,7 +806,7 @@ export default function HrRosterView() {
                   ))}
                 </select>
                 {selectedStaff && (
-                  <span className="text-sm text-[var(--color-muted-fg)]">
+                  <span className={mutedSmPlain}>
                     {staffRows.length} shift{staffRows.length === 1 ? "" : "s"} in this window · {staffRows.filter((r) => r.status === "completed").length} completed
                   </span>
                 )}
@@ -854,14 +855,14 @@ export default function HrRosterView() {
                     <div className="border-b border-[var(--color-border)] px-4 py-2.5 text-sm font-semibold">
                       {selectedStaff?.users?.full_name} — assignments
                     </div>
-                    <div className="divide-y divide-[var(--color-border)]">
+                    <div className={divideBorder}>
                       {staffRows.map((r) => (
                         <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
                           <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.shift?.color ?? "#94a3b8" }} />
                           <span className="min-w-[130px] font-medium">{fmtDayLong(r.shift_date)}</span>
                           <div className="min-w-[120px]">
                             <div className="font-medium">{r.shift?.name ?? "—"}</div>
-                            <div className="text-xs text-[var(--color-muted-fg)]">
+                            <div className={mutedXs}>
                               {r.shift ? `${String(r.shift.start_time).slice(0, 5)}–${String(r.shift.end_time).slice(0, 5)}` : ""}{r.ward?.name ? ` · ${r.ward.name}` : ""}
                             </div>
                           </div>
@@ -896,7 +897,7 @@ export default function HrRosterView() {
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-white px-4 py-3">
                 <div>
                   <div className="text-base font-semibold">{fmtDayLong(dayDate)}</div>
-                  <div className="text-xs text-[var(--color-muted-fg)]">Staff on duty this day</div>
+                  <div className={mutedXs}>Staff on duty this day</div>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="rounded-full bg-sky-50 px-3 py-1 font-medium text-sky-700">{daySorted.length} on duty</span>
@@ -914,11 +915,11 @@ export default function HrRosterView() {
                       <span className="h-9 w-1.5 rounded-full" style={{ background: r.shift?.color ?? "#94a3b8" }} />
                       <div className="min-w-[150px]">
                         <div className="font-medium">{r.staff?.users?.full_name}</div>
-                        <div className="text-xs text-[var(--color-muted-fg)]">{r.staff?.users?.role}{r.staff?.department ? ` · ${r.staff.department}` : ""}</div>
+                        <div className={mutedXs}>{r.staff?.users?.role}{r.staff?.department ? ` · ${r.staff.department}` : ""}</div>
                       </div>
                       <div className="min-w-[130px]">
                         <div className="font-medium">{r.shift?.name ?? "—"}</div>
-                        <div className="text-xs text-[var(--color-muted-fg)]">
+                        <div className={mutedXs}>
                           {r.shift ? `${String(r.shift.start_time).slice(0, 5)}–${String(r.shift.end_time).slice(0, 5)}` : ""}{r.ward?.name ? ` · ${r.ward.name}` : ""}
                         </div>
                       </div>
@@ -1009,7 +1010,7 @@ export default function HrRosterView() {
                       title={`${c.date} — ${dayRows.length} staff on duty. Click to open this day.`}
                       className={`min-h-[104px] border-b border-r border-[var(--color-border)] p-1.5 text-left transition-colors duration-150 hover:bg-[var(--color-muted)] ${!c.inMonth ? "bg-[var(--color-muted)]/40 opacity-50" : ""} ${today ? "ring-2 ring-inset ring-[var(--color-primary)]" : ""}`}
                     >
-                      <div className="flex items-center justify-between">
+                      <div className={flexBetween}>
                         <span className={`text-xs font-semibold ${today ? "text-[var(--color-primary)]" : "text-[var(--color-muted-fg)]"}`}>{Number(c.date.slice(8))}</span>
                         {dayRows.length > 0 && (
                           <span className="rounded-full bg-[var(--color-primary)] px-1.5 py-0.5 text-[10px] font-bold text-white">{dayRows.length}</span>
@@ -1069,7 +1070,7 @@ export default function HrRosterView() {
               </div>
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
               <button type="submit" disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Assign
+                {busy && <Loader2 className={spinner} />} Assign
               </button>
             </div>
           </form>
@@ -1082,7 +1083,7 @@ export default function HrRosterView() {
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-semibold">Bulk assign shifts</h3>
-                <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">Assign one shift template to many staff across a date range.</p>
+                <p className={mutedXsMt}>Assign one shift template to many staff across a date range.</p>
               </div>
               <button type="button" className="rounded-lg p-1.5 hover:bg-[var(--color-muted)]" onClick={() => { setShowBulk(false); setBulkMsg(null); }}><X className="h-4 w-4" /></button>
             </div>
@@ -1128,12 +1129,12 @@ export default function HrRosterView() {
                   {bulkCandidates.length === 0 ? (
                     <div className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">No active staff match these filters.</div>
                   ) : (
-                    <div className="divide-y divide-[var(--color-border)]">
+                    <div className={divideBorder}>
                       {bulkCandidates.map((s) => (
                         <label key={s.id} className="flex cursor-pointer items-center gap-3 px-4 py-2 text-sm hover:bg-[var(--color-muted)]">
                           <input type="checkbox" className="h-4 w-4 rounded border-[var(--color-border)] accent-[var(--color-primary)]" checked={bulkStaffIds.includes(s.id)} onChange={() => toggleStaff(s.id)} />
                           <span className="font-medium">{s.users?.full_name}</span>
-                          <span className="text-xs text-[var(--color-muted-fg)]">{s.users?.role}{s.department ? ` · ${s.department}` : ""}</span>
+                          <span className={mutedXs}>{s.users?.role}{s.department ? ` · ${s.department}` : ""}</span>
                         </label>
                       ))}
                     </div>
@@ -1146,7 +1147,7 @@ export default function HrRosterView() {
               {bulkMsg?.kind === "ok" && <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{bulkMsg.text}</div>}
               {bulkMsg?.kind === "err" && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{bulkMsg.text}</div>}
               <button type="submit" disabled={busy || bulkStaffIds.length === 0 || !bulkShiftId || !bulkFrom || !bulkTo} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} Assign {bulkStaffIds.length * bulkDays} shift{bulkStaffIds.length * bulkDays === 1 ? "" : "s"}
+                {busy && <Loader2 className={spinner} />} Assign {bulkStaffIds.length * bulkDays} shift{bulkStaffIds.length * bulkDays === 1 ? "" : "s"}
               </button>
             </div>
           </form>
@@ -1185,7 +1186,7 @@ export default function HrRosterView() {
               </div>
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
               <button type="submit" disabled={busy} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
-                {busy && <Loader2 className="h-4 w-4 animate-spin" />} {editingShift ? "Save changes" : "Create"}
+                {busy && <Loader2 className={spinner} />} {editingShift ? "Save changes" : "Create"}
               </button>
             </div>
           </form>
@@ -1207,7 +1208,7 @@ export default function HrRosterView() {
                 <div key={s.id} className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] px-3 py-2.5">
                   <span className="h-3.5 w-3.5 shrink-0 rounded-full" style={{ backgroundColor: s.color || "#0ea5e9" }} aria-hidden="true" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className={flexGap2}>
                       <span className="truncate text-sm font-semibold text-[var(--color-foreground)]">{s.name}</span>
                       {s.is_active ? (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">Active</span>

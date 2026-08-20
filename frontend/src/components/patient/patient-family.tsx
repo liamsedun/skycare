@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { fileToSquareImage } from "@/lib/square-image";
+import { mutedFg, errorBanner, cardTitle, flexBetween, mutedSm, mutedXsMt, sectionTitle, pageTitle, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 import {
   AppCard,
   AppHeader,
@@ -149,8 +150,8 @@ export default function PatientFamily() {
         <div className="space-y-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Dependants</h1>
-              <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+              <h1 className={pageTitle}>Dependants</h1>
+              <p className={mutedSm}>
                 Manage family members under your care.
               </p>
             </div>
@@ -166,7 +167,7 @@ export default function PatientFamily() {
           </div>
 
           {error && (
-            <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>
+            <p role="alert" className={errorBanner}>{error}</p>
           )}
           {success && (
             <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">{success}</p>
@@ -197,7 +198,7 @@ export default function PatientFamily() {
               {family.length === 0 ? (
                 <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
                   <Users size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-                  <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No family account yet.</p>
+                  <p className={sectionTitle}>No family account yet.</p>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -334,13 +335,13 @@ function FamilyAccountCard({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <p className="text-sm font-semibold text-[var(--color-foreground)]">Family Account</p>
+          <p className={cardTitle}>Family Account</p>
           <p className="font-mono text-sm font-bold text-[#e0a84a]">{code}</p>
           {!isMainAccount && (
             <span className="text-[11px] text-[var(--color-muted-fg)]">shared family</span>
           )}
         </div>
-        <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+        <p className={mutedXsMt}>
           {used} of {total} slots used
         </p>
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-muted)]/20">
@@ -441,7 +442,7 @@ function MemberCard({
     <Link href={`/patient/family/${member.id}`} className={cls}>
       {body}
       <span className="absolute right-14 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
-        <ChevronRight size={18} className="text-[var(--color-muted-fg)]" />
+        <ChevronRight size={18} className={mutedFg} />
       </span>
     </Link>
   );
@@ -479,15 +480,15 @@ function AddMemberModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label="Add Dependant"
     >
       <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">Add Dependant</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={18} />
           </button>
         </div>

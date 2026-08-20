@@ -7,6 +7,7 @@ import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { printTable } from "@/lib/export";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedFg, errorBanner, cardTitle, divideBorder, mutedXsMt, flexWrapGap2, fgMedium, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 
 // ============================================================================
 // Lab Services Income — per-service billed vs collected for a from/to window
@@ -143,11 +144,11 @@ export default function LabIncomeView({ accessLevel = "full", myRole }: { access
             <h2 className="flex items-center gap-2 text-base font-bold text-[var(--color-foreground)]">
               <Wallet className="h-5 w-5 text-[var(--color-primary)]" /> Lab Services Income
             </h2>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Revenue by lab service — billed vs collected, for the selected period.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className={flexWrapGap2}>
             <label className="flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
               <CalendarRange size={13} /> From
               <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={inputCls} />
@@ -193,7 +194,7 @@ export default function LabIncomeView({ accessLevel = "full", myRole }: { access
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -212,7 +213,7 @@ export default function LabIncomeView({ accessLevel = "full", myRole }: { access
                 <th className="px-4 py-2.5 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {loading ? (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--color-muted-fg)]">Loading…</td></tr>
               ) : rows.length === 0 ? (
@@ -286,7 +287,7 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={`Tests for ${service.serviceName}`}
@@ -295,11 +296,11 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-lg font-bold text-[var(--color-foreground)]">Tests — {service.serviceName}</h3>
-            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXsMt}>
               Individual testings behind this service{from || to ? ` · ${from || "…"} → ${to || "…"}` : " · all time"}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={16} />
           </button>
         </div>
@@ -309,9 +310,9 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
         )}
 
         {loading ? (
-          <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading tests…</p>
+          <p className={emptyState}>Loading tests…</p>
         ) : rows.length === 0 ? (
-          <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">No testings found for this service in the selected period.</p>
+          <p className={emptyState}>No testings found for this service in the selected period.</p>
         ) : (
           <div className="mt-4 space-y-3">
             {rows.map((r) => {
@@ -319,9 +320,9 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
               const patient = r.patients ? `${r.patients.first_name} ${r.patients.last_name}${r.patients.is_walk_in ? " (walk-in)" : ""}` : "—";
               return (
                 <div key={r.id} className="rounded-xl border border-[var(--color-border)] p-4">
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className={flexWrapGap2}>
                     <span className="font-mono text-xs text-[var(--color-muted-fg)]">{r.patients?.patient_number ?? ""}</span>
-                    <span className="text-sm font-semibold text-[var(--color-foreground)]">{patient}</span>
+                    <span className={cardTitle}>{patient}</span>
                     {r.referrer && (
                       <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">{r.referrer}</span>
                     )}
@@ -340,7 +341,7 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
                           <th className="py-1.5 font-semibold text-right">Status</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[var(--color-border)]">
+                      <tbody className={divideBorder}>
                         {(r.lab_request_items ?? []).map((it) => (
                           <tr key={it.id}>
                             <td className="py-1.5 pr-3 font-medium text-[var(--color-foreground)]">{it.service_name ?? "—"}</td>
@@ -355,7 +356,7 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
                                   )}
                                 </>
                               ) : (
-                                <span className="text-[var(--color-muted-fg)]">not reported</span>
+                                <span className={mutedFg}>not reported</span>
                               )}
                             </td>
                             <td className="py-1.5 text-right">
@@ -374,7 +375,7 @@ function IncomeDetailModal({ service, from, to, onClose }: { service: IncomeRow;
                     <span>Technician: <span className="text-[var(--color-foreground)]">{technician}</span></span>
                     {r.invoices && (
                       <span>
-                        Invoice: <span className="font-medium text-[var(--color-foreground)]">{r.invoices.invoice_number}</span> ({r.invoices.status}) · {ngn(Number(r.invoices.total_amount) || 0)}
+                        Invoice: <span className={fgMedium}>{r.invoices.invoice_number}</span> ({r.invoices.status}) · {ngn(Number(r.invoices.total_amount) || 0)}
                       </span>
                     )}
                     {r.payments && (

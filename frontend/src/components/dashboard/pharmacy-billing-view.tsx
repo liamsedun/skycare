@@ -11,6 +11,7 @@ import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { useTenantBranding } from "@/lib/use-tenant-branding";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, mutedFg, errorBanner, btnBase, flexBetween, divideBorder, flexGap2, mutedXsMt, flexWrapGap2, fgMedium, ghostIconBtn, rowStart, modalBackdrop, cardShell, tableHeadCell } from "@/lib/ui-constants";
 
 // ============================================================================
 // Pharmacy Billing â€” sales invoices, multi-method payments, insurance claims,
@@ -209,7 +210,7 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={flexWrapGap2}>
         <input
           type="search"
           value={q}
@@ -254,19 +255,19 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-              <th scope="col" className="px-4 py-2.5 font-semibold">Invoice</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Patient</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Source</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Total</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Paid</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Status</th>
+            <tr className={tableHeadCell}>
+              <th scope="col" className={btnBase}>Invoice</th>
+              <th scope="col" className={btnBase}>Patient</th>
+              <th scope="col" className={btnBase}>Source</th>
+              <th scope="col" className={btnBase}>Total</th>
+              <th scope="col" className={btnBase}>Paid</th>
+              <th scope="col" className={btnBase}>Status</th>
               <th scope="col" className="px-4 py-2.5 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {loading ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : visible.length === 0 ? (
@@ -279,7 +280,7 @@ function SalesTab({ viewOnly = false }: { viewOnly?: boolean }) {
                     {r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : "â€”"}
                   </td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)] capitalize">{r.source}</td>
-                  <td className="px-4 py-2.5 font-semibold">{ngn(r.total_amount)}</td>
+                  <td className={btnBase}>{ngn(r.total_amount)}</td>
                   <td className="px-4 py-2.5 text-emerald-600">{ngn(r.paid_amount)}</td>
                   <td className="px-4 py-2.5"><Badge value={r.status} /></td>
                   <td className="px-4 py-2.5 text-right">
@@ -455,11 +456,11 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className={modalBackdrop} role="dialog" aria-modal="true">
       <div className="my-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h3 className="text-lg font-bold">New counter sale</h3>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={16} />
           </button>
         </div>
@@ -533,7 +534,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
 
         {items.length > 0 && (
           <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--color-border)]">
-            <table className="w-full text-left text-sm">
+            <table className={rowStart}>
               <thead>
                 <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase text-[var(--color-muted-fg)]">
                   <th className="px-3 py-2 font-semibold">Drug</th>
@@ -542,7 +543,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
+              <tbody className={divideBorder}>
                 {items.map((it, i) => (
                   <tr key={i}>
                     <td className="px-3 py-2">
@@ -570,7 +571,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         )}
 
         <div className="mt-4 flex items-center justify-end gap-4 text-sm">
-          <span className="text-[var(--color-muted-fg)]">Subtotal {ngn(subtotal)}</span>
+          <span className={mutedFg}>Subtotal {ngn(subtotal)}</span>
           {disc > 0 && <span className="text-red-500">âˆ’{ngn(disc)}</span>}
           <span className="text-xl font-bold">{ngn(total)}</span>
         </div>
@@ -732,11 +733,11 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className={modalBackdrop} role="dialog" aria-modal="true">
       <div className="my-4 w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h3 className="text-lg font-bold">Convert prescription to sale</h3>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={16} />
           </button>
         </div>
@@ -776,7 +777,7 @@ function ConvertSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
                           }`}
                         >
                           <span className="flex items-center justify-between gap-2">
-                            <span className="font-medium text-[var(--color-foreground)]">
+                            <span className={fgMedium}>
                               {r.patients ? `${r.patients.first_name} ${r.patients.last_name}` : "Unnamed patient"}
                               {r.patients?.patient_number ? ` (${r.patients.patient_number})` : ""}
                             </span>
@@ -975,26 +976,26 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className={modalBackdrop} role="dialog" aria-modal="true">
       <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <div>
             <h3 className="text-lg font-bold">{invoice.invoice_number}</h3>
-            <p className="text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXs}>
               {invoice.patients ? `${invoice.patients.first_name} ${invoice.patients.last_name} (${invoice.patients.patient_number})` : "Walk-in"} Â· {new Date(invoice.created_at).toLocaleString()}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={flexGap2}>
             <Badge value={invoice.status} />
             <button type="button" onClick={print} className={btnGhost}><Printer size={13} aria-hidden="true" /></button>
-            <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+            <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
               <X size={16} />
             </button>
           </div>
         </div>
 
         <div className="mt-4 overflow-x-auto rounded-lg border border-[var(--color-border)]">
-          <table className="w-full text-left text-sm">
+          <table className={rowStart}>
             <thead>
               <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase text-[var(--color-muted-fg)]">
                 <th className="px-3 py-2 font-semibold">Item</th>
@@ -1003,7 +1004,7 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
                 <th className="px-3 py-2 font-semibold text-right">Total</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {(invoice.pharmacy_invoice_items ?? []).map((it) => (
                 <tr key={it.id}>
                   <td className="px-3 py-2">{it.drug_name}</td>
@@ -1033,10 +1034,10 @@ function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }: { invo
             <ul className="mt-1 space-y-1">
               {payments.map((p) => (
                 <li key={p.id} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm">
-                  <span className="flex items-center gap-2">
-                    <Wallet size={13} aria-hidden="true" className="text-[var(--color-muted-fg)]" />
+                  <span className={flexGap2}>
+                    <Wallet size={13} aria-hidden="true" className={mutedFg} />
                     <span className="capitalize">{p.method}</span>
-                    {p.reference && <span className="text-xs text-[var(--color-muted-fg)]">Â· {p.reference}</span>}
+                    {p.reference && <span className={mutedXs}>Â· {p.reference}</span>}
                   </span>
                   <span className="font-semibold text-emerald-600">{ngn(p.amount)}</span>
                 </li>
@@ -1202,7 +1203,7 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={flexWrapGap2}>
         <input
           type="search"
           value={q}
@@ -1250,7 +1251,7 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
             No bank entries yet â€” cash/transfer/POS payments will be posted here automatically.
           </p>
         ) : (
-          <div className="divide-y divide-[var(--color-border)]">
+          <div className={divideBorder}>
             {ledger.map((l) => (
               <div key={l.id} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
                 <div className="min-w-0">
@@ -1269,18 +1270,18 @@ function PaymentsTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-              <th scope="col" className="px-4 py-2.5 font-semibold">Invoice</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Patient</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Method</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Amount</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Reference</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">When</th>
+            <tr className={tableHeadCell}>
+              <th scope="col" className={btnBase}>Invoice</th>
+              <th scope="col" className={btnBase}>Patient</th>
+              <th scope="col" className={btnBase}>Method</th>
+              <th scope="col" className={btnBase}>Amount</th>
+              <th scope="col" className={btnBase}>Reference</th>
+              <th scope="col" className={btnBase}>When</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {loading ? (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : visible.length === 0 ? (
@@ -1433,22 +1434,22 @@ function ClaimsTab({ viewOnly = false }: { viewOnly?: boolean }) {
         )}
       </div>
 
-      {error && <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
+      {error && <p role="alert" className={errorBanner}>{error}</p>}
 
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-        <table className="w-full text-left text-sm">
+        <table className={rowStart}>
           <thead>
-            <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-              <th scope="col" className="px-4 py-2.5 font-semibold">Claim</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Invoice</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Provider</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Claim amount</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Co-pay</th>
-              <th scope="col" className="px-4 py-2.5 font-semibold">Status</th>
+            <tr className={tableHeadCell}>
+              <th scope="col" className={btnBase}>Claim</th>
+              <th scope="col" className={btnBase}>Invoice</th>
+              <th scope="col" className={btnBase}>Provider</th>
+              <th scope="col" className={btnBase}>Claim amount</th>
+              <th scope="col" className={btnBase}>Co-pay</th>
+              <th scope="col" className={btnBase}>Status</th>
               <th scope="col" className="px-4 py-2.5 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className={divideBorder}>
             {loading ? (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--color-muted-fg)]">Loadingâ€¦</td></tr>
             ) : rows.length === 0 ? (
@@ -1460,9 +1461,9 @@ function ClaimsTab({ viewOnly = false }: { viewOnly?: boolean }) {
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{r.pharmacy_invoices?.invoice_number ?? "â€”"}</td>
                   <td className="px-4 py-2.5">
                     <p className="font-medium">{r.provider_name}</p>
-                    {r.policy_number && <p className="text-xs text-[var(--color-muted-fg)]">{r.policy_number}</p>}
+                    {r.policy_number && <p className={mutedXs}>{r.policy_number}</p>}
                   </td>
-                  <td className="px-4 py-2.5 font-semibold">{ngn(r.claim_amount)}</td>
+                  <td className={btnBase}>{ngn(r.claim_amount)}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{ngn(r.co_pay_amount)}</td>
                   <td className="px-4 py-2.5"><Badge value={r.status} /></td>
                   <td className="px-4 py-2.5 text-right">
@@ -1526,11 +1527,11 @@ function NewClaimModal({ invoices, onClose, onSaved }: { invoices: Array<{ id: s
   const lbl = "mb-1 block text-xs font-medium text-[var(--color-foreground)]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className={modalBackdrop} role="dialog" aria-modal="true">
       <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h3 className="text-lg font-bold">New insurance claim</h3>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             <X size={16} />
           </button>
         </div>
@@ -1719,9 +1720,9 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
   return (
     <div className={`grid gap-5 ${viewOnly ? "lg:grid-cols-1" : "lg:grid-cols-2"}`}>
       {!viewOnly && (
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className={cardShell}>
         <h3 className="text-sm font-bold text-[var(--color-foreground)]">Add formulary rule</h3>
-        <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+        <p className={mutedXsMt}>
           Defines whether a drug is covered by a provider and the patient co-pay.
         </p>
 
@@ -1790,7 +1791,7 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
       </div>
       )}
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+      <div className={cardShell}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-bold text-[var(--color-foreground)]">Rules</h3>
           <ImportExportMenu
@@ -1815,7 +1816,7 @@ function CoverageTab({ viewOnly = false }: { viewOnly?: boolean }) {
               <li key={r.id} className="flex items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] px-3 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{r.pharmacy_drugs?.name ?? "â€”"}</p>
-                  <p className="text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXs}>
                     {r.provider_name} Â· {r.is_covered ? (
                       <span className="text-emerald-600">
                         {r.co_pay_type === "percent" ? `${r.co_pay_value}% co-pay` : r.co_pay_type === "fixed" ? `${ngn(r.co_pay_value)} co-pay` : "no co-pay"}
@@ -1937,7 +1938,7 @@ function ReportTab({ viewOnly = false }: { viewOnly?: boolean }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={flexWrapGap2}>
         <label className="text-xs font-medium text-[var(--color-foreground)]" htmlFor="rp-date">Date</label>
         <input id="rp-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inputCls} w-auto`} />
         {loading && <Clock size={14} aria-hidden="true" className="animate-spin text-[var(--color-muted-fg)]" />}
@@ -1952,7 +1953,7 @@ function ReportTab({ viewOnly = false }: { viewOnly?: boolean }) {
         />
       </div>
 
-      {error && <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">{error}</p>}
+      {error && <p role="alert" className={errorBanner}>{error}</p>}
 
       {report && (
         <>
@@ -1964,7 +1965,7 @@ function ReportTab({ viewOnly = false }: { viewOnly?: boolean }) {
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+            <div className={cardShell}>
               <h3 className="text-sm font-bold text-[var(--color-foreground)]">By payment method</h3>
               {methods.length === 0 ? (
                 <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">No sales on this day.</p>
@@ -1988,7 +1989,7 @@ function ReportTab({ viewOnly = false }: { viewOnly?: boolean }) {
               )}
             </div>
 
-            <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
+            <div className={cardShell}>
               <h3 className="text-sm font-bold text-[var(--color-foreground)]">Top drugs</h3>
               {report.top_drugs.length === 0 ? (
                 <p className="py-6 text-center text-xs text-[var(--color-muted-fg)]">No items sold on this day.</p>

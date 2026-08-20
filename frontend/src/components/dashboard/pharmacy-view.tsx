@@ -6,6 +6,7 @@ import { Pill, Plus, X, Printer, Pencil, Trash2, Sparkles, AlertTriangle } from 
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
+import { mutedXs, mutedFg, errorBanner, btnBase, cardTitle, flexBetween, mutedSm, divideBorder, flexWrapGap2, fgMedium, fgSemibold, sectionTitle, mutedSmPlain, pageTitle, ghostIconBtn, emptyState, modalBackdrop, tableHeadCell } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 
 interface RxItem {
@@ -149,8 +150,8 @@ export default function PharmacyView({ canDispense, accessLevel = "full" }: { ca
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Pharmacy</h1>
-          <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+          <h1 className={pageTitle}>Pharmacy</h1>
+          <p className={mutedSm}>
             Prescriptions, dispensing and stock.
           </p>
         </div>
@@ -166,7 +167,7 @@ export default function PharmacyView({ canDispense, accessLevel = "full" }: { ca
       </div>
 
 {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -176,7 +177,7 @@ export default function PharmacyView({ canDispense, accessLevel = "full" }: { ca
           </p>
         )}
 
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter prescriptions">
+      <div className={flexWrapGap2} role="group" aria-label="Filter prescriptions">
         {STATUS_FILTERS.map((item) => (
           <button
             key={item}
@@ -214,11 +215,11 @@ export default function PharmacyView({ canDispense, accessLevel = "full" }: { ca
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading prescriptions…</p>
+        <p className={emptyState}>Loading prescriptions…</p>
       ) : visibleRxs.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <Pill size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No prescriptions found.</p>
+          <p className={sectionTitle}>No prescriptions found.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -460,7 +461,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
             )}
             {aiRecs && (
               <div className="mt-2 space-y-1.5">
-                <div className="flex items-center justify-between">
+                <div className={flexBetween}>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
                     Suggested medications
                   </p>
@@ -476,7 +477,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
                   )}
                 </div>
                 {aiRecs.length === 0 ? (
-                  <p className="text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXs}>
                     No catalog match for this diagnosis — type medication names below.
                   </p>
                 ) : (
@@ -488,7 +489,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
                         <li key={r.id} className="flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-white px-3 py-2">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{r.name}</p>
-                            <p className="text-xs text-[var(--color-muted-fg)]">
+                            <p className={mutedXs}>
                               {[r.category, r.dosage ? `dose ${r.dosage}` : null].filter(Boolean).join(" · ")}
                               {" · "}
                               {outOfStock ? (
@@ -560,7 +561,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-semibold text-[var(--color-foreground)]">Medications</span>
+            <span className={cardTitle}>Medications</span>
             <button
               type="button"
               onClick={() => setItems([...items, newItem()])}
@@ -592,7 +593,7 @@ function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated:
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -922,7 +923,7 @@ function EditRxModal({ rx, onClose, onSaved }: { rx: Prescription; onClose: () =
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-semibold text-[var(--color-foreground)]">Medications</span>
+            <span className={cardTitle}>Medications</span>
             <button
               type="button"
               onClick={() => setItems([...items, { ...newItem(), id: null }])}
@@ -954,7 +955,7 @@ function EditRxModal({ rx, onClose, onSaved }: { rx: Prescription; onClose: () =
         </div>
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -1172,11 +1173,11 @@ const itemsPayload = rx.prescription_items
   return (
     <ModalShell title={`Prescription — ${rx.patients ? `${rx.patients.first_name} ${rx.patients.last_name}` : ""}`} onClose={onClose} wide>
       <div className="mt-5 space-y-6">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={flexWrapGap2}>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(rx.status)}`}>
             {rx.status.replace(/_/g, " ")}
           </span>
-          <span className="text-sm text-[var(--color-muted-fg)]">
+          <span className={mutedSmPlain}>
             Issued {rx.issued_date} · by {rx.users?.full_name ?? "—"}
           </span>
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
@@ -1214,19 +1215,19 @@ const itemsPayload = rx.prescription_items
 
         {rx.diagnosis && (
           <p className="text-sm">
-            <span className="font-semibold text-[var(--color-foreground)]">Diagnosis: </span>
+            <span className={fgSemibold}>Diagnosis: </span>
             {rx.diagnosis}
           </p>
         )}
         {external && rx.external_pharmacy_name && (
           <p className="text-sm">
-            <span className="font-semibold text-[var(--color-foreground)]">External pharmacy: </span>
+            <span className={fgSemibold}>External pharmacy: </span>
             {rx.external_pharmacy_name}
           </p>
         )}
 
         {error && (
-          <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+          <p role="alert" className={errorBanner}>
             {error}
           </p>
         )}
@@ -1272,16 +1273,16 @@ const itemsPayload = rx.prescription_items
         <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead>
-              <tr className="border-b border-[var(--color-border)] bg-[var(--color-muted)] text-xs uppercase tracking-wide text-[var(--color-muted-fg)]">
-                <th scope="col" className="px-4 py-2.5 font-semibold">Medication</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Dosage</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Frequency</th>
-                <th scope="col" className="px-4 py-2.5 font-semibold">Qty</th>
+              <tr className={tableHeadCell}>
+                <th scope="col" className={btnBase}>Medication</th>
+                <th scope="col" className={btnBase}>Dosage</th>
+                <th scope="col" className={btnBase}>Frequency</th>
+                <th scope="col" className={btnBase}>Qty</th>
                 {canDispense && !viewOnly && (
                   <>
-                    <th scope="col" className="px-4 py-2.5 font-semibold">Dispensed</th>
+                    <th scope="col" className={btnBase}>Dispensed</th>
                     {!external && (
-                      <th scope="col" className="px-4 py-2.5 font-semibold">Stock batch</th>
+                      <th scope="col" className={btnBase}>Stock batch</th>
                     )}
                     {!external && (
                       <th scope="col" className="px-4 py-2.5 text-right font-semibold">To dispense</th>
@@ -1290,16 +1291,16 @@ const itemsPayload = rx.prescription_items
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
+            <tbody className={divideBorder}>
               {rx.prescription_items.map((item) => {
                 const rem = remaining(item);
                 const list = batches[item.id] ?? [];
                 return (
                   <tr key={item.id}>
                     <td className="px-4 py-2.5">
-                      <p className="font-medium text-[var(--color-foreground)]">{item.medication_name ?? "—"}</p>
+                      <p className={fgMedium}>{item.medication_name ?? "—"}</p>
                       {item.instructions && (
-                        <p className="text-xs text-[var(--color-muted-fg)]">{item.instructions}</p>
+                        <p className={mutedXs}>{item.instructions}</p>
                       )}
                       {item.pharmacy_drug_id &&
                         (() => {
@@ -1314,7 +1315,7 @@ const itemsPayload = rx.prescription_items
                                   Suggested retail ₦{Math.round(price.suggestedLow).toLocaleString()}–₦
                                   {Math.round(price.suggestedHigh).toLocaleString()}
                                   {price.currentPrice > 0 && price.currentPrice !== price.suggestedLow && (
-                                    <span className="text-[var(--color-muted-fg)]">
+                                    <span className={mutedFg}>
                                       {" "}· current ₦{Math.round(price.currentPrice).toLocaleString()}
                                     </span>
                                   )}
@@ -1328,7 +1329,7 @@ const itemsPayload = rx.prescription_items
                                         Alternatives
                                       </p>
                                       {altList.length === 0 ? (
-                                        <p className="text-xs text-[var(--color-muted-fg)]">
+                                        <p className={mutedXs}>
                                           No same-category alternatives in the catalog.
                                         </p>
                                       ) : (
@@ -1340,7 +1341,7 @@ const itemsPayload = rx.prescription_items
                                                 same generic
                                               </span>
                                             )}
-                                            <span className="text-[var(--color-muted-fg)]">
+                                            <span className={mutedFg}>
                                               {" · "}
                                               {alt.inStock ? `${alt.stockQty} in stock` : "out of stock"}
                                               {Number(alt.unitPrice ?? 0) > 0 && ` · ₦${Number(alt.unitPrice).toLocaleString()}`}
@@ -1368,7 +1369,7 @@ const itemsPayload = rx.prescription_items
                     </td>
                     <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.dosage}</td>
                     <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{item.frequency}</td>
-                    <td className="px-4 py-2.5 font-semibold">{item.quantity}</td>
+                    <td className={btnBase}>{item.quantity}</td>
                     {canDispense && !viewOnly && (
                       <>
                         <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
@@ -1390,7 +1391,7 @@ const itemsPayload = rx.prescription_items
                                 ))}
                               </select>
                             ) : (
-                              <span className="text-xs text-[var(--color-muted-fg)]">uncatalogued</span>
+                              <span className={mutedXs}>uncatalogued</span>
                             )}
                           </td>
                         )}
@@ -1417,14 +1418,14 @@ const itemsPayload = rx.prescription_items
         </div>
 
         {external && canDispense && !viewOnly && (
-          <p className="text-xs text-[var(--color-muted-fg)]">
+          <p className={mutedXs}>
             External prescription — record dispensing without stock deduction. Enter quantities below and save.
           </p>
         )}
 
         {rx.notes && (
-          <p className="text-sm text-[var(--color-muted-fg)]">
-            <span className="font-semibold text-[var(--color-foreground)]">Notes: </span>
+          <p className={mutedSmPlain}>
+            <span className={fgSemibold}>Notes: </span>
             {rx.notes}
           </p>
         )}
@@ -1492,15 +1493,15 @@ const itemsPayload = rx.prescription_items
 function ModalShell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div className={`my-4 w-full rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-5xl" : "max-w-md"}`}>
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">{title}</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             ✕
           </button>
         </div>

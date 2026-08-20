@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown, Landmark, ReceiptText, Wallet } from "lucide-react";
 import { inDateRange } from "@/lib/daterange";
+import { mutedXs, mutedFg, errorBanner, cardTitle, flexBetween, mutedSm, divideBorder, flexGap2, fgMedium, fgSemibold, sectionTitle, pageTitle, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import {
   AppHeader,
@@ -174,8 +175,8 @@ export default function PatientBilling() {
       <div className="hidden md:block">
         <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Bills & payments</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <h1 className={pageTitle}>Bills & payments</h1>
+        <p className={mutedSm}>
           Outstanding balance: <span className="font-semibold text-amber-600">{ngn(outstanding)}</span>
         </p>
       </div>
@@ -183,7 +184,7 @@ export default function PatientBilling() {
       <DateRangeBar from={from} to={to} onFromChange={setFrom} onToChange={setTo} onClear={() => { setFrom(""); setTo(""); }} />
 
       {error && (
-        <p role="alert" className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]">
+        <p role="alert" className={errorBanner}>
           {error}
         </p>
       )}
@@ -212,11 +213,11 @@ export default function PatientBilling() {
       )}
 
       {loading ? (
-        <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading invoices…</p>
+        <p className={emptyState}>Loading invoices…</p>
       ) : visible.length === 0 ? (
         <div className="rounded-xl border border-[var(--color-border)] bg-white py-16 text-center shadow-[var(--shadow-sm)]">
           <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-          <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">No invoices yet.</p>
+          <p className={sectionTitle}>No invoices yet.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -234,7 +235,7 @@ export default function PatientBilling() {
                     <ChevronDown size={16} aria-hidden="true" className={`text-[var(--color-muted-fg)] transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
                     <div>
                       <p className="font-mono text-sm font-semibold text-[var(--color-foreground)]">{inv.invoice_number}</p>
-                      <p className="text-xs text-[var(--color-muted-fg)]">
+                      <p className={mutedXs}>
                         {inv.patients ? `${inv.patients.first_name} ${inv.patients.last_name}` : ""} ·{" "}
                         {new Date(inv.issue_date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                       </p>
@@ -244,7 +245,7 @@ export default function PatientBilling() {
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${statusClass(inv.status)}`}>
                       {inv.status.replace(/_/g, " ")}
                     </span>
-                    <p className="text-sm font-semibold text-[var(--color-foreground)]">{ngn(Number(inv.total_amount))}</p>
+                    <p className={cardTitle}>{ngn(Number(inv.total_amount))}</p>
                   </div>
                 </button>
 
@@ -260,7 +261,7 @@ export default function PatientBilling() {
                             <th className="pb-2 text-right font-medium">Total</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[var(--color-border)]">
+                        <tbody className={divideBorder}>
                           {inv.invoice_items.map((item) => (
                             <tr key={item.id}>
                               <td className="py-2 break-words text-[var(--color-foreground)]">
@@ -278,7 +279,7 @@ export default function PatientBilling() {
 
                     <div className="mt-3 flex justify-end space-y-1 text-right text-sm">
                       <div>
-                        <p className="text-[var(--color-muted-fg)]">
+                        <p className={mutedFg}>
                           Subtotal: {ngn(Number(inv.subtotal))}
                           {inv.discount_amount ? <> · Discount: −{ngn(inv.discount_amount)}</> : null}
                           {inv.tax_amount ? <> · Tax: {ngn(inv.tax_amount)}</> : null}
@@ -296,12 +297,12 @@ export default function PatientBilling() {
                         <ul className="mt-2 space-y-1.5">
                           {inv.payments.map((p) => (
                             <li key={p.id} className="flex items-center justify-between text-sm">
-                              <span className="text-[var(--color-muted-fg)]">
+                              <span className={mutedFg}>
                                 {p.reference ?? "—"} · {p.payment_method?.replace(/_/g, " ") ?? "—"}
                                 {p.paid_at ? ` · ${new Date(p.paid_at).toLocaleString("en-NG")}` : ""}
                               </span>
-                              <span className="flex items-center gap-2">
-                                <span className="font-medium text-[var(--color-foreground)]">{ngn(Number(p.amount))}</span>
+                              <span className={flexGap2}>
+                                <span className={fgMedium}>{ngn(Number(p.amount))}</span>
                                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${statusClass(p.status)}`}>
                                   {p.status.replace(/_/g, " ")}
                                 </span>
@@ -362,7 +363,7 @@ export default function PatientBilling() {
                 <Wallet size={20} aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs text-[var(--color-muted-fg)]">Total outstanding balance</p>
+                <p className={mutedXs}>Total outstanding balance</p>
                 <p className="text-lg font-bold text-[var(--color-foreground)]">{ngn(outstanding)}</p>
               </div>
               <AppStatusChip status={outstanding > 0 ? "pending" : "paid"} />
@@ -412,7 +413,7 @@ export default function PatientBilling() {
           ) : mobileBills.length === 0 ? (
             <div className="app-glass rounded-2xl py-10 text-center">
               <ReceiptText size={40} aria-hidden="true" className="mx-auto text-[var(--color-muted-fg)]" />
-              <p className="mt-3 text-sm font-medium text-[var(--color-foreground)]">
+              <p className={sectionTitle}>
                 No {mobileTab === "outstanding" ? "outstanding" : "paid"} bills.
               </p>
             </div>
@@ -482,10 +483,10 @@ export default function PatientBilling() {
                           <ul className="mt-2 space-y-1 border-t border-[var(--color-border)] pt-2">
                             {inv.payments.map((p) => (
                               <li key={p.id} className="flex items-center justify-between gap-2 text-xs">
-                                <span className="text-[var(--color-muted-fg)]">
+                                <span className={mutedFg}>
                                   {p.reference ?? "—"} · {p.payment_method?.replace(/_/g, " ") ?? "—"}
                                 </span>
-                                <span className="font-medium text-[var(--color-foreground)]">{ngn(Number(p.amount))}</span>
+                                <span className={fgMedium}>{ngn(Number(p.amount))}</span>
                               </li>
                             ))}
                           </ul>
@@ -552,19 +553,19 @@ function DeclareModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label="Declare Payment"
     >
       <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">Declare Payment</h2>
-          <button type="button" onClick={onClose} className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100" aria-label="Close">
+          <button type="button" onClick={onClose} className={ghostIconBtn} aria-label="Close">
             ✕
           </button>
         </div>
-        <p className="mt-1 text-sm text-[var(--color-muted-fg)]">
+        <p className={mutedSm}>
           {invoice.invoice_number} — outstanding <span className="font-semibold text-amber-600">{ngn(due)}</span>
         </p>
         <form
@@ -608,8 +609,8 @@ function DeclareModal({
               <p className="text-xs font-semibold text-[var(--color-foreground)]">Pay into any of these accounts</p>
               <ul className="mt-2 space-y-2">
                 {accounts.map((a) => (
-                  <li key={a.id} className="text-xs text-[var(--color-muted-fg)]">
-                    <span className="font-semibold text-[var(--color-foreground)]">{a.bank_name}</span> — {a.account_name} ·{" "}
+                  <li key={a.id} className={mutedXs}>
+                    <span className={fgSemibold}>{a.bank_name}</span> — {a.account_name} ·{" "}
                     <span className="font-mono font-semibold text-[var(--color-foreground)]">{a.account_number}</span>
                   </li>
                 ))}
@@ -617,13 +618,13 @@ function DeclareModal({
             </div>
           )}
           {method !== "online" && (
-            <p className="text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXs}>
               Your payment will show as <strong>pending</strong> until billing staff confirm it. If the POS payment was
               processed by the hospital directly, you don&apos;t need to declare it.
             </p>
           )}
           {method === "online" && (
-            <p className="text-xs text-[var(--color-muted-fg)]">
+            <p className={mutedXs}>
               You&apos;ll be taken to a secure Paystack checkout to pay by card. The payment is confirmed automatically
               when it completes.
             </p>

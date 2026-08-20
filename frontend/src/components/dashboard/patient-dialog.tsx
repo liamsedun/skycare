@@ -7,6 +7,7 @@ import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { Combobox } from "@/components/ui/combobox";
 import { CLINICIAN_ROLES } from "@/lib/auth";
+import { mutedFg, errorBanner, flexBetween, mutedXsMt, flexWrapGap2, fgMedium, mutedXsMt1, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 
 const RECORD_TYPES = [
   "diagnosis",
@@ -183,7 +184,7 @@ export function AddPatientModal({ open, onClose }: { open: boolean; onClose: () 
                     normalize={capitalize}
                     placeholder="Pick or Type (e.g. Male)"
                   />
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick or Type an option, or add one not listed.</p>
+                  <p className={mutedXsMt1}>Pick or Type an option, or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-dob">Date of Birth</label>
@@ -239,7 +240,7 @@ export function AddPatientModal({ open, onClose }: { open: boolean; onClose: () 
                     normalize={(v) => v.trim().toUpperCase().replace(/0/g, "O")}
                     placeholder="Pick or Type (e.g. O+)"
                   />
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
+                  <p className={mutedXsMt1}>Pick an option or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-genotype">Genotype</label>
@@ -250,7 +251,7 @@ export function AddPatientModal({ open, onClose }: { open: boolean; onClose: () 
                     normalize={(v) => v.trim().toUpperCase()}
                     placeholder="Pick or Type (e.g. AA)"
                   />
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">Pick an option or add one not listed.</p>
+                  <p className={mutedXsMt1}>Pick an option or add one not listed.</p>
                 </div>
                 <div>
                   <label className={labelCls} htmlFor="p-marital">Marital Status</label>
@@ -261,7 +262,7 @@ export function AddPatientModal({ open, onClose }: { open: boolean; onClose: () 
                     normalize={capitalize}
                     placeholder="Pick or Type (e.g. Single)"
                   />
-                  <p className="mt-1 text-xs text-[var(--color-muted-fg)]">
+                  <p className={mutedXsMt1}>
                     Pick or Type — e.g. Single, Married, Divorced, Widowed, Separated.
                   </p>
                 </div>
@@ -874,10 +875,10 @@ export function PatientViewButton({
           wide
         >
           {loading ? (
-            <p className="py-10 text-center text-sm text-[var(--color-muted-fg)]">Loading patient…</p>
+            <p className={emptyState}>Loading patient…</p>
           ) : detail ? (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className={flexWrapGap2}>
                 <span className="rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)]">
                   {detail.status}
                 </span>
@@ -1272,43 +1273,43 @@ export function PatientViewButton({
                                 </div>
                                 <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
                                   <div>
-                                    <dt className="text-[var(--color-muted-fg)]">Gender</dt>
+                                    <dt className={mutedFg}>Gender</dt>
                                     <dd className="font-medium capitalize text-[var(--color-foreground)]">{d.gender ?? "—"}</dd>
                                   </div>
                                   <div>
-                                    <dt className="text-[var(--color-muted-fg)]">Date of Birth</dt>
-                                    <dd className="font-medium text-[var(--color-foreground)]">
+                                    <dt className={mutedFg}>Date of Birth</dt>
+                                    <dd className={fgMedium}>
                                       {d.date_of_birth ? formatDateOnly(d.date_of_birth) : "—"}
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt className="text-[var(--color-muted-fg)]">Phone</dt>
+                                    <dt className={mutedFg}>Phone</dt>
                                     <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
                                       <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                                       {d.phone ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${d.phone}`}>{d.phone}</a> : "—"}
                                     </dd>
                                   </div>
                                   <div className="col-span-2 sm:col-span-3">
-                                    <dt className="text-[var(--color-muted-fg)]">Address</dt>
+                                    <dt className={mutedFg}>Address</dt>
                                     <dd className="flex items-start gap-1 font-medium text-[var(--color-foreground)]">
                                       <MapPin size={12} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-muted-fg)]" />
                                       {[d.address, d.city, d.state].filter(Boolean).join(", ") || "—"}
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt className="text-[var(--color-muted-fg)]">Emergency Contact</dt>
-                                    <dd className="font-medium text-[var(--color-foreground)]">{d.emergency_contact_name ?? "—"}</dd>
+                                    <dt className={mutedFg}>Emergency Contact</dt>
+                                    <dd className={fgMedium}>{d.emergency_contact_name ?? "—"}</dd>
                                   </div>
                                   <div>
-                                    <dt className="text-[var(--color-muted-fg)]">Emergency Phone</dt>
+                                    <dt className={mutedFg}>Emergency Phone</dt>
                                     <dd className="flex items-center gap-1 font-medium text-[var(--color-foreground)]">
                                       <Phone size={12} aria-hidden="true" className="shrink-0 text-[var(--color-muted-fg)]" />
                                       {d.emergency_contact_phone ? <a className="focus-ring font-semibold text-blue-600 hover:text-blue-700 hover:underline" href={`tel:${d.emergency_contact_phone}`}>{d.emergency_contact_phone}</a> : "—"}
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt className="text-[var(--color-muted-fg)]">Portal Login</dt>
-                                    <dd className="font-medium text-[var(--color-foreground)]">{d.user_id ? "Active" : "None"}</dd>
+                                    <dt className={mutedFg}>Portal Login</dt>
+                                    <dd className={fgMedium}>{d.user_id ? "Active" : "None"}</dd>
                                   </div>
                                 </dl>
                                 <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-[var(--color-border)] pt-2.5">
@@ -1518,8 +1519,8 @@ export function PatientViewButton({
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="font-medium text-[var(--color-foreground)]">{record.title}</p>
-                            <p className="mt-0.5 text-xs text-[var(--color-muted-fg)]">
+                            <p className={fgMedium}>{record.title}</p>
+                            <p className={mutedXsMt}>
                               {record.record_type.replace(/_/g, " ")} ·{" "}
                               {new Date(record.created_at).toLocaleDateString()} ·{" "}
                               {record.users?.full_name ?? "—"}
@@ -1560,20 +1561,20 @@ export function PatientViewButton({
 
       {showSchedule && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+          className={modalBackdrop}
           role="dialog"
           aria-modal="true"
           aria-label={`Schedule appointment for ${patient.last_name}, ${patient.first_name}`}
         >
           <div className="my-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between">
+            <div className={flexBetween}>
               <h2 className="text-lg font-bold">
                 New Appointment — {patient.last_name}, {patient.first_name}
               </h2>
               <button
                 type="button"
                 onClick={() => setShowSchedule(false)}
-                className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+                className={ghostIconBtn}
                 aria-label="Close"
               >
                 ✕
@@ -1634,7 +1635,7 @@ export function PatientViewButton({
               {schedError && (
                 <p
                   role="alert"
-                  className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+                  className={errorBanner}
                 >
                   {schedError}
                 </p>
@@ -1685,7 +1686,7 @@ function Modal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm"
+      className={modalBackdrop}
       role="dialog"
       aria-modal="true"
       aria-label={title}
@@ -1693,12 +1694,12 @@ function Modal({
       <div
         className={`my-4 w-full rounded-2xl bg-white p-6 shadow-2xl ${wide ? "max-w-2xl" : "max-w-md"}`}
       >
-        <div className="flex items-center justify-between">
+        <div className={flexBetween}>
           <h2 className="text-lg font-bold">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="focus-ring rounded-lg p-2 text-[var(--color-muted-fg)] hover:bg-slate-100"
+            className={ghostIconBtn}
             aria-label="Close"
           >
             ✕
@@ -1744,7 +1745,7 @@ function ErrorNote({ error }: { error: string }) {
   return (
     <p
       role="alert"
-      className="rounded-lg bg-[var(--color-destructive-soft)] px-3 py-2 text-sm font-medium text-[var(--color-destructive)]"
+      className={errorBanner}
     >
       {error}
     </p>
