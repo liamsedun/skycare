@@ -19,7 +19,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const host = await getHost();
-  const { tenant } = await loadTenant(host ?? slug);
+  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) return { title: "Hospital" };
 
   if (tenant.website_enabled === false) {
@@ -65,7 +66,8 @@ export default async function TenantSiteLayout({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const { tenant } = await loadTenant(host ?? slug);
+  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 
   const profile = tenant as TenantSiteProfile;

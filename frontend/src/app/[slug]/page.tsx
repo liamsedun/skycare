@@ -25,7 +25,9 @@ export default async function TenantWebsitePage({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const { tenant } = await loadTenant(host ?? slug);
+  // On localhost, getHost() returns "localhost" — use the slug from the URL.
+  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 
   const profile = tenant as TenantSiteProfile;

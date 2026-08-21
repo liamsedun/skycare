@@ -12,7 +12,8 @@ export default async function TenantContactPage({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const { tenant } = await loadTenant(host ?? slug);
+  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 
   const home = `/${tenant.slug}`;

@@ -14,7 +14,7 @@ export type TenantContext = {
 
 export function resolveTenantSlug(host?: string | null): TenantContext {
   const h = (host ?? "").replace(/^https?:\/\//, "").split(":")[0].toLowerCase();
-  if (!h || h === ROOT_DOMAIN || h === `www.${ROOT_DOMAIN}` || h === LOCAL_DOMAIN || h === `www.${LOCAL_DOMAIN}`) {
+  if (!h || h === ROOT_DOMAIN || h === `www.${ROOT_DOMAIN}` || h === LOCAL_DOMAIN || h === `www.${LOCAL_DOMAIN}` || h === "localhost") {
     return { slug: null, isRoot: true, customDomain: false };
   }
   // custom domain set by tenant → resolve via DB (handled in loadTenant)
@@ -35,12 +35,20 @@ export async function loadTenant(host?: string | null) {
   // the raw `tenants` table (incl. `settings` with Paystack keys) is never
   // exposed to anon — the view whitelists brand/contact/website content only.
   if (ctx.customDomain) {
+    // On localhost, the "host" is actually the slug from the URL params.
+    // Try slug first, then fall back to domain lookup.
     const { data } = await supabase
+      .from("tenant_public_profile")
+      .select("*")
+      .eq("slug", ctx.slug)
+      .maybeSingle();
+    if (data) return { ctx, tenant: data };
+    const { data: byDomain } = await supabase
       .from("tenant_public_profile")
       .select("*")
       .eq("domain", ctx.slug)
       .maybeSingle();
-    return { ctx, tenant: data ?? null };
+    return { ctx, tenant: byDomain ?? null };
   }
   if (!ctx.isRoot && ctx.slug) {
     const { data } = await supabase
