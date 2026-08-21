@@ -4,12 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2, Mail } from "lucide-react";
 import { getSupabase } from "@/lib/supabase/client";
-import { FacebookLogo, GoogleLogo, YahooLogo } from "@/components/brand-logos";
+import { GoogleLogo, YahooLogo } from "@/components/brand-logos";
 
 const OAUTH_PROVIDERS = [
   { id: "google", label: "Google", bg: "hover:bg-gray-50" },
   { id: "custom:yahoo", label: "Yahoo", bg: "hover:bg-purple-50" },
-  { id: "facebook", label: "Facebook", bg: "hover:bg-blue-50" },
 ] as const;
 
 function ProviderLogo({ id, className = "" }: { id: string; className?: string }) {
@@ -18,8 +17,6 @@ function ProviderLogo({ id, className = "" }: { id: string; className?: string }
       return <GoogleLogo size={18} />;
     case "custom:yahoo":
       return <YahooLogo size={22} />;
-    case "facebook":
-      return <FacebookLogo size={17} className={className} />;
     default:
       return <GoogleLogo size={18} />;
   }
@@ -46,7 +43,7 @@ export default function LoginForm() {
       case "auth_callback":
         return "Social sign-in could not be completed. Try again or use your email / patient number with a password.";
       case "oauth_no_account":
-        return "This Google, Yahoo or Facebook account isn't linked to a hospital account. Use your hospital email / patient number with a password, or ask your admin.";
+        return "This Google or Yahoo account isn't linked to a hospital account. Use your hospital email / patient number with a password, or ask your admin.";
       default:
         return "Something went wrong. Try again or use your email / patient number with a password.";
     }
@@ -120,7 +117,6 @@ export default function LoginForm() {
   const providerLabels: Record<string, string> = {
     google: "Google",
     "custom:yahoo": "Yahoo",
-    facebook: "Facebook",
   };
 
   async function signInWithOAuth(provider: (typeof OAUTH_PROVIDERS)[number]["id"]) {
@@ -128,7 +124,7 @@ export default function LoginForm() {
     setOauthBusy(provider);
     try {
       const { error } = await getSupabase().auth.signInWithOAuth({
-        provider: provider as "google" | "custom:yahoo" | "facebook",
+        provider: provider as "google" | "custom:yahoo",
         options: {
           redirectTo: `${window.location.origin}/auth/callback${
             redirectTo ? `?next=${encodeURIComponent(redirectTo)}` : ""

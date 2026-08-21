@@ -3,12 +3,44 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ThemeSync from "@/components/theme-sync";
 import ThemeToggle from "@/components/theme-toggle";
+import { applyTheme, readCookieTheme } from "@/lib/theme";
 
 beforeEach(() => {
   window.localStorage.clear();
+  document.cookie = "skycare-theme=; path=/; max-age=0";
   delete document.documentElement.dataset.theme;
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+});
+
+describe("applyTheme cookie", () => {
+  it("sets a cookie alongside localStorage", () => {
+    applyTheme("dark");
+    expect(document.cookie).toContain("skycare-theme=dark");
+    expect(window.localStorage.getItem("skycare-theme")).toBe("dark");
+    expect(document.documentElement.dataset.theme).toBe("dark");
+  });
+
+  it("overwrites the cookie on toggle", () => {
+    applyTheme("dark");
+    applyTheme("light");
+    expect(document.cookie).toContain("skycare-theme=light");
+  });
+});
+
+describe("readCookieTheme", () => {
+  it("reads dark from a cookie header string", () => {
+    expect(readCookieTheme("skycare-theme=dark; other=1")).toBe("dark");
+  });
+
+  it("reads light from a cookie header string", () => {
+    expect(readCookieTheme("skycare-theme=light")).toBe("light");
+  });
+
+  it("defaults to light when no cookie present", () => {
+    expect(readCookieTheme("other=1")).toBe("light");
+    expect(readCookieTheme(undefined)).toBe("light");
+  });
 });
 
 describe("ThemeSync", () => {
@@ -70,6 +102,7 @@ describe("ThemeToggle", () => {
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(document.documentElement.dataset.theme).toBe("light");
+    expect(document.cookie).toContain("skycare-theme=light");
     await waitFor(() =>
       expect(putMock).toHaveBeenCalledWith(
         "/api/account/preferences",

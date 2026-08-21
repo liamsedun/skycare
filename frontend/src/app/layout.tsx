@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
+import { cookies } from "next/headers";
 import localFont from "next/font/local";
 import { Inter, Noto_Sans } from "next/font/google";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import ThemeSync from "@/components/theme-sync";
+import { readCookieTheme } from "@/lib/theme";
 import "./globals.css";
 
 const figtree = localFont({
@@ -84,12 +85,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const cookieStore = await cookies();
+  const theme = readCookieTheme(cookieStore.get("skycare-theme")?.value);
+
   return (
     <html
       lang="en"
+      data-theme={theme}
       className={`${figtree.variable} ${inter.variable} ${notoSans.variable} antialiased`}
       suppressHydrationWarning
     >
@@ -97,9 +102,6 @@ export default function RootLayout({
         className="min-h-screen font-[family-name:var(--font-inter)]"
         suppressHydrationWarning
       >
-        <Script id="skycare-theme-init" strategy="beforeInteractive">
-          {`(function(){try{document.documentElement.dataset.theme=(localStorage.getItem("skycare-theme")||"light")}catch(e){}})();`}
-        </Script>
         <PwaWrapper>{children}</PwaWrapper>
         <ThemeSync />
       </body>

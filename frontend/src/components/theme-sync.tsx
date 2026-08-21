@@ -4,6 +4,14 @@ import { useEffect, useRef } from "react";
 import { applyTheme, readStoredTheme } from "@/lib/theme";
 import type { ThemeMode } from "@/lib/theme";
 
+/**
+ * Reconciles the server-side theme preference with the local state.
+ *
+ * On the first page load the SSR layout already set `data-theme` from the
+ * cookie, so there is no FOUC. This component handles the case where
+ * another device changed the theme while this tab was open — it polls
+ * the server once on mount and applies any difference.
+ */
 export default function ThemeSync() {
   const synced = useRef(false);
 
