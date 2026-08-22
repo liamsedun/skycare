@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Pencil, Plus, Save, X } from "lucide-react";
+import { Check, Loader2, Pencil, Plus, Save, X } from "lucide-react";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
@@ -53,6 +53,9 @@ export default function HrStaffView() {
   const [payCfg, setPayCfg] = useState<Record<string, unknown>>({});
   const [payCfgOpen, setPayCfgOpen] = useState(false);
   const [payCfgMsg, setPayCfgMsg] = useState<string | null>(null);
+  const [leaveEdits, setLeaveEdits] = useState<Record<string, number>>({});
+  const [savedLeave, setSavedLeave] = useState<Record<string, boolean>>({});
+  const [savingLeave, setSavingLeave] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -674,12 +677,76 @@ export default function HrStaffView() {
 
             <h4 className="mb-2 mt-5 text-sm font-semibold uppercase text-[var(--color-muted-fg)]">Leave balances</h4>
             <div className="space-y-2">
-              {(detail.leave_balances as Array<Record<string, unknown>> | undefined)?.map((b) => (
-                <div key={String(b.id ?? `${b.leave_type}-${b.leave_year}`)} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
-                  <span>{String(b.leave_type)} {String(b.leave_year)}</span>
-                  <b>{Number(b.used_days)}/{Number(b.entitled_days)}</b>
-                </div>
-              ))}
+              {(detail.leave_balances as Array<Record<string, unknown>> | undefined)?.map((b) => {
+                const key = String(b.id ?? `${b.leave_type}-${b.leave_year}`);
+                const editKey = `${b.staff_id}-${b.leave_type}-${b.leave_year}`;
+                const isEditing = editKey in leaveEdits;
+                return (
+                  <div key={key} className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm">
+                    <span>{String(b.leave_type)} {String(b.leave_year)}</span>
+                    <div className="flex items-center gap-2">
+                      {isAdmin && isEditing ? (
+                        <>
+                          <span className="text-xs text-[var(--color-muted-fg)]">{Number(b.used_days)}/</span>
+                          <input type="number" min={0} className="w-16 rounded border border-[var(--color-border)] px-1.5 py-0.5 text-right text-sm focus:border-[var(--color-primary)] outline-none"
+                            value={leaveEdits[editKey]}
+                            onChange={(e) => setLeaveEdits({ ...leaveEdits, [editKey]: Number(e.target.value) })} />
+                        </>
+                      ) : (
+                        <b>{Number(b.used_days)}/{Number(b.entitled_days)}</b>
+                      )}
+                      {isAdmin && !isEditing && (
+                        <button type="button" className="rounded p-0.5 text-[var(--color-muted-fg)] hover:text-[var(--color-primary)]" title="Edit entitlement"
+                          onClick={() => setLeaveEdits({ ...leaveEdits, [editKey]: Number(b.entitled_days) })}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {isAdmin && isEditing && (
+                        <>
+                          {savedLeave[editKey] ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 animate-[pop_0.3s_ease-out]">
+                              <Check className="h-3.5 w-3.5" /> Saved
+                            </span>
+                          ) : (
+                            <button type="button" className="rounded p-0.5 text-emerald-600 hover:bg-emerald-50" title="Save"
+                              disabled={savingLeave}
+                              onClick={async () => {
+                                setSavingLeave(true);
+                                try {
+                                  const res = await fetch("/api/hr/leave-balances", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ staff_id: b.staff_id, leave_type: b.leave_type, leave_year: b.leave_year, entitled_days: leaveEdits[editKey] }),
+                                  });
+                                  const body = await res.json();
+                                  if (!res.ok) throw new Error(body.error ?? "Failed to save");
+                                  setSavedLeave({ ...savedLeave, [editKey]: true });
+                                  await new Promise((r) => setTimeout(r, 1200));
+                                  setSavedLeave(({ [editKey]: _, ...rest }) => rest);
+                                  setLeaveEdits(({ [editKey]: __, ...rest }) => rest);
+                                  openDetail(String(detail.id));
+                                } catch (e) {
+                                  setSaveMsg(e instanceof Error ? e.message : "Save failed");
+                                } finally {
+                                  setSavingLeave(false);
+                                }
+                              }}>
+                              {savingLeave ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                            </button>
+                          )}
+                          <button type="button" className="rounded p-0.5 text-rose-500 hover:bg-rose-50" title="Cancel"
+                            onClick={() => {
+                              setSavedLeave(({ [editKey]: _, ...rest }) => rest);
+                              setLeaveEdits(({ [editKey]: __, ...rest }) => rest);
+                            }}>
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
               {(detail.leave_balances as Array<unknown> | undefined)?.length === 0 && <p className={mutedSmPlain}>No balances yet.</p>}
             </div>
           </div>

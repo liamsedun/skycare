@@ -52,6 +52,7 @@ export const POST = withStaff(async (req, ctx) => {
       leave_year: year,
       leave_type: leaveType,
       entitled_days: entitled,
+      manual_override: true,
     }, { onConflict: "staff_id,leave_year,leave_type" })
     .select()
     .single();

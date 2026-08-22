@@ -1,11 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
+import { classifyAbuse, getClientIp } from "@/lib/rate-limit";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "skycare.app";
 const LOCAL_DOMAIN = process.env.NEXT_PUBLIC_LOCAL_DOMAIN ?? "skycare.test";
 
 // Top-level routes that must never be treated as tenant slugs in path mode.
 const ROOT_ONLY_PREFIXES = ["/api", "/app", "/patient", "/login", "/signup", "/verify", "/auth"];
+
+// Known bot/user-agent patterns to challenge (not block — healthcare patients
+// may use accessibility tools that look like bots).
+const SUSPICIOUS_UA_PATTERNS = [
+  /scrapy/i, /curl/i, /wget/i, /python-requests/i, /go-http-client/i,
+  /java\//i, /perl/i, /ruby/i, /php\//i, /nikto/i, /sqlmap/i,
+  /masscan/i, /nmap/i, /dirbuster/i, /gobuster/i, /ffuf/i,
+];
 
 // Same host resolution as the tenant pages (getHost in lib/tenant.ts): the
 // Host headers win so smoke tests against localhost with a host header work,
@@ -20,6 +29,37 @@ function requestHost(request: NextRequest) {
 
 export async function proxy(request: NextRequest) {
   const hostname = requestHost(request).toLowerCase();
+
+  // ---- ABUSE DETECTION ----
+  const abuse = classifyAbuse(request);
+  const ip = getClientIp(request);
+  const userAgent = request.headers.get("user-agent") || "";
+
+  // Block known attack tools
+  if (SUSPICIOUS_UA_PATTERNS.some((p) => p.test(userAgent))) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  // Throttle suspicious traffic
+  if (abuse.action === "throttle") {
+    const response = NextResponse.next({ request });
+    response.headers.set("X-RateLimit-Warning", "throttled");
+    response.headers.set("Retry-After", "5");
+    return response;
+  }
+
+  // Challenge highly suspicious traffic (return 403 with challenge hint)
+  if (abuse.action === "challenge") {
+    return new NextResponse("Too Many Requests", {
+      status: 429,
+      headers: { "Retry-After": "30" },
+    });
+  }
+
+  // Block attack-level traffic
+  if (abuse.action === "block") {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
 
   // ---- Tenant subdomain: <slug>.<ROOT_DOMAIN> or <slug>.<LOCAL_DOMAIN> ----
   const subdomainSuffix = hostname.endsWith(`.${ROOT_DOMAIN}`)

@@ -9,6 +9,7 @@ import {
 } from "@/lib/paystack";
 import { notifyUsers } from "@/lib/notify";
 import { resolveBankAccountId, postBankLedger } from "@/lib/api-utils";
+import { rateLimit, API_WEBHOOK, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,8 @@ export const runtime = "nodejs";
 // The tenant is resolved from event metadata (tenant_id) — the signature is
 // checked against THAT tenant's secret, so forged cross-tenant events fail.
 // Idempotency: payments.reference has a partial unique index; existing ref → skip.
-export async function POST(req: NextRequest) {
+// Rate limiting: 100 req/min per IP to prevent webhook flooding.
+export const POST = rateLimit(async (req: NextRequest) => {
   try {
     const rawBody = await req.text();
     if (!rawBody) {
@@ -261,4 +263,4 @@ export async function POST(req: NextRequest) {
     console.error("[Paystack Webhook] Error:", err);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
-}
+}, API_WEBHOOK);

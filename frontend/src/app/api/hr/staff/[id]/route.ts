@@ -28,7 +28,7 @@ export const GET = withStaff(async (req, ctx) => {
   const [payroll, credentials, balances] = await Promise.all([
     ctx.svc.from("payroll_records").select("id, pay_period, base_salary, allowances, deductions, overtime_pay, bonus, net_salary, worked_days, absent_days, overtime_hours, status").eq("staff_id", id).eq("tenant_id", tenantId).order("pay_period", { ascending: false }).limit(12),
     ctx.svc.from("staff_credentials").select("id, license_number, certification, issuing_body, expiry_date, verified, verified_at").eq("staff_id", id).eq("tenant_id", tenantId).order("expiry_date"),
-    ctx.svc.from("leave_balances").select("id, leave_year, leave_type, entitled_days, used_days").eq("staff_id", id).eq("tenant_id", tenantId).order("leave_year", { ascending: false }),
+    ctx.svc.from("leave_balances").select("id, staff_id, leave_year, leave_type, entitled_days, used_days").eq("staff_id", id).eq("tenant_id", tenantId).order("leave_year", { ascending: false }),
   ]);
 
   return ok({

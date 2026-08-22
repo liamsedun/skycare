@@ -1,10 +1,12 @@
 import { withAuth, ok, ValidationError } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
+import { rateLimit, API_UPLOAD } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/uploads/avatar — upload a profile photo to the public avatars bucket
-export const POST = withAuth(async (req, ctx) => {
+// Rate limited: 10 uploads/min per IP
+export const POST = rateLimit(withAuth(async (req, ctx) => {
   const formData = await req.formData();
   const file = formData.get("avatar");
   if (!(file instanceof File)) throw new ValidationError("No file provided");
@@ -32,6 +34,6 @@ export const POST = withAuth(async (req, ctx) => {
   if (updateError) throw new ValidationError(updateError.message);
 
   return ok({ avatar_url: publicUrl });
-});
+}), API_UPLOAD);
 
 export const runtime = "nodejs";

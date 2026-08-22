@@ -9,6 +9,7 @@ import {
 import { logAudit } from "@/lib/audit";
 import { initializeTransaction, getPaystackKeys, generateReference, isPlaceholderKey } from "@/lib/paystack";
 import type { NextRequest } from "next/server";
+import { rateLimit, API_PAYMENT } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,8 @@ export interface InitializePaymentBody {
 // Returns { enabled, authorization_url, access_code, reference } when the
 // hospital has real Paystack keys; otherwise { enabled: false } and the client
 // falls back to the offline declare flow.
-export const POST = withAuth(async (req, ctx) => {
+// Rate limited: 20 req/min per IP
+export const POST = rateLimit(withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   if (ctx.role !== "patient_api") {
     throw new ForbiddenError("Only patients can initialize online payments");
@@ -103,6 +105,6 @@ export const POST = withAuth(async (req, ctx) => {
     access_code: result.access_code,
     reference,
   }, 201);
-});
+}), API_PAYMENT);
 
 export const runtime = "nodejs";

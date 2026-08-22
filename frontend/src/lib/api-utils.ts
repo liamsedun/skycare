@@ -70,10 +70,23 @@ export function err(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+/** Maximum request body size: 1 MB (prevents memory exhaustion attacks). */
+const MAX_BODY_SIZE = 1 * 1024 * 1024;
+
 export async function parseBody<T>(req: NextRequest): Promise<T> {
   try {
-    return (await req.json()) as T;
-  } catch {
+    // Check Content-Length header before reading body
+    const contentLength = req.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+      throw new ValidationError("Request body too large (max 1 MB)");
+    }
+    const text = await req.text();
+    if (text.length > MAX_BODY_SIZE) {
+      throw new ValidationError("Request body too large (max 1 MB)");
+    }
+    return JSON.parse(text) as T;
+  } catch (e) {
+    if (e instanceof ValidationError) throw e;
     throw new ValidationError("Invalid JSON body");
   }
 }

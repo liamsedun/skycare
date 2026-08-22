@@ -64,6 +64,11 @@ export default function LoginForm() {
           body: JSON.stringify({ identifier: email }),
         });
         const body = await res.json();
+        if (res.status === 429) {
+          setError("Too many attempts. Please wait a moment and try again.");
+          setLoading(false);
+          return;
+        }
         if (!res.ok) throw new Error(body.error ?? "Could not resolve your account");
         email = body.data.email as string;
       } catch (e) {
@@ -76,10 +81,24 @@ export default function LoginForm() {
     const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
 
     if (error) {
+      // Record failure for lockout tracking (fire-and-forget)
+      fetch("/api/auth/login-attempt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: email, success: false }),
+      }).catch(() => {});
+
       setError("Invalid email, patient number, phone or password. Check your details and try again.");
       setLoading(false);
       return;
     }
+
+    // Record successful login (fire-and-forget)
+    fetch("/api/auth/login-attempt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier: email, success: true }),
+    }).catch(() => {});
 
     const role = data.user?.app_metadata?.role as string | undefined;
 

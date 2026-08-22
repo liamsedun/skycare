@@ -1,6 +1,7 @@
 import { withAuth, ok, ValidationError, ForbiddenError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
+import { rateLimit, API_AUTH_STRICT } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,8 @@ interface ChangePasswordBody {
 }
 
 // POST /api/auth/change-password — verify current password, then set a new one
-export const POST = withAuth(async (req, ctx) => {
+// Rate limited: 10 attempts/min per IP
+export const POST = rateLimit(withAuth(async (req, ctx) => {
   const body = (await req.json()) as ChangePasswordBody;
 
   if (!body.currentPassword || !body.newPassword) {
@@ -46,6 +48,6 @@ export const POST = withAuth(async (req, ctx) => {
   });
 
   return ok({ message: "Password updated successfully" });
-});
+}), API_AUTH_STRICT);
 
 export const runtime = "nodejs";
