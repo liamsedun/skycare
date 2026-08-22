@@ -12,7 +12,6 @@ const CSP_DIRECTIVES = [
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -38,7 +37,10 @@ const nextConfig: NextConfig = {
         // Apply security headers to all routes
         source: "/(.*)",
         headers: [
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          // HSTS is handled by the hosting platform (Netlify/Vercel edge). We do NOT
+          // send it from the app because next start (NODE_ENV=production) runs on
+          // plain HTTP for LAN testing and Safari aggressively caches HSTS,
+          // causing it to force-redirect to HTTPS and break all resource loading.
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-XSS-Protection", value: "0" },
@@ -46,8 +48,6 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()" },
           { key: "Content-Security-Policy", value: CSP_DIRECTIVES },
           { key: "X-DNS-Prefetch-Control", value: "on" },
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "unsafe-none" },
         ],
       },
       {
