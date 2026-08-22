@@ -7,7 +7,7 @@ const CSP_DIRECTIVES = [
   "img-src 'self' data: blob: https://*.supabase.co https://images.pexels.com https://images.unsplash.com https://*.googleusercontent.com",
   "font-src 'self' https://fonts.gstatic.com",
   "connect-src 'self' https://*.supabase.co https://api.paystack.co wss://*.supabase.co",
-  "frame-src 'none'",
+  "frame-src 'self' https://www.google.com https://maps.google.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
