@@ -1,5 +1,5 @@
 ﻿import { unstable_cache, revalidateTag } from "next/cache";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 
 // Cache layer for reference/config data.
 // SECURITY: Patient data, clinical records, payments NEVER cached.
@@ -54,7 +54,7 @@ async function singleFlight<T>(key: string, fn: () => Promise<T>): Promise<T> {
 export async function getCachedTenant(slug: string) {
   return unstable_cache(
     async () => {
-      const supabase = await createClient();
+      const supabase = createServiceClient();
       const { data } = await supabase
         .from("tenant_public_profile")
         .select("*")
@@ -70,7 +70,7 @@ export async function getCachedTenant(slug: string) {
 export async function getCachedTenantByDomain(domain: string) {
   return unstable_cache(
     async () => {
-      const supabase = await createClient();
+      const supabase = createServiceClient();
       const { data } = await supabase
         .from("tenant_public_profile")
         .select("*")
