@@ -6,6 +6,7 @@ import {
   requireTenant,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateTenantCache } from "@/lib/cache";
 import { isPlaceholderKey } from "@/lib/paystack";
 import {
   DEFAULT_TENANT_SETTINGS,
@@ -285,6 +286,9 @@ export const PUT = withStaff(async (req, ctx) => {
     entityId: tenantId,
     description: `Updated hospital settings (${Object.keys(patch).join(", ")})`,
   });
+
+  // Invalidate cached tenant data so public website pages reflect changes.
+  await invalidateTenantCache(tenantId);
 
   return ok(updated);
 });

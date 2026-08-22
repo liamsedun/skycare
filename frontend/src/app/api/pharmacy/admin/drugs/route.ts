@@ -1,5 +1,6 @@
 import { withStaff, withAuth, ok, okPaginated, requireTenant, resolveParam, ValidationError, sanitizeLike } from "@/lib/api-utils";
 import { validateDrugInput } from "@/lib/pharmacy-admin";
+import { invalidatePharmacyCatalogCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -139,6 +140,7 @@ export const POST = withAuth(
       }
       throw new ValidationError(error.message);
     }
+    await invalidatePharmacyCatalogCache(tenantId);
     return ok(data, 201);
   },
   { roles: ["hospital_admin", "super_admin"] }

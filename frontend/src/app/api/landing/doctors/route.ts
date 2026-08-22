@@ -1,5 +1,6 @@
 import { withAuth, requireTenant, ForbiddenError, ok, err, parseBody, ValidationError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateDoctorsCache } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -68,6 +69,8 @@ export const POST = withAuth(async (req, ctx) => {
     entityId: data.id,
     description: "Added website doctor",
   });
+
+  await invalidateDoctorsCache(tenantId);
 
   return ok(data, 201);
 });

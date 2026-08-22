@@ -1,5 +1,6 @@
 import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateLabCatalogCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -125,6 +126,8 @@ export const POST = withStaff(async (req, ctx) => {
     entityId: `bulk/${created}/${updated}`,
     description: `CSV service import: ${created} created, ${updated} updated, ${errors.length} failed`,
   });
+
+  await invalidateLabCatalogCache(tenantId);
 
   return ok({ created, updated, errors });
 });

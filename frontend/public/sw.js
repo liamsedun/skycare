@@ -19,6 +19,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   if (new URL(event.request.url).origin !== self.location.origin) return;
+  const pathname = new URL(event.request.url).pathname;
+  // Never cache API routes or auth endpoints — they carry session tokens
+  // and contain sensitive per-user data.
+  if (pathname.startsWith("/api/")) return;
   event.respondWith(
     fetch(event.request)
       .then((res) => {

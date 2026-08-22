@@ -9,6 +9,7 @@ import {
   requireTenant,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateDoctorsCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +76,8 @@ export const PUT = withAuth(async (req, ctx) => {
     description: "Updated website doctor",
   });
 
+  await invalidateDoctorsCache(tenantId);
+
   return ok(data);
 });
 
@@ -101,6 +104,8 @@ export const DELETE = withAuth(async (req, ctx) => {
     entityId: id,
     description: "Deleted website doctor",
   });
+
+  await invalidateDoctorsCache(tenantId);
 
   return ok({ ok: true });
 });

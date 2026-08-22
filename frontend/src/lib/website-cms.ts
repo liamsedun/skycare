@@ -10,6 +10,7 @@ import {
   NotFoundError,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateServicesCache, invalidateDepartmentsCache } from "@/lib/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -21,6 +22,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 
 export type CmsTable = "website_services" | "website_departments";
+
+async function invalidateCmsCache(tenantId: string, table: CmsTable): Promise<void> {
+  if (table === "website_services") await invalidateServicesCache(tenantId);
+  else await invalidateDepartmentsCache(tenantId);
+}
 
 export function adminOnly(role: string): void {
   if (role !== "hospital_admin" && role !== "super_admin") {
@@ -111,6 +117,8 @@ export function cmsCreate(table: CmsTable, label: string) {
       description: `Added website ${label}`,
     });
 
+    await invalidateCmsCache(tenantId, table);
+
     return ok(data, 201);
   });
 }
@@ -158,6 +166,8 @@ export function cmsUpdate(table: CmsTable, label: string) {
       description: `Updated website ${label}`,
     });
 
+    await invalidateCmsCache(tenantId, table);
+
     return ok(data);
   });
 }
@@ -185,6 +195,8 @@ export function cmsDelete(table: CmsTable, label: string) {
       entityId: id,
       description: `Deleted website ${label}`,
     });
+
+    await invalidateCmsCache(tenantId, table);
 
     return ok({ ok: true });
   });

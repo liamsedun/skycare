@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
+import { getCachedTenant, getCachedTenantByDomain } from "@/lib/cache";
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "skycare.app";
 // Local-development subdomain suffix (.test is reserved, never HSTS-preloaded) so
@@ -29,7 +29,6 @@ export function resolveTenantSlug(host?: string | null): TenantContext {
 /** Server-side tenant loader used by hospital website routes. */
 export async function loadTenant(host?: string | null) {
   const ctx = resolveTenantSlug(host);
-  const supabase = await createClient();
 
   // Anonymous callers read the curated public profile view (migration 0088);
   // the raw `tenants` table (incl. `settings` with Paystack keys) is never
@@ -37,25 +36,13 @@ export async function loadTenant(host?: string | null) {
   if (ctx.customDomain) {
     // On localhost, the "host" is actually the slug from the URL params.
     // Try slug first, then fall back to domain lookup.
-    const { data } = await supabase
-      .from("tenant_public_profile")
-      .select("*")
-      .eq("slug", ctx.slug)
-      .maybeSingle();
+    const data = await getCachedTenant(ctx.slug!);
     if (data) return { ctx, tenant: data };
-    const { data: byDomain } = await supabase
-      .from("tenant_public_profile")
-      .select("*")
-      .eq("domain", ctx.slug)
-      .maybeSingle();
+    const byDomain = await getCachedTenantByDomain(ctx.slug!);
     return { ctx, tenant: byDomain ?? null };
   }
   if (!ctx.isRoot && ctx.slug) {
-    const { data } = await supabase
-      .from("tenant_public_profile")
-      .select("*")
-      .eq("slug", ctx.slug)
-      .maybeSingle();
+    const data = await getCachedTenant(ctx.slug);
     return { ctx, tenant: data ?? null };
   }
   return { ctx, tenant: null };

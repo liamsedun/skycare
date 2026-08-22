@@ -2,6 +2,12 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { HeartPulse, Stethoscope, FlaskConical, Pill, Baby,
   Ambulance, Scissors, Syringe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import {
+  getCachedWebsiteServices,
+  getCachedWebsiteDepartments,
+  getCachedLandingDoctors,
+  getCachedWebsitePage,
+} from "@/lib/cache";
 
 /**
  * Shared data layer for tenant website pages ([slug]/*).
@@ -109,29 +115,13 @@ export type WebsiteDepartment = {
 export async function loadWebsiteServices(
   tenantId: string
 ): Promise<WebsiteService[]> {
-  const svc = createServiceClient();
-  const { data } = await svc
-    .from("website_services")
-    .select("id, name, description, icon, image_url, display_order, active")
-    .eq("tenant_id", tenantId)
-    .eq("active", true)
-    .order("display_order", { ascending: true })
-    .order("name", { ascending: true });
-  return (data ?? []) as WebsiteService[];
+  return (await getCachedWebsiteServices(tenantId)) as WebsiteService[];
 }
 
 export async function loadWebsiteDepartments(
   tenantId: string
 ): Promise<WebsiteDepartment[]> {
-  const svc = createServiceClient();
-  const { data } = await svc
-    .from("website_departments")
-    .select("id, name, description, icon, image_url, display_order, active")
-    .eq("tenant_id", tenantId)
-    .eq("active", true)
-    .order("display_order", { ascending: true })
-    .order("name", { ascending: true });
-  return (data ?? []) as WebsiteDepartment[];
+  return (await getCachedWebsiteDepartments(tenantId)) as WebsiteDepartment[];
 }
 
 export type LandingDoctor = {
@@ -144,15 +134,7 @@ export type LandingDoctor = {
 };
 
 export async function loadLandingDoctors(tenantId: string): Promise<LandingDoctor[]> {
-  const svc = createServiceClient();
-  const { data } = await svc
-    .from("landing_doctors")
-    .select("id, name, specialty, image_url, available, availability")
-    .eq("tenant_id", tenantId)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true });
-  return (data ?? []) as LandingDoctor[];
+  return (await getCachedLandingDoctors(tenantId)) as LandingDoctor[];
 }
 
 /** CMS page content (website_pages) keyed by slug, or null when unpublished/absent. */
@@ -160,14 +142,5 @@ export async function loadWebsitePage(
   tenantId: string,
   slug: string
 ): Promise<{ title: string; content: Record<string, unknown> } | null> {
-  const svc = createServiceClient();
-  const { data } = await svc
-    .from("website_pages")
-    .select("title, content")
-    .eq("tenant_id", tenantId)
-    .eq("slug", slug)
-    .eq("published", true)
-    .maybeSingle();
-  if (!data) return null;
-  return { title: data.title, content: (data.content ?? {}) as Record<string, unknown> };
+  return getCachedWebsitePage(tenantId, slug);
 }

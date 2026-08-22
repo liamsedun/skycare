@@ -1,5 +1,6 @@
 import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateLabCatalogCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -110,6 +111,7 @@ export const PATCH = withStaff(async (req, ctx) => {
     entityId: id,
     description: `Updated lab service ${data.name}`,
   });
+  await invalidateLabCatalogCache(tenantId);
   return ok(data);
 });
 
@@ -131,6 +133,7 @@ export const DELETE = withStaff(async (req, ctx) => {
     entityId: id,
     description: `Deleted lab service ${existing.name}`,
   });
+  await invalidateLabCatalogCache(tenantId);
   return ok({ ok: true });
 });
 

@@ -1,5 +1,6 @@
 import { withAuth, requireTenant, ok, ForbiddenError } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateTenantCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,8 @@ export const POST = withAuth(async (req: NextRequest, ctx) => {
     entityId: tenantId,
     description: "Provisioned default tenant website content",
   });
+
+  await invalidateTenantCache(tenantId);
 
   return ok({
     ok: true,

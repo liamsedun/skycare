@@ -1,6 +1,7 @@
 import { withStaff, okPaginated, ok, ValidationError, requireTenant } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { invalidateLabCatalogCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -126,6 +127,7 @@ export const POST = withStaff(async (req, ctx) => {
     entityId: data.id,
     description: `Custom ${type} service "${name}" added${isAdmin ? " (approved)" : " (pending approval)"}`,
   });
+  await invalidateLabCatalogCache(tenantId);
   return ok(data, 201);
 });
 

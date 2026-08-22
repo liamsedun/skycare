@@ -1,5 +1,6 @@
 import { withStaff, withAuth, ok, NotFoundError, ValidationError, requireTenant, resolveParam } from "@/lib/api-utils";
 import { validateDrugInput, drugUpdateColumns } from "@/lib/pharmacy-admin";
+import { invalidatePharmacyCatalogCache } from "@/lib/cache";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +105,7 @@ export const PATCH = withAuth(
       if (String(error.message).includes("uq_pharmacy_drugs_name_norm")) throw new ValidationError("A drug already exists with this name");
       throw new ValidationError(error.message);
     }
+    await invalidatePharmacyCatalogCache(tenantId);
     return ok(data);
   },
   { roles: ["hospital_admin", "super_admin"] }
@@ -134,11 +136,13 @@ export const DELETE = withAuth(
       if ((batches ?? 0) > 0) throw new ValidationError("Drug has stock batches — use archive instead");
       const { error } = await ctx.svc.from("pharmacy_drugs").delete().eq("tenant_id", tenantId).eq("id", drugId);
       if (error) throw new ValidationError(error.message);
+      await invalidatePharmacyCatalogCache(tenantId);
       return ok({ deleted: true });
     }
 
     const { error } = await ctx.svc.from("pharmacy_drugs").update({ is_active: false }).eq("tenant_id", tenantId).eq("id", drugId);
     if (error) throw new ValidationError(error.message);
+    await invalidatePharmacyCatalogCache(tenantId);
     return ok({ archived: true });
   },
   { roles: ["hospital_admin", "super_admin"] }
