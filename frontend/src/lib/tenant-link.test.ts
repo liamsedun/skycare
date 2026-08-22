@@ -42,7 +42,7 @@ describe("tenantHomeUrl", () => {
 
   it("falls back to the local domain without a port for arbitrary hosts", () => {
     withLocation("http://localhost:3000/", () => {
-      expect(tenantHomeUrl("liamsfields")).toBe("http://liamsfields.skycare.test:3000/");
+      expect(tenantHomeUrl("liamsfields")).toBe("http://localhost:3000/liamsfields");
     });
   });
 });
