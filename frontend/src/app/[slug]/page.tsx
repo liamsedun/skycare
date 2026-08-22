@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getHost, loadTenant } from "@/lib/tenant";
+import { getHost, isLocalHost, loadTenant } from "@/lib/tenant";
 import {
   DEFAULT_SERVICES,
   loadLandingDoctors,
@@ -26,7 +26,7 @@ export default async function TenantWebsitePage({
   const { slug } = await params;
   const host = await getHost();
   // On localhost, getHost() returns "localhost" — use the slug from the URL.
-  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const isLocalhost = isLocalHost(host);
   const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 

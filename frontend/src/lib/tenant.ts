@@ -52,3 +52,16 @@ export async function getHost() {
   const h = await headers();
   return h.get("x-forwarded-host") ?? h.get("host");
 }
+
+/**
+ * True when the request comes from a non-deployed dev environment (localhost,
+ * LAN IP, Docker bridge, etc.). Slug pages use the URL-path slug instead of
+ * the host header to resolve the tenant in this case.
+ */
+export function isLocalHost(host?: string | null): boolean {
+  if (!host) return true;
+  if (host === "localhost" || host.startsWith("localhost:")) return true;
+  // IPv4 loopback / RFC 1918 private ranges / Docker/Compose bridges
+  if (/^(127\.\d|10\.\d|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.0\.0\.0|172\.(?:0|2(?:5[0-5]|[0-4]\d))\.)/.test(host)) return true;
+  return false;
+}

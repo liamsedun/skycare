@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { HeartPulse } from "lucide-react";
 import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
-import { getHost, loadTenant } from "@/lib/tenant";
+import { getHost, isLocalHost, loadTenant } from "@/lib/tenant";
 import type { TenantSiteProfile } from "@/lib/tenant-site";
 import TenantNavbar from "@/components/tenant/landing/navbar";
 import TenantFooter from "@/components/tenant/landing/footer";
@@ -19,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const host = await getHost();
-  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const isLocalhost = isLocalHost(host);
   const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) return { title: "Hospital" };
 
@@ -66,7 +66,7 @@ export default async function TenantSiteLayout({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const isLocalhost = isLocalHost(host);
   const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 

@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import Link from "next/link";
 import { CalendarCheck, ShieldCheck } from "lucide-react";
-import { getHost, loadTenant } from "@/lib/tenant";
+import { getHost, isLocalHost, loadTenant } from "@/lib/tenant";
 import LoginForm from "@/components/auth/login-form";
 import LoginScene from "@/components/tenant/login-scene";
 
@@ -15,7 +15,7 @@ export default async function TenantLoginPage({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const isLocalhost = isLocalHost(host);
   const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 

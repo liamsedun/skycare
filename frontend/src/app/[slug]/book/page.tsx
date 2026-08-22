@@ -9,7 +9,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import { getHost, loadTenant } from "@/lib/tenant";
+import { getHost, isLocalHost, loadTenant } from "@/lib/tenant";
 import { createServiceClient } from "@/lib/supabase/server";
 import BookAppointmentForm from "@/components/tenant/book-form";
 import Reveal from "@/components/tenant/reveal";
@@ -46,7 +46,7 @@ export default async function TenantBookPage({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const isLocalhost = isLocalHost(host);
   const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 

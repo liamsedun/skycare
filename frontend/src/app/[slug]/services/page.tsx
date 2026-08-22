@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getHost, loadTenant } from "@/lib/tenant";
+import { getHost, isLocalHost, loadTenant } from "@/lib/tenant";
 import { DEFAULT_SERVICES, loadWebsiteServices } from "@/lib/tenant-site";
 import { PageHeader, ServicesGrid } from "@/components/tenant/site-sections";
 
@@ -12,7 +12,7 @@ export default async function TenantServicesPage({
 }) {
   const { slug } = await params;
   const host = await getHost();
-  const isLocalhost = !host || host === "localhost" || host.startsWith("localhost:");
+  const isLocalhost = isLocalHost(host);
   const { tenant } = await loadTenant(isLocalhost ? slug : host);
   if (!tenant) notFound();
 
