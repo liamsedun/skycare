@@ -4,6 +4,24 @@
 This version (16.2.12, Turbopack builds) has breaking changes â€” APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `frontend/node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+## Documentation Index
+
+| Document | Location | Purpose |
+|----------|----------|---------|
+| PR.md | `docs/PR.md` | Product Requirements Document — full feature list, completion status, outstanding work |
+| Architecture | `docs/architectural.md` | Complete architecture: tech stack, multi-tenancy, auth, API, database, security, AI |
+| Architecture Essentials | `docs/architectural-essentials.md` | Quick-reference: core decisions, file map, API patterns, gotchas |
+| Scaffold Overview | `docs/scaffold.md` | What's built vs not built, completion %, metrics, roadmap |
+| DeepSeek Config | `docs/deepseek.md` | DeepSeek model config, system instructions, daily brief format |
+| MiMo Config | `docs/mimo.md` | MiMo/OpenCode config, session context, build commands |
+| Agent Config | `docs/agents.md` | Agent roles, instructions, communication formats |
+| Implementation Report | `docs/SkyCare-HMS-Implementation-Report.html` | Full HTML report — open in browser, print to PDF |
+| Security Architecture | `SECURITY-ARCHITECTURE.md` | Security controls, rate limiting, headers, RLS hardening |
+| API Map | `docs/api-map.md` | API endpoint reference |
+| Deployment | `docs/deployment.md` | Deployment guide |
+
+**For AI daily briefs:** Read `AGENTS.md` (this file) + `docs/scaffold.md` for current status.
+
 ## What this project is
 
 SkyCare is a multi-tenant hospital management SaaS ("HMS SaaS"). Hospitals subscribe as **tenants** and get their own branded site at <slug>.skycare.app plus a staff dashboard (/app/*) and a patient portal (/patient, in progress). Every hospital manages its own admins/staff/patients; tenants are strictly isolated from each other.

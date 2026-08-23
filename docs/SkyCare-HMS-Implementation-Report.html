@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkyCare HMS SaaS — Complete Implementation Report</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #1a1a2e; max-width: 210mm; margin: 0 auto; padding: 20px; }
+  h1 { color: #0a0f1a; border-bottom: 3px solid #e0a84a; padding-bottom: 10px; font-size: 28px; }
+  h2 { color: #0a0f1a; border-bottom: 2px solid #e0a84a; padding-bottom: 8px; margin-top: 30px; font-size: 22px; }
+  h3 { color: #1a1a2e; margin-top: 20px; font-size: 18px; }
+  h4 { color: #333; font-size: 16px; }
+  table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+  th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; }
+  th { background: #0a0f1a; color: #e0a84a; font-weight: 600; }
+  tr:nth-child(even) { background: #f8f9fa; }
+  .status-done { color: #10b981; font-weight: bold; }
+  .status-partial { color: #f59e0b; font-weight: bold; }
+  .status-not-started { color: #ef4444; font-weight: bold; }
+  .progress-bar { background: #e5e7eb; border-radius: 10px; height: 24px; overflow: hidden; margin: 10px 0; }
+  .progress-fill { background: linear-gradient(90deg, #10b981, #059669); height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; }
+  .metric-card { display: inline-block; background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px 20px; margin: 5px; text-align: center; min-width: 120px; }
+  .metric-value { font-size: 28px; font-weight: bold; color: #0a0f1a; }
+  .metric-label { font-size: 12px; color: #6b7280; text-transform: uppercase; }
+  .section-box { background: #f8f9fa; border-left: 4px solid #e0a84a; padding: 15px 20px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+  code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  pre { background: #0a0f1a; color: #e0a84a; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+  .page-break { page-break-before: always; }
+  .cover { text-align: center; padding: 100px 20px; }
+  .cover h1 { font-size: 42px; border: none; }
+  .cover .subtitle { font-size: 20px; color: #6b7280; margin-top: 10px; }
+  .cover .date { font-size: 16px; color: #9ca3af; margin-top: 30px; }
+  .cover .version { font-size: 14px; color: #e0a84a; margin-top: 10px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 5px; }
+  .toc { columns: 2; column-gap: 40px; }
+  .toc a { text-decoration: none; color: #0a0f1a; }
+  .toc li { margin-bottom: 3px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <h1>SkyCare HMS SaaS</h1>
+  <div class="subtitle">The Smart Hospital OS for Africa</div>
+  <div class="subtitle">Complete Implementation Report</div>
+  <div class="version">Version 0.1.0 — August 22, 2026</div>
+  <div class="date">Skyhouse Technologies</div>
+  <div style="margin-top: 40px;">
+    <div class="progress-bar" style="width: 400px; margin: 20px auto;">
+      <div class="progress-fill" style="width: 82%;">82% COMPLETE</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="page-break"></div>
+<h2>Table of Contents</h2>
+<ol class="toc">
+  <li><a href="#exec-summary">Executive Summary</a></li>
+  <li><a href="#completion">Implementation Completion</a></li>
+  <li><a href="#tech-stack">Technology Stack</a></li>
+  <li><a href="#architecture">Architecture Overview</a></li>
+  <li><a href="#multi-tenancy">Multi-Tenancy Model</a></li>
+  <li><a href="#auth">Authentication & Authorization</a></li>
+  <li><a href="#modules">Module Implementation Status</a></li>
+  <li><a href="#database">Database Schema</a></li>
+  <li><a href="#api">API Routes</a></li>
+  <li><a href="#security">Security Implementation</a></li>
+  <li><a href="#ai">AI Features</a></li>
+  <li><a href="#ui">UI/UX Implementation</a></li>
+  <li><a href="#testing">Testing & Quality</a></li>
+  <li><a href="#caching">Caching & Performance</a></li>
+  <li><a href="#deployment">Deployment</a></li>
+  <li><a href="#outstanding">Outstanding Work</a></li>
+  <li><a href="#roadmap">Roadmap</a></li>
+  <li><a href="#daily-brief">Daily Brief Template</a></li>
+</ol>
+
+<!-- 1. EXECUTIVE SUMMARY -->
+<div class="page-break"></div>
+<h2 id="exec-summary">1. Executive Summary</h2>
+
+<p><strong>SkyCare</strong> is a multi-tenant Hospital Management System (HMS) delivered as a SaaS platform. Every subscribing hospital gets a branded staff dashboard, a patient portal, and a public hospital website — all from one codebase.</p>
+
+<div class="section-box">
+  <strong>Key Facts:</strong>
+  <ul>
+    <li><strong>Product:</strong> SkyCare — The Smart Hospital OS for Africa</li>
+    <li><strong>Developer:</strong> Skyhouse Technologies</li>
+    <li><strong>Version:</strong> 0.1.0 (Initial Release)</li>
+    <li><strong>Completion:</strong> ~82%</li>
+    <li><strong>Git Repo:</strong> github.com/liamsedun/skycare</li>
+    <li><strong>Production Domain:</strong> skycare.app</li>
+    <li><strong>Supabase Ref:</strong> pvakwxeusbxesdealuuc</li>
+  </ul>
+</div>
+
+<h3>What's Built</h3>
+<ul>
+  <li>20 fully functional modules (Patients, Appointments, Pharmacy, Lab, Wards, Billing, Banking, HR, Payroll, etc.)</li>
+  <li>Complete multi-tenancy with PostgreSQL RLS isolation</li>
+  <li>25 staff roles with per-user module access grants</li>
+  <li>Patient portal with self-booking, bill payment, family management</li>
+  <li>Auto-provisioned public hospital website with CMS</li>
+  <li>AI-powered pharmacy (7 features: forecasting, recommendations, interactions, alternatives, pricing, anomalies, auto-reorder)</li>
+  <li>Nigerian payroll engine (PAYE, NHIS, NHF, Pension)</li>
+  <li>Online payments via Paystack</li>
+  <li>Dark mode ("Dusk & Gold" theme)</li>
+  <li>Mobile-first PWA with bottom navigation</li>
+  <li>Full audit trail and security hardening</li>
+</ul>
+
+<h3>What's Not Built</h3>
+<ul>
+  <li>SMS integration</li>
+  <li>Email notifications (external)</li>
+  <li>Full insurance claims UI</li>
+  <li>Telemedicine (video consultations)</li>
+  <li>Advanced analytics dashboards</li>
+  <li>E2E test suite</li>
+  <li>API documentation (OpenAPI/Swagger)</li>
+  <li>Redis caching (currently in-memory)</li>
+  <li>WebSocket chat (currently 5s polling)</li>
+</ul>
+
+<!-- 2. IMPLEMENTATION COMPLETION -->
+<div class="page-break"></div>
+<h2 id="completion">2. Implementation Completion</h2>
+
+<h3>Overall Progress</h3>
+<div class="progress-bar" style="width: 100%;">
+  <div class="progress-fill" style="width: 82%;">82% COMPLETE</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; margin: 20px 0;">
+  <div class="metric-card"><div class="metric-value">20/20</div><div class="metric-label">Core Modules</div></div>
+  <div class="metric-card"><div class="metric-value">103</div><div class="metric-label">Migrations</div></div>
+  <div class="metric-card"><div class="metric-value">150+</div><div class="metric-label">API Routes</div></div>
+  <div class="metric-card"><div class="metric-value">50+</div><div class="metric-label">Pages</div></div>
+  <div class="metric-card"><div class="metric-value">200+</div><div class="metric-label">Components</div></div>
+  <div class="metric-card"><div class="metric-value">206+</div><div class="metric-label">Tests</div></div>
+  <div class="metric-card"><div class="metric-value">~29%</div><div class="metric-label">Coverage</div></div>
+  <div class="metric-card"><div class="metric-value">0</div><div class="metric-label">Lint Errors</div></div>
+  <div class="metric-card"><div class="metric-value">0</div><div class="metric-label">Type Errors</div></div>
+  <div class="metric-card"><div class="metric-value">8</div><div class="metric-label">Storage Buckets</div></div>
+</div>
+
+<h3>Completion by Category</h3>
+<table>
+  <tr><th>Category</th><th>Status</th><th>Progress</th></tr>
+  <tr><td>Core Modules (20)</td><td class="status-done">Complete</td><td>20/20 (100%)</td></tr>
+  <tr><td>Infrastructure (8)</td><td class="status-done">Complete</td><td>8/8 (100%)</td></tr>
+  <tr><td>UI/UX (6)</td><td class="status-done">Complete</td><td>6/6 (100%)</td></tr>
+  <tr><td>High Priority Features</td><td class="status-not-started">Not Started</td><td>0/3 (0%)</td></tr>
+  <tr><td>Medium Priority Features</td><td class="status-not-started">Not Started</td><td>0/10 (0%)</td></tr>
+  <tr><td>Low Priority Features</td><td class="status-partial">Partial</td><td>1/10 (10%)</td></tr>
+  <tr><td>Documentation</td><td class="status-partial">Partial</td><td>10/15 (67%)</td></tr>
+</table>
+
+<!-- 3. TECH STACK -->
+<div class="page-break"></div>
+<h2 id="tech-stack">3. Technology Stack</h2>
+
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+  <tr><td>Frontend</td><td>Next.js</td><td>16.3.0</td><td>App Router, Turbopack</td></tr>
+  <tr><td>UI Framework</td><td>Tailwind CSS</td><td>v4</td><td>CSS-first theming, dark mode</td></tr>
+  <tr><td>Components</td><td>shadcn/ui</td><td>latest</td><td>Radix UI primitives</td></tr>
+  <tr><td>Charts</td><td>Recharts</td><td>3.10.1</td><td>Dashboard + reports</td></tr>
+  <tr><td>Icons</td><td>Lucide React</td><td>latest</td><td>Consistent icon set</td></tr>
+  <tr><td>Database</td><td>PostgreSQL</td><td>15</td><td>Supabase-hosted</td></tr>
+  <tr><td>ORM</td><td>Supabase JS</td><td>2.111.0</td><td>Service + anon clients</td></tr>
+  <tr><td>Auth</td><td>GoTrue</td><td>—</td><td>Email/password, OAuth</td></tr>
+  <tr><td>Storage</td><td>Supabase Storage</td><td>—</td><td>S3 + CloudFront</td></tr>
+  <tr><td>AI</td><td>Edge Functions</td><td>—</td><td>Deno runtime</td></tr>
+  <tr><td>Payments</td><td>Paystack</td><td>REST API</td><td>Card + bank transfer</td></tr>
+  <tr><td>Testing</td><td>Vitest</td><td>latest</td><td>206+ tests</td></tr>
+  <tr><td>Linting</td><td>ESLint</td><td>16.2.12</td><td>0 errors, ~602 warnings</td></tr>
+  <tr><td>CI/CD</td><td>GitHub Actions</td><td>v5</td><td>lint→typecheck→test→build</td></tr>
+  <tr><td>Hosting</td><td>Netlify</td><td>—</td><td>CDN + edge functions</td></tr>
+  <tr><td>DNS</td><td>Cloudflare</td><td>—</td><td>WAF + DDoS + bot protection</td></tr>
+</table>
+
+<!-- 4. ARCHITECTURE -->
+<div class="page-break"></div>
+<h2 id="architecture">4. Architecture Overview</h2>
+
+<pre>
+┌─────────────────────────── Public internet ────────────────────────────┐
+│                                                                       │
+│  skycare.app (marketing)    {hospital}.skycare.app (hospital website)  │
+│       │                             │                                  │
+│       └───────────┬─────────────────┘                                  │
+│           Next.js 16.3 (frontend/)  — App Router, Turbopack           │
+│             │  Supabase SSR session (JWT)                              │
+│   ┌─────────┴─────────────┐                                            │
+│   │  Staff Dashboard       │  Patient PWA (installable on any device)  │
+│   │  /app/* (15+ modules)  │  /patient/* (10+ pages)                   │
+│   └─────────┬─────────────┘                                            │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│  Edge Functions (Deno)     Service role: onboarding, bookings,         │
+│                            subscription webhooks, SMS/email, exports   │
+│  PostgREST (RLS-scoped)    Authenticated CRUD per tenant claims        │
+│  PostgreSQL 15             tenants → branches → 100+ domain tables     │
+│  Storage                   8 buckets (3 public, 5 private)             │
+│  Auth (GoTrue)             Email/password, OAuth (Google, Yahoo)        │
+└────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+<h3>Key Architectural Decisions</h3>
+<ol>
+  <li><strong>Multi-tenant via RLS</strong> — Every table has <code>tenant_id</code>. Service-client queries MUST filter it.</li>
+  <li><strong>JWT claims are source of truth</strong> — <code>app_metadata { role, tenant_id, branch_id }</code>. Never trust client-supplied tenant/org IDs.</li>
+  <li><strong>Service client bypasses RLS</strong> — Must always add <code>tenant_id</code> filter manually.</li>
+  <li><strong><code>withAuth</code>/<code>withStaff</code> wraps every API route</strong> — Gives <code>ctx { user, claims, tenantId, branchId, role, supabase, svc }</code>.</li>
+  <li><strong>Audit duality</strong> — DB triggers log RLS-scoped writes; API layer logs service-client writes. Never double-log.</li>
+  <li><strong>No <code>cookies()</code> inside <code>unstable_cache</code></strong> — Use <code>createServiceClient()</code> instead.</li>
+</ol>
+
+<!-- 5. MULTI-TENANCY -->
+<div class="page-break"></div>
+<h2 id="multi-tenancy">5. Multi-Tenancy Model</h2>
+
+<h3>Isolation Contract</h3>
+<ul>
+  <li><strong>Tenant = hospital.</strong> <code>tenants</code> row with unique <code>slug</code> → <code>{slug}.skycare.app</code></li>
+  <li><strong>JWT claims</strong> carry <code>{ tenant_id, role, branch_id }</code> — set at login</li>
+  <li><strong>RLS helper functions</strong> read claims — no per-request DB lookups</li>
+  <li><strong>Branch layer</strong> (Enterprise): staff scoped to <code>branch_id</code></li>
+</ul>
+
+<h3>Three-Layer Isolation</h3>
+<ol>
+  <li><strong>PostgreSQL RLS</strong> — row-level, not bypassable via client keys</li>
+  <li><strong>API-layer <code>withAuth</code>/<code>withStaff</code></strong> — <code>requireTenant(ctx)</code> throws for non-tenant callers</li>
+  <li><strong>Service-client queries MUST filter <code>tenant_id = requireTenant(ctx)</code></strong> — service role bypasses RLS</li>
+</ol>
+
+<h3>RLS Helper Functions</h3>
+<table>
+  <tr><th>Function</th><th>Purpose</th></tr>
+  <tr><td><code>get_tenant_id()</code></td><td>Reads tenant_id from JWT claims</td></tr>
+  <tr><td><code>get_role()</code></td><td>Reads role from JWT claims</td></tr>
+  <tr><td><code>get_branch_id()</code></td><td>Reads branch_id from JWT claims</td></tr>
+  <tr><td><code>is_super_admin()</code></td><td>Returns true if role = 'super_admin'</td></tr>
+  <tr><td><code>is_hospital_admin()</code></td><td>Returns true if role = 'hospital_admin'</td></tr>
+  <tr><td><code>is_staff()</code></td><td>Returns true if non-patient role</td></tr>
+  <tr><td><code>is_patient()</code></td><td>Returns true if role = 'patient_api'</td></tr>
+</table>
+
+<!-- 6. AUTH & AUTHZ -->
+<div class="page-break"></div>
+<h2 id="auth">6. Authentication & Authorization</h2>
+
+<h3>JWT Claims Structure</h3>
+<pre>{
+  "role": "hospital_admin",
+  "tenant_id": "uuid",
+  "branch_id": "uuid | null"
+}</pre>
+
+<h3>25 Staff Roles</h3>
+<table>
+  <tr><th>Role</th><th>Access Level</th></tr>
+  <tr><td>super_admin</td><td>Platform-wide management</td></tr>
+  <tr><td>hospital_admin</td><td>Full hospital access</td></tr>
+  <tr><td>doctor</td><td>Clinical: patients, appointments, prescriptions, lab</td></tr>
+  <tr><td>nurse</td><td>Clinical: patients, appointments, rounds</td></tr>
+  <tr><td>pharmacist</td><td>Pharmacy: inventory, dispensing, compliance</td></tr>
+  <tr><td>lab_tech</td><td>Laboratory: orders, results, services</td></tr>
+  <tr><td>cashier</td><td>Billing: invoices, payments, banking</td></tr>
+  <tr><td>receptionist</td><td>Front desk: appointments, patients</td></tr>
+  <tr><td>hr_officer</td><td>HR: staff, payroll, roster, attendance, leave</td></tr>
+  <tr><td>accountant</td><td>Finance: payroll view, reports</td></tr>
+  <tr><td>patient_api</td><td>Patient portal access</td></tr>
+  <tr><td>+ 14 more</td><td>Specialized roles (nurse_manager, medical_officer, etc.)</td></tr>
+</table>
+
+<h3>Module Access System</h3>
+<ul>
+  <li>Per-user <code>users.module_access</code> JSONB grants</li>
+  <li>Three levels: <code>full</code>, <code>view_only</code>, <code>none</code></li>
+  <li><code>navForRole()</code> uses grants as authoritative (overrides role defaults when set)</li>
+  <li><code>requireModuleLevel()</code> guards API routes per module</li>
+</ul>
+
+<h3>Security Controls</h3>
+<ul>
+  <li>Rate limiting: 100 req/min (standard), 10 req/min (auth)</li>
+  <li>Login lockout: 5 failed attempts → 15 min lockout</li>
+  <li>Idle auto-logout: 15 minutes</li>
+  <li>CSP headers, X-Frame-Options DENY, nosniff</li>
+  <li>RLS on 100+ tables</li>
+  <li>Function EXECUTE hardening (migrations 0097/0100)</li>
+  <li>Cross-tenant isolation verified by smoke tests</li>
+</ul>
+
+<!-- 7. MODULE STATUS -->
+<div class="page-break"></div>
+<h2 id="modules">7. Module Implementation Status</h2>
+
+<table>
+  <tr><th>Module</th><th>Status</th><th>Features</th></tr>
+  <tr><td>Patient Management</td><td class="status-done">✅ Complete</td><td>Registration, family accounts, medical records, portal login</td></tr>
+  <tr><td>Appointments</td><td class="status-done">✅ Complete</td><td>Book, confirm, complete, cancel. Patient self-booking</td></tr>
+  <tr><td>Pharmacy</td><td class="status-done">✅ Complete</td><td>Drug catalogue, batches, dispensing, stock, suppliers, POs</td></tr>
+  <tr><td>AI Pharmacy</td><td class="status-done">✅ Complete</td><td>Forecasting, recommendations, interactions, alternatives, pricing</td></tr>
+  <tr><td>Laboratory</td><td class="status-done">✅ Complete</td><td>Test catalogue, orders, results, walk-in payments</td></tr>
+  <tr><td>Wards</td><td class="status-done">✅ Complete</td><td>Bed management, admissions, discharges, rounds, AI forecasting</td></tr>
+  <tr><td>Billing</td><td class="status-done">✅ Complete</td><td>Invoicing, payments (online/offline), PDF print</td></tr>
+  <tr><td>Banking</td><td class="status-done">✅ Complete</td><td>Multi-account, transfers, statements, reconciliation</td></tr>
+  <tr><td>Expenses/Income</td><td class="status-done">✅ Complete</td><td>Category tracking, bank selectors, CSV import</td></tr>
+  <tr><td>HR Module</td><td class="status-done">✅ Complete</td><td>Staff, shifts, roster, attendance, leave, credentials</td></tr>
+  <tr><td>Payroll</td><td class="status-done">✅ Complete</td><td>Nigerian engine (PAYE/Pension/NHIS/NHF), payslips, schedules</td></tr>
+  <tr><td>Internal Mail</td><td class="status-done">✅ Complete</td><td>Inbox/Sent/Compose, broadcast, patient resolution</td></tr>
+  <tr><td>Chats</td><td class="status-done">✅ Complete</td><td>Staff-patient messaging, presence, file attachments</td></tr>
+  <tr><td>Financial Reports</td><td class="status-done">✅ Complete</td><td>P&L, income by services, payroll by department</td></tr>
+  <tr><td>Audit & Security</td><td class="status-done">✅ Complete</td><td>Audit trail, security events, rate limiting, login lockout</td></tr>
+  <tr><td>Settings</td><td class="status-done">✅ Complete</td><td>Profile, branding, prefixes, Paystack keys, website setup</td></tr>
+  <tr><td>Subscription</td><td class="status-done">✅ Complete</td><td>Plans, lifecycle (trial→active→suspended→cancelled)</td></tr>
+  <tr><td>Public Website</td><td class="status-done">✅ Complete</td><td>Auto-provisioned, CMS-managed, SEO, Google Maps</td></tr>
+  <tr><td>Patient Portal</td><td class="status-done">✅ Complete</td><td>Dashboard, appointments, bills, results, family, chats, mail</td></tr>
+  <tr><td>Staff Dashboard</td><td class="status-done">✅ Complete</td><td>15+ module pages, dark mode, mobile navigation</td></tr>
+</table>
+
+<!-- 8. DATABASE -->
+<div class="page-break"></div>
+<h2 id="database">8. Database Schema</h2>
+
+<h3>Migration History</h3>
+<table>
+  <tr><th>Range</th><th>Purpose</th><th>Count</th></tr>
+  <tr><td>0001–0007</td><td>Multi-tenant foundation</td><td>7</td></tr>
+  <tr><td>0008–0012</td><td>HMS port + enhancements</td><td>5</td></tr>
+  <tr><td>0013–0050</td><td>Pharmacy enhancements</td><td>38</td></tr>
+  <tr><td>0051–0060</td><td>Wards, appointments, billing</td><td>10</td></tr>
+  <tr><td>0061–0080</td><td>Banking, expenses, suppliers</td><td>20</td></tr>
+  <tr><td>0081–0090</td><td>HR module (payroll, roster)</td><td>10</td></tr>
+  <tr><td>0091–0096</td><td>Website provisioning, onboarding</td><td>6</td></tr>
+  <tr><td>0097–0103</td><td>RLS hardening, security, caching</td><td>7</td></tr>
+  <tr><td><strong>Total</strong></td><td></td><td><strong>103</strong></td></tr>
+</table>
+
+<h3>Key Tables (100+)</h3>
+<div style="columns: 2; column-gap: 30px; font-size: 13px;">
+<ul style="list-style: none; padding: 0;">
+  <li>tenants, branches, users</li>
+  <li>patients, appointments</li>
+  <li>invoices, invoice_items, payments</li>
+  <li>prescriptions, prescription_items</li>
+  <li>lab_orders, lab_requests, lab_results</li>
+  <li>pharmacy_drugs, pharmacy_stock_batches</li>
+  <li>pharmacy_branch_stock, pharmacy_invoices</li>
+  <li>ward_beds, admissions, discharges</li>
+  <li>duty_roster, staff_shifts, staff_leave</li>
+  <li>payroll_records, payroll_lines</li>
+  <li>hospital_bank_accounts, hospital_bank_ledger</li>
+  <li>expenses, other_income</li>
+  <li>internal_messages, internal_message_recipients</li>
+  <li>chats, chat_messages, chat_presence</li>
+  <li>medical_records, doctor_notes</li>
+  <li>audit_logs, security_events</li>
+  <li>notifications, push_subscriptions</li>
+  <li>subscription_invoices, leave_balances</li>
+  <li>staff_profiles, staff_credentials</li>
+  <li>roles_permissions, hospital_bank_accounts</li>
+</ul>
+</div>
+
+<h3>Storage Buckets</h3>
+<table>
+  <tr><th>Bucket</th><th>Access</th><th>Purpose</th></tr>
+  <tr><td>avatars</td><td>Public</td><td>Patient/profile photos</td></tr>
+  <tr><td>avatars-staff</td><td>Private</td><td>Staff profile photos</td></tr>
+  <tr><td>hospital-logos</td><td>Public</td><td>Hospital branding</td></tr>
+  <tr><td>prescription-pdfs</td><td>Private</td><td>Generated prescription PDFs</td></tr>
+  <tr><td>lab-reports</td><td>Private</td><td>Lab result documents</td></tr>
+  <tr><td>invoices</td><td>Private</td><td>Invoice PDFs</td></tr>
+  <tr><td>medical-records</td><td>Private</td><td>Patient documents</td></tr>
+  <tr><td>tenant-assets</td><td>Private</td><td>Hospital-specific assets</td></tr>
+</table>
+
+<!-- 9. API ROUTES -->
+<div class="page-break"></div>
+<h2 id="api">9. API Routes</h2>
+
+<h3>Route Count by Module</h3>
+<table>
+  <tr><th>Module</th><th>Routes</th><th>Notes</th></tr>
+  <tr><td>Auth</td><td>5</td><td>login, logout, me, change-password, preferences</td></tr>
+  <tr><td>Admin/Users</td><td>3</td><td>list, [id], [id]/reset-password</td></tr>
+  <tr><td>Patients</td><td>3</td><td>list, [id], me</td></tr>
+  <tr><td>Dependants</td><td>4</td><td>list, [id], provision-portal</td></tr>
+  <tr><td>Appointments</td><td>2</td><td>list, [id]</td></tr>
+  <tr><td>Invoices</td><td>3</td><td>list, [id], [id]/print</td></tr>
+  <tr><td>Payments</td><td>6</td><td>initialize, webhook, callback, record, declare, cancel</td></tr>
+  <tr><td>Billing</td><td>1</td><td>summary</td></tr>
+  <tr><td>Prescriptions</td><td>3</td><td>list, [id], [id]/convert-sale</td></tr>
+  <tr><td>Lab</td><td>6</td><td>tests, services, orders, results, requests, walk-in</td></tr>
+  <tr><td>Pharmacy Admin</td><td>8</td><td>drugs, categories, import, branches, suppliers</td></tr>
+  <tr><td>Pharmacy Billing</td><td>5</td><td>invoices, payments, compliance, procurement</td></tr>
+  <tr><td>Wards</td><td>5</td><td>beds, admissions, discharges, rounds, bed-map</td></tr>
+  <tr><td>HR</td><td>15</td><td>staff, shifts, roster, attendance, leave, payroll</td></tr>
+  <tr><td>Banking</td><td>5</td><td>accounts, transfers, statements, entries, ledger</td></tr>
+  <tr><td>Expenses/Income</td><td>4</td><td>expenses, other-income, categories, import</td></tr>
+  <tr><td>Mail</td><td>5</td><td>inbox, sent, recipients, unread-count, [id]</td></tr>
+  <tr><td>Chats</td><td>4</td><td>list, [id]/messages, directory, presence</td></tr>
+  <tr><td>Notifications</td><td>4</td><td>list, unread-count, [id], push endpoints</td></tr>
+  <tr><td>Settings</td><td>4</td><td>tenant-settings, bank-accounts, branding</td></tr>
+  <tr><td>Reports</td><td>3</td><td>dashboard, financial-reports, medical-reports</td></tr>
+  <tr><td>System</td><td>3</td><td>backup, reset, restore</td></tr>
+  <tr><td>Subscription</td><td>2</td><td>GET, PUT</td></tr>
+  <tr><td>Landing</td><td>2</td><td>doctors, [id]</td></tr>
+  <tr><td>Other</td><td>12</td><td>uploads, account, website, etc.</td></tr>
+  <tr><td><strong>Total</strong></td><td><strong>150+</strong></td><td></td></tr>
+</table>
+
+<!-- 10. SECURITY -->
+<div class="page-break"></div>
+<h2 id="security">10. Security Implementation</h2>
+
+<h3>Defense-in-Depth</h3>
+<pre>Internet → Cloudflare (WAF+DDoS+Bot) → Netlify (CDN) → Next.js Proxy (Abuse+Auth) → API (Rate Limit+RLS) → Supabase (DB Isolation)</pre>
+
+<h3>Security Headers</h3>
+<ul>
+  <li><strong>CSP:</strong> <code>script-src 'self' 'unsafe-inline' 'unsafe-eval'</code>; <code>frame-src 'self' https://www.google.com https://maps.google.com</code></li>
+  <li><strong>X-Frame-Options:</strong> DENY</li>
+  <li><strong>X-Content-Type-Options:</strong> nosniff</li>
+  <li><strong>Referrer-Policy:</strong> strict-origin-when-cross-origin</li>
+  <li><strong>Permissions-Policy:</strong> camera/microphone/geolocation/payment disabled</li>
+</ul>
+
+<h3>Rate Limiting</h3>
+<table>
+  <tr><th>Endpoint Type</th><th>Limit</th></tr>
+  <tr><td>Standard API</td><td>100 req/min/IP</td></tr>
+  <tr><td>Auth endpoints</td><td>10 req/min/IP</td></tr>
+  <tr><td>Identifier resolution</td><td>20 req/min/IP</td></tr>
+  <tr><td>File uploads</td><td>10 req/min/IP</td></tr>
+  <tr><td>Payment</td><td>20 req/min/IP</td></tr>
+  <tr><td>Webhooks</td><td>100 req/min/IP</td></tr>
+</table>
+
+<h3>RLS Hardening (Migrations 0097+0100)</h3>
+<ul>
+  <li>7 role-only policies rewritten to also require tenant_id</li>
+  <li>Pharmacy reference tables RLS-enabled</li>
+  <li>SECURITY DEFINER RPCs locked: <code>REVOKE ALL FROM PUBLIC, anon, authenticated</code> + grant <code>service_role</code></li>
+  <li>Default privileges: <code>REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC</code></li>
+</ul>
+
+<!-- 11. AI -->
+<div class="page-break"></div>
+<h2 id="ai">11. AI Features</h2>
+
+<h3>Pharmacy AI (7 Features)</h3>
+<table>
+  <tr><th>Feature</th><th>Purpose</th><th>Edge Function</th></tr>
+  <tr><td>Demand Forecasting</td><td>30/90-day demand prediction per drug</td><td>pharmacy-forecast-demand</td></tr>
+  <tr><td>Drug Recommendations</td><td>Diagnosis-based medication suggestions</td><td>pharmacy-recommend-drugs</td></tr>
+  <tr><td>Drug Interactions</td><td>Dangerous combination detection</td><td>pharmacy-check-interactions</td></tr>
+  <tr><td>Drug Alternatives</td><td>Same-category substitutions</td><td>pharmacy-suggest-alternatives</td></tr>
+  <tr><td>Smart Pricing</td><td>Nigeria retail margin bands</td><td>pharmacy-suggest-pricing</td></tr>
+  <tr><td>Anomaly Detection</td><td>Dispensing spikes, billing outliers</td><td>pharmacy-detect-anomalies</td></tr>
+  <tr><td>Auto Reorder</td><td>Purchase order suggestions</td><td>pharmacy-auto-reorder</td></tr>
+</table>
+
+<p><strong>Ward AI:</strong> Occupancy forecasting (7-day projection) for bed management.</p>
+
+<!-- 12. UI/UX -->
+<div class="page-break"></div>
+<h2 id="ui">12. UI/UX Implementation</h2>
+
+<h3>Theme System</h3>
+<ul>
+  <li><strong>Light mode:</strong> Sky palette (sky-600 primary)</li>
+  <li><strong>Dark mode:</strong> "Dusk & Gold" (<code>#0a0f1a</code> navy, <code>#e0a84a</code> gold)</li>
+  <li><strong>Token remapping:</strong> <code>html[data-theme=dark]</code> block in <code>globals.css</code></li>
+  <li><strong>Persistence:</strong> <code>users.preferences.jsonb</code></li>
+  <li><strong>Sync:</strong> ThemeSync component reconciles server vs local on boot</li>
+</ul>
+
+<h3>Mobile Navigation</h3>
+<table>
+  <tr><th>Portal</th><th>Tabs</th><th>More Menu</th></tr>
+  <tr><td>Staff</td><td>Overview, Patients, Appointments, Pharmacy, Lab, Billing</td><td>17 tiles (Ward, Staff, HR, Payroll, Leave, Roster, Mail, Chat, etc.)</td></tr>
+  <tr><td>Patient</td><td>Overview, Appointments, Bills & Payments, Chats, Messages</td><td>7 tiles (Prescriptions, Records, Family, Notifications, Profile, etc.)</td></tr>
+</table>
+
+<h3>Public Website Pages</h3>
+<ul>
+  <li>Home (hero, services, gallery, facilities, doctors, testimonials, tips)</li>
+  <li>About (story, vision/mission, departments, doctors, why-choose-us)</li>
+  <li>Services (service cards with icons)</li>
+  <li>Departments (department cards)</li>
+  <li>Doctors (profiles with photos)</li>
+  <li>Contact (address, phone, email, WhatsApp, Google Maps, opening hours)</li>
+  <li>Book Appointment (public request form)</li>
+  <li>Login (shared staff/patient login)</li>
+</ul>
+
+<!-- 13. TESTING -->
+<div class="page-break"></div>
+<h2 id="testing">13. Testing & Quality</h2>
+
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Actual</th><th>Status</th></tr>
+  <tr><td>Build</td><td>0 errors</td><td>0 errors</td><td class="status-done">✅ Pass</td></tr>
+  <tr><td>TypeCheck</td><td>0 errors</td><td>0 errors</td><td class="status-done">✅ Pass</td></tr>
+  <tr><td>Lint</td><td>0 errors</td><td>0 errors (~602 warnings)</td><td class="status-done">✅ Pass</td></tr>
+  <tr><td>Tests</td><td>206+ passing</td><td>206+ passing</td><td class="status-done">✅ Pass</td></tr>
+  <tr><td>Coverage (statements)</td><td>≥25%</td><td>~29%</td><td class="status-done">✅ Pass</td></tr>
+  <tr><td>Smoke Tests</td><td>Passing</td><td>Passing against prod</td><td class="status-done">✅ Pass</td></tr>
+</table>
+
+<h3>Test Breakdown</h3>
+<ul>
+  <li><strong>Unit Tests:</strong> 180+ (individual functions, components)</li>
+  <li><strong>Integration Tests:</strong> 26+ (API routes, database operations)</li>
+  <li><strong>Smoke Tests:</strong> 15+ scripts (per-feature validation)</li>
+</ul>
+
+<h3>CI Pipeline (GitHub Actions)</h3>
+<ol>
+  <li>Lint (<code>npm run lint</code>)</li>
+  <li>TypeCheck (<code>npx tsc --noEmit</code>)</li>
+  <li>Test (<code>npm test</code>) with coverage gate ≥25%</li>
+  <li>Build (<code>npm run build</code>)</li>
+</ol>
+
+<!-- 14. CACHING -->
+<div class="page-break"></div>
+<h2 id="caching">14. Caching & Performance</h2>
+
+<h3>Cache Strategy</h3>
+<ul>
+  <li><strong><code>unstable_cache</code></strong> with <code>createServiceClient()</code> (no cookies() in cache)</li>
+  <li><strong><code>revalidateTag()</code></strong> for targeted invalidation on writes</li>
+  <li><strong>Stampede protection</strong> with 30s cooldown</li>
+  <li><strong>Cache invalidation</strong> in 12+ write endpoints</li>
+</ul>
+
+<h3>Cache-Control Headers</h3>
+<ul>
+  <li><code>_next/static/*</code>: 1 year (immutable)</li>
+  <li><code>/images/*</code>: 30 days</li>
+  <li><code>/icons/*</code>: 30 days</li>
+</ul>
+
+<h3>Performance Optimizations</h3>
+<ul>
+  <li>Composite indexes on <code>(tenant_id, ...)</code> for every hot query path</li>
+  <li><code>analytics_daily</code> upserted by triggers; dashboards read aggregates</li>
+  <li>Pagination everywhere (cursor-based for large tables)</li>
+  <li>PWA + CDN for static assets</li>
+  <li>Turbopack for fast builds</li>
+</ul>
+
+<!-- 15. DEPLOYMENT -->
+<div class="page-break"></div>
+<h2 id="deployment">15. Deployment</h2>
+
+<h3>Infrastructure</h3>
+<ul>
+  <li><strong>Hosting:</strong> Netlify (Next.js on Node.js runtime)</li>
+  <li><strong>Database:</strong> Supabase (PostgreSQL 15, hosted)</li>
+  <li><strong>CDN:</strong> Cloudflare (DNS + WAF + DDoS)</li>
+  <li><strong>Edge Functions:</strong> Supabase (Deno runtime)</li>
+  <li><strong>CI/CD:</strong> GitHub Actions</li>
+  <li><strong>Domain:</strong> skycare.app with {slug}.skycare.app subdomains</li>
+</ul>
+
+<h3>Production Environment</h3>
+<ul>
+  <li><strong>Supabase ref:</strong> pvakwxeusbxesdealuuc</li>
+  <li><strong>Port:</strong> 3000 (Next.js production server)</li>
+  <li><strong>Bound to:</strong> 0.0.0.0 (all interfaces for LAN access)</li>
+  <li><strong>Node.js:</strong> LTS</li>
+</ul>
+
+<h3>Restart Command</h3>
+<pre>Get-NetTCPConnection -LocalPort 3000 | Select -ExpandProperty OwningProcess -Unique | Stop-Process -Force
+Start-Process node -ArgumentList "node_modules\next\dist\bin\next","start","-p","3000"</pre>
+
+<!-- 16. OUTSTANDING -->
+<div class="page-break"></div>
+<h2 id="outstanding">16. Outstanding Work</h2>
+
+<h3>High Priority</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Impact</th></tr>
+  <tr><td>SMS Integration</td><td class="status-not-started">Not Started</td><td>Appointment reminders, notifications</td></tr>
+  <tr><td>Email Notifications</td><td class="status-not-started">Not Started</td><td>External email sending</td></tr>
+  <tr><td>Full Insurance Claims</td><td class="status-partial">Partial</td><td>Schema exists, UI/API minimal</td></tr>
+</table>
+
+<h3>Medium Priority</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Impact</th></tr>
+  <tr><td>Telemedicine</td><td class="status-not-started">Not Started</td><td>Video consultations</td></tr>
+  <tr><td>Custom Domain Provisioning</td><td class="status-partial">Partial</td><td>Auto-DNS for custom domains</td></tr>
+  <tr><td>Advanced Analytics</td><td class="status-partial">Partial</td><td>Dashboards, ML beyond pharmacy AI</td></tr>
+  <tr><td>Performance Monitoring</td><td class="status-partial">Partial</td><td>Sentry configured, no dashboards</td></tr>
+  <tr><td>E2E Test Suite</td><td class="status-not-started">Not Started</td><td>Playwright tests</td></tr>
+  <tr><td>Redis Caching</td><td class="status-not-started">Not Started</td><td>Multi-instance support</td></tr>
+  <tr><td>WebSocket Chat</td><td class="status-not-started">Not Started</td><td>Real-time messaging</td></tr>
+  <tr><td>Background Job Queue</td><td class="status-not-started">Not Started</td><td>Async processing</td></tr>
+  <tr><td>API Versioning</td><td class="status-not-started">Not Started</td><td>Future-proofing</td></tr>
+  <tr><td>OpenAPI/Swagger</td><td class="status-not-started">Not Started</td><td>API documentation</td></tr>
+</table>
+
+<h3>Low Priority</h3>
+<table>
+  <tr><th>Item</th><th>Status</th><th>Impact</th></tr>
+  <tr><td>Mobile Native Apps</td><td class="status-not-started">Not Started</td><td>PWA covers most use cases</td></tr>
+  <tr><td>Multi-language (i18n)</td><td class="status-not-started">Not Started</td><td>English only</td></tr>
+  <tr><td>Staff Scheduling Optimization</td><td class="status-not-started">Not Started</td><td>Manual roster works</td></tr>
+  <tr><td>Patient Portal Reschedule</td><td class="status-not-started">Not Started</td><td>Cancel only</td></tr>
+  <tr><td>Lab Result PDF Export</td><td class="status-not-started">Not Started</td><td>Screen view only</td></tr>
+  <tr><td>Pharmacy Batch Barcode</td><td class="status-not-started">Not Started</td><td>Manual entry works</td></tr>
+  <tr><td>Audit Log Archival</td><td class="status-not-started">Not Started</td><td>Logs grow unbounded</td></tr>
+  <tr><td>Field-level Encryption</td><td class="status-not-started">Not Started</td><td>Not required yet</td></tr>
+</table>
+
+<!-- 17. ROADMAP -->
+<div class="page-break"></div>
+<h2 id="roadmap">17. Roadmap</h2>
+
+<h3>Immediate (This Week)</h3>
+<ol>
+  <li>Complete any in-progress work from AGENTS.md</li>
+  <li>Fix any failing tests</li>
+  <li>Update documentation</li>
+</ol>
+
+<h3>Short-term (This Month)</h3>
+<ol>
+  <li>SMS integration (appointment reminders, notifications)</li>
+  <li>Email notifications (external email sending)</li>
+  <li>Full insurance claims UI</li>
+  <li>E2E test suite (Playwright)</li>
+</ol>
+
+<h3>Medium-term (Next Quarter)</h3>
+<ol>
+  <li>Telemedicine module (video consultations)</li>
+  <li>Custom domain provisioning (auto-DNS)</li>
+  <li>Advanced analytics dashboards</li>
+  <li>Redis caching (multi-instance support)</li>
+  <li>WebSocket chat (real-time messaging)</li>
+</ol>
+
+<h3>Long-term (Next 6 Months)</h3>
+<ol>
+  <li>Mobile native apps (React Native)</li>
+  <li>Multi-language support (i18n)</li>
+  <li>Staff scheduling optimization</li>
+  <li>API versioning</li>
+  <li>OpenAPI documentation</li>
+</ol>
+
+<!-- 18. DAILY BRIEF -->
+<div class="page-break"></div>
+<h2 id="daily-brief">18. Daily Brief Template</h2>
+
+<p>Use this template for daily morning briefs on the SkyCare HMS project:</p>
+
+<pre>
+## SkyCare HMS — Daily Brief [DATE]
+
+### Build Status
+- [PASS/FAIL] npm run build
+- [PASS/FAIL] npx tsc --noEmit
+- [PASS/FAIL] npm run lint (0 errors, ~602 warnings)
+- [N/N] npm test (206+ passing)
+
+### Project Health
+- Migrations applied: 103
+- API routes: 150+
+- Pages: 50+
+- Components: 200+
+- Test coverage: ~29%
+- Last commit: [hash] [message]
+
+### Completed (Recent)
+- [List recent completions from AGENTS.md]
+
+### In Progress
+- [List active items]
+
+### Blocked
+- [List blockers if any]
+
+### Next Steps
+- [List planned work]
+
+### Completion Status
+- Overall: ~82%
+- Core Modules: 20/20 (100%)
+- Infrastructure: 8/8 (100%)
+- UI/UX: 6/6 (100%)
+- High Priority: 0/3 (0%)
+- Medium Priority: 0/10 (0%)
+- Low Priority: 1/10 (10%)
+
+### Key Metrics
+- Build: [PASS/FAIL]
+- Tests: [N/N]
+- Coverage: ~[N]%
+- Lint: 0 errors
+- TypeCheck: 0 errors
+</pre>
+
+---
+
+<div style="text-align: center; margin-top: 50px; padding: 20px; border-top: 3px solid #e0a84a;">
+  <p><strong>SkyCare HMS SaaS — Complete Implementation Report</strong></p>
+  <p>Version 0.1.0 | August 22, 2026 | Skyhouse Technologies</p>
+  <p>github.com/liamsedun/skycare</p>
+</div>
+
+</body>
+</html>

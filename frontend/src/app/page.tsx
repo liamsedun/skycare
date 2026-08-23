@@ -365,17 +365,25 @@ export default function HomePage() {
           {[1, 2].map((half) => (
             <div key={half} className="flex gap-6" aria-hidden={half === 2}>
               {[
-                ...Array.from({ length: 6 }, (_, i) => `/images/hospital-website/hosp-website-${String(i + 1).padStart(2, "0")}.png`),
-                ...Array.from({ length: 6 }, (_, i) => `/images/staff-web-images/staff-web-${String(i + 1).padStart(2, "0")}.png`),
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full.png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (1).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (2).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (3).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (4).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (5).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (6).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (7).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (8).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (9).png",
               ].map((src, i) => (
                 <div
                   key={`${half}-${i}`}
                   className="relative w-56 shrink-0 overflow-hidden rounded-xl border border-slate-200 shadow-md"
                 >
-                  <div className="relative aspect-video bg-slate-100">
+                  <div className="relative aspect-[9/19.5] bg-slate-100">
                     <Image
                       src={src}
-                      alt="SkyCare app screenshot"
+                      alt="SkyCare hospital website screenshot"
                       fill
                       sizes="224px"
                       className="object-cover object-top"
