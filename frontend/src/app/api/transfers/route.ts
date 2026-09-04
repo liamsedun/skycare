@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 // POST /api/transfers — move an active admission to another bed via
-// ward_transfer. hospital_admin / doctor / nurse / super_admin.
+// ward_transfer. hospital_admin / doctor / nurse.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   if (!CLINICAL_ROLES.includes(ctx.role ?? "receptionist")) {

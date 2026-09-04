@@ -156,7 +156,7 @@ export default function SubscriptionView() {
         const meRes = await fetch("/api/auth/me", { cache: "no-store" });
         const meBody = await meRes.json();
         const role = meBody.data?.claims?.role ?? null;
-        setIsAdmin(role === "hospital_admin" || role === "super_admin");
+        setIsAdmin(role === "hospital_admin");
         if (!isAdminRole(role)) {
           setError("Only hospital administrators can view subscription billing.");
           setLoading(false);
@@ -173,7 +173,7 @@ export default function SubscriptionView() {
   }, []);
 
   function isAdminRole(r: string | null | undefined): boolean {
-    return r === "hospital_admin" || r === "super_admin";
+    return r === "hospital_admin";
   }
 
   if (loading) {
@@ -239,7 +239,7 @@ export default function SubscriptionView() {
                 {tenant?.name ?? "Hospital"}
               </h2>
               <p className={mutedSmPlain}>
-                {tenant?.email ?? "—"} · {tenant?.slug ?? "your-hospital"}.skycare.app
+                {tenant?.email ? <a href={`mailto:${tenant.email}`} className="hover:underline">{tenant.email}</a> : "—"} · {tenant?.slug ?? "your-hospital"}.skycare.app
               </p>
             </div>
           </div>

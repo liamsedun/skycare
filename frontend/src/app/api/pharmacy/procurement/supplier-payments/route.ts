@@ -1,11 +1,12 @@
 import { withAuth, withStaff, okPaginated, ok, ValidationError, requireTenant } from "@/lib/api-utils";
 import { getPagination, resolveParam, resolveBankAccountId, postBankLedger } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const PROCUREMENT_TEAM = ["hospital_admin", "super_admin", "pharmacist", "pharmacy_tech"];
+const PROCUREMENT_TEAM = ["hospital_admin", "pharmacist", "pharmacy_tech"];
 const PAYMENT_METHODS = ["bank_transfer", "cash", "pos", "credit_note"] as const;
 
 // GET /api/pharmacy/procurement/supplier-payments?supplier_id=&from=&to=&page=&pageSize=
@@ -67,6 +68,7 @@ export const GET = withStaff(async (req, ctx) => {
 export const POST = withAuth(
   async (req, ctx) => {
     const tenantId = requireTenant(ctx);
+    const { symbol } = await tenantCurrency(ctx.svc, tenantId);
     const body = (await req.json()) as {
       supplierId: string;
       poId?: string;
@@ -157,7 +159,7 @@ export const POST = withAuth(
       action: "create",
       entityType: "supplier_payments",
       entityId: payment.id,
-      description: `Paid ₦${amount.toLocaleString()} to ${supplier.name} (${body.method.replace(/_/g, " ")})`,
+      description: `Paid ${symbol}${amount.toLocaleString()} to ${supplier.name} (${body.method.replace(/_/g, " ")})`,
     });
     return ok(payment, 201);
   },

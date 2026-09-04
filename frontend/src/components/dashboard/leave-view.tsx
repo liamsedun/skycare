@@ -78,7 +78,7 @@ export default function LeaveView() {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
       const role = me.data?.claims?.role;
-      const admin = role === "hospital_admin" || role === "super_admin";
+      const admin = role === "hospital_admin";
       setIsAdmin(admin);
       const res = await fetch(`/api/staff/leave?pageSize=100${tab === "all" ? "&status=" : ""}`, { cache: "no-store" });
       const body = await res.json();

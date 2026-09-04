@@ -9,7 +9,7 @@ import { mutedFg, divideBorder, flexGap2, mutedSmPlain, spinner, rowStart } from
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 
-const HR_ADMIN_ROLES = ["hospital_admin", "hr_officer", "super_admin"];
+const HR_ADMIN_ROLES = ["hospital_admin", "hr_officer"];
 
 interface ViewingPayslip {
   line: HrRunLine;

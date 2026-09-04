@@ -14,7 +14,7 @@ export default async function StaffPage() {
 
   if (!user) redirect("/login?redirect=/app/staff");
 
-  const accessLevel = await requireModulePage(supabase, user, "staff", ["hospital_admin", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "staff", ["hospital_admin"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return <StaffManagement meId={user.id} myRole={role} accessLevel={accessLevel} />;

@@ -44,7 +44,7 @@ interface AnnounceBody {
 // POST /api/notifications — hospital admins broadcast an announcement to staff
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Only hospital admins can send announcements");
   }
 

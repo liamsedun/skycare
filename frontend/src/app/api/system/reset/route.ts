@@ -3,7 +3,7 @@ import { withAuth, requireTenant, ForbiddenError, ok, err } from "@/lib/api-util
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// POST /api/system/reset — hospital_admin / super_admin within a tenant scope.
+// POST /api/system/reset — hospital_admin within a tenant scope.
 //
 // Wipes all entered data (users except the caller, patients, staff, clinical
 // records, prescriptions, lab orders, invoices, payments, expenses, other
@@ -61,7 +61,7 @@ const CHILD_TABLES: Record<string, { parent: string; column: string }> = {
 };
 
 export const POST = withAuth(async (_req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);

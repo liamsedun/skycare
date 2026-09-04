@@ -10,6 +10,7 @@ import {
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
 import { initializeTransaction, getPaystackKeys, generateReference, isPlaceholderKey } from "@/lib/paystack";
+import { tenantCurrency } from "@/lib/server-currency";
 import { pushNotifyUsers } from "@/lib/push-send";
 import type { NextRequest } from "next/server";
 
@@ -49,6 +50,7 @@ export interface WalkInLabRequestBody {
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "lab", "full");
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
 
   const body = (await req.json()) as WalkInLabRequestBody;
 
@@ -296,7 +298,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "lab_requests",
     entityId: request.id,
-    description: `Walk-in lab request (${request.lab_request_items?.length ?? body.items.length} item(s)) for ${patient.first_name} ${patient.last_name} — paid ₦${total.toLocaleString()} (${payment.payment_method ?? body.paymentMethod})${body.referrer ? `, referrer ${body.referrer}` : ""}`,
+    description: `Walk-in lab request (${request.lab_request_items?.length ?? body.items.length} item(s)) for ${patient.first_name} ${patient.last_name} — paid ${symbol}${total.toLocaleString()} (${payment.payment_method ?? body.paymentMethod})${body.referrer ? `, referrer ${body.referrer}` : ""}`,
   });
 
   return ok(

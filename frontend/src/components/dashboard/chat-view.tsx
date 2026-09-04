@@ -14,7 +14,9 @@ import {
   Send,
   Smile,
 } from "lucide-react";
+import BranchFilter from "@/components/dashboard/branch-filter";
 import { initials } from "@/lib/auth";
+import { useBranch } from "@/lib/branch-context";
 import { errorBanner, flexBetween, flexGap2 } from "@/lib/ui-constants";
 
 interface OtherUser {
@@ -145,6 +147,7 @@ function Avatar({
 }
 
 export default function ChatView() {
+  const { selectedBranchId } = useBranch();
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [directory, setDirectory] = useState<DirectoryEntry[]>([]);
   const [online, setOnline] = useState<Set<string>>(new Set());
@@ -169,7 +172,7 @@ export default function ChatView() {
 
   const loadList = useCallback(async () => {
     try {
-      const res = await fetch("/api/chats", { cache: "no-store" });
+      const res = await fetch(`/api/chats${selectedBranchId ? `?branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load chats");
       setChats(body.data?.chats ?? []);
@@ -180,7 +183,7 @@ export default function ChatView() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedBranchId]);
 
   useEffect(() => {
     loadList();
@@ -431,7 +434,7 @@ export default function ChatView() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 border-b border-[#E3E9E7] bg-[#F5F7F6] px-5 py-3">
+          <div className="flex items-center gap-2 border-b border-[#E3E9E7] bg-[#F5F7F6] px-5 py-3">
             {TABS.map((t) => {
               const isActive = activeTab === t.key;
               return (
@@ -449,6 +452,9 @@ export default function ChatView() {
                 </button>
               );
             })}
+            <div className="ml-auto">
+              <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
+            </div>
           </div>
 
           <div className="grid min-h-0 flex-1 md:grid-cols-[320px_1fr]">
@@ -509,10 +515,10 @@ export default function ChatView() {
                             <span className="block truncate text-[14px] font-medium text-[#16221F]">{d.full_name}</span>
                             <span className="block truncate text-xs text-[#6B7A77]">
                               {isStaff
-                                ? `${d.role?.replace(/_/g, " ") ?? "Staff"}${d.phone ? ` · ${d.phone}` : ""}`
+                                ? `${d.role?.replace(/_/g, " ") ?? "Staff"}${d.phone ? <> · <a href={`tel:${d.phone}`} className="hover:underline">{d.phone}</a></> : ""}`
                                 : `${d.patient_number ?? ""} ${d.is_dependant ? "· Dependant" : ""}${
                                     d.has_account === false ? " · No portal login — family replies" : ""
-                                  }${d.phone ? ` · ${d.phone}` : ""}`}
+                                  }${d.phone ? <> · <a href={`tel:${d.phone}`} className="hover:underline">{d.phone}</a></> : ""}`}
                             </span>
                           </span>
                           {existing ? (
@@ -574,7 +580,7 @@ export default function ChatView() {
                           </span>
                           <span className="mt-0.5 block truncate text-[11px] text-[#9FAEAB]">
                             {c.kind === "staff"
-                              ? `${u?.role?.replace(/_/g, " ") ?? "Staff"}${u?.phone ? ` · ${u.phone}` : ""}`
+                              ? `${u?.role?.replace(/_/g, " ") ?? "Staff"}${u?.phone ? <> · <a href={`tel:${u.phone}`} className="hover:underline">{u.phone}</a></> : ""}`
                               : `${u?.patient_number ?? ""}${
                                   u?.is_dependant ? " · Dependant" : ""
                                 }${u && u.has_account === false ? " · No portal login — family replies" : ""}`}

@@ -22,6 +22,7 @@ import { inDateRange } from "@/lib/daterange";
 import FilterBar from "@/components/filters/filter-bar";
 import type { AccessLevel } from "@/lib/nav";
 import { mutedFg, flexGap2, mutedXsMt, spinner } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 
 const EXPORT_COLUMNS = [
   "ward",
@@ -99,6 +100,7 @@ function ModalShell({ title, onClose, children, wide }: { title: string; onClose
 }
 
 export default function BedMapView({ canManage, accessLevel = "full" }: { canManage: boolean; accessLevel?: AccessLevel }) {
+  const { currency } = useCurrency();
   const viewOnly = accessLevel === "view_only";
   const [wards, setWards] = useState<WardRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -469,7 +471,7 @@ export default function BedMapView({ canManage, accessLevel = "full" }: { canMan
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${rate ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
                           title="Daily accommodation rate"
                         >
-                          <Coins size={11} /> {rate ? `₦${Number(rate).toLocaleString()}/night` : "No rate"}
+                           <Coins size={11} /> {rate ? `${currencySymbol(currency)}${Number(rate).toLocaleString()}/night` : "No rate"}
                         </span>
                         <button
                           type="button"
@@ -591,6 +593,7 @@ function WardModal({
   const [isActive, setIsActive] = useState(ward?.is_active ?? true);
   const [rate, setRate] = useState(ward?.ward_daily_rates?.[0]?.rate != null ? String(ward.ward_daily_rates[0].rate) : "");
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useCurrency();
 
   const submit = () => {
     if (!name.trim()) { setError("Ward name is required"); return; }
@@ -630,7 +633,7 @@ function WardModal({
           </select>
         </div>
         <div>
-          <label htmlFor="ward-rate" className={labelCls}>Daily accommodation rate (₦) — used for discharge billing</label>
+          <label htmlFor="ward-rate" className={labelCls}>Daily accommodation rate ({currencySymbol(currency)}) — used for discharge billing</label>
           <input
             id="ward-rate"
             type="number"

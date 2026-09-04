@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_TYPES = ["general", "private", "icu", "maternity", "surgical", "pediatric", "observation"];
 
-// PATCH /api/wards/[id] — update ward name / type / active (hospital_admin / super_admin).
+// PATCH /api/wards/[id] — update ward name / type / active (hospital_admin).
 export const PATCH = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   if (!isAdminRole(ctx.role)) {

@@ -8,6 +8,7 @@ import {
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { initializeTransaction, getPaystackKeys, generateReference, isPlaceholderKey } from "@/lib/paystack";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 import { rateLimit, API_PAYMENT } from "@/lib/rate-limit";
 
@@ -25,6 +26,7 @@ export interface InitializePaymentBody {
 // Rate limited: 20 req/min per IP
 export const POST = rateLimit(withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   if (ctx.role !== "patient_api") {
     throw new ForbiddenError("Only patients can initialize online payments");
   }
@@ -95,7 +97,7 @@ export const POST = rateLimit(withAuth(async (req, ctx) => {
     action: "create",
     entityType: "payments",
     entityId: null,
-    description: `Initialized online payment of ₦${body.amount.toLocaleString()} for invoice ${invoice.invoice_number} (${reference})`,
+    description: `Initialized online payment of ${symbol}${body.amount.toLocaleString()} for invoice ${invoice.invoice_number} (${reference})`,
     changes: { gateway: "paystack", reference },
   });
 

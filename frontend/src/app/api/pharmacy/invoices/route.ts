@@ -2,6 +2,7 @@ import { withStaff, ok, okPaginated, ValidationError, NotFoundError, requireTena
 import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { mirrorPharmacyInvoiceToCentral } from "@/lib/pharmacy-billing";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -79,6 +80,7 @@ export const GET = withStaff(async (req, ctx) => {
 // resolution; syncs to the central ledger when a patient is attached).
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const body = (await req.json()) as CreatePharmacyInvoiceBody;
 
   if (!["counter", "prescription", "ward"].includes(body.source)) {
@@ -134,13 +136,13 @@ export const POST = withStaff(async (req, ctx) => {
 
   // Central-ledger sync (best effort): mirror the invoice so cashier billing
   // dashboards and the patient portal see pharmacy charges under one ledger.
-  await mirrorPharmacyInvoiceToCentral(ctx.svc, tenantId, invoice, ctx.user.id);
+  await mirrorPharmacyInvoiceToCentral(ctx.svc, tenantId, invoice, ctx.user.id, symbol);
 
   await logAudit(req, ctx, {
     action: "create",
     entityType: "pharmacy_invoices",
     entityId: invoice.id,
-    description: `Pharmacy invoice ${invoice.invoice_number} created (${invoice.source}) for ${patientName} — ₦${Number(invoice.total_amount).toLocaleString()}`,
+    description: `Pharmacy invoice ${invoice.invoice_number} created (${invoice.source}) for ${patientName} — ${symbol}${Number(invoice.total_amount).toLocaleString()}`,
   });
 
   return ok(invoice, 201);

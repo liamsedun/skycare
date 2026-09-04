@@ -173,7 +173,7 @@ export default function AccountView() {
             <p className="mt-3 text-base font-semibold text-[var(--color-foreground)]">
               {user?.full_name ?? "Staff"}
             </p>
-            <p className={mutedSmPlain}>{user?.email}</p>
+            <p className={mutedSmPlain}>{user?.email ? <a href={`mailto:${user.email}`} className="hover:underline">{user.email}</a> : ""}</p>
             {user && (
               <span className="mt-2 rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)]">
                 {ROLE_LABELS[user.role] ?? user.role}

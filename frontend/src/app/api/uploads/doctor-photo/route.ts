@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // POST /api/uploads/doctor-photo — upload a website doctor photo to the public avatars bucket
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Only admins can upload doctor photos");
   }
 

@@ -118,6 +118,37 @@ export function sanitizeLike(term: string): string {
   return term.replace(/[(),]/g, "%");
 }
 
+/**
+ * Apply an optional branch filter to a Supabase query.
+ * Reads `?branch=<uuid>` from the request URL.
+ * If branch is a valid UUID, filters to that branch.
+ * If branch is "all" or absent, returns all tenant data (no filter).
+ * Falls back to ctx.branchId when the query param is absent (auto-scoping for
+ * branch-assigned staff). Pass `forceAll = true` to ignore ctx.branchId.
+ */
+export function applyBranchFilter<T extends { eq: (col: string, val: unknown) => T }>(
+  query: T,
+  searchParams: URLSearchParams,
+  ctx: { branchId: string | null },
+  forceAll = false,
+): T {
+  const raw = resolveParam(searchParams.get("branch"));
+  let branchId: string | null = null;
+  if (raw && raw !== "all") {
+    // Validate it looks like a UUID
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw)) {
+      branchId = raw;
+    }
+  } else if (!raw && !forceAll) {
+    // No param — fall back to the caller's JWT branch claim (auto-scope)
+    branchId = ctx.branchId;
+  }
+  if (branchId) {
+    return query.eq("branch_id", branchId);
+  }
+  return query;
+}
+
 // ---------------------------------------------------------------------------
 // BANKING LEDGER (automated posting helpers)
 // ---------------------------------------------------------------------------
@@ -341,12 +372,12 @@ export function requireTenant(ctx: AuthedContext): string {
 // ---------------------------------------------------------------------------
 // ROLE HELPERS (SkyCare role vocabulary)
 // ---------------------------------------------------------------------------
-export const BILLING_ROLES: AppRole[] = ["hospital_admin", "cashier", "super_admin"];
-export const CLINICAL_ROLES: AppRole[] = ["hospital_admin", "doctor", "nurse", "super_admin"];
-export const ADMIN_ROLES: AppRole[] = ["hospital_admin", "super_admin"];
+export const BILLING_ROLES: AppRole[] = ["hospital_admin", "cashier"];
+export const CLINICAL_ROLES: AppRole[] = ["hospital_admin", "doctor", "nurse"];
+export const ADMIN_ROLES: AppRole[] = ["hospital_admin"];
 
 export function isAdminRole(role: AppRole | undefined): boolean {
-  return role === "hospital_admin" || role === "super_admin";
+  return role === "hospital_admin";
 }
 
 // ---------------------------------------------------------------------------

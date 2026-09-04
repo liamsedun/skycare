@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownCircle, ArrowUpCircle, Eye, Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { ngn } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/expense-categories";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
@@ -10,6 +11,8 @@ import { downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { mutedXs, errorBanner, mutedSm, flexWrapGap2, mutedXsMt1, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 export type FinanceKind = "expense" | "income";
 
@@ -92,6 +95,8 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
   const [busy, setBusy] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [form, setForm] = useState<TxForm>(() => emptyForm(new Date().toISOString().slice(0, 10)));
+  const { currency } = useCurrency();
+  const { selectedBranchId } = useBranch();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,6 +119,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
       if (fromDate) params.set("from", fromDate);
       if (toDate) params.set("to", toDate);
       if (search.trim()) params.set("search", search.trim());
+      if (selectedBranchId) params.set("branch", selectedBranchId);
       const res = await fetch(`/api/${isExpense ? "expenses" : "other-income"}?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load records");
@@ -123,7 +129,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate, search, isExpense]);
+  }, [fromDate, toDate, search, isExpense, selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -363,6 +369,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
       )}
 
       <div className="flex flex-wrap items-center gap-3">
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <div className="relative max-w-sm flex-1">
           <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
           <input
@@ -498,7 +505,7 @@ export default function FinanceView({ kind }: { kind: FinanceKind }) {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls} htmlFor="fx-amount">Amount (₦) *</label>
+                  <label className={labelCls} htmlFor="fx-amount">Amount ({currencySymbol(currency)}) *</label>
                   <input id="fx-amount" type="number" min={0} step="0.01" required className={inputCls} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" />
                 </div>
               </div>

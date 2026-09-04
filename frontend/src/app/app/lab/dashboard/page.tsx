@@ -14,7 +14,7 @@ export default async function LabDashboardPage() {
 
   if (!user) redirect("/login?redirect=/app/lab/dashboard");
 
-  const accessLevel = await requireModulePage(supabase, user, "lab-dashboard", ["hospital_admin", "lab_tech", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "lab-dashboard", ["hospital_admin", "lab_tech"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

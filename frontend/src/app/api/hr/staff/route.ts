@@ -1,4 +1,4 @@
-import { withStaff, ok, okPaginated, ValidationError, ForbiddenError, requireTenant, getPagination, sanitizeLike } from "@/lib/api-utils";
+import { withStaff, ok, okPaginated, ValidationError, ForbiddenError, requireTenant, getPagination, sanitizeLike, applyBranchFilter } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { isHrAdmin } from "@/lib/hr-perms";
 import type { NextRequest } from "next/server";
@@ -21,6 +21,7 @@ export const GET = withStaff(async (req, ctx) => {
     .from("staff")
     .select("id, staff_number, department, specialization, employment_type, base_salary, is_available, on_leave_until, created_at, users(full_name, role, email, phone, is_active), profiles:staff_profiles(id, hire_date, salary_grade, bank_name, bank_account_name, bank_account_number, credentials_status)", { count: "exact" })
     .eq("tenant_id", tenantId);
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
   let staffIdFilter: string[] | null = null;
   if (q) {
     const like = `%${sanitizeLike(q)}%`;

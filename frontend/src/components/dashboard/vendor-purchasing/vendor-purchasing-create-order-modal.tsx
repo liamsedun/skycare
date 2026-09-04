@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { ngn } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { mutedXs, errorBanner, mutedXsMt1 } from "@/lib/ui-constants";
 import { inputCls, labelCls, SupplierOption, ModalShell } from "./vendor-purchasing-shared";
 
@@ -44,6 +45,7 @@ export function CreateOrderModal({
   const [onlySupplierD, setOnlySupplierD] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useCurrency();
 
   const loadDrugs = useCallback(async () => {
     try {
@@ -221,7 +223,7 @@ export function CreateOrderModal({
                 <div className="grid grid-cols-12 gap-2 border-b border-[var(--color-border)] bg-[var(--color-muted)]/60 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-muted-fg)]">
                   <span className="col-span-6">Drug</span>
                   <span className="col-span-3">Qty</span>
-                  <span className="col-span-3 text-right">Unit cost (₦)</span>
+                  <span className="col-span-3 text-right">Unit cost ({currencySymbol(currency)})</span>
                 </div>
                 {visibleDrugs.map((d) => {
                   const offer = offers.find((o) => o.drugId === d.id);

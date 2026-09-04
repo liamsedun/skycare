@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, requireTenant, ForbiddenError, isAdminRole } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, ForbiddenError, isAdminRole, applyBranchFilter } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
 
@@ -10,16 +10,20 @@ const WARD_SELECT =
 // GET /api/wards — list wards with bed counts + daily rates (staff; all roles).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const { data: wards, error } = await ctx.svc
+  let query = ctx.svc
     .from("wards")
     .select(WARD_SELECT)
     .eq("tenant_id", tenantId)
     .order("name");
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
+
+  const { data: wards, error } = await query;
   if (error) throw new Error(error.message);
   return ok(wards ?? []);
 });
 
-// POST /api/wards — create a ward (hospital_admin / super_admin).
+// POST /api/wards — create a ward (hospital_admin).
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   if (!isAdminRole(ctx.role)) {

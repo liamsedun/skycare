@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 // PUT /api/ward-rates — set the daily accommodation rate for a ward
-// (hospital_admin / super_admin). Also accepts create-on-first-use.
+// (hospital_admin). Also accepts create-on-first-use.
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   if (!isAdminRole(ctx.role)) {

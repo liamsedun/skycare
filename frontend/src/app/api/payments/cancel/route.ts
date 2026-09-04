@@ -1,6 +1,7 @@
 import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "billing", "full");
-  if (!["hospital_admin", "cashier", "super_admin"].includes(ctx.role)) {
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
+  if (!["hospital_admin", "cashier"].includes(ctx.role)) {
     throw new ForbiddenError("Billing access required");
   }
   const body = (await req.json()) as { pendingPaymentId?: string };
@@ -57,7 +59,7 @@ export const POST = withAuth(async (req, ctx) => {
     action: "update",
     entityType: "payments",
     entityId: payment.id,
-    description: `Cancelled pending ${payment.payment_method} of ₦${Number(payment.amount).toLocaleString()} (${payment.reference})`,
+    description: `Cancelled pending ${payment.payment_method} of ${symbol}${Number(payment.amount).toLocaleString()} (${payment.reference})`,
   });
 
   return ok(updated);

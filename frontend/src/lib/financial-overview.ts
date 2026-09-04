@@ -81,28 +81,44 @@ function bucket(total: number, collected: number, count: number): ModuleIncome {
 export async function computeFinancialOverview(
   svc: SupabaseClient,
   tenantId: string,
-  range: { from: string; to: string }
+  range: { from: string; to: string },
+  branchId?: string | null
 ): Promise<FinancialOverview> {
   const { from, to } = range;
 
-  // ---- central invoices (medical / ward / lab buckets) ----
-  const { data: invoices } = await svc
-    .from("invoices")
-    .select("id, admission_id, total_amount, paid_amount, status")
-    .eq("tenant_id", tenantId)
-    .gte("issue_date", from)
-    .lte("issue_date", to);
-  const activeInv = (invoices ?? []).filter((i) => !["cancelled", "refunded"].includes(i.status));
+  // Build queries then conditionally apply branch filter
+  const invQ = svc.from("invoices").select("id, admission_id, total_amount, paid_amount, status").eq("tenant_id", tenantId).gte("issue_date", from).lte("issue_date", to);
+  const labReqQ = svc.from("lab_requests").select("invoice_id, payment_id").eq("tenant_id", tenantId).not("invoice_id", "is", null).or("payment_id.not.is.null");
+  const pharmInvQ = svc.from("pharmacy_invoices").select("id, patient_id, total_amount, status, synced_invoice_id").eq("tenant_id", tenantId).gte("created_at", `${from}T00:00:00`).lte("created_at", `${to}T23:59:59.999`);
+  const pharmPayQ = svc.from("pharmacy_payments").select("amount, invoice_id").eq("tenant_id", tenantId).eq("status", "completed").gte("received_at", `${from}T00:00:00`).lte("received_at", `${to}T23:59:59.999`);
+  const otherQ = svc.from("other_income").select("amount").eq("tenant_id", tenantId).gte("income_date", from).lte("income_date", to);
+  const expQ = svc.from("expenses").select("amount, category").eq("tenant_id", tenantId).gte("expense_date", from).lte("expense_date", to);
+  const payrollQ = svc.from("payroll_records").select("net_salary, base_salary, allowances, bonus, overtime_pay, paye, pension_employer, nhis_employer, pay_date, staff:staff(department)").eq("tenant_id", tenantId).eq("status", "paid");
+  const supplierQ = svc.from("supplier_payments").select("amount").eq("tenant_id", tenantId).gte("paid_at", from).lte("paid_at", to);
 
-  // lab-tagged invoices + walk-in payments (never double count: labelled side)
-  const { data: labReqs } = await svc
-    .from("lab_requests")
-    .select("invoice_id, payment_id")
-    .eq("tenant_id", tenantId)
-    .not("invoice_id", "is", null)
-    .or(`payment_id.not.is.null`);
-  const labInvoiceIds = new Set((labReqs ?? []).map((r) => r.invoice_id).filter(Boolean));
-  const walkinPaymentIds = (labReqs ?? []).map((r) => r.payment_id).filter(Boolean);
+  const [
+    { data: invoices },
+    { data: labReqs },
+    { data: pharmInvRows },
+    { data: pharmPayRows },
+    { data: otherRows },
+    { data: expRows },
+    { data: payrollRows },
+    { data: supplierRows },
+  ] = await Promise.all([
+    branchId ? invQ.eq("branch_id", branchId) : invQ,
+    branchId ? labReqQ.eq("branch_id", branchId) : labReqQ,
+    branchId ? pharmInvQ.eq("branch_id", branchId) : pharmInvQ,
+    branchId ? pharmPayQ.eq("branch_id", branchId) : pharmPayQ,
+    branchId ? otherQ.eq("branch_id", branchId) : otherQ,
+    branchId ? expQ.eq("branch_id", branchId) : expQ,
+    branchId ? payrollQ.eq("branch_id", branchId) : payrollQ,
+    branchId ? supplierQ.eq("branch_id", branchId) : supplierQ,
+  ]);
+
+  const activeInv = (invoices ?? []).filter((i: Record<string, unknown>) => !["cancelled", "refunded"].includes(i.status as string));
+  const labInvoiceIds = new Set((labReqs ?? []).map((r: Record<string, unknown>) => r.invoice_id).filter(Boolean));
+  const walkinPaymentIds = (labReqs ?? []).map((r: Record<string, unknown>) => r.payment_id).filter(Boolean);
 
   let medTotal = 0, medCollected = 0, medCount = 0;
   let wardTotal = 0, wardCollected = 0, wardCount = 0;
@@ -119,96 +135,59 @@ export async function computeFinancialOverview(
     }
   }
 
-  // walk-in lab payments (no invoice — paid up-front, nothing outstanding)
+  // walk-in lab payments
   let walkinLab = 0;
   if (walkinPaymentIds.length > 0) {
-    const { data: walkinPays } = await svc
-      .from("payments")
-      .select("amount")
-      .eq("tenant_id", tenantId)
-      .eq("status", "completed")
-      .in("id", walkinPaymentIds.slice(0, 500))
-      .gte("paid_at", `${from}T00:00:00`)
-      .lte("paid_at", `${to}T23:59:59.999`);
-    walkinLab = (walkinPays ?? []).reduce((s, p) => s + Number(p.amount), 0);
+    const wpBase = svc.from("payments").select("amount").eq("tenant_id", tenantId).eq("status", "completed").in("id", walkinPaymentIds.slice(0, 500)).gte("paid_at", `${from}T00:00:00`).lte("paid_at", `${to}T23:59:59.999`);
+    let wpResult: { data: Array<Record<string, unknown>> | null };
+    if (branchId) {
+      wpResult = await wpBase.eq("branch_id", branchId);
+    } else {
+      wpResult = await wpBase;
+    }
+    walkinLab = (wpResult.data ?? []).reduce((s: number, p: Record<string, unknown>) => s + Number(p.amount), 0);
   }
   labTotal += walkinLab;
   labCollected += walkinLab;
   if (walkinLab > 0) labCount += 1;
 
-  // ---- pharmacy (own tables) ----
-  // Pharmacy invoices synced into the central billing ledger (synced_invoice_id,
-  // e.g. convert-sale → central invoice) are ALREADY counted in the central
-  // medical/ward buckets above — exclude them and their payments here to avoid
-  // double counting the same money in both the pharmacy and central buckets.
-  const { data: pharmInvRows } = await svc
-    .from("pharmacy_invoices")
-    .select("id, patient_id, total_amount, status, synced_invoice_id")
-    .eq("tenant_id", tenantId)
-    .gte("created_at", `${from}T00:00:00`)
-    .lte("created_at", `${to}T23:59:59.999`);
-  const pharmInvs = (pharmInvRows ?? []).filter((i) => !["cancelled", "refunded"].includes(i.status));
+  // Pharmacy — exclude synced to avoid double-count
+  const pharmInvs = (pharmInvRows ?? []).filter((i: Record<string, unknown>) => !["cancelled", "refunded"].includes(i.status as string));
   const syncedIds = new Set(
     pharmInvs
-      .filter((i) => i.synced_invoice_id && i.patient_id)
-      .map((i) => i.id as string)
+      .filter((i: Record<string, unknown>) => i.synced_invoice_id && i.patient_id)
+      .map((i: Record<string, unknown>) => i.id as string)
   );
-  const pharmUnsynced = pharmInvs.filter((i) => !syncedIds.has(i.id as string));
-  const pharmTotal = pharmUnsynced.reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
+  const pharmUnsynced = pharmInvs.filter((i: Record<string, unknown>) => !syncedIds.has(i.id as string));
+  const pharmTotal = pharmUnsynced.reduce((s: number, i: Record<string, unknown>) => s + Number(i.total_amount ?? 0), 0);
   const pharmCount = pharmUnsynced.length;
 
-  const { data: pharmPayRows } = await svc
-    .from("pharmacy_payments")
-    .select("amount, invoice_id")
-    .eq("tenant_id", tenantId)
-    .eq("status", "completed")
-    .gte("received_at", `${from}T00:00:00`)
-    .lte("received_at", `${to}T23:59:59.999`);
   const pharmCollected = (pharmPayRows ?? [])
-    .filter((p) => !syncedIds.has(p.invoice_id as string))
-    .reduce((s, p) => s + Number(p.amount), 0);
+    .filter((p: Record<string, unknown>) => !syncedIds.has(p.invoice_id as string))
+    .reduce((s: number, p: Record<string, unknown>) => s + Number(p.amount), 0);
 
-  // ---- other income ----
-  const { data: otherRows } = await svc
-    .from("other_income")
-    .select("amount")
-    .eq("tenant_id", tenantId)
-    .gte("income_date", from)
-    .lte("income_date", to);
-  const otherTotal = (otherRows ?? []).reduce((s, r) => s + Number(r.amount), 0);
+  const otherTotal = (otherRows ?? []).reduce((s: number, r: Record<string, unknown>) => s + Number(r.amount), 0);
   const otherCount = (otherRows ?? []).length;
 
-  // ---- expenses: general (by category) ----
-  const { data: expRows } = await svc
-    .from("expenses")
-    .select("amount, category")
-    .eq("tenant_id", tenantId)
-    .gte("expense_date", from)
-    .lte("expense_date", to);
+  // Expenses: general
   const byCat = new Map<string, number>();
-  for (const e of expRows ?? []) {
+  for (const e of (expRows ?? []) as Record<string, unknown>[]) {
     const c = String(e.category ?? "Uncategorised");
     byCat.set(c, (byCat.get(c) ?? 0) + Number(e.amount));
   }
-  const generalTotal = (expRows ?? []).reduce((s, e) => s + Number(e.amount), 0);
+  const generalTotal = (expRows ?? []).reduce((s: number, e: Record<string, unknown>) => s + Number(e.amount), 0);
 
-  // ---- expenses: paid payroll only ----
-  const { data: payrollRows } = await svc
-    .from("payroll_records")
-    .select("net_salary, base_salary, allowances, bonus, overtime_pay, paye, pension_employer, nhis_employer, pay_date, staff:staff(department)")
-    .eq("tenant_id", tenantId)
-    .eq("status", "paid");
+  // Payroll
   const inRangePaid = (payrollRows ?? []).filter(
-    (p) => p.pay_date && String(p.pay_date).slice(0, 10) >= from && String(p.pay_date).slice(0, 10) <= to
+    (p: Record<string, unknown>) => p.pay_date && String(p.pay_date).slice(0, 10) >= from && String(p.pay_date).slice(0, 10) <= to
   );
-  const payrollNet = inRangePaid.reduce((s, p) => s + Number(p.net_salary ?? 0), 0);
+  const payrollNet = inRangePaid.reduce((s: number, p: Record<string, unknown>) => s + Number(p.net_salary ?? 0), 0);
   const payrollGross = inRangePaid.reduce(
-    (s, p) => s + Number(p.base_salary ?? 0) + Number(p.allowances ?? 0) + Number(p.bonus ?? 0) + Number(p.overtime_pay ?? 0),
+    (s: number, p: Record<string, unknown>) => s + Number(p.base_salary ?? 0) + Number(p.allowances ?? 0) + Number(p.bonus ?? 0) + Number(p.overtime_pay ?? 0),
     0
   );
   const payrollStatutory = inRangePaid.reduce(
-    (s, p) =>
-      s + Number(p.paye ?? 0) + Number(p.pension_employer ?? 0) + Number(p.nhis_employer ?? 0),
+    (s: number, p: Record<string, unknown>) => s + Number(p.paye ?? 0) + Number(p.pension_employer ?? 0) + Number(p.nhis_employer ?? 0),
     0
   );
   const deptMap = new Map<string, { gross: number; net: number; count: number }>();
@@ -216,8 +195,7 @@ export async function computeFinancialOverview(
     const deptStaff = p.staff as unknown as { department?: string } | null;
     const dept = String(deptStaff?.department ?? "Unassigned");
     const cur = deptMap.get(dept) ?? { gross: 0, net: 0, count: 0 };
-    cur.gross +=
-      Number(p.base_salary ?? 0) + Number(p.allowances ?? 0) + Number(p.bonus ?? 0) + Number(p.overtime_pay ?? 0);
+    cur.gross += Number(p.base_salary ?? 0) + Number(p.allowances ?? 0) + Number(p.bonus ?? 0) + Number(p.overtime_pay ?? 0);
     cur.net += Number(p.net_salary ?? 0);
     cur.count += 1;
     deptMap.set(dept, cur);
@@ -226,14 +204,8 @@ export async function computeFinancialOverview(
     .map(([department, v]) => ({ department, gross: round2(v.gross), net: round2(v.net), count: v.count }))
     .sort((a, b) => b.net - a.net);
 
-  // ---- expenses: stock purchases (supplier payments) ----
-  const { data: supplierRows } = await svc
-    .from("supplier_payments")
-    .select("amount")
-    .eq("tenant_id", tenantId)
-    .gte("paid_at", from)
-    .lte("paid_at", to);
-  const stockTotal = (supplierRows ?? []).reduce((s, p) => s + Number(p.amount), 0);
+  // Stock purchases
+  const stockTotal = (supplierRows ?? []).reduce((s: number, p: Record<string, unknown>) => s + Number(p.amount), 0);
 
   // ---- assemble ----
   const medical = bucket(medTotal, medCollected, medCount);

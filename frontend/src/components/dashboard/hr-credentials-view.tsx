@@ -47,7 +47,7 @@ export default function HrCredentialsView() {
     try {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
-      setIsAdmin(["hospital_admin", "hr_officer", "super_admin"].includes(me.data?.claims?.role));
+      setIsAdmin(["hospital_admin", "hr_officer"].includes(me.data?.claims?.role));
 
       const [credsRes, staffRes] = await Promise.all([
         fetch("/api/hr/credentials?pageSize=200", { cache: "no-store" }),

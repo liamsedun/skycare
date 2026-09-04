@@ -14,7 +14,7 @@ export default async function SuppliersPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/suppliers");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-suppliers", ["hospital_admin", "pharmacist", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-suppliers", ["hospital_admin", "pharmacist"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

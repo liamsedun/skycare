@@ -2,6 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { ROLE_LABELS } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { errorBanner, flexBetween, ghostIconBtn, labelSm, modalBackdrop, mutedXsMt1 } from "@/lib/ui-constants";
 import { inputCls, rolesFor, type BranchRow, type StaffUser } from "./staff-management-shared";
 
@@ -15,6 +16,7 @@ export function StaffEditModal(props: {
   branches: BranchRow[];
 }) {
   const { target: editTarget, setTarget: setEditTarget, busy, error, onSave: saveStaffDetails, myRole, branches } = props;
+  const { currency } = useCurrency();
   if (!editTarget?.staff) return null;
   return (
         <div
@@ -199,7 +201,7 @@ export function StaffEditModal(props: {
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelSm} htmlFor="sd-salary">
-                    Base salary (₦)
+                    Base salary ({currencySymbol(currency)})
                   </label>
                   <input
                     id="sd-salary"

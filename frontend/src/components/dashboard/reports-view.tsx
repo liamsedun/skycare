@@ -37,7 +37,7 @@ export default function ReportsView() {
       .catch(() => setRole(null));
   }, []);
 
-  const canWrite = role === "doctor" || role === "hospital_admin" || role === "super_admin";
+  const canWrite = role === "doctor" || role === "hospital_admin";
 
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [reports, setReports] = useState<Report[]>([]);

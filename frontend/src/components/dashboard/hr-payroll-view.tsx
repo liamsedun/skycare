@@ -6,8 +6,11 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { downloadCsv, printTable } from "@/lib/export";
+import { getTenantCurrency, useCurrency, currencySymbol } from "@/lib/currency";
 import { mutedXs, divideBorder, labelSm, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -66,7 +69,12 @@ const STATUS_CLASS: Record<string, string> = {
   paid: "bg-emerald-100 text-emerald-700",
 };
 
-const fmtN = (n: number) => `₦${(n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const fmtN = (n: number, currency?: string) => {
+  const v = n ?? 0;
+  const cur = currency || getTenantCurrency() || "NGN";
+  if (cur !== "NGN") return new Intl.NumberFormat("en", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(v);
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(v);
+};
 
 function endOfPeriod(period: string) {
   const [y, m] = period.split("-").map(Number);
@@ -104,6 +112,8 @@ export default function HrPayrollView() {
   const [bulkNotes, setBulkNotes] = useState("");
   const [bulkBug, setBulkBug] = useState<string | null>(null);
   const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+  const { currency } = useCurrency();
+  const { selectedBranchId } = useBranch();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,8 +121,8 @@ export default function HrPayrollView() {
     try {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
-      setIsAdmin(["hospital_admin", "hr_officer", "super_admin", "accountant"].includes(me.data?.claims?.role));
-      const res = await fetch(`/api/hr/payroll?period=${period}&pageSize=200`, { cache: "no-store" });
+      setIsAdmin(["hospital_admin", "hr_officer", "accountant"].includes(me.data?.claims?.role));
+      const res = await fetch(`/api/hr/payroll?period=${period}&pageSize=200${selectedBranchId ? `&branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load payroll");
       setRows(body.data ?? []);
@@ -121,7 +131,7 @@ export default function HrPayrollView() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [period, selectedBranchId]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -437,6 +447,7 @@ export default function HrPayrollView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <input type="month" className={inputCls + " max-w-[180px]"} value={period} onChange={(e) => setPeriod(e.target.value)} />
         <DateRangeBar
           from={from}
@@ -729,13 +740,13 @@ export default function HrPayrollView() {
             <h3 className="mb-1 text-lg font-semibold">Edit {selDraftIds.length} draft record(s)</h3>
             <p className="mb-4 text-sm text-[var(--color-muted-fg)]">Fields left blank keep their current value. Net salary is recomputed per record from its calculated base.</p>
             <div className="space-y-3">
-              <div><label className={labelSm}>Allowances (₦)</label>
+              <div><label className={labelSm}>Allowances ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkAllow} onChange={(e) => setBulkAllow(e.target.value)} /></div>
-              <div><label className={labelSm}>Bonus (₦)</label>
+              <div><label className={labelSm}>Bonus ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkBonus} onChange={(e) => setBulkBonus(e.target.value)} /></div>
-              <div><label className={labelSm}>Deductions (₦)</label>
+              <div><label className={labelSm}>Deductions ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkDed} onChange={(e) => setBulkDed(e.target.value)} /></div>
-              <div><label className={labelSm}>Overtime pay (₦)</label>
+              <div><label className={labelSm}>Overtime pay ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} placeholder="Leave blank to keep" value={bulkOt} onChange={(e) => setBulkOt(e.target.value)} /></div>
               <div><label className={labelSm}>Notes</label>
                 <input type="text" className={inputCls} placeholder="Leave blank to keep" value={bulkNotes} onChange={(e) => setBulkNotes(e.target.value)} /></div>
@@ -802,11 +813,11 @@ export default function HrPayrollView() {
           <form className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()} onSubmit={saveEdit}>
             <h3 className="mb-4 text-lg font-semibold">Adjust {editing.staff?.users?.full_name}</h3>
             <div className="space-y-3">
-              <div><label className={labelSm}>Allowances (₦)</label>
+              <div><label className={labelSm}>Allowances ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} value={editAllow} onChange={(e) => setEditAllow(Number(e.target.value))} /></div>
-              <div><label className={labelSm}>Bonus (₦)</label>
+              <div><label className={labelSm}>Bonus ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} value={editBonus} onChange={(e) => setEditBonus(Number(e.target.value))} /></div>
-              <div><label className={labelSm}>Deductions (₦)</label>
+              <div><label className={labelSm}>Deductions ({currencySymbol(currency)})</label>
                 <input type="number" min="0" className={inputCls} value={editDed} onChange={(e) => setEditDed(Number(e.target.value))} /></div>
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
               <button type="submit" disabled={running} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">

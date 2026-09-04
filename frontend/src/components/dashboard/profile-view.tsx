@@ -173,7 +173,7 @@ export default function ProfileView() {
           </div>
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <p className="truncate text-lg font-bold text-[var(--color-foreground)]">{me.user.full_name}</p>
-            <p className="truncate text-sm text-[var(--color-muted-fg)]">{me.user.email}</p>
+            <p className="truncate text-sm text-[var(--color-muted-fg)]"><a href={`mailto:${me.user.email}`} className="hover:underline">{me.user.email}</a></p>
             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)]">
                 <ShieldCheck size={12} aria-hidden="true" /> {ROLE_LABELS[me.user.role] ?? me.user.role}

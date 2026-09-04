@@ -194,7 +194,7 @@ export default function PatientProfile() {
                 </button>
               </div>
             ) : (
-              <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{row.value}</p>
+              <p className="truncate text-sm font-medium text-[var(--color-foreground)]">{row.field === "phone" && user?.phone ? <a href={`tel:${user.phone}`} className="hover:underline">{row.value}</a> : row.label === "Email" && user?.email ? <a href={`mailto:${user.email}`} className="hover:underline">{row.value}</a> : row.value}</p>
             )}
           </div>
         </div>
@@ -385,7 +385,7 @@ export default function PatientProfile() {
             <p className="text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
             <p className={mutedSmPlain}>
               {patient?.patient_number ? `${patient.patient_number} · ` : ""}
-              {user?.email}
+              {user?.email ? <a href={`mailto:${user.email}`} className="hover:underline">{user.email}</a> : "…"}
             </p>
           </div>
         </div>
@@ -469,14 +469,14 @@ export default function PatientProfile() {
                 <p className="text-lg font-bold text-[var(--color-foreground)]">{fullName}</p>
                 <p className={mutedXs}>
                   {patient?.patient_number ? `${patient.patient_number} · ` : ""}
-                  {user?.email}
+                  {user?.email ? <a href={`mailto:${user.email}`} className="hover:underline">{user.email}</a> : "…"}
                 </p>
               </div>
             </div>
             <div className="mt-3 rounded-xl border border-[var(--color-border)] bg-black/[0.03] px-3 py-1.5">
               <div className="flex items-center justify-between gap-3 py-1">
                 <span className="text-[10px] font-semibold tracking-wider text-[var(--color-muted-fg)] uppercase">Phone</span>
-                <span className="truncate text-right text-xs font-semibold text-[var(--color-foreground)]">{patient?.phone ?? "—"}</span>
+                <span className="truncate text-right text-xs font-semibold text-[var(--color-foreground)]">{patient?.phone ? <a href={`tel:${patient.phone}`} className="hover:underline">{patient.phone}</a> : "—"}</span>
               </div>
               <div className="flex items-center justify-between gap-3 py-1">
                 <span className="text-[10px] font-semibold tracking-wider text-[var(--color-muted-fg)] uppercase">Date of Birth</span>

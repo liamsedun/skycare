@@ -1,6 +1,6 @@
 "use client";
 
-import { KeyRound, MapPin, Pencil, Phone, Plus, Trash2, Users } from "lucide-react";
+import { MapPin, Pencil, Phone, Plus, Trash2, Users } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 import { fgMedium, mutedFg } from "@/lib/ui-constants";
 import { ErrorNote, GENDERS, REL_STYLES, capitalize, formatDateOnly, inputCls, labelCls } from "./patient-dialog-shared";
@@ -8,7 +8,7 @@ import type { PatientView } from "./patient-dialog-shared";
 
 export function PatientDependants({ view }: { view: PatientView }) {
   const detail = view.detail;
-  const { error, busy, editDependant, setEditDependant, showAddDependant, setShowAddDependant, updateDependant, addDependant, provisionDependantLogin, removeDependant } = view;
+  const { error, busy, editDependant, setEditDependant, showAddDependant, setShowAddDependant, updateDependant, addDependant, removeDependant } = view;
   if (!detail) return null;
   return (
               <section>
@@ -189,30 +189,11 @@ export function PatientDependants({ view }: { view: PatientView }) {
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt className={mutedFg}>Portal Login</dt>
-                                    <dd className={fgMedium}>{d.user_id ? "Active" : "None"}</dd>
+                                    <dt className={mutedFg}>Portal Access</dt>
+                                    <dd className={fgMedium}>Via family account</dd>
                                   </div>
                                 </dl>
                                 <div className="mt-3 flex items-center justify-end gap-1.5 border-t border-[var(--color-border)] pt-2.5">
-                                  {!d.user_id ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => provisionDependantLogin(d, false)}
-                                      disabled={busy}
-                                      className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-amber-700 transition-colors duration-200 hover:border-amber-300 hover:bg-amber-50"
-                                    >
-                                      <KeyRound size={12} aria-hidden="true" /> Create portal login
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => provisionDependantLogin(d, true)}
-                                      disabled={busy}
-                                      className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-medium text-amber-700 transition-colors duration-200 hover:border-amber-300 hover:bg-amber-50"
-                                    >
-                                      <KeyRound size={12} aria-hidden="true" /> Reset password
-                                    </button>
-                                  )}
                                   <button
                                     type="button"
                                     onClick={() => setEditDependant(d)}
@@ -278,7 +259,7 @@ export function PatientDependants({ view }: { view: PatientView }) {
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="d-email">Email</label>
-                      <input id="d-email" name="email" type="email" className={inputCls} placeholder="Used to create their portal login automatically" />
+                      <input id="d-email" name="email" type="email" className={inputCls} placeholder="For notifications and receipts" />
                     </div>
                     <div>
                       <label className={labelCls} htmlFor="d-rel">Relationship</label>

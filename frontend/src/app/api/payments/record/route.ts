@@ -1,6 +1,7 @@
 import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant, requireModuleLevel, resolvePayingAccountId, postBankLedger } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers, resolvePatientUserIds } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,8 @@ export interface RecordPaymentBody {
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "billing", "full");
-  if (!["hospital_admin", "cashier", "super_admin"].includes(ctx.role)) {
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
+  if (!["hospital_admin", "cashier"].includes(ctx.role)) {
     throw new ForbiddenError("Billing access required");
   }
   const body = (await req.json()) as RecordPaymentBody;
@@ -188,7 +190,7 @@ export const POST = withAuth(async (req, ctx) => {
       userIds: portalUsers,
       type: "payment_confirmed",
       title: "Payment confirmed",
-      message: `${reference} — ₦${body.amount.toLocaleString()} received on ${invoiceNumbers || "your bill"}. A receipt is available in your portal.`,
+      message: `${reference} — ${symbol}${body.amount.toLocaleString()} received on ${invoiceNumbers || "your bill"}. A receipt is available in your portal.`,
       referenceType: "invoices",
       referenceId: touchedInvoices[0]?.id,
     });
@@ -208,7 +210,7 @@ export const POST = withAuth(async (req, ctx) => {
       userIds: others,
       type: "payment_confirmed",
       title: "Payment recorded",
-      message: `${reference} — ₦${body.amount.toLocaleString()} for ${patient.first_name} ${patient.last_name}`,
+      message: `${reference} — ${symbol}${body.amount.toLocaleString()} for ${patient.first_name} ${patient.last_name}`,
       referenceType: "payments",
       referenceId: createdPayments[0]?.id,
     });
@@ -218,7 +220,7 @@ export const POST = withAuth(async (req, ctx) => {
     action: "create",
     entityType: "payments",
     entityId: createdPayments[0]?.id,
-    description: `Recorded payment ${reference} of ₦${body.amount.toLocaleString()} (${body.paymentMethod}) for ${patient.first_name} ${patient.last_name}`,
+    description: `Recorded payment ${reference} of ${symbol}${body.amount.toLocaleString()} (${body.paymentMethod}) for ${patient.first_name} ${patient.last_name}`,
   });
 
   return ok({ payments: createdPayments, invoices: touchedInvoices }, 201);

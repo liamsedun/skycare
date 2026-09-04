@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Printer, Pencil, Trash2, Sparkles, AlertTriangle } from "lucide-react";
 import { mutedXs, mutedFg, errorBanner, btnBase, divideBorder, flexWrapGap2, fgMedium, fgSemibold, mutedSmPlain, tableHeadCell } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { RxItem, Prescription, AiInteraction, AiAlternative, AiPricing, inputCls, statusClass, ModalShell } from "./pharmacy-prescriptions-shared";
 import { BatchOption, EditRxModal } from "./pharmacy-prescriptions-edit-modal";
 
 export function RxDetailModal({ rx, canDispense, viewOnly = false, onClose, onChanged, onDispensed }: { rx: Prescription; canDispense: boolean; viewOnly?: boolean; onClose: () => void; onChanged: () => void; onDispensed: (msg: string) => void }) {
+  const { currency } = useCurrency();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [batches, setBatches] = useState<Record<string, BatchOption[]>>({});
@@ -132,7 +134,7 @@ const itemsPayload = rx.prescription_items
       const autoInvoice = body.data?.autoInvoice as { invoice_number: string; total_amount: number } | null | undefined;
       onDispensed(
         autoInvoice
-          ? `Fully dispensed — invoice ${autoInvoice.invoice_number} auto-created (₦${Number(autoInvoice.total_amount).toLocaleString()})`
+          ? `Fully dispensed — invoice ${autoInvoice.invoice_number} auto-created (${currencySymbol(currency)}${Number(autoInvoice.total_amount).toLocaleString()})`
           : "Dispensing saved"
       );
       onChanged();
@@ -344,11 +346,11 @@ const itemsPayload = rx.prescription_items
                             <>
                               {price && price.suggestedLow > 0 && (
                                 <p className="mt-0.5 text-[11px] font-medium text-emerald-700">
-                                  Suggested retail ₦{Math.round(price.suggestedLow).toLocaleString()}–₦
-                                  {Math.round(price.suggestedHigh).toLocaleString()}
+                               Suggested retail {currencySymbol(currency)}{Math.round(price.suggestedLow).toLocaleString()}–{currencySymbol(currency)}
+                                   {Math.round(price.suggestedHigh).toLocaleString()}
                                   {price.currentPrice > 0 && price.currentPrice !== price.suggestedLow && (
                                     <span className={mutedFg}>
-                                      {" "}· current ₦{Math.round(price.currentPrice).toLocaleString()}
+                                       {" "}· current {currencySymbol(currency)}{Math.round(price.currentPrice).toLocaleString()}
                                     </span>
                                   )}
                                 </p>
@@ -376,7 +378,7 @@ const itemsPayload = rx.prescription_items
                                             <span className={mutedFg}>
                                               {" · "}
                                               {alt.inStock ? `${alt.stockQty} in stock` : "out of stock"}
-                                              {Number(alt.unitPrice ?? 0) > 0 && ` · ₦${Number(alt.unitPrice).toLocaleString()}`}
+                                              {Number(alt.unitPrice ?? 0) > 0 && ` · ${currencySymbol(currency)}${Number(alt.unitPrice).toLocaleString()}`}
                                             </span>
                                           </p>
                                         ))

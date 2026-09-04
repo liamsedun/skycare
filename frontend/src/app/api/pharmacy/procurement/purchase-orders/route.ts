@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const PROCUREMENT_TEAM = ["hospital_admin", "super_admin", "pharmacist", "pharmacy_tech"];
+const PROCUREMENT_TEAM = ["hospital_admin", "pharmacist", "pharmacy_tech"];
 
 // GET /api/pharmacy/procurement/purchase-orders?status=&supplier_id=&from=&to=&q=&page=&pageSize=
 export const GET = withStaff(async (req, ctx) => {

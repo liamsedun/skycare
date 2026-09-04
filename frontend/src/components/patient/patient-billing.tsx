@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown, Landmark, ReceiptText, Wallet } from "lucide-react";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { inDateRange } from "@/lib/daterange";
 import { mutedXs, mutedFg, errorBanner, cardTitle, flexBetween, mutedSm, divideBorder, flexGap2, fgMedium, fgSemibold, sectionTitle, pageTitle, ghostIconBtn, emptyState, modalBackdrop } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
@@ -538,6 +539,7 @@ function DeclareModal({
   );
   const [method, setMethod] = useState(onlineEnabled ? "online" : "bank_transfer");
   const [accounts, setAccounts] = useState<{ id: string; bank_name: string; account_name: string; account_number: string }[]>([]);
+  const { currency } = useCurrency();
 
   const due = Number(invoice.total_amount) - Number(invoice.paid_amount);
   const parsed = Number(amount);
@@ -576,7 +578,7 @@ function DeclareModal({
           }}
         >
           <div>
-            <label className={labelCls} htmlFor="dec-amount">Amount (₦)</label>
+            <label className={labelCls} htmlFor="dec-amount">Amount ({currencySymbol(currency)})</label>
             <input
               id="dec-amount"
               type="number"

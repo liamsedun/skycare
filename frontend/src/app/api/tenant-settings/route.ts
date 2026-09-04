@@ -150,7 +150,7 @@ function redactPaystack(paystack: Record<string, unknown> | null | undefined) {
 // GET /api/tenant-settings — admin org settings (profile + branding + prefixes)
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Only admins can view settings");
   }
 
@@ -183,7 +183,7 @@ export interface UpdateTenantSettingsBody {
 // PUT /api/tenant-settings — update profile fields + merge settings JSONB
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Only admins can update settings");
   }
 

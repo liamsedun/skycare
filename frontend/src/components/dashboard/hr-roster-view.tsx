@@ -42,6 +42,8 @@ import FilterBar from "@/components/filters/filter-bar";
 import { downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { mutedXs, flexBetween, divideBorder, flexWrapGap2, mutedSmPlain, spinner } from "@/lib/ui-constants";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 export default function HrRosterView() {
   const [tab, setTab] = useState<TabKey>("month");
@@ -92,6 +94,7 @@ export default function HrRosterView() {
   const [shiftEnd, setShiftEnd] = useState("16:00");
   const [shiftDept, setShiftDept] = useState("");
   const [shiftColor, setShiftColor] = useState("#0ea5e9");
+  const { selectedBranchId } = useBranch();
 
   const windowQs = useMemo(() => {
     if (tab === "day") return `from=${dayDate}&to=${dayDate}`;
@@ -105,12 +108,13 @@ export default function HrRosterView() {
     try {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
-      const admin = ["hospital_admin", "hr_officer", "super_admin"].includes(me.data?.claims?.role);
+      const admin = ["hospital_admin", "hr_officer"].includes(me.data?.claims?.role);
       setIsAdmin(admin);
+      const branchQs = selectedBranchId ? `&branch=${selectedBranchId}` : "";
       const [r, s, st] = await Promise.all([
-        fetch(`/api/hr/roster?${windowQs}`, { cache: "no-store" }),
-        fetch("/api/hr/shifts", { cache: "no-store" }),
-        fetch("/api/hr/staff?pageSize=200", { cache: "no-store" }),
+        fetch(`/api/hr/roster?${windowQs}${branchQs}`, { cache: "no-store" }),
+        fetch(`/api/hr/shifts${branchQs.startsWith("&") ? "?" + branchQs.slice(1) : ""}`, { cache: "no-store" }),
+        fetch(`/api/hr/staff?pageSize=200${branchQs}`, { cache: "no-store" }),
       ]);
       const rb = await r.json();
       const sb = await s.json();
@@ -125,7 +129,7 @@ export default function HrRosterView() {
     } finally {
       setLoading(false);
     }
-  }, [windowQs]);
+  }, [windowQs, selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -503,6 +507,7 @@ export default function HrRosterView() {
             </button>
           </div>
         )}
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <FilterBar
           query={search}
           onQueryChange={setSearch}

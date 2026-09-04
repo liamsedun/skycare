@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 // GET /api/ward-rounds?admission_id= — ward round entries (staff).
 // POST /api/ward-rounds — add a round via ward_round_add
-// (hospital_admin / doctor / nurse / super_admin).
+// (hospital_admin / doctor / nurse).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const sp = req.nextUrl.searchParams;

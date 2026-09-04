@@ -6,7 +6,7 @@ const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "skycare.app";
 const LOCAL_DOMAIN = process.env.NEXT_PUBLIC_LOCAL_DOMAIN ?? "skycare.test";
 
 // Top-level routes that must never be treated as tenant slugs in path mode.
-const ROOT_ONLY_PREFIXES = ["/api", "/app", "/patient", "/login", "/signup", "/verify", "/auth"];
+const ROOT_ONLY_PREFIXES = ["/api", "/app", "/patient", "/login", "/signup", "/verify", "/auth", "/platform"];
 
 // Known bot/user-agent patterns to challenge (not block — healthcare patients
 // may use accessibility tools that look like bots).
@@ -102,7 +102,7 @@ export async function proxy(request: NextRequest) {
   // Everything else keeps the previous behaviour: session refresh only for
   // the staff app and login (authoritative guards stay in the layouts).
   const pathname = request.nextUrl.pathname;
-  if (pathname.startsWith("/app") || pathname === "/login") {
+  if (pathname.startsWith("/app") || pathname === "/login" || pathname.startsWith("/platform")) {
     return await updateSession(request);
   }
   return NextResponse.next({ request });

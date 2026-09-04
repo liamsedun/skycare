@@ -1,4 +1,4 @@
-import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
+import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
@@ -38,6 +38,8 @@ export const GET = withAuth(async (req, ctx) => {
     .eq("tenant_id", tenantId)
     .order("requested_at", { ascending: false })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (patientId) query = query.eq("patient_id", patientId);
   if (status) query = query.eq("status", status);

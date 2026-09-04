@@ -20,7 +20,7 @@ interface UserRow {
 }
 
 /** Roles a hospital admin may assign (mirrors GRANTABLE_ROLES in the API). */
-const ASSIGNABLE_ROLES = STAFF_ROLES.filter((r) => r !== "super_admin") as readonly StaffRole[];
+const ASSIGNABLE_ROLES = STAFF_ROLES as readonly StaffRole[];
 
 const LEVEL_OPTIONS: { value: AccessLevel; label: string }[] = [
   { value: "full", label: "Full access" },
@@ -262,7 +262,7 @@ function UserRowView({
             </div>
             <div className="min-w-0">
               <p className="truncate font-medium text-[var(--color-foreground)]">{u.full_name || "—"}</p>
-              <p className="truncate text-xs text-[var(--color-muted-fg)]">{u.email}</p>
+              <p className="truncate text-xs text-[var(--color-muted-fg)]"><a href={`mailto:${u.email}`} className="hover:underline">{u.email}</a></p>
             </div>
           </div>
         </td>
@@ -270,24 +270,18 @@ function UserRowView({
           <select
             value={u.role}
             onChange={(e) => onRoleChange(e.target.value)}
-            disabled={u.role === "super_admin" || busy}
+            disabled={busy}
             className="h-9 w-full max-w-[180px] rounded-lg border border-[var(--color-border)] bg-white px-2 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)] disabled:opacity-60"
             aria-label={`Role for ${u.email}`}
           >
             <option value={u.role}>{ROLE_LABELS[u.role as keyof typeof ROLE_LABELS] ?? u.role}</option>
-            {u.role === "super_admin" ? null : (
-              ASSIGNABLE_ROLES.filter((r) => r !== u.role).map((r) => (
-                <option key={r} value={r}>{ROLE_LABELS[r] ?? r}</option>
-              ))
-            )}
+            {ASSIGNABLE_ROLES.filter((r) => r !== u.role).map((r) => (
+              <option key={r} value={r}>{ROLE_LABELS[r] ?? r}</option>
+            ))}
           </select>
         </td>
         <td className="px-4 py-3">
-          {u.role === "super_admin" ? (
-            <span className="inline-flex items-center gap-1 text-xs text-[var(--color-muted-fg)]">
-              <Lock size={12} aria-hidden="true" /> Platform-wide
-            </span>
-          ) : grantedCount === null ? (
+          {grantedCount === null ? (
             <span className={mutedXs}>Role default (all)</span>
           ) : grantedCount === 0 ? (
             <span className={mutedXs}>No modules</span>
@@ -302,7 +296,7 @@ function UserRowView({
             aria-checked={u.is_active}
             aria-label={`Active for ${u.email}`}
             onClick={onActiveChange}
-            disabled={u.role === "super_admin" || busy}
+            disabled={busy}
             className={`focus-ring relative h-6 w-11 rounded-full transition-colors duration-200 disabled:opacity-60 ${
               u.is_active ? "bg-emerald-500" : "bg-slate-300"
             }`}
@@ -316,21 +310,19 @@ function UserRowView({
         </td>
         <td className="px-4 py-3">
           <div className="flex items-center justify-end gap-2">
-            {u.role !== "super_admin" && (
-              <button
-                type="button"
-                onClick={onToggleExpand}
-                disabled={busy}
-                className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:opacity-60"
-              >
-                <ShieldCheck size={13} aria-hidden="true" /> Access
-                <ChevronDown size={12} aria-hidden="true" className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              disabled={busy}
+              className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] disabled:opacity-60"
+            >
+              <ShieldCheck size={13} aria-hidden="true" /> Access
+              <ChevronDown size={12} aria-hidden="true" className={`transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+            </button>
             <button
               type="button"
               onClick={onDelete}
-              disabled={u.role === "super_admin" || busy}
+            disabled={busy}
               className="focus-ring inline-flex items-center gap-1 rounded-lg border border-[var(--color-border)] px-2.5 py-1.5 text-xs font-semibold text-[var(--color-destructive)] transition-colors duration-200 hover:border-[var(--color-destructive)] disabled:opacity-60"
               aria-label={`Delete ${u.email}`}
             >
@@ -339,7 +331,7 @@ function UserRowView({
           </div>
         </td>
       </tr>
-      {expanded && u.role !== "super_admin" && (
+      {expanded && (
         <tr className="bg-slate-50/60">
           <td colSpan={5} className="px-4 py-4">
             <div className="space-y-3">

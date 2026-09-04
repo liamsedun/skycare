@@ -10,8 +10,8 @@ const groups = [
     label: "Hospital Website",
     icon: Globe,
     kind: "browser",
-    dir: "hospital-website",
-    base: "hosp-website",
+    dir: "hosp-web",
+    base: "",
     count: 6,
     note: "The public website every hospital gets — booking, doctors, services, contact.",
   },
@@ -20,19 +20,21 @@ const groups = [
     label: "Staff Web App",
     icon: LayoutDashboard,
     kind: "browser",
-    dir: "staff-web-images",
-    base: "staff-web",
-    count: 19,
+    dir: "staff-webb",
+    base: "mobile-workspace-board",
+    count: 20,
     note: "The full HMS dashboard your admin, doctors and nurses run from any desktop.",
+    nameFn: (i: number) => `mobile-workspace-board (${i}).png`,
   },
   {
     id: "staff-app",
     label: "Staff Mobile App",
     icon: Stethoscope,
     kind: "phone",
-    dir: "staff-app-images",
-    base: "staff-app",
-    count: 24,
+    dir: "staff-mobb",
+    base: "",
+    count: 8,
+    ext: "png",
     note: "Doctors & nurses on the go — ward rounds, lab orders, prescribing from any phone.",
   },
   {
@@ -40,24 +42,28 @@ const groups = [
     label: "Patient App",
     icon: Smartphone,
     kind: "phone",
-    dir: "patient-app-images",
-    base: "patient-app",
-    count: 18,
+    dir: "patient_mobb",
+    base: "",
+    count: 7,
+    ext: "png",
+    nameFn: (i: number) => i === 1 ? "mobile-iPhone_17_Pro_Max.png" : `mobile-iPhone_17_Pro_Max (${i - 1}).png`,
     note: "What your patients see — booking, results, payments and chat in one PWA.",
   },
 ];
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-function srcFor(base: string, dir: string, i: number, ext: string) {
+function srcFor(base: string, dir: string, i: number, ext: string, nameFn?: (i: number) => string) {
+  if (nameFn) return `/images/${dir}/${nameFn(i)}`;
+  if (!base) return `/images/${dir}/${i}.${ext}`;
   return `/images/${dir}/${base}-${pad(i)}.${ext}`;
 }
 
 export function Gallery() {
   const [active, setActive] = useState(groups[0].id);
   const group = groups.find((g) => g.id === active)!;
-  const ext = group.kind === "phone" ? "jpeg" : "png";
-  const src = (n: number) => srcFor(group.base, group.dir, n, ext);
+  const ext = group.ext ?? (group.kind === "phone" ? "jpeg" : "png");
+  const src = (n: number) => srcFor(group.base, group.dir, n, ext, group.nameFn);
 
   return (
     <section id="gallery" className="scroll-mt-20 bg-white py-20">
@@ -115,7 +121,7 @@ export function Gallery() {
                     src={src(n)}
                     alt={`${group.label} screenshot ${n}`}
                     fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    unoptimized
                     className="object-cover object-top"
                   />
                 </div>
@@ -123,20 +129,21 @@ export function Gallery() {
             ))}
           </div>
         ) : (
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10">
             {Array.from({ length: group.count }, (_, i) => i + 1).map((n) => (
               <figure
                 key={n}
-                className="mx-auto w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl sm:max-w-none"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
               >
-                <div className="relative mx-auto aspect-[9/19] w-full bg-slate-900">
-                  <div className="absolute left-1/2 top-1.5 z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-slate-700" />
+                <div className="relative w-[110px] bg-slate-900 p-0.5 sm:w-[120px]">
+                  <div className="absolute left-1/2 top-0.5 z-10 h-0.5 w-6 -translate-x-1/2 rounded-full bg-slate-700" />
                   <Image
                     src={src(n)}
                     alt={`${group.label} screenshot ${n}`}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover object-top"
+                    width={120}
+                    height={260}
+                    unoptimized
+                    className="h-auto w-full object-contain"
                   />
                 </div>
               </figure>

@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+import { currencySymbol } from "@/lib/currency";
 
 // ---------------------------------------------------------------------------
 // Discharge summary printout — tenant branding, patient + admission window,
@@ -120,6 +121,7 @@ export default function DischargeDocument({ data }: { data: any }) {
   const dischargedBy = data.dischargedBy ?? null;
   const medications: unknown[] = data.medications ?? [];
   const rounds: Array<{ at: string; vitals: Record<string, unknown>; notes: string | null }> = data.rounds ?? [];
+  const sym = currencySymbol(data.currency);
 
   return (
     <Document title={`Discharge Summary ${data.id ?? ""}`} author={h.name ?? "Hospital"}>
@@ -187,13 +189,13 @@ export default function DischargeDocument({ data }: { data: any }) {
                 <View key={i} style={styles.medRow}>
                   <Text style={styles.medName}>{it.description ?? "—"}</Text>
                   <Text style={styles.medMeta}>
-                    {it.quantity} × ₦{Number(it.unitPrice ?? 0).toLocaleString()} = ₦{Number(it.total ?? 0).toLocaleString()}
+                    {it.quantity} × {sym}{Number(it.unitPrice ?? 0).toLocaleString()} = {sym}{Number(it.total ?? 0).toLocaleString()}
                   </Text>
                 </View>
               ))}
             <View style={styles.kvRow}>
               <Text style={styles.kvLabel}>Total</Text>
-              <Text style={styles.kvValue}>₦{Number(data.billing.amount ?? 0).toLocaleString()}</Text>
+              <Text style={styles.kvValue}>{sym}{Number(data.billing.amount ?? 0).toLocaleString()}</Text>
             </View>
           </View>
         )}

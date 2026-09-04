@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { ngn } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { emptyState } from "@/lib/ui-constants";
 
 export interface RevenuePoint {
@@ -18,6 +19,8 @@ export interface RevenuePoint {
 }
 
 export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
+  const { currency } = useCurrency();
+
   if (data.length === 0) {
     return (
       <p className={emptyState}>
@@ -47,7 +50,7 @@ export default function RevenueChart({ data }: { data: RevenuePoint[] }) {
           tick={{ fontSize: 12, fill: "#64748b" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={(value: number) => `₦${(value / 1000).toFixed(0)}k`}
+          tickFormatter={(value: number) => `${currencySymbol(currency)}${(value / 1000).toFixed(0)}k`}
           width={56}
         />
         <Tooltip

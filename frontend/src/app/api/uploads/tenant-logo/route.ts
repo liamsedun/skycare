@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // POST /api/uploads/tenant-logo — upload a hospital logo to the public avatars bucket
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Only admins can upload a hospital logo");
   }
 

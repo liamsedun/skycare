@@ -2,6 +2,7 @@ import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/
 import { logAudit } from "@/lib/audit";
 import { generatePrescriptionPdf } from "@/lib/prescription-pdf";
 import { createPrescriptionInvoice } from "@/lib/pharmacy-billing";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ interface DispenseItem {
 // still log the dispense event for the clinical record.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const id = req.nextUrl.pathname.split("/").at(-2)!;
   const rx = await getPrescription(ctx, id, tenantId);
   if (!rx) throw new ValidationError("Prescription not found");
@@ -181,14 +183,15 @@ export const POST = withStaff(async (req, ctx) => {
             quantity: i.quantity,
           })),
           ctx.user.id,
-          ctx.branchId
+          ctx.branchId,
+          symbol
         );
         if (autoInvoice) {
           await logAudit(req, ctx, {
             action: "create",
             entityType: "pharmacy_invoices",
             entityId: autoInvoice.id,
-            description: `Invoice ${autoInvoice.invoice_number} auto-created for fully dispensed prescription ${id} — ₦${Number(
+            description: `Invoice ${autoInvoice.invoice_number} auto-created for fully dispensed prescription ${id} — ${symbol}${Number(
               autoInvoice.total_amount
             ).toLocaleString()}`,
           });

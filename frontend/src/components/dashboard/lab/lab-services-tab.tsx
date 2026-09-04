@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckSquare, Eye, ListChecks, Loader2, Pencil, Search, Square, TestTube, Trash2 } from "lucide-react";
 import { ActionDropdown } from "@/components/ui/action-dropdown";
 import { btnBase, divideBorder, errorBanner, fgMedium, mutedXs, mutedXsMt1, sectionTitle } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { LabService, approvalBadge, inputCls, labelCls } from "./lab-shared";
 import { ModalShell } from "./lab-modal-shell";
 
@@ -24,6 +25,7 @@ export function ServicesTab({
   reloadKey?: number;
 }) {
   const [services, setServices] = useState<LabService[]>([]);
+  const { currency } = useCurrency();
   const [typeFilter, setTypeFilter] = useState<"all" | "lab" | "imaging">("all");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -328,7 +330,7 @@ export function ServicesTab({
                           )}
                         </p>
                         <p className={mutedXs}>
-                          {s.type} · ₦{Number(s.price).toLocaleString()}
+                          {s.type} · {currencySymbol(currency)}{Number(s.price).toLocaleString()}
                           {s.reference_range ? ` · ${s.reference_range}` : ""}
                         </p>
                       </div>
@@ -426,6 +428,7 @@ export function ServicesTab({
 // VIEW SERVICE MODAL — read-only catalog details (all staff)
 // ---------------------------------------------------------------------------
 function ViewServiceModal({ service, onClose }: { service: LabService; onClose: () => void }) {
+  const { currency } = useCurrency();
   return (
     <ModalShell title={service.name} onClose={onClose}>
       <div className="mt-5 space-y-4 text-sm">
@@ -436,7 +439,7 @@ function ViewServiceModal({ service, onClose }: { service: LabService; onClose: 
           </div>
           <div>
             <dt className={mutedXs}>Price</dt>
-            <dd className={fgMedium}>₦{Number(service.price).toLocaleString()}</dd>
+            <dd className={fgMedium}>{currencySymbol(currency)}{Number(service.price).toLocaleString()}</dd>
           </div>
           <div>
             <dt className={mutedXs}>Group / category</dt>
@@ -499,6 +502,7 @@ function EditServiceModal({
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
   const [isActive, setIsActive] = useState(service.is_active);
+  const { currency } = useCurrency();
 
   useEffect(() => {
     (async () => {
@@ -562,7 +566,7 @@ function EditServiceModal({
             </select>
           </div>
           <div>
-            <label className={labelCls} htmlFor="edit-price">Amount (₦)</label>
+            <label className={labelCls} htmlFor="edit-price">Amount ({currencySymbol(currency)})</label>
             <input id="edit-price" name="price" type="number" min={0} step="0.01" defaultValue={service.price ?? 0} className={inputCls} />
           </div>
         </div>
@@ -631,6 +635,7 @@ function BulkPriceModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
+  const { currency } = useCurrency();
 
   const changed = useMemo(
     () => services.filter((s) => Number(prices[s.id] ?? 0) !== Number(s.price ?? 0)),
@@ -702,7 +707,7 @@ function BulkPriceModal({
                 <th scope="col" className={btnBase}>Service</th>
                 <th scope="col" className={btnBase}>Group</th>
                 <th scope="col" className={btnBase}>Current</th>
-                <th scope="col" className={btnBase}>Amount (₦)</th>
+                <th scope="col" className={btnBase}>Amount ({currencySymbol(currency)})</th>
               </tr>
             </thead>
             <tbody className={divideBorder}>
@@ -722,7 +727,7 @@ function BulkPriceModal({
                       {s.lab_categories?.name ?? "—"}
                     </td>
                     <td className="px-4 py-2 text-xs text-[var(--color-muted-fg)]">
-                      ₦{Number(s.price ?? 0).toLocaleString()}
+                      {currencySymbol(currency)}{Number(s.price ?? 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-2">
                       <input
@@ -783,6 +788,7 @@ export function AddServiceModal({ canManageCatalog, onClose, onAdded }: { canMan
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const { currency } = useCurrency();
 
   useEffect(() => {
     (async () => {
@@ -851,7 +857,7 @@ export function AddServiceModal({ canManageCatalog, onClose, onAdded }: { canMan
             </select>
           </div>
           <div>
-            <label className={labelCls} htmlFor="svc-price">Price (₦)</label>
+            <label className={labelCls} htmlFor="svc-price">Price ({currencySymbol(currency)})</label>
             <input id="svc-price" name="price" type="number" min={0} step="0.01" defaultValue={0} className={inputCls} />
           </div>
         </div>

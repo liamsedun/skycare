@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 // GET /api/admissions?status=&branch=&search=&from=YYYY-MM-DD&to=YYYY-MM-DD — current census (staff).
 // POST /api/admissions — admit a patient to a bed via ward_admit RPC
-// (hospital_admin / doctor / nurse / super_admin).
+// (hospital_admin / doctor / nurse).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const sp = req.nextUrl.searchParams;

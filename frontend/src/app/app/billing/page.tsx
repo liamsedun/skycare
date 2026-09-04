@@ -14,7 +14,7 @@ export default async function BillingPage() {
 
   if (!user) redirect("/login?redirect=/app/billing");
 
-  const accessLevel = await requireModulePage(supabase, user, "billing", ["hospital_admin", "cashier", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "billing", ["hospital_admin", "cashier"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return <BillingView accessLevel={accessLevel} myRole={role} />;

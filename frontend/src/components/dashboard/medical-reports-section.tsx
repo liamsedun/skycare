@@ -10,7 +10,7 @@ const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
-const WRITE_ROLES: AppRole[] = ["hospital_admin", "super_admin", "doctor"];
+const WRITE_ROLES: AppRole[] = ["hospital_admin", "doctor"];
 
 interface MedicalReport {
   id: string;
@@ -42,7 +42,7 @@ function printReport(org: OrgHeader, report: MedicalReport, patientName: string)
     return;
   }
   const orgName = esc(org.name || "SkyCare Hospital");
-  const contact = [org.phone && `Tel: ${esc(org.phone)}`, org.email && `Email: ${esc(org.email)}`, org.website && esc(org.website)].filter(Boolean).join(" &nbsp;&bull;&nbsp; ");
+  const contact = [org.phone && `Tel: <a href="tel:${esc(org.phone)}">${esc(org.phone)}</a>`, org.email && `Email: <a href="mailto:${esc(org.email)}">${esc(org.email)}</a>`, org.website && esc(org.website)].filter(Boolean).join(" &nbsp;&bull;&nbsp; ");
   const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Medical Report ${esc(report.reference_number)}</title>
 <style>
   body { font-family: Georgia, 'Times New Roman', serif; color: #111; margin: 32px; font-size: 13px; }

@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 // client (tenant-scoped) — no anonymous endpoint is exposed.
 
 export const GET = withAuth(async (_req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);
@@ -27,7 +27,7 @@ export const GET = withAuth(async (_req, ctx) => {
 });
 
 export const POST = withAuth(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);

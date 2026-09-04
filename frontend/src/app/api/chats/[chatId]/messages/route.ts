@@ -34,13 +34,9 @@ async function getChat(ctx: any, tenantId: string, chatId: string) {
     if (ids.length === 0) return null;
     query = query.in("patient_id", ids);
   } else {
-    if (ctx.role === "super_admin") {
-      query = query.not("patient_id", "is", null);
-    } else {
-      // A staff member participates in patient chats (staff_user_id) and
-      // staff-to-staff chats (either staff_user_id or other_staff_user_id).
-      query = query.or(`staff_user_id.eq.${ctx.user.id},other_staff_user_id.eq.${ctx.user.id}`);
-    }
+    // A staff member participates in patient chats (staff_user_id) and
+    // staff-to-staff chats (either staff_user_id or other_staff_user_id).
+    query = query.or(`staff_user_id.eq.${ctx.user.id},other_staff_user_id.eq.${ctx.user.id}`);
   }
 
   const { data } = await query.maybeSingle();

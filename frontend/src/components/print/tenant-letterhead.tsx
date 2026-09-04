@@ -13,15 +13,17 @@ export function fullAddress(
 }
 
 /** "Tel: … • Email: … • Website: …" contact line for print letterheads. */
-export function contactLine(brand: TenantBranding | null | undefined): string {
+export function contactLine(brand: TenantBranding | null | undefined): React.ReactNode {
   if (!brand) return "";
-  return [
-    brand.phone && `Tel: ${brand.phone}`,
-    brand.email && `Email: ${brand.email}`,
-    brand.website,
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  return (
+    <>
+      {brand.phone && <>Tel: <a href={`tel:${brand.phone}`}>{brand.phone}</a></>}
+      {brand.phone && brand.email && " • "}
+      {brand.email && <>Email: <a href={`mailto:${brand.email}`}>{brand.email}</a></>}
+      {brand.website && (brand.phone || brand.email) && " • "}
+      {brand.website}
+    </>
+  );
 }
 
 /**

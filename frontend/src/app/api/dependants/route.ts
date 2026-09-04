@@ -2,7 +2,6 @@ import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenan
 import { getPagination } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
-import { createPortalAccount } from "@/lib/dependant-portal";
 import { storePatientAvatar } from "@/lib/patient-avatar";
 import type { NextRequest } from "next/server";
 
@@ -116,40 +115,9 @@ export const POST = withAuth(async (req, ctx) => {
   const settings = await getTenantSettings(ctx.svc, tenantId);
   const dependantNumber = await generatePatientNumber(ctx.svc, tenantId, settings.dependantPrefix);
 
-  // Optional portal login for the dependant — explicit credentials win; otherwise
-  // a login is auto-provisioned from the dependant's own email with a generated
-  // temporary password (returned once so staff can share it).
-  let portalUserId: string | null = null;
-  let tempPassword: string | null = null;
-  const explicitEmail = body.portalEmail?.trim().toLowerCase();
-  const explicitPassword = body.portalPassword;
-  const fallbackEmail = body.email?.trim().toLowerCase() || null;
-  if (explicitEmail && explicitPassword) {
-    if (explicitPassword.length < 8) {
-      throw new ValidationError("Portal password must be at least 8 characters");
-    }
-    const res = await createPortalAccount(ctx.svc, {
-      email: explicitEmail,
-      fullName: `${body.firstName} ${body.lastName}`.trim(),
-      tenantId,
-      branchId: ctx.branchId ?? null,
-      phone: body.phone?.trim() ?? null,
-      password: explicitPassword,
-    });
-    portalUserId = res.userId;
-  } else if ((explicitEmail || explicitPassword) && !fallbackEmail) {
-    throw new ValidationError("Portal login needs both an email and a password");
-  } else if (fallbackEmail) {
-    const res = await createPortalAccount(ctx.svc, {
-      email: fallbackEmail,
-      fullName: `${body.firstName} ${body.lastName}`.trim(),
-      tenantId,
-      branchId: ctx.branchId ?? null,
-      phone: body.phone?.trim() ?? null,
-    });
-    portalUserId = res.userId;
-    tempPassword = res.tempPassword;
-  }
+  // Family account model: dependants do NOT get their own portal login.
+  // All family members access the portal through the primary account holder's login.
+  // Dependants are visible in the family portal under the primary's session.
 
   const { data: dependant, error } = await ctx.svc
     .from("patients")
@@ -157,7 +125,6 @@ export const POST = withAuth(async (req, ctx) => {
       tenant_id: tenantId,
       branch_id: ctx.branchId ?? null,
       patient_number: dependantNumber,
-      user_id: portalUserId,
       first_name: body.firstName.trim(),
       last_name: body.lastName.trim(),
       gender: body.gender || null,
@@ -183,10 +150,6 @@ export const POST = withAuth(async (req, ctx) => {
     .select()
     .single();
   if (error) {
-    if (portalUserId) {
-      await ctx.svc.auth.admin.deleteUser(portalUserId);
-      await ctx.svc.from("users").delete().eq("id", portalUserId);
-    }
     throw new ValidationError(error.message);
   }
 
@@ -207,10 +170,6 @@ export const POST = withAuth(async (req, ctx) => {
       finalRow = updated;
     } catch (avatarErr) {
       await ctx.svc.from("patients").delete().eq("id", dependant.id);
-      if (portalUserId) {
-        await ctx.svc.auth.admin.deleteUser(portalUserId);
-        await ctx.svc.from("users").delete().eq("id", portalUserId);
-      }
       throw new ValidationError(avatarErr instanceof Error ? avatarErr.message : "Failed to save the photo");
     }
   }
@@ -221,7 +180,7 @@ export const POST = withAuth(async (req, ctx) => {
     entityId: dependant.id,
     description: `Added dependant ${dependantNumber} — ${dependant.first_name} ${dependant.last_name} (${body.relationship})`,
   });
-  return ok(tempPassword ? { ...finalRow, tempPassword } : finalRow);
+  return ok(finalRow);
 });
 
 export const runtime = "nodejs";

@@ -66,10 +66,8 @@ export const CREATABLE_ROLES: StaffRole[] = [
   "paramedic",
 ];
 
-export function rolesFor(myRole?: string): StaffRole[] {
-  return myRole === "super_admin"
-    ? ["super_admin", ...CREATABLE_ROLES]
-    : CREATABLE_ROLES;
+export function rolesFor(_myRole?: string): StaffRole[] {
+  return CREATABLE_ROLES;
 }
 
 export const AVATAR_GRADIENTS = [
@@ -83,7 +81,7 @@ export const AVATAR_GRADIENTS = [
 ];
 
 export function gradientFor(role: string): string {
-  if (role === "hospital_admin" || role === "super_admin") return "from-sky-500 to-blue-600";
+  if (role === "hospital_admin") return "from-sky-500 to-blue-600";
   const key = [...role].reduce((a, c) => a + c.charCodeAt(0), 0);
   return AVATAR_GRADIENTS[key % AVATAR_GRADIENTS.length];
 }

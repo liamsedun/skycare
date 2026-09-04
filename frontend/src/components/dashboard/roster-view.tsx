@@ -153,7 +153,7 @@ export default function RosterView() {
     try {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
-      setIsAdmin(me.data?.claims?.role === "hospital_admin" || me.data?.claims?.role === "super_admin");
+      setIsAdmin(me.data?.claims?.role === "hospital_admin");
 
       const params = new URLSearchParams({ from: rosterFrom, to: rosterTo });
       const [rosterRes, staffRes] = await Promise.all([

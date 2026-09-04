@@ -128,7 +128,9 @@ export default function LoginForm() {
       }
     }
 
-    const fallback = role === "patient_api" ? "/patient" : "/app";
+    let fallback = "/app";
+    if (role === "patient_api") fallback = "/patient";
+    else if (role === "super_admin") fallback = "/platform/dashboard";
     router.push(redirectTo ?? fallback);
     router.refresh();
   }

@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "@/components/dashboard/sidebar";
 import Topbar from "@/components/dashboard/topbar";
 import MobileNav from "@/components/dashboard/mobile-nav";
+import { CurrencyProvider } from "@/lib/currency";
+import { BranchProvider } from "@/lib/branch-context";
 import type { StaffRole } from "@/lib/auth";
 import type { ModuleAccess } from "@/lib/nav";
 
@@ -34,7 +36,7 @@ export default function AppShell({
   // Phase 4 first-run flow: admins whose tenant has NOT provisioned their
   // default website are routed to the onboarding wizard once on the staff
   // portal (unless already there). Non-admin staff skip it entirely.
-  const isAdmin = role === "hospital_admin" || role === "super_admin";
+  const isAdmin = role === "hospital_admin";
   useEffect(() => {
     if (
       websiteProvisioned === false &&
@@ -48,6 +50,8 @@ export default function AppShell({
   }, [websiteProvisioned, pathname]);
 
   return (
+    <BranchProvider>
+    <CurrencyProvider>
     <div className="flex min-h-screen w-full">
       {/* Mobile drawer */}
       {mobileOpen && (
@@ -77,5 +81,7 @@ export default function AppShell({
         <MobileNav role={role} moduleAccess={moduleAccess} />
       </div>
     </div>
+    </CurrencyProvider>
+    </BranchProvider>
   );
 }

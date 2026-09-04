@@ -14,6 +14,7 @@ import {
   Globe,
   HeartPulse,
   LineChart,
+  Mail,
   MapPin,
   MessageSquareText,
   MonitorSmartphone,
@@ -37,6 +38,133 @@ import {
   XIcon,
   YouTubeIcon,
 } from "@/components/landing/social-icons";
+import { createServiceClient } from "@/lib/supabase/server";
+import ContactUsProvider from "@/components/landing/contact-us-provider";
+
+/* ── Module labels for the pricing tiers ── */
+const MODULE_LABELS: Record<string, string> = {
+  overview: "Dashboard Overview", appointments: "Appointments & Scheduling",
+  patients: "Patient Records (EHR)", pharmacy: "Pharmacy Management",
+  lab: "Laboratory & Diagnostics", wards: "Ward & Bed Management",
+  billing: "Billing & Payments", banking: "Banking & Transfers",
+  expenses: "Expense Tracking", other_income: "Other Income",
+  staff: "Staff Management", leave: "Leave Management",
+  hr: "Human Resources", payroll: "Payroll & Payslips",
+  mail: "Internal Mail", chats: "Staff & Patient Chat",
+  medical_reports: "Medical Reports", financial_reports: "Financial Reports",
+  audit_logs: "Audit Logs", account: "Account Settings",
+  subscription: "Subscription Management", settings: "Hospital Settings",
+  download_app: "Download App", profile: "User Profile",
+  multi_branch: "Multi-Branch Hospitals", nhia_insurance: "NHIA / Insurance / HMO Integrations",
+  custom_workflows: "Custom Workflows", dedicated_account_manager: "Dedicated Account Manager",
+  on_premise: "On-Premise Option", ai_features: "AI Features",
+  full_customization: "Full Customization", private_cloud: "On-Premise / Private Cloud",
+  national_deployments: "National-Scale Deployments", training_migration: "Training & Migration",
+  support_24_7: "24/7 Dedicated Support",
+};
+
+const MODULE_CATEGORIES_MKT = [
+  { label: "Clinical", keys: ["overview", "appointments", "patients", "pharmacy", "lab", "wards"] },
+  { label: "Financial", keys: ["billing", "banking", "expenses", "other_income"] },
+  { label: "HR & Staff", keys: ["staff", "leave", "hr", "payroll"] },
+  { label: "Communication", keys: ["mail", "chats"] },
+  { label: "Reports", keys: ["medical_reports", "financial_reports"] },
+  { label: "Administration", keys: ["audit_logs", "account", "subscription", "settings"] },
+  { label: "Patient Portal", keys: ["download_app", "profile"] },
+  { label: "Enterprise & Premium", keys: ["multi_branch", "nhia_insurance", "custom_workflows", "dedicated_account_manager", "on_premise", "ai_features", "full_customization", "private_cloud", "national_deployments", "training_migration", "support_24_7"] },
+];
+
+/* ── Feature labels for the pricing tiers (used when DB plans lack feature lists) ── */
+const BASIC_FEATURES = [
+  "1 clinic / branch",
+  "Patient records (EHR)",
+  "Appointments & scheduling",
+  "Billing & payments",
+  "Email support",
+];
+const PRO_FEATURES = [
+  "All Basic features",
+  "Pharmacy & drug inventory",
+  "Laboratory & diagnostics",
+  "Ward & bed management",
+  "SMS appointment reminders",
+  "Reports & analytics",
+  "Priority support",
+];
+const ENTERPRISE_FEATURES = [
+  "Multi-branch hospitals",
+  "NHIA / insurance integration",
+  "Custom workflows",
+  "Dedicated account manager",
+  "On-premise option",
+  "AI features",
+];
+const CUSTOM_FEATURES = [
+  "Full customization",
+  "On-premise / private cloud",
+  "National-scale deployments",
+  "Training & migration",
+  "24/7 dedicated support",
+];
+
+/* ── Fetch active public plans from the platform_plans table ── */
+type DbPlan = {
+  name: string;
+  code: string;
+  description: string;
+  monthly_price: number;
+  trial_days: number;
+  user_limit: number;
+  storage_limit_gb: number;
+  patient_limit: number;
+  branch_limit: number;
+  popular_badge: boolean;
+  button_text: string;
+  modules: string[] | null;
+};
+
+const CODE_FEATURES: Record<string, string[]> = {
+  basic: BASIC_FEATURES,
+  pro: PRO_FEATURES,
+  enterprise: ENTERPRISE_FEATURES,
+};
+
+async function fetchPricingPlans() {
+  try {
+    const svc = createServiceClient();
+    const { data, error } = await svc
+      .from("platform_plans")
+      .select("name, code, description, monthly_price, trial_days, user_limit, storage_limit_gb, patient_limit, branch_limit, popular_badge, button_text, modules")
+      .eq("is_active", true)
+      .eq("is_public", true)
+      .order("sort_order", { ascending: true });
+
+    if (error || !data || data.length === 0) return null;
+
+    return data.map((p: DbPlan) => ({
+      name: p.name,
+      ngn: p.monthly_price.toLocaleString("en-NG"),
+      usd: Math.round(p.monthly_price / 1500).toString(),
+      per: "month",
+      desc: p.description || "",
+      features: (p.modules && p.modules.length > 0)
+        ? p.modules.map((m) => MODULE_LABELS[m] || m)
+        : CODE_FEATURES[p.code] || [],
+      modules: p.modules || [],
+      cta: p.button_text || "Start Free Trial",
+      highlight: p.popular_badge,
+      criteria: {
+        users: p.user_limit,
+        storage: p.storage_limit_gb,
+        patients: p.patient_limit,
+        branches: p.branch_limit,
+        trialDays: p.trial_days,
+      },
+    }));
+  } catch {
+    return null;
+  }
+}
 
 const features = [
   {
@@ -101,74 +229,12 @@ const modules = [
   "Hospital website + patient app included",
 ];
 
-const pricing = [
-  {
-    name: "Basic",
-    ngn: "7,000",
-    usd: "5",
-    per: "month",
-    desc: "For single clinics getting digital.",
-    features: [
-      "1 clinic / branch",
-      "Patient records (EHR)",
-      "Appointments & scheduling",
-      "Billing & payments",
-      "Email support",
-    ],
-    cta: "Start Free Trial",
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    ngn: "13,000",
-    usd: "9",
-    per: "month",
-    desc: "The full hospital operating system.",
-    features: [
-      "All Basic features",
-      "Pharmacy & drug inventory",
-      "Laboratory & diagnostics",
-      "Ward & bed management",
-      "SMS appointment reminders",
-      "Reports & analytics",
-      "Priority support",
-    ],
-    cta: "Start Free Trial",
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    ngn: "80,000",
-    usd: "53",
-    per: "month",
-    desc: "For hospital chains & groups.",
-    features: [
-      "Multi-branch hospitals",
-      "NHIA / insurance integration",
-      "Custom workflows",
-      "Dedicated account manager",
-      "On-premise option",
-      "AI features",
-    ],
-    cta: "Talk to Sales",
-    highlight: false,
-  },
-  {
-    name: "Custom",
-    ngn: "Tailored",
-    usd: "Custom",
-    per: "project",
-    desc: "Government & large institutions.",
-    features: [
-      "Full customization",
-      "On-premise / private cloud",
-      "National-scale deployments",
-      "Training & migration",
-      "24/7 dedicated support",
-    ],
-    cta: "Request Proposal",
-    highlight: false,
-  },
+/* ── Fallback pricing (used only when the DB fetch fails) ── */
+const FALLBACK_PRICING = [
+  { name: "Basic", ngn: "7,000", usd: "5", per: "month", desc: "For single clinics getting digital.", features: BASIC_FEATURES, modules: [], cta: "Start Free Trial", highlight: false, criteria: { users: 5, storage: 5, patients: 500, branches: 1, trialDays: 14 } },
+  { name: "Pro", ngn: "13,000", usd: "9", per: "month", desc: "The full hospital operating system.", features: PRO_FEATURES, modules: [], cta: "Start Free Trial", highlight: true, criteria: { users: 25, storage: 50, patients: 5000, branches: 3, trialDays: 14 } },
+  { name: "Enterprise", ngn: "80,000", usd: "53", per: "month", desc: "For hospital chains & groups.", features: ENTERPRISE_FEATURES, modules: [], cta: "Talk to Sales", highlight: false, criteria: { users: 0, storage: 0, patients: 0, branches: 0, trialDays: 30 } },
+  { name: "Custom", ngn: "Tailored", usd: "Custom", per: "project", desc: "Government & large institutions.", features: CUSTOM_FEATURES, modules: [], cta: "Request Proposal", highlight: false, criteria: { users: 0, storage: 0, patients: 0, branches: 0, trialDays: 0 } },
 ];
 
 const steps = [
@@ -198,8 +264,22 @@ const navLinks = [
   { href: "#hospital-website", label: "Hospital Website" },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const dbPlans = await fetchPricingPlans();
+  const pricing = dbPlans || FALLBACK_PRICING;
+  // Ensure Custom plan is always last (not in DB)
+  const custom = pricing.find((p) => p.name === "Custom");
+  if (!custom) {
+    pricing.push(FALLBACK_PRICING[FALLBACK_PRICING.length - 1]);
+  } else {
+    const idx = pricing.indexOf(custom);
+    if (idx !== pricing.length - 1) {
+      pricing.splice(idx, 1);
+      pricing.push(custom);
+    }
+  }
   return (
+    <ContactUsProvider>
     <main className="min-h-screen bg-white font-[family-name:var(--font-sans)]">
       {/* NAV */}
       <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur">
@@ -359,7 +439,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SCREENSHOT MARQUEE */}
+      {/* SCREENSHOT MARQUEE — landscape hospital-website images */}
       <div className="marquee-mask overflow-hidden border-b border-slate-100 bg-white py-10">
         <div className="animate-marquee flex w-max gap-6">
           {[1, 2].map((half) => (
@@ -369,24 +449,42 @@ export default function HomePage() {
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (1).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (2).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (3).png",
-                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (4).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (5).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (6).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (7).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (8).png",
                 "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (9).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (10).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (11).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (13).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (14).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (15).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (17).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (18).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (20).png",
+                "/images/hospital-website/mobile-iPhone_17_Pro_Max-full (21).png",
+                "/images/hospital-website/download.png",
+                "/images/hospital-website/download (1).png",
+                "/images/hospital-website/download (2).png",
+                "/images/hospital-website/download (3).png",
+                "/images/hospital-website/1.png",
+                "/images/hospital-website/2.png",
+                "/images/hospital-website/3.png",
+                "/images/hospital-website/7.png",
+                "/images/hospital-website/8.png",
+                "/images/hospital-website/10.png",
               ].map((src, i) => (
                 <div
                   key={`${half}-${i}`}
-                  className="relative w-56 shrink-0 overflow-hidden rounded-xl border border-slate-200 shadow-md"
+                  className="relative w-80 shrink-0 overflow-hidden rounded-xl border border-slate-200 shadow-md"
                 >
-                  <div className="relative aspect-[9/19.5] bg-slate-100">
+                  <div className="relative aspect-[16/9] bg-slate-100">
                     <Image
                       src={src}
                       alt="SkyCare hospital website screenshot"
                       fill
-                      sizes="224px"
-                      className="object-cover object-top"
+                      sizes="320px"
+                      className="object-cover object-center"
                     />
                   </div>
                 </div>
@@ -610,18 +708,43 @@ export default function HomePage() {
                   <span className="text-sm text-slate-500"> /{p.per}</span>
                 </div>
                 <p className="text-xs text-slate-400">≈ ${p.usd} USD</p>
-                <ul className="mt-5 flex-1 space-y-2.5">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-slate-700">
-                      <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                        <Check size={10} />
-                      </span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+                {"criteria" in p && (p as { criteria?: { users: number; storage: number; patients: number; branches: number; trialDays: number } }).criteria && (
+                  <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-slate-500">
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5">{(p as { criteria: { users: number } }).criteria.users} users</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5">{(p as { criteria: { storage: number } }).criteria.storage} GB</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5">{(p as { criteria: { patients: number } }).criteria.patients.toLocaleString()} patients</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5">{(p as { criteria: { branches: number } }).criteria.branches} branch{(p as { criteria: { branches: number } }).criteria.branches !== 1 ? "es" : ""}</span>
+                    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-700">{(p as { criteria: { trialDays: number } }).criteria.trialDays}-day trial</span>
+                  </div>
+                )}
+                <div className="mt-5 flex-1 space-y-3">
+                  {"modules" in p && (p as { modules?: string[] }).modules && (p as { modules: string[] }).modules.length > 0 ? (
+                    MODULE_CATEGORIES_MKT.filter((cat) =>
+                      (p as { modules: string[] }).modules.some((m) => cat.keys.includes(m))
+                    ).map((cat) => {
+                      const items = (p as { modules: string[] }).modules.filter((m) => cat.keys.includes(m));
+                      return (
+                        <div key={cat.label}>
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{cat.label}</div>
+                          <ul className="space-y-1.5">
+                            {items.map((m) => (
+                              <li key={m} className="flex items-start gap-2 text-sm text-slate-700">
+                                <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                  <Check size={10} />
+                                </span>
+                                {MODULE_LABELS[m] || m}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-sm text-slate-500 italic">Contact us for details</p>
+                  )}
+                </div>
                 <Link
-                  href="/signup"
+                  href={p.name === "Custom" ? "#contact-us" : "/signup"}
                   className={`mt-6 rounded-xl px-4 py-2.5 text-center text-sm font-semibold transition-all ${
                     p.highlight
                       ? "sky-gradient text-white shadow-md hover:-translate-y-px hover:opacity-90"
@@ -635,7 +758,7 @@ export default function HomePage() {
           </div>
           <p className="mt-8 text-center text-sm text-slate-500">
             Government & large hospitals →{" "}
-            <a href="#cta" className="font-semibold text-sky-600 hover:underline">
+            <a href="#contact-us" className="font-semibold text-sky-600 hover:underline">
               request a custom proposal
             </a>
           </p>
@@ -800,6 +923,18 @@ export default function HomePage() {
                   +234 705 811 9864
                 </a>
               </li>
+              <li className="flex items-center gap-2.5">
+                <Mail size={16} className="shrink-0 text-sky-600" />
+                <a href="mailto:sales@skycare.app" className="transition-colors hover:text-sky-600">
+                  sales@skycare.app
+                </a>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Globe size={16} className="shrink-0 text-sky-600" />
+                <a href="https://skycare.app" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-sky-600">
+                  skycare.app
+                </a>
+              </li>
             </ul>
           </div>
           <div>
@@ -807,7 +942,7 @@ export default function HomePage() {
             <ul className="mt-4 space-y-2.5 text-sm text-slate-500">
               <li><Link href="/signup" className="transition-colors hover:text-sky-600">Start Free Trial</Link></li>
               <li><Link href="/login" className="transition-colors hover:text-sky-600">Sign in</Link></li>
-              <li><a href="#cta" className="transition-colors hover:text-sky-600">Contact Sales</a></li>
+              <li><a href="mailto:sales@skycare.app" className="transition-colors hover:text-sky-600">Contact Sales</a></li>
             </ul>
           </div>
         </div>
@@ -822,5 +957,6 @@ export default function HomePage() {
       {/* LIVE CHAT */}
       <LiveChat />
     </main>
+    </ContactUsProvider>
   );
 }

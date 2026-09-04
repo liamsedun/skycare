@@ -34,7 +34,7 @@ export const PATCH = withStaff(async (req, ctx) => {
   const existing = await getService(ctx, id, tenantId);
   if (!existing) throw new NotFoundError("Service not found");
 
-  const isAdmin = ctx.role === "hospital_admin" || ctx.role === "super_admin";
+  const isAdmin = ctx.role === "hospital_admin";
   const canEditCatalog = isAdmin || ctx.role === "lab_tech";
   const body = (await req.json()) as Record<string, unknown>;
 
@@ -118,7 +118,7 @@ export const PATCH = withStaff(async (req, ctx) => {
 // DELETE /api/lab-services/[id] — hospital admins only
 export const DELETE = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ValidationError("Only hospital admins can delete services");
   }
   const id = req.nextUrl.pathname.split("/").pop()!;

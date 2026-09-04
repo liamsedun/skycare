@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Banknote, FileText, Receipt, ShieldCheck, Wallet } from "lucide-react";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 import type { AccessLevel } from "@/lib/nav";
 import { ClaimsTab } from "./pharmacy/pharmacy-claims-tab";
 import { CoverageTab } from "./pharmacy/pharmacy-coverage-tab";
@@ -26,6 +28,7 @@ const TABS: Array<{ id: Tab; label: string; icon: typeof Receipt }> = [
 export default function PharmacyBillingView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
   const viewOnly = accessLevel === "view_only";
   const [tab, setTab] = useState<Tab>("sales");
+  const { selectedBranchId } = useBranch();
 
   return (
     <div className="space-y-5">
@@ -36,7 +39,9 @@ export default function PharmacyBillingView({ accessLevel = "full", myRole }: { 
             Sales invoices, split payments, insurance claims and daily revenue.
           </p>
         </div>
-        <div className="flex gap-2" role="group" aria-label="Billing section">
+        <div className="flex flex-wrap items-center gap-2">
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
+          <div className="flex gap-2" role="group" aria-label="Billing section">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -51,6 +56,7 @@ export default function PharmacyBillingView({ accessLevel = "full", myRole }: { 
               {t.label}
             </button>
           ))}
+          </div>
         </div>
       </div>
 

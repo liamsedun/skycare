@@ -1,4 +1,4 @@
-﻿import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel, parseBody } from "@/lib/api-utils";
+﻿import { withAuth, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel, parseBody, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
@@ -69,6 +69,8 @@ export const GET = withAuth(async (req, ctx) => {
     .order("scheduled_date", { ascending: true })
     .order("start_time", { ascending: true })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (status) query = query.eq("status", status);
   if (dateFrom) query = query.gte("scheduled_date", dateFrom);

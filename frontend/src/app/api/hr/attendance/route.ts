@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 // so department/role enrichment happens via a staff map after the query.
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  const isHr = ctx.role === "hospital_admin" || ctx.role === "hr_officer" || ctx.role === "super_admin";
+  const isHr = ctx.role === "hospital_admin" || ctx.role === "hr_officer";
   await ctx.svc.rpc("hr_mark_missed_shifts", { p_tenant: tenantId, p_branch: ctx.branchId ?? null });
 
   const date = req.nextUrl.searchParams.get("date")?.trim() || null;

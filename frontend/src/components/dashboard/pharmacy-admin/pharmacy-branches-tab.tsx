@@ -237,13 +237,13 @@ export function BranchesTab({ viewOnly = false }: { viewOnly?: boolean }) {
               {b.phone && (
                 <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
                   <PhoneIcon size={12} aria-hidden="true" className="shrink-0" />
-                  <span>{b.phone}</span>
+                  <a href={`tel:${b.phone}`} className="hover:underline">{b.phone}</a>
                 </div>
               )}
               {b.email && (
                 <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-muted-fg)]">
                   <Mail size={12} aria-hidden="true" className="shrink-0" />
-                  <span className="truncate">{b.email}</span>
+                  <a href={`mailto:${b.email}`} className="truncate hover:underline">{b.email}</a>
                 </div>
               )}
 

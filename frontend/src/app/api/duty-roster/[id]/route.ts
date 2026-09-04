@@ -13,7 +13,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_ROLES = ["hospital_admin", "super_admin"];
+const ADMIN_ROLES = ["hospital_admin"];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function idFrom(req: NextRequest): string {

@@ -6,7 +6,7 @@ import LabView from "@/components/dashboard/lab-view";
 
 export const dynamic = "force-dynamic";
 
-const LAB_ROLES = ["hospital_admin", "doctor", "nurse", "lab_tech", "super_admin"];
+const LAB_ROLES = ["hospital_admin", "doctor", "nurse", "lab_tech"];
 
 export default async function LabServicesPage() {
   const supabase = await createClient();
@@ -23,10 +23,10 @@ export default async function LabServicesPage() {
   return (
     <LabView
       initialTab="services"
-      canManageCatalog={!viewOnly && (role === "hospital_admin" || role === "super_admin")}
-      canEditService={!viewOnly && (role === "lab_tech" || role === "hospital_admin" || role === "super_admin")}
-      canEnterResults={!viewOnly && (role === "lab_tech" || role === "hospital_admin" || role === "super_admin" || role === "doctor")}
-      canBill={!viewOnly && (role === "hospital_admin" || role === "super_admin")}
+      canManageCatalog={!viewOnly && (role === "hospital_admin")}
+      canEditService={!viewOnly && (role === "lab_tech" || role === "hospital_admin")}
+      canEnterResults={!viewOnly && (role === "lab_tech" || role === "hospital_admin" || role === "doctor")}
+      canBill={!viewOnly && (role === "hospital_admin")}
     />
   );
 }

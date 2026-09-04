@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Printer, X } from "lucide-react";
+import { Printer, ShieldCheck, X } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { btnBase, cardTitle, divideBorder, errorBanner, flexBetween, flexWrapGap2, ghostIconBtn, modalBackdrop, mutedFg, mutedSmPlain, rowStart, tableHeadCell } from "@/lib/ui-constants";
 import { inputCls, labelCls, ngn, printHref, SOURCE_META, statusClass, type Invoice, type PatientOption } from "./billing-shared";
 
@@ -13,6 +14,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void
     { description: "", quantity: 1, unitPrice: 0, vatPercent: 0 },
   ]);
   const [discount, setDiscount] = useState(0);
+  const { currency } = useCurrency();
 
   useEffect(() => {
     (async () => {
@@ -196,7 +198,7 @@ export function CreateInvoiceModal({ onClose, onCreated }: { onClose: () => void
         </div>
 
         <div className="flex flex-wrap items-center gap-3 rounded-xl bg-[var(--color-muted)]/40 px-4 py-3 text-sm">
-          <span className={mutedFg}>Discount (₦)</span>
+          <span className={mutedFg}>Discount ({currencySymbol(currency)})</span>
           <input
             type="number"
             min={0}
@@ -241,6 +243,8 @@ export function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = fal
   const [method, setMethod] = useState("cash");
   const [account, setAccount] = useState("cash");
   const [bankAccounts, setBankAccounts] = useState<{ id: string; bank_name: string; account_name: string; account_number: string }[]>([]);
+  const [patientInsurance, setPatientInsurance] = useState<{ policy_number: string; coverage_type: string; copay_percent: number | null; insurance_providers: { name: string } | null } | null>(null);
+  const [claimBusy, setClaimBusy] = useState(false);
 
   useEffect(() => {
     if (invoice) setAmount(Number(invoice.total_amount) - Number(invoice.paid_amount));
@@ -259,6 +263,54 @@ export function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = fal
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (!invoice?.patients?.id) { setPatientInsurance(null); return; }
+    (async () => {
+      try {
+        const res = await fetch(`/api/insurance/eligibility?patient_id=${invoice.patients!.id}`, { cache: "no-store" });
+        if (res.ok) {
+          const body = await res.json();
+          const active = (body.data ?? []).find((p: { status: string }) => p.status === "active");
+          setPatientInsurance(active ?? null);
+        }
+      } catch {
+        /* optional */
+      }
+    })();
+  }, [invoice?.patients?.id]);
+
+  async function createClaimFromInvoice() {
+    if (!invoice || !patientInsurance || !invoice.patients) return;
+    if (!confirm("Create an insurance claim for this invoice?")) return;
+    setClaimBusy(true);
+    try {
+      const res = await fetch("/api/insurance/claims", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patient_id: invoice.patients.id,
+          provider_id: patientInsurance.insurance_providers ? undefined : undefined,
+          invoice_id: invoice.id,
+          encounter_type: invoice.source || "consultation",
+          billed_amount: Number(invoice.total_amount),
+          covered_amount: patientInsurance.copay_percent != null
+            ? Number(invoice.total_amount) * (1 - patientInsurance.copay_percent / 100)
+            : Number(invoice.total_amount),
+          copay_amount: patientInsurance.copay_percent != null
+            ? Number(invoice.total_amount) * (patientInsurance.copay_percent / 100)
+            : 0,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to create claim");
+      alert("Claim created successfully. Go to Insurance → Claims to submit it.");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to create claim");
+    } finally {
+      setClaimBusy(false);
+    }
+  }
 
   if (!invoice) return null;
 
@@ -476,6 +528,61 @@ export function InvoiceDetailModal({ invoice, onClose, onChanged, viewOnly = fal
             </div>
           ) : null}
         </section>
+
+        {/* Insurance section */}
+        {patientInsurance && invoice && !isPharmacy && (
+          <section className="rounded-xl border border-sky-200 bg-sky-50/60 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <ShieldCheck size={16} className="text-sky-600" />
+              <h3 className="text-sm font-semibold text-sky-800">Insurance Coverage</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className={mutedFg}>Provider</span>
+                <p className="font-medium">{patientInsurance.insurance_providers?.name ?? "—"}</p>
+              </div>
+              <div>
+                <span className={mutedFg}>Policy #</span>
+                <p className="font-mono text-xs font-semibold">{patientInsurance.policy_number}</p>
+              </div>
+              <div>
+                <span className={mutedFg}>Coverage</span>
+                <p className="font-medium">{patientInsurance.copay_percent != null ? `${100 - patientInsurance.copay_percent}% covered` : "100% covered"}</p>
+              </div>
+              <div>
+                <span className={mutedFg}>Co-pay</span>
+                <p className="font-medium">{patientInsurance.copay_percent != null ? `${patientInsurance.copay_percent}%` : "—"}</p>
+              </div>
+              <div>
+                <span className={mutedFg}>Estimated Insurance Amount</span>
+                <p className="font-semibold text-emerald-700">
+                  {ngn(patientInsurance.copay_percent != null
+                    ? Number(invoice.total_amount) * (1 - patientInsurance.copay_percent / 100)
+                    : Number(invoice.total_amount))}
+                </p>
+              </div>
+              <div>
+                <span className={mutedFg}>Patient Co-pay</span>
+                <p className="font-semibold text-amber-700">
+                  {ngn(patientInsurance.copay_percent != null
+                    ? Number(invoice.total_amount) * (patientInsurance.copay_percent / 100)
+                    : 0)}
+                </p>
+              </div>
+            </div>
+            {!viewOnly && invoice.status !== "paid" && invoice.status !== "cancelled" && (
+              <button
+                type="button"
+                onClick={createClaimFromInvoice}
+                disabled={claimBusy}
+                className="focus-ring mt-3 inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700 disabled:opacity-60"
+              >
+                <ShieldCheck size={13} aria-hidden="true" />
+                {claimBusy ? "Creating…" : "Create Claim"}
+              </button>
+            )}
+          </section>
+        )}
       </div>
     </ModalShell>
   );

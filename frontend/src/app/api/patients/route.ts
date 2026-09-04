@@ -1,4 +1,4 @@
-﻿import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, requireModuleLevel, parseBody } from "@/lib/api-utils";
+﻿import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, requireModuleLevel, parseBody, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { getTenantSettings, generatePatientNumber } from "@/lib/tenant-settings";
@@ -23,6 +23,8 @@ export const GET = withStaff(async (req, ctx) => {
     .eq("tenant_id", ctx.tenantId)
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (q) {
     query = query.or(

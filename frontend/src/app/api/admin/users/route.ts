@@ -45,7 +45,7 @@ export const GET = withStaff(async (req, ctx) => {
   const department = resolveParam(req.nextUrl.searchParams.get("department"))?.trim();
   const specialization = resolveParam(req.nextUrl.searchParams.get("specialization"))?.trim();
 
-  // super_admin is platform-wide (tenant NULL) — list all staff; hospital_admin is tenant-scoped.
+  // hospital_admin is tenant-scoped.
   let query = ctx.svc
     .from("users")
     .select(
@@ -94,10 +94,9 @@ async function resolveBranch(ctx: any, tenantId: string, branchId: unknown): Pro
 }
 
 // POST /api/admin/users — create an admin/staff login with direct credentials.
-// hospital_admin creates tenant-scoped accounts; super_admin may also create
-// platform super_admin accounts (tenant_id NULL).
+// hospital_admin creates tenant-scoped accounts.
 export const POST = withAuth(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   await requireModuleLevel(ctx, "staff", "full");
@@ -106,23 +105,17 @@ export const POST = withAuth(async (req, ctx) => {
   if (!body.fullName?.trim() || !body.email?.trim()) {
     throw new ValidationError("Full name and email are required");
   }
-  const creatingSuperAdmin = body.role === "super_admin";
-  if (creatingSuperAdmin && ctx.role !== "super_admin") {
-    throw new ForbiddenError("Only the Super Admin can create platform admins");
-  }
-  if (!GRANTABLE_ROLES.includes(body.role) && !creatingSuperAdmin) {
+  if (!GRANTABLE_ROLES.includes(body.role)) {
     throw new ValidationError("Cannot create accounts with that role");
   }
   if (!body.password || body.password.length < 8) {
     throw new ValidationError("Password must be at least 8 characters");
   }
 
-  const tenantId = creatingSuperAdmin ? null : requireTenant(ctx);
+  const tenantId = requireTenant(ctx);
   // Explicit branch wins; otherwise the new staff member inherits the creator's
   // branch claim (NULL => any/all branches).
-  const branchId = creatingSuperAdmin
-    ? null
-    : body.branchId !== undefined
+  const branchId = body.branchId !== undefined
       ? await resolveBranch(ctx, tenantId!, body.branchId)
       : ctx.branchId ?? null;
   const email = body.email.trim().toLowerCase();

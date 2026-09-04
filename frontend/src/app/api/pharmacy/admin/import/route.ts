@@ -265,7 +265,7 @@ export const POST = withAuth(
 
     return ok({ total: raw.length - 1, created, updated, skipped, existing, errors: errors.slice(0, 400) }, 201);
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 export const runtime = "nodejs";

@@ -52,7 +52,7 @@ export default function NotificationsView() {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
       const role = me.data?.claims?.role;
-      setIsAdmin(role === "hospital_admin" || role === "super_admin");
+      setIsAdmin(role === "hospital_admin");
 
       const res = await fetch(`/api/notifications?pageSize=100${filter === "unread" ? "&unread_only=true" : ""}`, { cache: "no-store" });
       const body = await res.json();

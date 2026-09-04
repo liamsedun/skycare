@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const ADMIN_ROLES = ["hospital_admin", "super_admin"];
+const ADMIN_ROLES = ["hospital_admin"];
 
 function idFrom(req: NextRequest): string {
   const segs = req.nextUrl.pathname.split("/").filter(Boolean);

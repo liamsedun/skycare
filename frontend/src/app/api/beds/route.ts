@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 // GET /api/beds?ward_id=&status= — beds with ward info + occupant (staff).
-// POST /api/beds — create a bed (hospital_admin / super_admin).
+// POST /api/beds — create a bed (hospital_admin).
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const sp = req.nextUrl.searchParams;

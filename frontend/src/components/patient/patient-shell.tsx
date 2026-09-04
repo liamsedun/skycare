@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { PATIENT_NAV_ITEMS } from "@/lib/patient-nav";
 import { flexGap2 } from "@/lib/ui-constants";
+import { CurrencyProvider } from "@/lib/currency";
+import { BranchProvider } from "@/lib/branch-context";
 import { PatientMobileNav } from "@/components/dashboard/mobile-nav";
 import NotificationsBell from "@/components/notifications-bell";
 import PatientUserMenu from "@/components/patient/patient-user-menu";
@@ -64,6 +66,8 @@ export default function PatientShell({
   );
 
   return (
+    <BranchProvider>
+    <CurrencyProvider>
     <div className="flex min-h-screen w-full">
       <div aria-hidden="true" className="app-mobile-bg md:hidden" />
       {mobileOpen && (
@@ -152,5 +156,7 @@ export default function PatientShell({
       </div>
       <PatientMobileNav />
     </div>
+    </CurrencyProvider>
+    </BranchProvider>
   );
 }

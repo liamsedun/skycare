@@ -15,8 +15,8 @@ import { mutedXs, mutedXsMt, flexWrapGap2 } from "@/lib/ui-constants";
 // ============================================================================
 // Pharmacy Analytics — sales analytics, financial insights and reporting
 // dashboards (0048/0049): top sellers, profit margins, monthly financials
-// with payment-method split, wastage/loss ledger. hospital_admin / super_admin
-// / pharmacist only (gated in the pharmacy page).
+// with payment-method split, wastage/loss ledger. hospital_admin / pharmacist
+// only (gated in the pharmacy page).
 // ============================================================================
 
 const btnPrimary =

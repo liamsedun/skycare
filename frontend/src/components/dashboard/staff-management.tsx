@@ -590,10 +590,9 @@ export default function StaffManagement({ meId, myRole, accessLevel = "full" }: 
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {visibleUsers.map((user) => {
-            const canManage = user.role !== "super_admin" && user.id !== meId;
+            const canManage = user.id !== meId;
             const canDelete =
-              (myRole === "super_admin" || myRole === "hospital_admin") &&
-              user.role !== "super_admin" &&
+              myRole === "hospital_admin" &&
               user.id !== meId;
             return (
             <div

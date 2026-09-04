@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const GET = withAuth(async (req, ctx) => {
-  if (ctx.role !== "super_admin" && ctx.role !== "hospital_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
 

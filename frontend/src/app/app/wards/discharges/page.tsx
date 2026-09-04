@@ -6,7 +6,7 @@ import DischargesView from "@/components/dashboard/discharges-view";
 
 export const dynamic = "force-dynamic";
 
-const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "super_admin"];
+const WARD_ROLES = ["hospital_admin", "doctor", "nurse"];
 
 export default async function DischargesPage() {
   const supabase = await createClient();
@@ -22,7 +22,7 @@ export default async function DischargesPage() {
 
   return (
     <div className="space-y-6">
-      <DischargesView accessLevel={accessLevel} canBill={!viewOnly && (role === "hospital_admin" || role === "super_admin")} />
+      <DischargesView accessLevel={accessLevel} canBill={!viewOnly && (role === "hospital_admin")} />
     </div>
   );
 }

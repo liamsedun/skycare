@@ -1,7 +1,8 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolvePayingAccountId, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolvePayingAccountId, postBankLedger, requireModuleLevel, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { INCOME_CATEGORIES } from "@/lib/expense-categories";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,8 @@ export const GET = withStaff(async (req, ctx) => {
     .order("income_date", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (category) query = query.eq("category", category);
   if (dateFrom) query = query.gte("income_date", dateFrom);
@@ -50,6 +53,7 @@ export interface CreateIncomeBody {
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "other-income", "full");
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const body = (await req.json()) as CreateIncomeBody;
 
   if (!body.description?.trim() || !body.amount || body.amount <= 0) {
@@ -84,7 +88,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "other_income",
     entityId: income.id,
-    description: `Recorded income ₦${body.amount.toLocaleString()} — ${body.description.trim()}`,
+    description: `Recorded income ${symbol}${body.amount.toLocaleString()} — ${body.description.trim()}`,
   });
 
   // Banking ledger auto-post: the receipt lands in the selected account — Cash

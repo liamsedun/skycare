@@ -1,4 +1,4 @@
-﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, parseBody } from "@/lib/api-utils";
+﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, parseBody, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { pushNotifyUsers } from "@/lib/push-send";
@@ -59,6 +59,8 @@ export const GET = withAuth(async (req, ctx) => {
     .eq("tenant_id", tenantId)
     .order("requested_at", { ascending: false })
     .range(rangeFrom, rangeTo);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (patientId) query = query.eq("patient_id", patientId);
   if (status) query = query.eq("status", status);

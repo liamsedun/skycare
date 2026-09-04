@@ -82,7 +82,7 @@ export const GENDERS: string[] = ["Male", "Female", "Other"];
 export const BLOOD_GROUPS: string[] = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 export const GENOTYPES: string[] = ["AA", "AS", "SS", "AC", "SC", "CC"];
 export const MARITAL_STATUSES: string[] = ["Single", "Married", "Divorced", "Widowed", "Separated"];
-export type PatientTab = "info" | "records" | "notes" | "reports";
+export type PatientTab = "info" | "records" | "notes" | "reports" | "insurance";
 
 export interface PatientView {
   patient: PatientRow;
@@ -133,7 +133,6 @@ export interface PatientView {
   transferPatient: () => Promise<void>;
   addDependant: (form: FormData) => Promise<void>;
   updateDependant: (id: string, form: FormData) => Promise<void>;
-  provisionDependantLogin: (d: DependantRow, forceReset?: boolean) => Promise<void>;
   removeDependant: (id: string) => Promise<void>;
   provisionPrimaryLogin: (forceReset?: boolean) => Promise<void>;
 }

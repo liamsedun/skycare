@@ -1,6 +1,7 @@
 import { withStaff, ok, okPaginated, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export interface CreateClaimBody {
 // manual: draft for review. Duplicate claims for invoice+provider are blocked.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const body = (await req.json()) as CreateClaimBody;
 
   if (!body.invoiceId || !body.providerName?.trim()) {
@@ -72,7 +74,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "insurance_claims",
     entityId: claim.id,
-    description: `Claim ${claim.claim_number} (${body.providerName}) for ₦${claim.claim_amount} created (${body.mode})`,
+    description: `Claim ${claim.claim_number} (${body.providerName}) for ${symbol}${claim.claim_amount} created (${body.mode})`,
   });
 
   return ok(claim, 201);

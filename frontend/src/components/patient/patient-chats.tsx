@@ -489,7 +489,7 @@ export default function PatientChats() {
                             <span className="block truncate text-[14px] font-medium text-[#16221F]">{d.full_name}</span>
                             <span className="block truncate text-xs text-[#6B7A77]">
                               {d.role?.replace(/_/g, " ") ?? "Hospital staff"}
-                              {d.phone ? ` · ${d.phone}` : ""}
+                              {d.phone ? <> · <a href={`tel:${d.phone}`} className="hover:underline">{d.phone}</a></> : ""}
                             </span>
                           </span>
                           {existing ? (

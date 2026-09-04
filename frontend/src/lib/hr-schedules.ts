@@ -1,4 +1,5 @@
 import { downloadCsv, letterheadHtml } from "@/lib/export";
+import { getTenantCurrency } from "@/lib/currency";
 
 export interface HrRun {
   runNumber: string;
@@ -62,7 +63,12 @@ export interface HrRunLine {
   } | null;
 }
 
-export const fmtN = (n: number) => `₦${(n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+export const fmtN = (n: number, currency?: string) => {
+  const v = n ?? 0;
+  const cur = currency || getTenantCurrency() || "NGN";
+  if (cur !== "NGN") return new Intl.NumberFormat("en", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(v);
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(v);
+};
 
 export function fmtDate(d: string | null | undefined): string {
   if (!d) return "—";

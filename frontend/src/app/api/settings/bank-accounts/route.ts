@@ -51,7 +51,7 @@ function validateBody(body: any): BankAccountBody {
 // POST /api/settings/bank-accounts — admin adds an account (max 5)
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Only hospital admins can manage bank accounts");
   }
   const body = validateBody(await req.json());

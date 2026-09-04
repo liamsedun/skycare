@@ -10,6 +10,9 @@ import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
 import { mutedFg, mutedXsMt, flexWrapGap2, spinner, rowStart } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-semibold text-[var(--color-foreground)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
@@ -41,6 +44,7 @@ interface DischargeRow {
 }
 
 export default function DischargesView({ canBill, accessLevel = "full" }: { canBill: boolean; accessLevel?: AccessLevel }) {
+  const { currency } = useCurrency();
   const viewOnly = accessLevel === "view_only";
   const [rows, setRows] = useState<DischargeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,15 +53,16 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
   const [billing, setBilling] = useState<string | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const { selectedBranchId } = useBranch();
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/discharges/history", { cache: "no-store" });
+    const res = await fetch(`/api/discharges/history${selectedBranchId ? `?branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
     const body = await res.json();
     if (!res.ok) { setToast(body.error ?? "Failed to load discharges"); setLoading(false); return; }
     setRows(body.data ?? []);
     setLoading(false);
-  }, []);
+  }, [selectedBranchId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -98,7 +103,7 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
       if (!res.ok) throw new Error(body.error ?? "Failed to post bill");
       setToast(
         body.data?.charge
-          ? `Posted ${body.data.charge.invoiceNumber} — ₦${Number(body.data.charge.charge ?? 0).toLocaleString()}`
+          ? `Posted ${body.data.charge.invoiceNumber} — ${currencySymbol(currency)}${Number(body.data.charge.charge ?? 0).toLocaleString()}`
           : (body.data?.message ?? "No charge posted")
       );
       await load();
@@ -210,6 +215,7 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
           </div>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
           <DateRangeBar
             from={from}
             to={to}
@@ -255,7 +261,7 @@ export default function DischargesView({ canBill, accessLevel = "full" }: { canB
                       <td className="px-4 py-3 text-xs">
                         {inv ? (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">
-                            {inv.invoice_number} · ₦{Number(inv.total_amount ?? 0).toLocaleString()}
+                            {inv.invoice_number} · {currencySymbol(currency)}{Number(inv.total_amount ?? 0).toLocaleString()}
                           </span>
                         ) : canBill && !viewOnly ? (
                           <button

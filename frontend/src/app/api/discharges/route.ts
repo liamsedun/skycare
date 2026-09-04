@@ -1,14 +1,16 @@
 import { withStaff, ok, ValidationError, requireTenant, ForbiddenError, CLINICAL_ROLES } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyInvoiceIssued } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/discharges — discharge an active admission via ward_discharge.
-// Requires a summary. hospital_admin / doctor / nurse / super_admin.
+// Requires a summary. hospital_admin / doctor / nurse.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   if (!CLINICAL_ROLES.includes(ctx.role ?? "receptionist")) {
     throw new ForbiddenError("Only clinical staff can discharge patients");
   }
@@ -62,14 +64,14 @@ export const POST = withStaff(async (req, ctx) => {
         .select("patient_id")
         .eq("id", admissionId)
         .maybeSingle();
-      await notifyInvoiceIssued(ctx.svc, tenantId, admission?.patient_id, ch.invoice_id, ch.invoice_number, Number(ch.charge ?? 0));
+      await notifyInvoiceIssued(ctx.svc, tenantId, admission?.patient_id, ch.invoice_id, ch.invoice_number, Number(ch.charge ?? 0), symbol);
     }
     await logAudit(req, ctx, {
       action: "create",
       entityType: "invoices",
       entityId: ch.invoice_id,
       changes: { charge, admission_id: admissionId },
-      description: `Ward charges ${charge.invoiceNumber} (₦${charge.charge.toLocaleString()}) posted on discharge`,
+      description: `Ward charges ${charge.invoiceNumber} (${symbol}${charge.charge.toLocaleString()}) posted on discharge`,
     });
   } else if (chError) {
     await logAudit(req, ctx, {

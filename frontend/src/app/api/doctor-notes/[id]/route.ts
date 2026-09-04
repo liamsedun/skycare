@@ -11,7 +11,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const CLINICAL_ROLES = ["hospital_admin", "super_admin", "doctor", "nurse"];
+const CLINICAL_ROLES = ["hospital_admin", "doctor", "nurse"];
 
 const NOTE_SELECT =
   "id, tenant_id, patient_id, doctor_id, appointment_id, visit_date, vitals, tests_procedures, clinical_findings, diagnosis, medications, treatment_recommendations, next_visit_date, next_visit_reason, is_confidential, created_by, created_at, updated_at, patients(id, patient_number, first_name, last_name, gender, date_of_birth), users!doctor_notes_doctor_id_fkey(id, full_name, role)";

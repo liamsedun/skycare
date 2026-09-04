@@ -460,7 +460,6 @@ function AddMemberModal({
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
-  const [hasPortal, setHasPortal] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -508,8 +507,6 @@ function AddMemberModal({
               allergies: fd.get("allergies"),
               phone: fd.get("phone"),
               email: fd.get("email"),
-              portalEmail: hasPortal ? fd.get("portalEmail") : undefined,
-              portalPassword: hasPortal ? fd.get("portalPassword") : undefined,
               avatar: photo ?? undefined,
             });
           }}
@@ -612,29 +609,9 @@ function AddMemberModal({
             <textarea id="fam-allergies" name="allergies" rows={2} className={inputCls} placeholder="e.g. penicillin, latex — leave blank if none" />
           </div>
 
-          <div className={cn("rounded-lg border border-[var(--color-border)] p-3", hasPortal && "border-[#e0a84a]/40 bg-[#e0a84a]/5")}>
-            <label className="flex items-center gap-2 text-sm text-[var(--color-foreground)]">
-              <input
-                type="checkbox"
-                checked={hasPortal}
-                onChange={(e) => setHasPortal(e.target.checked)}
-                className="focus-ring h-4 w-4 accent-[var(--color-primary)]"
-              />
-              <span className="font-medium">Give them their own portal login</span>
-            </label>
-            {hasPortal && (
-              <div className="mt-3 space-y-3">
-                <div>
-                  <label className={labelCls} htmlFor="fam-portal-email">Portal email</label>
-                  <input id="fam-portal-email" name="portalEmail" type="email" required className={inputCls} />
-                </div>
-                <div>
-                  <label className={labelCls} htmlFor="fam-portal-pass">Portal password</label>
-                  <input id="fam-portal-pass" name="portalPassword" type="password" minLength={8} required className={inputCls} />
-                </div>
-              </div>
-            )}
-          </div>
+          <p className="text-xs text-[var(--color-muted-fg)] rounded-lg bg-[var(--color-muted)]/50 p-3">
+            Family members access the portal through your login. Their medical records, appointments, and bills are visible in your family dashboard.
+          </p>
 
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} className="focus-ring flex-1 rounded-lg border border-[var(--color-border)] py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-slate-50">

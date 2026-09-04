@@ -1,7 +1,8 @@
-import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolvePayingAccountId, postBankLedger, requireModuleLevel } from "@/lib/api-utils";
+import { withStaff, okPaginated, ok, ValidationError, requireTenant, sanitizeLike, resolvePayingAccountId, postBankLedger, requireModuleLevel, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,8 @@ export const GET = withStaff(async (req, ctx) => {
     .order("expense_date", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (category) query = query.eq("category", category);
   if (dateFrom) query = query.gte("expense_date", dateFrom);
@@ -50,6 +53,7 @@ export interface CreateExpenseBody {
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "expenses", "full");
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const body = (await req.json()) as CreateExpenseBody;
 
   if (!body.description?.trim() || !body.amount || body.amount <= 0) {
@@ -84,7 +88,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "expenses",
     entityId: expense.id,
-    description: `Recorded expense ₦${body.amount.toLocaleString()} — ${body.description.trim()}`,
+    description: `Recorded expense ${symbol}${body.amount.toLocaleString()} — ${body.description.trim()}`,
   });
 
   // Banking ledger auto-post: the money leaves the selected account — Cash

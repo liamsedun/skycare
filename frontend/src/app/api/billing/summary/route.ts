@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const BILLING_ROLES = ["hospital_admin", "cashier", "super_admin"];
+const BILLING_ROLES = ["hospital_admin", "cashier"];
 
 function monthRange(raw: string | null): { from: string; to: string } {
   const m = raw?.match(/^(\d{4})-(\d{2})$/);

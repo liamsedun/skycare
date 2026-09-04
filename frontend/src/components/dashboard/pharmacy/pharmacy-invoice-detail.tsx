@@ -71,15 +71,13 @@ export function InvoiceDetail({ invoice, onClose, onChanged, viewOnly = false }:
         .filter(Boolean)
         .join(", ")
     );
-    const contact = esc(
-      [
-        branding?.phone && `Tel: ${branding.phone}`,
-        branding?.email && `Email: ${branding.email}`,
-        branding?.website,
-      ]
-        .filter(Boolean)
-        .join(" â€¢ ")
-    );
+    const contact = [
+      branding?.phone && `Tel: <a href="tel:${esc(branding.phone)}">${esc(branding.phone)}</a>`,
+      branding?.email && `Email: <a href="mailto:${esc(branding.email)}">${esc(branding.email)}</a>`,
+      branding?.website && esc(branding.website),
+    ]
+      .filter(Boolean)
+      .join(" &#8226; ");
     const letterhead = `
       <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;">
         ${branding?.logo_url ? `<img src="${esc(branding.logo_url)}" alt="logo" style="width:44px;height:44px;object-fit:contain;" />` : ""}

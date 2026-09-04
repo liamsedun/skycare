@@ -33,7 +33,10 @@ import {
   Legend,
 } from "recharts";
 import { ngn } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { mutedXs, errorBanner, cardTitle, mutedSm, divideBorder, flexGap2, mutedXsMt, flexWrapGap2, fgMedium, fgSemibold, pageTitle, emptyState } from "@/lib/ui-constants";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const inputCls =
   "focus-ring h-10 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-foreground)] outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -125,6 +128,7 @@ function downloadCsv(filename: string, rows: string[][]) {
 }
 
 export default function FinancialReportsView() {
+  const { currency } = useCurrency();
   const now = new Date();
   const [month, setMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
   const [from, setFrom] = useState("");
@@ -133,6 +137,7 @@ export default function FinancialReportsView() {
   const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedBranchId } = useBranch();
 
   const monthLabel = useMemo(() => {
     const [y, m] = month.split("-").map(Number);
@@ -151,8 +156,9 @@ export default function FinancialReportsView() {
     if (!from || !to) return;
     setLoading(true);
     setError(null);
+    const branchQs = selectedBranchId ? `&branch=${selectedBranchId}` : "";
     Promise.all([
-      fetch(`/api/financial/summary?from=${from}&to=${to}`, { cache: "no-store" }),
+      fetch(`/api/financial/summary?from=${from}&to=${to}${branchQs}`, { cache: "no-store" }),
       fetch("/api/tenant/branding", { cache: "no-store" }),
     ])
       .then(async ([res, orgRes]) => {
@@ -164,7 +170,7 @@ export default function FinancialReportsView() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load financial report"))
       .finally(() => setLoading(false));
-  }, [from, to]);
+  }, [from, to, selectedBranchId]);
 
   const moduleRows = useMemo(() => {
     if (!summary) return [];
@@ -281,7 +287,7 @@ export default function FinancialReportsView() {
   const printPnl = useCallback(() => {
     if (!summary) return;
     const orgAddress = [orgInfo?.address, [orgInfo?.city, orgInfo?.state].filter(Boolean).join(", "), orgInfo?.country].filter(Boolean).join(", ");
-    const contact = [orgInfo?.phone && `Tel: ${orgInfo.phone}`, orgInfo?.email && `Email: ${orgInfo.email}`, orgInfo?.website].filter(Boolean).join(" • ");
+    const contact = [orgInfo?.phone && `Tel: <a href="tel:${orgInfo.phone}">${orgInfo.phone}</a>`, orgInfo?.email && `Email: <a href="mailto:${orgInfo.email}">${orgInfo.email}</a>`, orgInfo?.website].filter(Boolean).join(" • ");
     const incomeRows = MODULE_META.map((m) => [
       m.label,
       summary.income[m.key].invoiced,
@@ -364,6 +370,7 @@ export default function FinancialReportsView() {
           </p>
         </div>
         <div className={flexWrapGap2}>
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
           <div className="relative">
             <CalendarRange size={17} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
             <input
@@ -556,7 +563,7 @@ export default function FinancialReportsView() {
                     <BarChart data={collectedVsInvoiced} barGap={4}>
                       <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `₦${(v / 1e6).toFixed(1)}M`} />
+                       <YAxis tick={{ fontSize: 11, fill: "var(--color-muted-fg)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currencySymbol(currency)}${(v / 1e6).toFixed(1)}M`} />
                       <Tooltip cursor={{ fill: "var(--color-muted)/20" }} contentStyle={{ borderRadius: 10, border: "1px solid var(--color-border)", background: "var(--color-card-bg)" }} formatter={(v) => [ngn(Number(v)), ""]} labelStyle={{ color: "var(--color-foreground)" }} />
                       <Legend iconType="circle" iconSize={8} formatter={(value: string) => <span className={mutedXs}>{value}</span>} />
                       <Bar dataKey="collected" name="Collected" fill="#10b981" radius={[6, 6, 0, 0]} />

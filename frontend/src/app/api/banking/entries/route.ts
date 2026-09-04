@@ -1,16 +1,18 @@
 import { withAuth, ok, ValidationError, ForbiddenError, requireTenant, resolveBankAccountId } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const MANUAL_ROLES = ["hospital_admin", "super_admin", "cashier", "accountant"] as const;
+const MANUAL_ROLES = ["hospital_admin", "cashier", "accountant"] as const;
 
 // POST /api/banking/entries — record a manual receipt ('in') or payment
 // ('out') directly into Cash or a bank account. account: "cash" or a
 // hospital_bank_accounts id (must exist and be active for the tenant).
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   if (!(MANUAL_ROLES as readonly string[]).includes(ctx.role)) {
     throw new ForbiddenError("Banking adjustments require admin, cashier or accountant access");
   }
@@ -87,8 +89,8 @@ export const POST = withAuth(async (req, ctx) => {
     entityId: entry.id,
     description:
       source === "opening"
-        ? `Opening balance of ₦${Number(body.amount).toLocaleString()} for ${accountId ? "bank" : "Cash"}`
-        : `Manual ${body.direction === "in" ? "receipt" : "payment"} of ₦${Number(body.amount).toLocaleString()} → ${
+        ? `Opening balance of ${symbol}${Number(body.amount).toLocaleString()} for ${accountId ? "bank" : "Cash"}`
+        : `Manual ${body.direction === "in" ? "receipt" : "payment"} of ${symbol}${Number(body.amount).toLocaleString()} → ${
             accountId ? "bank" : "Cash"
           }${body.notes ? ` — ${body.notes}` : ""}`,
   });

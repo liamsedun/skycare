@@ -15,7 +15,7 @@ export default async function BranchPricesPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/prices");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-prices", ["hospital_admin", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-prices", ["hospital_admin"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

@@ -75,7 +75,7 @@ const p = (rx.patients as { first_name?: string; last_name?: string; patient_num
 
     return ok({ dispensed: moved }, 201);
   },
-  { roles: ["hospital_admin", "super_admin", "pharmacist"] as const }
+  { roles: ["hospital_admin", "pharmacist"] as const }
 );
 
 export const runtime = "nodejs";

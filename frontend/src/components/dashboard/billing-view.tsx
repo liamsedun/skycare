@@ -10,6 +10,8 @@ import { inDateRange } from "@/lib/daterange";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { emptyState, errorBanner, fgMedium, fgSemibold, flexGap2, flexWrapGap2, mutedFg, mutedSm, mutedXs, pageTitle, sectionTitle } from "@/lib/ui-constants";
 import type { AccessLevel } from "@/lib/nav";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 import { KpiCard } from "./billing/billing-kpi";
 import { CreateInvoiceModal, InvoiceDetailModal } from "./billing/billing-modals";
 import { fetchAllPatients, inputCls, ngn, printHref, SOURCE_FILTERS, SOURCE_META, STATUS_FILTERS, statusClass, type Invoice, type PendingPayment } from "./billing/billing-shared";
@@ -17,6 +19,7 @@ import { fetchAllPatients, inputCls, ngn, printHref, SOURCE_FILTERS, SOURCE_META
 export default function BillingView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
   const viewOnly = accessLevel === "view_only";
   const router = useRouter();
+  const { selectedBranchId } = useBranch();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pending, setPending] = useState<PendingPayment[]>([]);
   const [summary, setSummary] = useState<{ collected: number; outstanding: number; monthCollected: number; monthOtherIncome: number; monthTotal: number; invoiceCount: number } | null>(null);
@@ -41,10 +44,11 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
       if (q.trim()) params.set("q", q.trim());
       if (from) params.set("from", from);
       if (to) params.set("to", to);
+      const branchQs = `&branch=${selectedBranchId ?? ""}`;
       const [invoiceRes, pendingRes, summaryRes] = await Promise.all([
-        fetch(`/api/billing/invoices?${params.toString()}`, { cache: "no-store" }),
-        fetch("/api/payments?status=pending&pageSize=100", { cache: "no-store" }),
-        fetch("/api/billing/summary", { cache: "no-store" }),
+        fetch(`/api/billing/invoices?${params.toString()}${branchQs}`, { cache: "no-store" }),
+        fetch(`/api/payments?status=pending&pageSize=100${branchQs}`, { cache: "no-store" }),
+        fetch(`/api/billing/summary${branchQs.startsWith("&") ? "?" + branchQs.slice(1) : ""}`, { cache: "no-store" }),
       ]);
       const invoiceBody = await invoiceRes.json();
       const pendingBody = await pendingRes.json();
@@ -60,7 +64,7 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
     } finally {
       setLoading(false);
     }
-  }, [filter, source, q, from, to]);
+  }, [filter, source, q, from, to, selectedBranchId]);
 
   // Debounce search typing; filters other than q apply immediately.
   useEffect(() => {
@@ -308,6 +312,7 @@ export default function BillingView({ accessLevel = "full", myRole }: { accessLe
       {/* Search + filters */}
       <div className="space-y-3 rounded-2xl border border-[var(--color-border)] bg-white p-4 shadow-[var(--shadow-sm)]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
           <div className="relative flex-1">
             <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-fg)]" />
             <input

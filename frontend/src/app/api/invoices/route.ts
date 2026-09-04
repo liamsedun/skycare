@@ -1,8 +1,9 @@
-﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel, parseBody } from "@/lib/api-utils";
+﻿import { withAuth, withStaff, okPaginated, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel, parseBody, applyBranchFilter } from "@/lib/api-utils";
 import { getPagination, resolveParam } from "@/lib/api-utils";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { notifyInvoiceIssued } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import { getTenantSettings, generateInvoiceNumber } from "@/lib/tenant-settings";
 import { validateWith } from "@/lib/schemas";
 import { invoiceCreateSchema } from "@/lib/schemas/invoice-schema";
@@ -41,6 +42,8 @@ export const GET = withAuth(async (req, ctx) => {
     .order("issue_date", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (status) query = query.eq("status", status);
   if (patientId) query = query.eq("patient_id", patientId);
@@ -142,7 +145,7 @@ export const POST = withStaff(async (req, ctx) => {
     .select();
   if (itemsError) throw new ValidationError(itemsError.message);
 
-  await notifyInvoiceIssued(ctx.svc, tenantId, body.patientId, invoice.id, invoiceNumber, body.totalAmount);
+  await notifyInvoiceIssued(ctx.svc, tenantId, body.patientId, invoice.id, invoiceNumber, body.totalAmount, (await tenantCurrency(ctx.svc, tenantId)).symbol);
 
   await logAudit(req, ctx, {
     action: "create",

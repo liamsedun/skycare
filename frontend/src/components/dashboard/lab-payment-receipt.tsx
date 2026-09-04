@@ -134,8 +134,8 @@ export default function LabPaymentReceipt({ params }: { params: Promise<{ id: st
                 </p>
                 <p className={mutedXsMt}>
                   {receipt.patient.patient_number}
-                  {receipt.patient.phone ? ` · ${receipt.patient.phone}` : ""}
-                  {receipt.patient.email ? ` · ${receipt.patient.email}` : ""}
+                  {receipt.patient.phone ? <> · <a href={`tel:${receipt.patient.phone}`} className="hover:underline">{receipt.patient.phone}</a></> : ""}
+                  {receipt.patient.email ? <> · <a href={`mailto:${receipt.patient.email}`} className="hover:underline">{receipt.patient.email}</a></> : ""}
                 </p>
               </div>
             )}

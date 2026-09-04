@@ -27,7 +27,7 @@ export const POST = withStaff(async (req, ctx) => {
   const records = Array.isArray(body.records) ? body.records : [];
   if (records.length === 0) throw new ValidationError("No records to import");
 
-  const isAdmin = ctx.role === "hospital_admin" || ctx.role === "super_admin";
+  const isAdmin = ctx.role === "hospital_admin";
   const canEditCatalog = isAdmin || ctx.role === "lab_tech";
   const errors: { row: number; message: string }[] = [];
   let created = 0;

@@ -1,6 +1,7 @@
 import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export const POST = withStaff(async (req, ctx) => {
       userIds: [claim.patient_id],
       type: "payment_confirmed",
       title: `Insurance claim ${body.status}`,
-      message: `${existing.claim_number} (${existing.provider_name}) — ₦${Number(claim.approved_amount ?? 0).toLocaleString()}`,
+      message: `${existing.claim_number} (${existing.provider_name}) — ${(await tenantCurrency(ctx.svc, tenantId)).symbol}${Number(claim.approved_amount ?? 0).toLocaleString()}`,
       referenceType: "insurance_claims",
       referenceId: claim.id,
     });

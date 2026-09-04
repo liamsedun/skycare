@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus, ClipboardList, Eye, FileText, KeyRound, MoreHorizontal, Pencil, Trash2, UserRound } from "lucide-react";
+import { CalendarPlus, ClipboardList, Eye, FileText, KeyRound, MoreHorizontal, Pencil, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import DoctorNotesSection from "@/components/dashboard/doctor-notes-section";
 import MedicalReportsSection from "@/components/dashboard/medical-reports-section";
 import { CLINICIAN_ROLES } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { emptyState, errorBanner, flexBetween, flexWrapGap2, ghostIconBtn, modal
 import { ErrorNote, Modal, inputCls, labelCls, type DependantRow, type MedicalRecord, type PatientDetail, type PatientRow, type PatientView } from "./patient-dialog-shared";
 import { PatientInfoTab } from "./patient-info-tab";
 import { PatientMedicalRecordTab } from "./patient-medical-record-tab";
+import PatientInsuranceTab from "./patient-insurance-tab";
 export function PatientViewButton({
   patient,
   myRole,
@@ -17,7 +18,7 @@ export function PatientViewButton({
   patient: PatientRow;
   myRole?: string;
 }) {
-  const canDelete = myRole === "hospital_admin" || myRole === "super_admin";
+  const canDelete = myRole === "hospital_admin";
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<PatientDetail | null>(null);
@@ -30,7 +31,7 @@ export function PatientViewButton({
   const [showAddDependant, setShowAddDependant] = useState(false);
   const [depInfo, setDepInfo] = useState<string | null>(null);
   const [showAddRecord, setShowAddRecord] = useState(false);
-  const [tab, setTab] = useState<"info" | "records" | "notes" | "reports">("info");
+  const [tab, setTab] = useState<"info" | "records" | "notes" | "reports" | "insurance">("info");
   const [showSchedule, setShowSchedule] = useState(false);
   const [doctors, setDoctors] = useState<{ id: string; label: string }[]>([]);
   const [schedBusy, setSchedBusy] = useState(false);
@@ -294,12 +295,6 @@ export function PatientViewButton({
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to add dependant");
-      const added = body.data as { tempPassword?: string } | null;
-      if (added?.tempPassword) {
-        setDepInfo(
-          `A portal login was created automatically from this dependant's email. Share these credentials with them: temporary password ${added.tempPassword}`
-        );
-      }
       await load();
       router.refresh();
     } catch (e) {
@@ -344,40 +339,8 @@ export function PatientViewButton({
     }
   }
 
-  async function provisionDependantLogin(d: DependantRow, forceReset = false) {
-    const who = `${d.first_name} ${d.last_name}`;
-    if (!forceReset && !confirm(`Create a portal login for ${who}? A temporary password will be generated — you'll see it once, so copy it and share it with them.`)) return;
-    if (forceReset && !confirm(`Reset the portal password for ${who}? A new temporary password will be generated — you'll see it once, so copy it and share it with them; the old one stops working immediately.`)) return;
-    setBusy(true);
-    setError(null);
-    setDepInfo(null);
-    try {
-      const res = await fetch("/api/dependants/provision-portal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patientIds: [d.id], forceReset }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Failed to create portal login");
-      const p = body.data?.provisioned?.[0] as { firstName?: string; lastName?: string; email?: string; tempPassword?: string } | undefined;
-      if (p?.tempPassword) {
-        setDepInfo(forceReset
-          ? `Portal password reset for ${p.firstName ?? ""} ${p.lastName ?? ""}. Share these credentials: email ${p.email}, temporary password ${p.tempPassword}`
-          : `Portal login created for ${p.firstName ?? ""} ${p.lastName ?? ""}. Share these credentials: email ${p.email}, temporary password ${p.tempPassword}`);
-      } else {
-        setDepInfo(`No login created — ${body.data?.skipped?.[0]?.reason ?? "see the message"}.`);
-      }
-      await load();
-      router.refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create portal login");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function removeDependant(id: string) {
-    if (!confirm("Remove this dependant? This deactivates their portal login.")) return;
+    if (!confirm("Remove this dependant from the family account?")) return;
     setBusy(true);
     setError(null);
     try {
@@ -474,7 +437,6 @@ export function PatientViewButton({
     transferPatient,
     addDependant,
     updateDependant,
-    provisionDependantLogin,
     removeDependant,
     provisionPrimaryLogin,
   };
@@ -614,6 +576,7 @@ export function PatientViewButton({
                     ["records", "Medical Records", ClipboardList],
                     ["notes", "Clinical Notes", FileText],
                     ["reports", "Medical Reports", FileText],
+                    ["insurance", "Insurance", ShieldCheck],
                   ] as const
                 ).map(([key, label, Icon]) => (
                   <button
@@ -641,6 +604,10 @@ export function PatientViewButton({
                   patientId={patient.id}
                   patientName={detail ? `${detail.first_name} ${detail.last_name}` : "Patient"}
                 />
+              )}
+
+              {tab === "insurance" && (
+                <PatientInsuranceTab patientId={patient.id} />
               )}
             </div>
           ) : (

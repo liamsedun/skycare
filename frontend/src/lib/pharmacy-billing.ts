@@ -26,7 +26,8 @@ export async function mirrorPharmacyInvoiceToCentral(
   svc: SupabaseClient,
   tenantId: string,
   invoice: PharmacyInvoiceRow,
-  actorId: string
+  actorId: string,
+  currencySymbol = "₦"
 ): Promise<string | null> {
   if (!invoice.patient_id || invoice.synced_invoice_id) return null;
 
@@ -80,7 +81,7 @@ export async function mirrorPharmacyInvoiceToCentral(
     .eq("id", invoice.id);
 
   // The patient's portal account (and the family root) learns about the bill.
-  await notifyInvoiceIssued(svc, tenantId, invoice.patient_id, central.id, invoice.invoice_number, Number(invoice.total_amount));
+  await notifyInvoiceIssued(svc, tenantId, invoice.patient_id, central.id, invoice.invoice_number, Number(invoice.total_amount), currencySymbol);
 
   return central.id;
 }
@@ -109,7 +110,8 @@ export async function createPrescriptionInvoice(
   rx: PrescriptionForInvoice,
   items: InvoiceLineSource[],
   actorId: string,
-  branchId?: string | null
+  branchId?: string | null,
+  currencySymbol = "₦"
 ): Promise<{ id: string; invoice_number: string; total_amount: number } | null> {
   const lines = items.filter((i) => i.pharmacy_drug_id && Math.floor(Number(i.quantity) || 0) > 0);
   if (lines.length === 0) return null;
@@ -151,7 +153,7 @@ export async function createPrescriptionInvoice(
     .single();
   if (!invoice) throw new Error("Invoice created but could not be loaded");
 
-  await mirrorPharmacyInvoiceToCentral(svc, tenantId, invoice, actorId);
+  await mirrorPharmacyInvoiceToCentral(svc, tenantId, invoice, actorId, currencySymbol);
 
   return {
     id: invoice.id,

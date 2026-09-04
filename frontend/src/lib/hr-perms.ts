@@ -2,7 +2,7 @@ import type { AppRole } from "@/lib/auth";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Roles allowed to manage the HR module (beyond staff self-service). */
-export const HR_ADMIN_ROLES: AppRole[] = ["hospital_admin", "hr_officer", "super_admin"];
+export const HR_ADMIN_ROLES: AppRole[] = ["hospital_admin", "hr_officer"];
 
 export function isHrAdmin(role: AppRole | undefined): boolean {
   return !!role && HR_ADMIN_ROLES.includes(role);
@@ -10,7 +10,7 @@ export function isHrAdmin(role: AppRole | undefined): boolean {
 
 /**
  * Check the tenant's roles_permissions matrix (lazy-seeded) for a permission
- * key like "hr.payroll.view" / "prescribe". super_admin/hospital_admin bypass.
+ * key like "hr.payroll.view" / "prescribe". hospital_admin bypass.
  * Supports exact keys, "prefix.*" wildcards and the seeded "hr.*" umbrella.
  */
 export async function hrHasPermission(
@@ -19,7 +19,7 @@ export async function hrHasPermission(
   role: AppRole,
   key: string
 ): Promise<boolean> {
-  if (role === "super_admin" || role === "hospital_admin") return true;
+  if (role === "hospital_admin") return true;
   try {
     const { data } = await svc
       .from("roles_permissions")

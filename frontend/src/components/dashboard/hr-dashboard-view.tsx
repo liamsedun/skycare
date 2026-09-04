@@ -1,6 +1,7 @@
 "use client";
 
 import { mutedXs, mutedFg, flexBetween, mutedXsMt1, fgSemibold } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
@@ -121,6 +122,7 @@ function Ring({ pct, label }: { pct: number; label: string }) {
 }
 
 export default function HrDashboardView() {
+  const { currency } = useCurrency();
   const [dash, setDash] = useState<Dash | null>(null);
   const [attSeries, setAttSeries] = useState<Array<{ day: string; present: number; late: number; absent: number }>>([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +155,7 @@ export default function HrDashboardView() {
 
       const me = await meRes.json();
       const role = me.data?.claims?.role as string | undefined;
-      const admin = !!role && ["hospital_admin", "hr_officer", "super_admin"].includes(role);
+      const admin = !!role && ["hospital_admin", "hr_officer"].includes(role);
       setIsAdmin(admin);
 
       const att = await attRes.json();
@@ -295,7 +297,7 @@ export default function HrDashboardView() {
         <KpiCard icon={Users} tint={C.sky} label="Staff" value={staff?.total ?? 0} sub={`${staff?.active ?? 0} active · ${staff?.on_leave ?? 0} on leave`} />
         <KpiCard icon={Clock} tint={C.emerald} label="Attendance today" value={`${today?.present ?? 0}/${today?.scheduled ?? 0}`} sub={`${today?.late ?? 0} late · ${today?.absent ?? 0} absent`} />
         <KpiCard icon={TrendingUp} tint={C.amber} label={periodActive ? "Period rate" : "Month rate"} value={`${month?.rate ?? 0}%`} sub={`${month?.present ?? 0} present · ${month?.absent ?? 0} absent`} valueCls="text-emerald-600" />
-        <KpiCard icon={Wallet} tint={C.violet} label={`Payroll ${dash?.payroll?.period ?? ""}`} value={`₦${(dash?.payroll?.net ?? 0).toLocaleString()}`} sub={`${dash?.payroll?.records ?? 0} records · ${dash?.payroll?.paid ?? 0} paid`} />
+        <KpiCard icon={Wallet} tint={C.violet} label={`Payroll ${dash?.payroll?.period ?? ""}`} value={`${currencySymbol(currency)}${(dash?.payroll?.net ?? 0).toLocaleString()}`} sub={`${dash?.payroll?.records ?? 0} records · ${dash?.payroll?.paid ?? 0} paid`} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">

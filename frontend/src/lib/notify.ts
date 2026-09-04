@@ -28,6 +28,7 @@ export interface NotifyInput {
   message?: string;
   referenceType?: string;
   referenceId?: string;
+  currencySymbol?: string;
 }
 
 export async function notifyUsers(
@@ -98,7 +99,8 @@ export async function notifyInvoiceIssued(
   patientId: string | null | undefined,
   invoiceId: string,
   invoiceNumber: string,
-  totalAmount: number
+  totalAmount: number,
+  currencySymbol = "₦"
 ): Promise<void> {
   const userIds = await resolvePatientUserIds(svc, tenantId, patientId);
   if (userIds.length === 0) return;
@@ -107,7 +109,7 @@ export async function notifyInvoiceIssued(
     userIds,
     type: "invoice_issued",
     title: "New bill on your account",
-    message: `Invoice ${invoiceNumber} — ₦${Number(totalAmount).toLocaleString()} has been raised on your account.`,
+    message: `Invoice ${invoiceNumber} — ${currencySymbol}${Number(totalAmount).toLocaleString()} has been raised on your account.`,
     referenceType: "invoices",
     referenceId: invoiceId,
   });

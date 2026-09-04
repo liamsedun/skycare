@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CalendarPlus, FileDown, Loader2, ReceiptText } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { btnBase, cardTitle, divideBorder, errorBanner, fgMedium, fgSemibold, flexWrapGap2, mutedFg, mutedSmPlain, mutedXsMt, rowStart, tableHeadCell } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { LabRequest, LabService, inputCls, labelCls, statusClass } from "./lab-shared";
 import { ModalShell } from "./lab-modal-shell";
 
@@ -12,6 +13,7 @@ import { ModalShell } from "./lab-modal-shell";
 // CREATE REQUEST MODAL — patient + optional doctor + services grouped by category
 // ---------------------------------------------------------------------------
 export function CreateRequestModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { currency } = useCurrency();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patients, setPatients] = useState<{ id: string; label: string }[]>([]);
@@ -316,7 +318,7 @@ export function CreateRequestModal({ onClose, onCreated }: { onClose: () => void
                         <span className="flex-1">
                           <span className={fgMedium}>{svc.name}</span>
                           <span className="ml-2 text-xs text-[var(--color-muted-fg)]">
-                            {svc.type === "imaging" ? "imaging" : "lab"} · ₦{Number(svc.price).toLocaleString()}
+                            {svc.type === "imaging" ? "imaging" : "lab"} · {currencySymbol(currency)}{Number(svc.price).toLocaleString()}
                           </span>
                           {selected[svc.id] && (
                             <span className="mt-1 flex gap-2">
@@ -355,7 +357,7 @@ export function CreateRequestModal({ onClose, onCreated }: { onClose: () => void
         {isWalkIn && (
           <div className="rounded-xl border border-[var(--color-border)] p-3">
             <p className="mb-2 text-sm font-semibold text-[var(--color-foreground)]">
-              Instant payment — ₦{selectedTotal.toLocaleString()}
+              Instant payment — {currencySymbol(currency)}{selectedTotal.toLocaleString()}
               <span className="ml-1 text-xs font-normal text-[var(--color-muted-fg)]">
                 (walk-in customers pay up-front; credit is not available)
               </span>
@@ -427,7 +429,7 @@ export function CreateRequestModal({ onClose, onCreated }: { onClose: () => void
               {busy
                 ? "Creating…"
                 : isWalkIn
-                  ? `Collect ₦${selectedTotal.toLocaleString()} & create request`
+                  ? `Collect ${currencySymbol(currency)}${selectedTotal.toLocaleString()} & create request`
                   : "Create lab request"}
             </button>
           )}
@@ -453,6 +455,7 @@ export function RequestDetailModal({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const { currency } = useCurrency();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
@@ -612,7 +615,7 @@ export function RequestDetailModal({
           {request.payments ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700" title="Walk-in payment received up-front">
               <ReceiptText size={13} aria-hidden="true" />
-              Paid · {request.payments.reference ?? "—"} · {request.payments.payment_method?.replace(/_/g, " ") ?? "—"} · ₦
+              Paid · {request.payments.reference ?? "—"} · {request.payments.payment_method?.replace(/_/g, " ") ?? "—"} · {currencySymbol(currency)}
               {Number(request.payments.amount).toLocaleString()}
             </span>
           ) : null}
@@ -631,7 +634,7 @@ export function RequestDetailModal({
                 title="Invoice generated for this request"
               >
                 <ReceiptText size={13} aria-hidden="true" />
-                {request.invoices.invoice_number} · {request.invoices.status.replace(/_/g, " ")} · ₦
+                {request.invoices.invoice_number} · {request.invoices.status.replace(/_/g, " ")} · {currencySymbol(currency)}
                 {Number(request.invoices.total_amount).toLocaleString()}
               </span>
             ) : canBill && request.status !== "cancelled" ? (

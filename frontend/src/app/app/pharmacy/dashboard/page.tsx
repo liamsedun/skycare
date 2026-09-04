@@ -14,7 +14,7 @@ export default async function PharmacyDashboardPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/dashboard");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-dashboard", ["hospital_admin", "pharmacist", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-dashboard", ["hospital_admin", "pharmacist"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

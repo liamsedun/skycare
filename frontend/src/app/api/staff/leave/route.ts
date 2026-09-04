@@ -5,6 +5,7 @@ import {
   ValidationError,
   requireTenant,
   getPagination,
+  applyBranchFilter,
 } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import type { NextRequest } from "next/server";
@@ -12,7 +13,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 const LEAVE_TYPES = ["annual", "sick", "study", "unpaid", "maternity", "emergency", "paternity"];
-const ADMIN_ROLES = ["hospital_admin", "super_admin"];
+const ADMIN_ROLES = ["hospital_admin"];
 
 function isAdmin(ctx: any): boolean {
   return ADMIN_ROLES.includes(ctx.role);
@@ -33,6 +34,8 @@ export const GET = withStaff(async (req, ctx) => {
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false })
     .range(from, to);
+
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
 
   if (isAdmin(ctx)) {
     if (status) query = query.eq("status", status);

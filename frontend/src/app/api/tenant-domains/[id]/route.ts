@@ -19,7 +19,7 @@ function idFrom(req: NextRequest): string {
 }
 
 function adminOnly(role: string): void {
-  if (role !== "hospital_admin" && role !== "super_admin") {
+  if (role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
 }

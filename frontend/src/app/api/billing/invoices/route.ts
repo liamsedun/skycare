@@ -1,9 +1,9 @@
-import { withAuth, okPaginated, ForbiddenError, ValidationError, requireTenant, getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
+import { withAuth, okPaginated, ForbiddenError, ValidationError, requireTenant, getPagination, resolveParam, sanitizeLike, applyBranchFilter } from "@/lib/api-utils";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const BILLING_ROLES = ["hospital_admin", "cashier", "super_admin"];
+const BILLING_ROLES = ["hospital_admin", "cashier"];
 
 const CENTRAL_SELECT =
   "id, tenant_id, branch_id, patient_id, admission_id, invoice_number, issue_date, due_date, status, subtotal, tax_amount, discount_amount, total_amount, paid_amount, insurance_claimable, notes, created_by, attending_staff_id, created_at, updated_at, patients(id, patient_number, first_name, last_name, gender, phone, user_id), invoice_items(id, description, quantity, unit_price, total_price, vat_percent, vat_amount), payments(id, amount, payment_method, status, reference, paid_at)";
@@ -91,6 +91,7 @@ export const GET = withAuth(async (req, ctx) => {
     .order("issue_date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1000);
+  cq = applyBranchFilter(cq, req.nextUrl.searchParams, ctx);
   if (status) cq = cq.eq("status", status);
   if (from) cq = cq.gte("issue_date", from);
   if (to) cq = cq.lte("issue_date", to);
@@ -113,6 +114,7 @@ export const GET = withAuth(async (req, ctx) => {
     .is("synced_invoice_id", null)
     .order("created_at", { ascending: false })
     .limit(1000);
+  pq = applyBranchFilter(pq, req.nextUrl.searchParams, ctx);
   if (status) {
     const matches = pharmacyStatusesFor(status);
     if (matches) pq = pq.in("status", matches);

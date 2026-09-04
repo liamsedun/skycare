@@ -34,7 +34,7 @@ export const GET = withStaff(async (req, ctx) => {
   await requireModuleLevel(ctx, "staff");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);
-  if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
+  if (!user || user.tenant_id !== ctx.tenantId) {
     throw new NotFoundError("User not found");
   }
   return ok(user);
@@ -44,8 +44,8 @@ export const GET = withStaff(async (req, ctx) => {
 // full_name / email / phone (tenant-scoped). Email changes are pushed to the
 // auth account first (duplicates rejected there), then the users mirror.
 export const PATCH = withAuth(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
-  if (ctx.role !== "super_admin") requireTenant(ctx);
+  if (ctx.role !== "hospital_admin") throw new ForbiddenError();
+  requireTenant(ctx);
   await requireModuleLevel(ctx, "staff", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const body = (await req.json()) as {
@@ -59,7 +59,7 @@ export const PATCH = withAuth(async (req, ctx) => {
   };
 
   const user = await loadUser(ctx, id);
-  if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
+  if (!user || user.tenant_id !== ctx.tenantId) {
     throw new NotFoundError("User not found");
   }
   if (user.role === "super_admin") throw new ForbiddenError("Platform admins cannot be modified");
@@ -69,8 +69,7 @@ export const PATCH = withAuth(async (req, ctx) => {
   if (typeof body.is_active === "boolean") patch.is_active = body.is_active;
   if (typeof body.role === "string") {
     if (
-      !GRANTABLE_ROLES.includes(body.role as never) &&
-      !(ctx.role === "super_admin" && body.role === "super_admin")
+      !GRANTABLE_ROLES.includes(body.role as never)
     ) {
       throw new ValidationError("Cannot assign that role");
     }
@@ -168,18 +167,17 @@ export const PATCH = withAuth(async (req, ctx) => {
 
 // DELETE /api/admin/users/[id] — permanent removal.
 // hospital_admin: own-tenant staff only (never platform admins, never self).
-// super_admin: platform-wide, still never other platform admins or self.
 // Removes the auth account, the users row (staff profile + rosters + leave +
 // notifications + mail + chats cascade), and nulls audit references.
 export const DELETE = withAuth(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
-  if (ctx.role !== "super_admin") requireTenant(ctx);
+  requireTenant(ctx);
   await requireModuleLevel(ctx, "staff", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const user = await loadUser(ctx, id);
-  if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
+  if (!user || user.tenant_id !== ctx.tenantId) {
     throw new NotFoundError("User not found");
   }
   if (user.role === "super_admin") throw new ForbiddenError("Platform admins cannot be deleted");

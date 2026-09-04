@@ -157,9 +157,9 @@ export function SuppliersTab({ viewOnly = false }: { viewOnly?: boolean }) {
                     {s.code && <p className={mutedXs}>{s.code}</p>}
                   </td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">
-                    {[s.contactPerson, s.email].filter(Boolean).join(" Â· ") || "â€”"}
+                    {(() => { const parts: React.ReactNode[] = []; if (s.contactPerson) parts.push(s.contactPerson); if (s.email) parts.push(<a key={s.id} href={`mailto:${s.email}`} className="hover:underline">{s.email}</a>); return parts.length ? <>{parts.reduce((a: React.ReactNode, b: React.ReactNode, i: number) => <>{a}{i > 0 ? " \u00b7 " : ""}{b}</>)}</> : "\u2014"; })()}
                   </td>
-                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.phone ?? "â€”"}</td>
+                  <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.phone ? <a href={`tel:${s.phone}`} className="hover:underline">{s.phone}</a> : "\u2014"}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.nafdacLicense ?? "â€”"}</td>
                   <td className="px-4 py-2.5 text-[var(--color-muted-fg)]">{s.paymentTerms ?? "â€”"}</td>
                   <td className="px-4 py-2.5 text-right">

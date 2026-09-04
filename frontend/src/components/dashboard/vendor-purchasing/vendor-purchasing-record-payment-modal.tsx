@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ngn } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { errorBanner, mutedXsMt1 } from "@/lib/ui-constants";
 import { inputCls, labelCls, METHOD_LABELS, METHOD_ICONS, SupplierOption, ModalShell } from "./vendor-purchasing-shared";
 
@@ -28,6 +29,7 @@ export function RecordPaymentModal({
   const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useCurrency();
 
   async function pickSupplier(sid: string) {
     setSupplierId(sid);
@@ -119,7 +121,7 @@ export function RecordPaymentModal({
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className={labelCls} htmlFor="pay-amount">Amount (₦)</label>
+            <label className={labelCls} htmlFor="pay-amount">Amount ({currencySymbol(currency)})</label>
             <input id="pay-amount" type="number" min={0.01} step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} />
           </div>
           <div>

@@ -14,7 +14,7 @@ export default async function LabIncomePage() {
 
   if (!user) redirect("/login?redirect=/app/lab/income");
 
-  const accessLevel = await requireModulePage(supabase, user, "lab-income", ["hospital_admin", "lab_tech", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "lab-income", ["hospital_admin", "lab_tech"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

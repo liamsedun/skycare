@@ -721,7 +721,7 @@ export default function PatientDashboard({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold text-white">{org?.name ?? "SkyCare"}</p>
                   {org?.address && <p className="truncate text-[10px] text-white/60">{org.address}</p>}
-                  {org?.email && <p className="truncate text-[10px] text-white/60">{org.email}</p>}
+                  {org?.email && <a href={`mailto:${org.email}`} className="truncate text-[10px] text-white/60 hover:underline">{org.email}</a>}
                 </div>
               </div>
               <div className="flex gap-3 px-4 pt-4">
@@ -753,7 +753,7 @@ export default function PatientDashboard({
                 <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-1.5">
                   <div className="flex items-center justify-between gap-3 py-1">
                     <span className="text-[10px] font-semibold tracking-wider text-white/45 uppercase">Phone</span>
-                    <span className="truncate text-right text-xs font-semibold text-white">{patientMe?.phone ?? "—"}</span>
+                    <span className="truncate text-right text-xs font-semibold text-white">{patientMe?.phone ? <a href={`tel:${patientMe.phone}`} className="hover:underline">{patientMe.phone}</a> : "—"}</span>
                   </div>
                   <div className="flex items-center justify-between gap-3 py-1">
                     <span className="text-[10px] font-semibold tracking-wider text-white/45 uppercase">Date of Birth</span>

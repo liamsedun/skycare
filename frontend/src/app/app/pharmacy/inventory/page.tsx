@@ -14,7 +14,7 @@ export default async function InventoryPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/inventory");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-inventory", ["hospital_admin", "pharmacist", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-inventory", ["hospital_admin", "pharmacist"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

@@ -8,6 +8,8 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { errorBanner, mutedSm, pageTitle } from "@/lib/ui-constants";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 import {
   LabRequest,
   LabService,
@@ -37,6 +39,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
   const [q, setQ] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const { selectedBranchId } = useBranch();
 
   const servicesRef = useRef<LabService[]>([]);
   const [servicesReload, setServicesReload] = useState(0);
@@ -50,6 +53,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
       if (q.trim()) params.set("q", q.trim());
       if (fromDate) params.set("from", fromDate);
       if (toDate) params.set("to", toDate);
+      if (selectedBranchId) params.set("branch", selectedBranchId);
       const res = await fetch(`/api/lab-requests?${params.toString()}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load lab requests");
@@ -59,7 +63,7 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
     } finally {
       setLoading(false);
     }
-  }, [filter, q, fromDate, toDate]);
+  }, [filter, q, fromDate, toDate, selectedBranchId]);
 
   useEffect(() => {
     loadRequests();
@@ -241,7 +245,8 @@ export default function LabView({ canManageCatalog, canEditService, canEnterResu
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Lab module sections">
+      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Lab module sections">
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <button
           type="button"
           onClick={() => setTab("requests")}

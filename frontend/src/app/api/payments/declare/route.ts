@@ -1,6 +1,7 @@
 import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export interface DeclarePaymentBody {
 // (status pending until billing staff confirm via /api/payments/record).
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   if (ctx.role !== "patient_api") {
     throw new ForbiddenError("Only patients can declare payments");
   }
@@ -105,7 +107,7 @@ export const POST = withAuth(async (req, ctx) => {
       userIds: staffIds,
       type: "payment_declared",
       title: "New payment declared",
-      message: `${reference} — ₦${body.amount.toLocaleString()} for invoice ${invoice.invoice_number} (${method})`,
+      message: `${reference} — ${symbol}${body.amount.toLocaleString()} for invoice ${invoice.invoice_number} (${method})`,
       referenceType: "payments",
       referenceId: payment.id,
     });
@@ -115,7 +117,7 @@ export const POST = withAuth(async (req, ctx) => {
     action: "create",
     entityType: "payments",
     entityId: payment.id,
-    description: `Declared ${method} payment of ₦${body.amount.toLocaleString()} for invoice ${invoice.invoice_number}`,
+    description: `Declared ${method} payment of ${symbol}${body.amount.toLocaleString()} for invoice ${invoice.invoice_number}`,
   });
 
   return ok(payment, 201);

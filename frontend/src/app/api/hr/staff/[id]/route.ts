@@ -20,7 +20,7 @@ export const GET = withStaff(async (req, ctx) => {
     .maybeSingle();
   if (error) throw new ValidationError(error.message);
   if (!staff) throw new NotFoundError("Staff member not found");
-  if (ctx.role !== "hospital_admin" && ctx.role !== "hr_officer" && ctx.role !== "super_admin"
+  if (ctx.role !== "hospital_admin" && ctx.role !== "hr_officer"
       && (staff.users as { id?: string } | null)?.id !== ctx.user.id) {
     throw new ForbiddenError("You can only view your own HR profile");
   }

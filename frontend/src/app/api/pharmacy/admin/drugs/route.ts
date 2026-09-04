@@ -143,7 +143,7 @@ export const POST = withAuth(
     await invalidatePharmacyCatalogCache(tenantId);
     return ok(data, 201);
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 export const runtime = "nodejs";

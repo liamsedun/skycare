@@ -8,6 +8,8 @@ import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { mutedXs, mutedSm, divideBorder, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -44,6 +46,7 @@ export default function HrAttendanceView() {
   const [me, setMe] = useState<{ full_name?: string; role?: string; user_id?: string } | null>(null);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const { selectedBranchId } = useBranch();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -52,10 +55,10 @@ export default function HrAttendanceView() {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const meBody = await meRes.json();
       const role = meBody.data?.claims?.role;
-      setIsAdmin(["hospital_admin", "hr_officer", "super_admin"].includes(role));
+      setIsAdmin(["hospital_admin", "hr_officer"].includes(role));
       setMe({ full_name: meBody.data?.user?.user_metadata?.full_name ?? "", role, user_id: meBody.data?.user?.id });
 
-      const res = await fetch(`/api/hr/attendance?date=${date}`, { cache: "no-store" });
+      const res = await fetch(`/api/hr/attendance?date=${date}${selectedBranchId ? `&branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load attendance");
       setRows(body.data ?? []);
@@ -64,7 +67,7 @@ export default function HrAttendanceView() {
     } finally {
       setLoading(false);
     }
-  }, [date]);
+  }, [date, selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -149,6 +152,7 @@ export default function HrAttendanceView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <input type="date" className={inputCls + " max-w-[180px]"} value={date} onChange={(e) => setDate(e.target.value)} />
         <DateRangeBar
           from={from}

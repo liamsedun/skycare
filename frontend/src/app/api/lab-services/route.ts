@@ -54,7 +54,7 @@ export const POST = withStaff(async (req, ctx) => {
   const name = body.name?.trim();
   if (!name) throw new ValidationError("Service name is required");
   const type = body.type === "imaging" ? "imaging" : "lab";
-  const isAdmin = ctx.role === "hospital_admin" || ctx.role === "super_admin";
+  const isAdmin = ctx.role === "hospital_admin";
 
   let categoryId: string | null = body.categoryId || null;
 

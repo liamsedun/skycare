@@ -6,7 +6,7 @@ import BedMapView from "@/components/dashboard/bed-map-view";
 
 export const dynamic = "force-dynamic";
 
-const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "receptionist", "super_admin"];
+const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "receptionist"];
 
 export default async function BedMapPage() {
   const supabase = await createClient();
@@ -22,7 +22,7 @@ export default async function BedMapPage() {
 
   return (
     <div className="space-y-6">
-      <BedMapView accessLevel={accessLevel} canManage={!viewOnly && (role === "hospital_admin" || role === "super_admin")} />
+      <BedMapView accessLevel={accessLevel} canManage={!viewOnly && (role === "hospital_admin")} />
     </div>
   );
 }

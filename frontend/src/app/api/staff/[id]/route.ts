@@ -26,7 +26,7 @@ export const GET = withStaff(async (req, ctx) => {
 // PUT /api/staff/[id] — staff profile fields (admin)
 export const PUT = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const id = req.nextUrl.pathname.split("/").pop()!;
@@ -65,7 +65,7 @@ export const PUT = withStaff(async (req, ctx) => {
 // DELETE /api/staff/[id] — remove staff row (user account stays, deactivated)
 export const DELETE = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const id = req.nextUrl.pathname.split("/").pop()!;

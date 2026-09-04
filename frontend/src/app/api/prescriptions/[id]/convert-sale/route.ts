@@ -2,6 +2,7 @@ import { withStaff, ok, ValidationError, NotFoundError, requireTenant } from "@/
 import { logAudit } from "@/lib/audit";
 import { generatePrescriptionPdf } from "@/lib/prescription-pdf";
 import { mirrorPharmacyInvoiceToCentral } from "@/lib/pharmacy-billing";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ interface BatchRow {
 // shortage check rejects the whole conversion up front.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const id = req.nextUrl.pathname.split("/").at(-2)!;
   const rx = await getPrescription(ctx, id, tenantId);
   if (!rx) throw new NotFoundError("Prescription not found");
@@ -249,7 +251,7 @@ export const POST = withStaff(async (req, ctx) => {
       p_prescription_id: id,
       p_event: "dispensed",
     });
-    if (inv) await mirrorPharmacyInvoiceToCentral(ctx.svc, tenantId, inv, ctx.user.id);
+    if (inv) await mirrorPharmacyInvoiceToCentral(ctx.svc, tenantId, inv, ctx.user.id, symbol);
   } catch (e) {
     console.error("convert-sale extras failed", e);
   }
@@ -258,7 +260,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "pharmacy_invoices",
     entityId: invoice?.id,
-    description: `Prescription ${id} converted to ${channel} sale — invoice ${invoice?.invoice_number ?? ""} ₦${(
+    description: `Prescription ${id} converted to ${channel} sale — invoice ${invoice?.invoice_number ?? ""} ${symbol}${(
       Number(invoice?.total_amount) ?? 0
     ).toLocaleString()}, stock issued`,
   });

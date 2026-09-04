@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, ShieldCheck } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { errorBanner, flexBetween, flexWrapGap2, ghostIconBtn, modalBackdrop } from "@/lib/ui-constants";
 
@@ -102,6 +102,9 @@ export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [patients, setPatients] = useState<PatientOption[]>([]);
   const [doctors, setDoctors] = useState<DoctorOption[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [patientInsurance, setPatientInsurance] = useState<{ coverage_type: string; copay_percent: number | null; insurance_providers: { name: string } | null } | null>(null);
+  const [insuranceChecked, setInsuranceChecked] = useState(false);
 
   const loadOptions = useCallback(async () => {
     try {
@@ -133,6 +136,21 @@ export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
   useEffect(() => {
     if (open) loadOptions();
   }, [open, loadOptions]);
+
+  useEffect(() => {
+    if (!selectedPatientId) { setPatientInsurance(null); setInsuranceChecked(false); return; }
+    (async () => {
+      try {
+        const res = await fetch(`/api/insurance/eligibility?patient_id=${selectedPatientId}`, { cache: "no-store" });
+        if (res.ok) {
+          const body = await res.json();
+          const active = (body.data ?? []).find((p: { status: string }) => p.status === "active");
+          setPatientInsurance(active ?? null);
+        }
+      } catch { /* optional */ }
+      setInsuranceChecked(true);
+    })();
+  }, [selectedPatientId]);
 
   async function handleSubmit(form: FormData) {
     setBusy(true);
@@ -202,7 +220,9 @@ export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
             >
               <div>
                 <label className={labelCls} htmlFor="a-patient">Patient</label>
-                <select id="a-patient" name="patientId" required className={inputCls}>
+                <select id="a-patient" name="patientId" required className={inputCls}
+                  value={selectedPatientId}
+                  onChange={(e) => setSelectedPatientId(e.target.value)}>
                   <option value="">Select patient…</option>
                   {patients.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -211,6 +231,14 @@ export function NewAppointmentButton({ onBooked }: { onBooked?: () => void }) {
                   ))}
                 </select>
               </div>
+              {insuranceChecked && patientInsurance && (
+                <div className="flex items-center gap-2 rounded-lg bg-sky-50 border border-sky-200 px-3 py-2">
+                  <ShieldCheck size={14} className="text-sky-600" />
+                  <span className="text-xs font-medium text-sky-700">
+                    Insurance verified — {patientInsurance.insurance_providers?.name ?? "Provider"} · {patientInsurance.copay_percent != null ? `${100 - patientInsurance.copay_percent}% covered` : "Full coverage"}
+                  </span>
+                </div>
+              )}
               <div>
                 <label className={labelCls} htmlFor="a-doctor">Doctor (optional)</label>
                 <select id="a-doctor" name="doctorId" className={inputCls}>

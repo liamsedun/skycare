@@ -81,7 +81,7 @@ export default function TenantContact({ tenant }: { tenant: TenantSiteProfile })
                       </a>
                     )}
                     {tenant.emergency_phone && (
-                      <p className="text-sm text-[#6B7A90]">Emergency: {tenant.emergency_phone}</p>
+                      <a href={`tel:${tenant.emergency_phone}`} className="block text-sm text-[#6B7A90] hover:text-[#0F4C81]">Emergency: {tenant.emergency_phone}</a>
                     )}
                   </div>
                 </div>

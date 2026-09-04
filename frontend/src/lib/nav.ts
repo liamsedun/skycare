@@ -17,6 +17,7 @@ import {
   ReceiptText,
   Settings,
   ShieldCheck,
+  ShieldPlus,
   SlidersHorizontal,
   TrendingUp,
   UserCircle,
@@ -29,6 +30,7 @@ import {
   TestTube,
   Clock,
   Landmark,
+  MapPin,
 } from "lucide-react";
 import type { StaffRole } from "@/lib/auth";
 
@@ -46,11 +48,11 @@ export interface NavItem {
   children?: NavItem[];
 }
 
-const ADMIN = ["hospital_admin", "super_admin"] as StaffRole[];
+const ADMIN = ["hospital_admin"] as StaffRole[];
 const CLINICAL = ["hospital_admin", "doctor", "nurse"] as StaffRole[];
-const PHARM_TEAM = ["hospital_admin", "super_admin", "pharmacist"] as StaffRole[];
-const HR_ADMIN = ["hospital_admin", "hr_officer", "super_admin"] as StaffRole[];
-const HR_FINANCE = ["hospital_admin", "hr_officer", "accountant", "super_admin"] as StaffRole[];
+const PHARM_TEAM = ["hospital_admin", "pharmacist"] as StaffRole[];
+const HR_ADMIN = ["hospital_admin", "hr_officer"] as StaffRole[];
+const HR_FINANCE = ["hospital_admin", "hr_officer", "accountant"] as StaffRole[];
 
 /** Personal/system pages that are never hidden by module access (still role-gated). */
 export const ALWAYS_VISIBLE_KEYS = new Set(["account", "download", "profile", "settings"]);
@@ -73,7 +75,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/app/appointments",
     label: "Appointments",
     icon: CalendarClock,
-    roles: ["hospital_admin", "doctor", "nurse", "receptionist", "super_admin"],
+    roles: ["hospital_admin", "doctor", "nurse", "receptionist"],
   },
   { key: "patients", href: "/app/patients", label: "Patients", icon: Users },
   {
@@ -81,7 +83,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/app/pharmacy",
     label: "Pharmacy",
     icon: Pill,
-    roles: ["hospital_admin", "pharmacist", "doctor", "nurse", "super_admin"],
+    roles: ["hospital_admin", "pharmacist", "doctor", "nurse"],
     children: [
       { key: "pharmacy-dashboard", href: "/app/pharmacy/dashboard", label: "Pharmacy Dashboard", icon: LayoutDashboard },
       { key: "pharmacy-prescriptions", href: "/app/pharmacy/prescriptions", label: "Prescriptions", icon: FileText },
@@ -97,12 +99,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/app/lab",
     label: "Lab",
     icon: FlaskConical,
-    roles: ["hospital_admin", "lab_tech", "doctor", "nurse", "super_admin"],
+    roles: ["hospital_admin", "lab_tech", "doctor", "nurse"],
     children: [
-      { key: "lab-dashboard", href: "/app/lab/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["hospital_admin", "lab_tech", "super_admin"] },
+      { key: "lab-dashboard", href: "/app/lab/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["hospital_admin", "lab_tech"] },
       { key: "lab-requests", href: "/app/lab/requests", label: "Requests", icon: FileText },
       { key: "lab-services", href: "/app/lab/services", label: "Services", icon: TestTube },
-      { key: "lab-income", href: "/app/lab/income", label: "Services Income", icon: TrendingUp, roles: ["hospital_admin", "lab_tech", "super_admin"] },
+      { key: "lab-income", href: "/app/lab/income", label: "Services Income", icon: TrendingUp, roles: ["hospital_admin", "lab_tech"] },
     ],
   },
   {
@@ -110,7 +112,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/app/wards",
     label: "Wards",
     icon: BedDouble,
-    roles: ["hospital_admin", "doctor", "nurse", "receptionist", "super_admin"],
+    roles: ["hospital_admin", "doctor", "nurse", "receptionist"],
     children: [
       { key: "wards-dashboard", href: "/app/wards/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { key: "wards-bed-map", href: "/app/wards/bed-map", label: "Bed Map", icon: BedDouble },
@@ -120,6 +122,7 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { key: "billing", href: "/app/billing", label: "Billing", icon: ReceiptText, roles: [...ADMIN, "cashier"] },
+  { key: "insurance", href: "/app/insurance", label: "Insurance", icon: ShieldPlus, roles: ADMIN },
   { key: "banking", href: "/app/banking", label: "Banking", icon: Landmark, roles: [...ADMIN, "cashier", "accountant"] },
   { key: "expenses", href: "/app/expenses", label: "Expenses", icon: Wallet, roles: ADMIN },
   { key: "other-income", href: "/app/other-income", label: "Other Income", icon: TrendingUp, roles: ADMIN },
@@ -153,9 +156,10 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { key: "mail", href: "/app/mail", label: "Mail", icon: Mail, roles: ADMIN },
   { key: "chats", href: "/app/chats", label: "Chats", icon: MessageSquare, roles: ADMIN },
-  { key: "reports", href: "/app/reports", label: "Medical Reports", icon: FileText, roles: [...CLINICAL, "super_admin"] },
+  { key: "reports", href: "/app/reports", label: "Medical Reports", icon: FileText, roles: CLINICAL },
   { key: "financial-reports", href: "/app/financial-reports", label: "Financial Reports", icon: TrendingUp, roles: ADMIN },
   { key: "audit-logs", href: "/app/audit-logs", label: "Audit Logs", icon: ShieldCheck, roles: ADMIN },
+  { key: "branches", href: "/app/pharmacy/prices", label: "Branches", icon: MapPin, roles: ADMIN },
   { key: "account", href: "/app/account", label: "Account", icon: SlidersHorizontal },
   { key: "subscription", href: "/app/subscription", label: "Subscription", icon: CreditCard, roles: ADMIN },
   { key: "download", href: "/app/download", label: "Download App", icon: Download },

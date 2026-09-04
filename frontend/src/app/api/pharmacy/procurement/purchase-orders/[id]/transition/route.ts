@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const PROCUREMENT_TEAM = ["hospital_admin", "super_admin", "pharmacist", "pharmacy_tech"];
+const PROCUREMENT_TEAM = ["hospital_admin", "pharmacist", "pharmacy_tech"];
 
 // POST /api/pharmacy/procurement/purchase-orders/[id]/transition
 // { status: "sent" | "approved" | "cancelled" } — engine state machine

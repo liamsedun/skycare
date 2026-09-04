@@ -12,8 +12,8 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const READ_ROLES = ["hospital_admin", "super_admin", "doctor", "nurse"];
-const WRITE_ROLES = ["hospital_admin", "super_admin", "doctor"];
+const READ_ROLES = ["hospital_admin", "doctor", "nurse"];
+const WRITE_ROLES = ["hospital_admin", "doctor"];
 
 async function familyPatientIds(ctx: any): Promise<string[]> {
   const { data: me } = await ctx.svc

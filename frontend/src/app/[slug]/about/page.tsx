@@ -586,10 +586,10 @@ export default async function TenantAboutPage({
                 </p>
                 <div className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-br from-[#0F4C81] to-[#0B3A63] p-8 text-white shadow-xl">
                   <p className="text-sm text-white/80">Prefer to talk to someone?</p>
-                  <p className="mt-1 text-2xl font-extrabold">{tenant.phone ?? "Call us"}</p>
+                  <p className="mt-1 text-2xl font-extrabold">{tenant.phone ? <a href={`tel:${tenant.phone}`} className="hover:underline">{tenant.phone}</a> : "Call us"}</p>
                   <p className="mt-1 text-sm text-white/70">
                     {tenant.emergency_phone
-                      ? `Emergency: ${tenant.emergency_phone}`
+                      ? <>Emergency: <a href={`tel:${tenant.emergency_phone}`} className="hover:underline">{tenant.emergency_phone}</a></>
                       : "We're here to help."}
                   </p>
                 </div>

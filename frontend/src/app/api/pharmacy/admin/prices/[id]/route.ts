@@ -17,7 +17,7 @@ export const DELETE = withAuth(
     if (error) throw new ValidationError(error.message);
     return ok({ deleted: true });
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 export const runtime = "nodejs";

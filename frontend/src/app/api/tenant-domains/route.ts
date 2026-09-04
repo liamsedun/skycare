@@ -15,7 +15,7 @@ const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61
 const MAX_DOMAINS = 5;
 
 function adminOnly(role: string): void {
-  if (role !== "hospital_admin" && role !== "super_admin") {
+  if (role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
 }

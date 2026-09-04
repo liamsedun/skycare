@@ -1,4 +1,5 @@
 import { Baby, Heart, Users } from "lucide-react";
+import { getTenantCurrency } from "@/lib/currency";
 
 /** Single patient/family row as returned by /api/patients/me (patients table). */
 export interface FamilyMember {
@@ -76,9 +77,11 @@ export function fmtDate(d: string | null | undefined): string {
   return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-export function ngn(n: number | string | null | undefined): string {
+export function ngn(n: number | string | null | undefined, currency?: string): string {
   const value = Number(n ?? 0);
-  return `₦${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  const cur = currency || getTenantCurrency() || "NGN";
+  if (cur !== "NGN") return new Intl.NumberFormat("en", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(value);
 }
 
 /** Derived portal status: needs attention when allergies present or money owing. */

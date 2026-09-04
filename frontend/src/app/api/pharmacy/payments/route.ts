@@ -1,6 +1,7 @@
 import { withStaff, ok, okPaginated, ValidationError, NotFoundError, requireTenant, getPagination, resolveParam, sanitizeLike } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyUsers } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export interface RecordPharmacyPaymentsBody {
 // auto-closed when fully paid. Payments sync to the central ledger row.
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   const body = (await req.json()) as RecordPharmacyPaymentsBody;
 
   if (!body.invoiceId) throw new ValidationError("invoiceId is required");
@@ -190,7 +192,7 @@ export const POST = withStaff(async (req, ctx) => {
         userIds: Array.from(userIds),
         type: "payment_confirmed",
         title: "Pharmacy payment received",
-        message: `${afterInvoice.invoice_number} — ₦${totalPaid.toLocaleString()} received. A receipt is available in your portal.`,
+        message: `${afterInvoice.invoice_number} — ${symbol}${totalPaid.toLocaleString()} received. A receipt is available in your portal.`,
         referenceType: "invoices",
         referenceId: invoice.synced_invoice_id ?? null,
       });
@@ -201,7 +203,7 @@ export const POST = withStaff(async (req, ctx) => {
     action: "create",
     entityType: "pharmacy_payments",
     entityId: paymentIds?.[0],
-    description: `Pharmacy payment ₦${totalPaid.toLocaleString()} (${body.payments.length} split(s)) on ${invoice.invoice_number}`,
+    description: `Pharmacy payment ${symbol}${totalPaid.toLocaleString()} (${body.payments.length} split(s)) on ${invoice.invoice_number}`,
   });
 
   return ok({ paymentIds, invoice: afterInvoice }, 201);

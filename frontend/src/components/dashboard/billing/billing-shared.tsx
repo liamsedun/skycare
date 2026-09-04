@@ -62,10 +62,12 @@ export const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 export const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
-export function ngn(amount: number): string {
+import { getTenantCurrency } from "@/lib/currency";
+
+export function ngn(amount: number, currency?: string): string {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: "NGN",
+    currency: currency || getTenantCurrency() || "NGN",
     maximumFractionDigits: 2,
   }).format(amount);
 }

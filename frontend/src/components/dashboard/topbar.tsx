@@ -6,6 +6,7 @@ import { ROLE_LABELS } from "@/lib/auth";
 import type { StaffRole } from "@/lib/auth";
 import NotificationsBell from "@/components/notifications-bell";
 import UserMenu from "@/components/dashboard/user-menu";
+import BranchSwitcher from "@/components/dashboard/branch-switcher";
 
 export default function Topbar({
   userName,
@@ -50,6 +51,7 @@ export default function Topbar({
         <span className="hidden rounded-full bg-[var(--color-primary-soft)] px-3 py-1 text-xs font-semibold text-[var(--color-primary-dark)] sm:inline-block">
           {ROLE_LABELS[role] ?? role}
         </span>
+        <BranchSwitcher />
         <NotificationsBell basePath="/app" />
         <UserMenu userName={userName} role={role} avatarUrl={avatarUrl} />
       </div>

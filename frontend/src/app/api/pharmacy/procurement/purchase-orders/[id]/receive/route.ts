@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const PROCUREMENT_TEAM = ["hospital_admin", "super_admin", "pharmacist", "pharmacy_tech"];
+const PROCUREMENT_TEAM = ["hospital_admin", "pharmacist", "pharmacy_tech"];
 
 interface ReceiveItem {
   poItemId: string;

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import type { AccessLevel } from "@/lib/nav";
 import { mutedXs, cardTitle, mutedXsMt, spinner } from "@/lib/ui-constants";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
@@ -36,12 +38,14 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
   const [forecast, setForecast] = useState<ForecastPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const { selectedBranchId } = useBranch();
 
   const load = useCallback(async () => {
     setLoading(true);
+    const branchQs = selectedBranchId ? `?branch=${selectedBranchId}` : "";
     const [dashRes, foreRes] = await Promise.all([
-      fetch("/api/wards/dashboard", { cache: "no-store" }),
-      fetch("/api/wards/forecast", { cache: "no-store" }),
+      fetch(`/api/wards/dashboard${branchQs}`, { cache: "no-store" }),
+      fetch(`/api/wards/forecast${branchQs}`, { cache: "no-store" }),
     ]);
     const dash = await dashRes.json();
     const fore = await foreRes.json();
@@ -51,7 +55,7 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
     if (foreRes.ok) setForecast(fore.data ?? null);
     else setToast(fore.error ?? null);
     setLoading(false);
-  }, []);
+  }, [selectedBranchId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -83,6 +87,7 @@ export default function WardDashboardView({ accessLevel = "full", myRole }: { ac
               Live bed census, admissions movement and an AI 7-day occupancy outlook.
             </p>
           </div>
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
           <button onClick={() => void load()} className={btnPrimary} disabled={loading}>
             {loading ? <Loader2 className={spinner} /> : <Activity size={14} />}
             Refresh

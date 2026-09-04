@@ -107,11 +107,13 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   patient_api: "Patient",
 };
 
-/** Formats an amount as Nigerian Naira (the default tenant currency). */
-export function ngn(amount: number): string {
+import { getTenantCurrency } from "@/lib/currency";
+
+/** Formats an amount in the tenant's currency. */
+export function ngn(amount: number, currency?: string): string {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
-    currency: "NGN",
+    currency: currency || getTenantCurrency() || "NGN",
     maximumFractionDigits: 0,
   }).format(amount);
 }

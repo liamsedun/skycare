@@ -30,7 +30,7 @@ export const GET = withStaff(async (req, ctx) => {
 // POST /api/lab-categories — hospital admins only
 export const POST = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ValidationError("Only hospital admins can create categories");
   }
   const body = (await req.json()) as { name?: string };

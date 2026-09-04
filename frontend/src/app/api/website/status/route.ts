@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 // Returns whether the default website has been provisioned, whether the public
 // site is enabled, the current website JSONB content, and CMS row counts.
 export const GET = withAuth(async (_req: NextRequest, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);

@@ -11,6 +11,9 @@ import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import type { AccessLevel } from "@/lib/nav";
 import { mutedXs, mutedFg, mutedXsMt, flexWrapGap2, fgSemibold, spinner, rowStart } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const EXPORT_COLUMNS = [
   "patient",
@@ -51,6 +54,7 @@ interface AdmissionRow {
 }
 
 export default function AdmissionsView({ accessLevel = "full", myRole }: { accessLevel?: AccessLevel; myRole?: string }) {
+  const { currency } = useCurrency();
   const viewOnly = accessLevel === "view_only";
   const [rows, setRows] = useState<AdmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +64,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
   const [toDate, setToDate] = useState("");
   const [toast, setToast] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const { selectedBranchId } = useBranch();
 
   const [showAdmit, setShowAdmit] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -82,12 +87,13 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
     const params = new URLSearchParams({ status: tab });
     if (fromDate) params.set("from", fromDate);
     if (toDate) params.set("to", toDate);
+    if (selectedBranchId) params.set("branch", selectedBranchId);
     const res = await fetch(`/api/admissions?${params.toString()}`, { cache: "no-store" });
     const body = await res.json();
     if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Failed to load admissions" }); setLoading(false); return; }
     setRows(body.data ?? []);
     setLoading(false);
-  }, [tab, fromDate, toDate]);
+  }, [tab, fromDate, toDate, selectedBranchId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -175,7 +181,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
     if (!res.ok) { setToast({ kind: "err", msg: body.error ?? "Discharge failed" }); return; }
     const ch = body?.data?.charge;
     if (ch?.invoiceNumber) {
-      setToast({ kind: "ok", msg: `${patientName(dischargeFor)} discharged — ${ch.invoiceNumber} (₦${Number(ch.charge ?? 0).toLocaleString()}) posted` });
+      setToast({ kind: "ok", msg: `${patientName(dischargeFor)} discharged — ${ch.invoiceNumber} (${currencySymbol(currency)}${Number(ch.charge ?? 0).toLocaleString()}) posted` });
     } else {
       setToast(null);
     }
@@ -286,6 +292,7 @@ export default function AdmissionsView({ accessLevel = "full", myRole }: { acces
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-muted-fg)]" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search patient…" className={`${inputCls} pl-9`} style={{ width: 260 }} />

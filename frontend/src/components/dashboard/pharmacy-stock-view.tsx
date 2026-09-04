@@ -1,6 +1,7 @@
 "use client";
 
 import { mutedXs, mutedFg, divideBorder, fgSemibold, emptyState } from "@/lib/ui-constants";
+import { getTenantCurrency, useCurrency, currencySymbol } from "@/lib/currency";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, RefreshCcw, PackagePlus, ArrowLeftRight, Pill, X, AlertTriangle,
@@ -15,7 +16,12 @@ const btnPrimary =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-[var(--color-primary-dark)] disabled:opacity-60";
 const btnGhost =
   "focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-2 text-xs font-medium text-[var(--color-muted-fg)] transition-colors duration-200 hover:bg-slate-50 disabled:opacity-60";
-const ngnv = (v: number | null | undefined) => `₦${Number(v ?? 0).toLocaleString()}`;
+const ngnv = (v: number | null | undefined, currency?: string) => {
+  const n = Number(v ?? 0);
+  const cur = currency || getTenantCurrency() || "NGN";
+  if (cur !== "NGN") return new Intl.NumberFormat("en", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
+};
 
 interface InventoryRow {
   id: string;
@@ -476,6 +482,7 @@ function OperationModal({ kind, drugId, branches, onClose, onDone }: { kind: "re
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { currency } = useCurrency();
 
   const submit = async () => {
     setBusy(true); setError(null);
@@ -540,7 +547,7 @@ function OperationModal({ kind, drugId, branches, onClose, onDone }: { kind: "re
                 <Field label="Quantity *"><input type="number" min={1} value={qty} onChange={(e) => setQty(e.target.value)} className={inputCls} placeholder="0" /></Field>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Cost per unit (₦)"><input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)} className={inputCls} placeholder="0" /></Field>
+                <Field label={`Cost per unit (${currencySymbol(currency)})`}><input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)} className={inputCls} placeholder="0" /></Field>
                 <Field label="Location"><input value={location} onChange={(e) => setLocation(e.target.value)} className={inputCls} placeholder="Shelf A2" /></Field>
               </div>
               <Field label="Receive into branch">

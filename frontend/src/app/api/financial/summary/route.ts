@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, resolveParam } from "@/lib/api-utils";
 import { computeFinancialOverview } from "@/lib/financial-overview";
 import type { NextRequest } from "next/server";
 
@@ -18,7 +18,13 @@ export const GET = withStaff(async (req, ctx) => {
   }
   if (String(from) > String(to)) throw new ValidationError("from must be before or equal to to");
 
-  const overview = await computeFinancialOverview(ctx.svc, tenantId, { from: from!, to: to! });
+  // Branch filter: read from query param, fall back to JWT claim
+  const rawBranch = resolveParam(req.nextUrl.searchParams.get("branch"));
+  const branchId = rawBranch && rawBranch !== "all" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawBranch)
+    ? rawBranch
+    : ctx.branchId;
+
+  const overview = await computeFinancialOverview(ctx.svc, tenantId, { from: from!, to: to! }, branchId);
   return ok(overview);
 });
 

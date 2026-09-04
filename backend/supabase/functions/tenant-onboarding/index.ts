@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
         website_url: websiteUrl,
         phone,
         plan,
-        trial_ends_at: new Date(Date.now() + 30 * 864e5).toISOString(),
+        trial_ends_at: new Date(Date.now() + 14 * 864e5).toISOString(),
       })
       .select()
       .single();

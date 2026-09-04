@@ -38,7 +38,11 @@ export default function TenantFooter({ tenant }: { tenant: TenantSiteProfile }) 
     { label: "Our Doctors", href: `${home}/doctors` },
     { label: "Contact", href: `${home}#contact` },
     { label: "Book Appointment", href: `${home}/book` },
-    { label: "Patient Login", href: `${home}/login` },
+  ];
+
+  const loginLinks = [
+    { label: "Patient Login", href: `${home}/login`, color: "hover:bg-[#16A34A]" },
+    { label: "Staff Login", href: `${home}/login`, color: "hover:bg-[#2563EB]" },
   ];
 
 type SocialIcon = (p: { size?: number }) => ReactNode;
@@ -104,6 +108,17 @@ const social: SocialEntry[] = (
                 </li>
               ))}
             </ul>
+            <div className="mt-5 flex gap-3">
+              {loginLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className={`inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-4 py-2 text-xs font-semibold text-white transition-all hover:text-white ${link.color}`}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
           </div>
 
           <div>

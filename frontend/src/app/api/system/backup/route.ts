@@ -4,7 +4,7 @@ import { withAuth, requireTenant, ForbiddenError } from "@/lib/api-utils";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Full-system backup — hospital_admin / super_admin within a tenant scope.
+// Full-system backup — hospital_admin within a tenant scope.
 // Exports the tenant row + every tenant-scoped data table (children included
 // via their parent ids) as JSON so the hospital can be rebuilt after a crash
 // or during a software-developer → hospital-management handover.
@@ -68,7 +68,7 @@ const BACKUP_TABLES = [
 ] as const;
 
 export const GET = withAuth(async (_req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);

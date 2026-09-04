@@ -121,14 +121,14 @@ export const POST = withStaff(async (req, ctx) => {
 });
 
 // DELETE /api/patients/[id] — permanent removal from the system.
-// hospital_admin / super_admin only. All child rows (records, notes, reports,
+// hospital_admin only. All child rows (records, notes, reports,
 // invoices, payments, appointments, chats, dependants) are removed via
 // ON DELETE CASCADE on patients(id).
 export const DELETE = withStaff(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
-  const tenantId = ctx.role === "super_admin" ? null : requireTenant(ctx);
+  const tenantId = requireTenant(ctx);
   await requireModuleLevel(ctx, "patients", "full");
   const id = req.nextUrl.pathname.split("/").pop()!;
   const existing = await getPatient(ctx, id, tenantId);

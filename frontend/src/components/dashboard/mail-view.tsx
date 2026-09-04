@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Inbox, Loader2, MailPlus, Paperclip, Search, Send, Trash2 } from "lucide-react";
+import BranchFilter from "@/components/dashboard/branch-filter";
 import { initials, ROLE_LABELS } from "@/lib/auth";
 import type { AppRole } from "@/lib/auth";
+import { useBranch } from "@/lib/branch-context";
 import { inDateRange } from "@/lib/daterange";
 import { mutedXs, errorBanner, mutedSm, divideBorder, fgMedium, mutedXsMt1, pageTitle } from "@/lib/ui-constants";
 import DateRangeBar from "@/components/filters/date-range-bar";
@@ -61,6 +63,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function MailView() {
+  const { selectedBranchId } = useBranch();
   const [tab, setTab] = useState<Tab>("inbox");
   const [inbox, setInbox] = useState<MailMessage[]>([]);
   const [sent, setSent] = useState<MailMessage[]>([]);
@@ -85,17 +88,17 @@ export default function MailView() {
     setError(null);
     try {
       if (t === "inbox") {
-        const res = await fetch("/api/mail/inbox?pageSize=100", { cache: "no-store" });
+        const res = await fetch(`/api/mail/inbox?pageSize=100${selectedBranchId ? `&branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
         const b = await res.json();
         if (!res.ok) throw new Error(b.error ?? "Failed to load inbox");
         setInbox(b.data ?? []);
       } else if (t === "sent") {
-        const res = await fetch("/api/mail/sent?pageSize=100", { cache: "no-store" });
+        const res = await fetch(`/api/mail/sent?pageSize=100${selectedBranchId ? `&branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
         const b = await res.json();
         if (!res.ok) throw new Error(b.error ?? "Failed to load sent mail");
         setSent(b.data ?? []);
       } else if (t === "compose") {
-        const res = await fetch("/api/mail/recipients", { cache: "no-store" });
+        const res = await fetch(`/api/mail/recipients${selectedBranchId ? `?branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
         const b = await res.json();
         if (!res.ok) throw new Error(b.error ?? "Failed to load recipients");
         setRecipients({ staff: b.data?.staff ?? [], patients: b.data?.patients ?? [] });
@@ -105,7 +108,7 @@ export default function MailView() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedBranchId]);
 
   useEffect(() => {
     loadTab(tab);
@@ -229,6 +232,7 @@ export default function MailView() {
           );
         })}
         </div>
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <DateRangeBar
           from={filterFrom}
           to={filterTo}

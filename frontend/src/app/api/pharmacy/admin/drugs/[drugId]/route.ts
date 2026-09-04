@@ -108,7 +108,7 @@ export const PATCH = withAuth(
     await invalidatePharmacyCatalogCache(tenantId);
     return ok(data);
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 // ---------------------------------------------------------------------------
@@ -145,7 +145,7 @@ export const DELETE = withAuth(
     await invalidatePharmacyCatalogCache(tenantId);
     return ok({ archived: true });
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 export const runtime = "nodejs";

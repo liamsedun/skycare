@@ -7,7 +7,10 @@ import type { ImportResult } from "@/components/ui/csv-import-modal";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { inDateRange } from "@/lib/daterange";
 import { mutedXs, mutedFg, divideBorder, flexGap2, mutedSmPlain, spinner, rowStart } from "@/lib/ui-constants";
+import { getTenantCurrency, useCurrency, currencySymbol } from "@/lib/currency";
 import DateRangeBar from "@/components/filters/date-range-bar";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
@@ -32,7 +35,12 @@ const CRED_BADGE: Record<string, string> = {
   expired: "bg-rose-100 text-rose-700",
 };
 
-const fmtN = (n: number | null | undefined) => (n == null ? "—" : `₦${n.toLocaleString()}`);
+const fmtN = (n: number | null | undefined, currency?: string) => {
+  if (n == null) return "—";
+  const cur = currency || getTenantCurrency() || "NGN";
+  if (cur !== "NGN") return new Intl.NumberFormat("en", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(n);
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
+};
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(`${d}T00:00:00`).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
@@ -56,6 +64,8 @@ export default function HrStaffView() {
   const [leaveEdits, setLeaveEdits] = useState<Record<string, number>>({});
   const [savedLeave, setSavedLeave] = useState<Record<string, boolean>>({});
   const [savingLeave, setSavingLeave] = useState(false);
+  const { currency } = useCurrency();
+  const { selectedBranchId } = useBranch();
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -63,10 +73,11 @@ export default function HrStaffView() {
     try {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const me = await meRes.json();
-      setIsAdmin(["hospital_admin", "hr_officer", "super_admin"].includes(me.data?.claims?.role));
+      setIsAdmin(["hospital_admin", "hr_officer"].includes(me.data?.claims?.role));
       const params = new URLSearchParams({ pageSize: "200" });
       if (q) params.set("q", q);
       if (role) params.set("role", role);
+      if (selectedBranchId) params.set("branch", selectedBranchId);
       const res = await fetch(`/api/hr/staff?${params}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load staff");
@@ -76,7 +87,7 @@ export default function HrStaffView() {
     } finally {
       setLoading(false);
     }
-  }, [q, role]);
+  }, [q, role, selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -364,6 +375,7 @@ export default function HrStaffView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
+        <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
         <input
           className={inputCls + " max-w-xs"}
           placeholder="Search name / staff number…"
@@ -511,7 +523,7 @@ export default function HrStaffView() {
                         <input className={inputCls} value={editForm.salary_grade} onChange={(e) => setEditForm({ ...editForm, salary_grade: e.target.value })} placeholder="e.g. GL 08" />
                       </div>
                       <div>
-                        <label className={labelCls}>Base salary (₦)</label>
+                        <label className={labelCls}>Base salary ({currencySymbol(currency)})</label>
                         <input type="number" min={0} className={inputCls} value={editForm.base_salary} onChange={(e) => setEditForm({ ...editForm, base_salary: e.target.value })} placeholder="0.00" />
                       </div>
                       <div>
@@ -574,15 +586,15 @@ export default function HrStaffView() {
                         </div>
                       ))}
                       <div>
-                        <label className="block text-[11px] text-[var(--color-muted-fg)]">Annual rent (₦)</label>
+                        <label className="block text-[11px] text-[var(--color-muted-fg)]">Annual rent ({currencySymbol(currency)})</label>
                         <input type="number" min={0} className={inputCls + " mt-0.5 px-2 py-1.5 text-xs"} value={Number(payCfg.annual_rent ?? 0)} onChange={(e) => setPayCfg({ ...payCfg, annual_rent: Number(e.target.value) })} />
                       </div>
                       <div>
-                        <label className="block text-[11px] text-[var(--color-muted-fg)]">Mortgage interest (₦)</label>
+                        <label className="block text-[11px] text-[var(--color-muted-fg)]">Mortgage interest ({currencySymbol(currency)})</label>
                         <input type="number" min={0} className={inputCls + " mt-0.5 px-2 py-1.5 text-xs"} value={Number(payCfg.annual_mortgage_interest ?? 0)} onChange={(e) => setPayCfg({ ...payCfg, annual_mortgage_interest: Number(e.target.value) })} />
                       </div>
                       <div>
-                        <label className="block text-[11px] text-[var(--color-muted-fg)]">Life assurance (₦)</label>
+                        <label className="block text-[11px] text-[var(--color-muted-fg)]">Life assurance ({currencySymbol(currency)})</label>
                         <input type="number" min={0} className={inputCls + " mt-0.5 px-2 py-1.5 text-xs"} value={Number(payCfg.annual_life_assurance ?? 0)} onChange={(e) => setPayCfg({ ...payCfg, annual_life_assurance: Number(e.target.value) })} />
                       </div>
                       <label className="flex items-center gap-2 text-xs">

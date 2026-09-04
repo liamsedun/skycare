@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, resolveParam } from "@/lib/api-utils";
 import { classifyLedgerSources } from "@/lib/banking-sources";
 import type { NextRequest } from "next/server";
 
@@ -33,20 +33,29 @@ export const GET = withStaff(async (req, ctx) => {
   monthStart.setDate(1);
   monthStart.setHours(0, 0, 0, 0);
 
+  // Branch filter
+  const rawBranch = resolveParam(req.nextUrl.searchParams.get("branch"));
+  const branchId = rawBranch && rawBranch !== "all" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawBranch)
+    ? rawBranch
+    : ctx.branchId;
+
+  const mainQ = ctx.svc
+    .from("hospital_bank_ledger")
+    .select("id, account_id, direction, amount, method, source, source_ref, payment_id, reference, notes, recorded_at")
+    .eq("tenant_id", tenantId);
+  const pharmQ = ctx.svc
+    .from("pharmacy_bank_ledger")
+    .select("id, account_id, direction, amount, method, source, source_ref, reference, notes, created_at")
+    .eq("tenant_id", tenantId);
+
   const [banksRes, mainRes, pharmRes] = await Promise.all([
     ctx.svc
       .from("hospital_bank_accounts")
       .select("id, bank_name, account_name, account_number, is_active")
       .eq("tenant_id", tenantId)
       .order("created_at", { ascending: true }),
-    ctx.svc
-      .from("hospital_bank_ledger")
-      .select("id, account_id, direction, amount, method, source, source_ref, payment_id, reference, notes, recorded_at")
-      .eq("tenant_id", tenantId),
-    ctx.svc
-      .from("pharmacy_bank_ledger")
-      .select("id, account_id, direction, amount, method, source, source_ref, reference, notes, created_at")
-      .eq("tenant_id", tenantId),
+    branchId ? mainQ.eq("branch_id", branchId) : mainQ,
+    branchId ? pharmQ.eq("branch_id", branchId) : pharmQ,
   ]);
   if (banksRes.error) throw new ValidationError(banksRes.error.message);
   if (mainRes.error) throw new ValidationError(mainRes.error.message);

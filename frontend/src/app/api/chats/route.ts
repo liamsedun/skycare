@@ -10,7 +10,7 @@ import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const STAFF_ROLES = ["hospital_admin", "super_admin", "doctor", "nurse", "pharmacist", "lab_tech", "cashier", "receptionist"];
+const STAFF_ROLES = ["hospital_admin", "doctor", "nurse", "pharmacist", "lab_tech", "cashier", "receptionist"];
 
 async function familyIds(ctx: any): Promise<string[]> {
   const { data: me } = await ctx.svc

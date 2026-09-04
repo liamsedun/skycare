@@ -3,7 +3,7 @@ import { withAuth, requireTenant, ForbiddenError, ok, err, parseBody, Validation
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Full-system restore — hospital_admin / super_admin within a tenant scope.
+// Full-system restore — hospital_admin within a tenant scope.
 // POST body: the JSON produced by GET /api/system/backup.
 //
 // Behavior:
@@ -227,7 +227,7 @@ function randomTempPassword(): string {
 }
 
 export const POST = withAuth(async (req, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);

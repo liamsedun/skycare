@@ -1,11 +1,12 @@
 import { withAuth, ok, ValidationError, ForbiddenError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { tenantCurrency } from "@/lib/server-currency";
 import crypto from "node:crypto";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const MANUAL_ROLES = ["hospital_admin", "super_admin", "cashier", "accountant"] as const;
+const MANUAL_ROLES = ["hospital_admin", "cashier", "accountant"] as const;
 
 interface TransferBody {
   fromAccount?: string;
@@ -29,6 +30,7 @@ interface BankRow {
 // sharing transfer_id + reference (TRF-xxxx). account: "cash" | bank uuid.
 export const POST = withAuth(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   if (!(MANUAL_ROLES as readonly string[]).includes(ctx.role)) {
     throw new ForbiddenError("Banking adjustments require admin, cashier or accountant access");
   }
@@ -110,7 +112,7 @@ export const POST = withAuth(async (req, ctx) => {
     action: "create",
     entityType: "hospital_bank_ledger",
     entityId: transferId,
-    description: `Transfer of ₦${amount.toLocaleString()} from ${fromLabel} to ${toLabel}`,
+    description: `Transfer of ${symbol}${amount.toLocaleString()} from ${fromLabel} to ${toLabel}`,
   });
 
   const pair = (data ?? []).find((r: { direction: string }) => r.direction === "in");

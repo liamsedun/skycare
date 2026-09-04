@@ -35,7 +35,7 @@ export default function UserMenu({
   const [signingOut, setSigningOut] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const isAdmin = role === "super_admin" || role === "hospital_admin";
+  const isAdmin = role === "hospital_admin";
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {

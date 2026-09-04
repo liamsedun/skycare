@@ -1,7 +1,14 @@
+import { getTenantCurrency } from "@/lib/currency";
+
 export const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 export const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
-export const naira = (n: number) => `₦${Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+export const naira = (n: number, currency?: string) => {
+  const v = Number(n || 0);
+  const cur = currency || getTenantCurrency() || "NGN";
+  if (cur !== "NGN") return new Intl.NumberFormat("en", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(v);
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(v);
+};
 
 export interface AccountCard {
   id: string; // "cash" | bank uuid

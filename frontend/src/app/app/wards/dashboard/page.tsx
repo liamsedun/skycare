@@ -6,7 +6,7 @@ import WardDashboardView from "@/components/dashboard/ward-dashboard-view";
 
 export const dynamic = "force-dynamic";
 
-const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "super_admin"];
+const WARD_ROLES = ["hospital_admin", "doctor", "nurse"];
 
 export default async function WardsDashboardPage() {
   const supabase = await createClient();

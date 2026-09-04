@@ -9,6 +9,7 @@ import {
 } from "@/lib/paystack";
 import { notifyUsers } from "@/lib/notify";
 import { resolveBankAccountId, postBankLedger } from "@/lib/api-utils";
+import { tenantCurrency } from "@/lib/server-currency";
 import { rateLimit, API_WEBHOOK, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -40,6 +41,8 @@ export const POST = rateLimit(async (req: NextRequest) => {
     const tenantId = typeof event.data.metadata.tenant_id === "string" ? event.data.metadata.tenant_id : null;
 
     const svc = createServiceClient();
+
+    const { symbol } = await tenantCurrency(svc, tenantId);
 
     // Resolve the tenant's keys from metadata (payload is verified against that tenant's secret).
     let keys = tenantId
@@ -232,7 +235,7 @@ export const POST = rateLimit(async (req: NextRequest) => {
         userIds: staffIds,
         type: "payment_confirmed",
         title: "Online payment received",
-        message: `${reference} — ₦${amountNaira.toLocaleString()}${labRef ? " for walk-in lab" : ` for invoice ${invoice?.invoice_number ?? ""}`} (Paystack)`,
+        message: `${reference} — ${symbol}${amountNaira.toLocaleString()}${labRef ? " for walk-in lab" : ` for invoice ${invoice?.invoice_number ?? ""}`} (Paystack)`,
         referenceType: "payments",
         referenceId: payment.id,
       });
@@ -248,7 +251,7 @@ export const POST = rateLimit(async (req: NextRequest) => {
         entity_type: "payments",
         entity_id: payment.id,
         changes: { reference, amount: amountNaira, channel: data.channel, invoice_id: invoiceId, lab_request_id: labRequestId },
-        description: `Paystack webhook recorded payment ${reference} (₦${amountNaira.toLocaleString()})${labRef ? ` for walk-in lab request ${labRequestId}` : ` for invoice ${invoice?.invoice_number ?? ""}`}`,
+        description: `Paystack webhook recorded payment ${reference} (${symbol}${amountNaira.toLocaleString()})${labRef ? ` for walk-in lab request ${labRequestId}` : ` for invoice ${invoice?.invoice_number ?? ""}`}`,
       });
     } catch {
       /* audit must not break the webhook */

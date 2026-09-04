@@ -12,7 +12,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 // GET /api/security-events?event_type=&severity=&user_id=&from=&to=&page=&pageSize=
-// Admin-only (hospital_admin / super_admin). Tenant events plus global
+// Admin-only (hospital_admin). Tenant events plus global
 // failed-login events (tenant_id IS NULL) — mirrors the
 // security_events_admin_read RLS policy via the service client.
 export const GET = withStaff(async (req, ctx) => {

@@ -1,5 +1,6 @@
 import { ArrowLeftRight, CalendarDays, Loader2, Printer, Scale, Wallet } from "lucide-react";
 import { errorBanner, mutedXs, rowStart } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { inputCls, labelCls, naira, SOURCE_LABELS, type AccountCard, type StmtData } from "./banking-shared";
 
 type FormSubmit = (e: React.FormEvent<HTMLFormElement>) => void;
@@ -13,6 +14,7 @@ export function EntryModal({ onClose, busy, error, accounts, onSubmit }: {
   accounts: AccountCard[];
   onSubmit: FormSubmit;
 }) {
+  const { currency } = useCurrency();
   return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Record banking entry">
           <button type="button" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
@@ -39,7 +41,7 @@ export function EntryModal({ onClose, busy, error, accounts, onSubmit }: {
                 </select>
               </div>
               <div>
-                <label className={labelCls} htmlFor="be-amount">Amount (₦)</label>
+                <label className={labelCls} htmlFor="be-amount">Amount ({currencySymbol(currency)})</label>
                 <input id="be-amount" name="amount" type="number" min="0.01" step="0.01" className={inputCls} placeholder="0.00" required />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -94,6 +96,7 @@ export function TransferModal({ onClose, busy, error, accounts, onSubmit }: {
   accounts: AccountCard[];
   onSubmit: FormSubmit;
 }) {
+  const { currency } = useCurrency();
   return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Transfer between accounts">
           <button type="button" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
@@ -123,7 +126,7 @@ export function TransferModal({ onClose, busy, error, accounts, onSubmit }: {
                 </div>
               </div>
               <div>
-                <label className={labelCls} htmlFor="bt-amount">Amount (₦)</label>
+                <label className={labelCls} htmlFor="bt-amount">Amount ({currencySymbol(currency)})</label>
                 <input id="bt-amount" name="amount" type="number" min="0.01" step="0.01" className={inputCls} placeholder="0.00" required />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -173,6 +176,7 @@ export function OpeningModal({ account, onClose, busy, error, onSubmit }: {
   error: string | null;
   onSubmit: FormSubmit;
 }) {
+  const { currency } = useCurrency();
   return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Set opening balance">
           <button type="button" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
@@ -188,7 +192,7 @@ export function OpeningModal({ account, onClose, busy, error, onSubmit }: {
                 One opening balance per account — delete it from the transaction list to change it.
               </p>
               <div>
-                <label className={labelCls} htmlFor="bo-amount">Amount (₦)</label>
+                <label className={labelCls} htmlFor="bo-amount">Amount ({currencySymbol(currency)})</label>
                 <input id="bo-amount" name="amount" type="number" min="0.01" step="0.01" className={inputCls} placeholder="0.00" required />
               </div>
               <div>
@@ -234,6 +238,7 @@ export function StatementModal({ account, onClose, stmtMonth, onMonthChange, stm
   onCsv: () => void;
   onPrint: () => void;
 }) {
+  const { currency } = useCurrency();
   return (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4" role="dialog" aria-modal="true" aria-label="Account statement">
           <button type="button" className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-label="Close" />
@@ -297,7 +302,7 @@ export function StatementModal({ account, onClose, stmtMonth, onMonthChange, stm
                   </p>
                   <div className="mt-3 flex flex-wrap items-end gap-3">
                     <div className="w-56">
-                      <label className={labelCls} htmlFor="rec-closing">Bank statement closing balance (₦)</label>
+                      <label className={labelCls} htmlFor="rec-closing">Bank statement closing balance ({currencySymbol(currency)})</label>
                       <input id="rec-closing" type="number" step="0.01" min="0" className={inputCls} value={bankClosing} onChange={(e) => onBankClosingChange(e.target.value)} placeholder={String(stmt.closing)} />
                     </div>
                     <div className="pb-1 text-sm">

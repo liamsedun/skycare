@@ -8,7 +8,7 @@ const inputCls =
   "w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus:border-[var(--color-primary)]";
 const labelCls = "mb-1 block text-sm font-medium text-[var(--color-foreground)]";
 
-const CLINICAL_ROLES = ["hospital_admin", "super_admin", "doctor", "nurse"];
+const CLINICAL_ROLES = ["hospital_admin", "doctor", "nurse"];
 
 const VITAL_FIELDS: Array<{ key: string; label: string; placeholder?: string }> = [
   { key: "bp", label: "Blood pressure", placeholder: "e.g. 120/80" },

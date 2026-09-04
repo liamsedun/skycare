@@ -36,9 +36,12 @@ import {
   YAxis,
 } from "recharts";
 import { ngn, formatTime, initials, ROLE_LABELS } from "@/lib/auth";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { errorBanner, flexGap2, mutedXsMt } from "@/lib/ui-constants";
 import StatusBadge from "@/components/dashboard/status-badge";
 import { PatientViewButton, type PatientRow } from "@/components/dashboard/patient-dialog";
+import BranchFilter from "@/components/dashboard/branch-filter";
+import { useBranch } from "@/lib/branch-context";
 
 interface DashboardData {
   kpis: {
@@ -104,6 +107,8 @@ export default function DashboardView({
   fullName?: string;
   avatarUrl?: string | null;
 }) {
+  const { currency } = useCurrency();
+  const { selectedBranchId } = useBranch();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +121,7 @@ export default function DashboardView({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/dashboard?month=${month}`, { cache: "no-store" });
+      const res = await fetch(`/api/dashboard?month=${month}&branch=${selectedBranchId ?? ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load dashboard");
       setData(body.data as DashboardData);
@@ -126,7 +131,7 @@ export default function DashboardView({
     } finally {
       setLoading(false);
     }
-  }, [month]);
+  }, [month, selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -251,9 +256,11 @@ export default function DashboardView({
             Key numbers for the selected reporting period.
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-[var(--color-muted-fg)]">
-          Period
-          <input
+        <div className="flex items-center gap-2">
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
+          <label className="flex items-center gap-2 text-sm text-[var(--color-muted-fg)]">
+            Period
+            <input
             type="month"
             value={month}
             max={new Date().toISOString().slice(0, 7)}
@@ -261,7 +268,8 @@ export default function DashboardView({
             className="focus-ring rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-foreground)]"
             aria-label="Select month"
           />
-        </label>
+          </label>
+        </div>
       </div>
 
       {loading && <LoadingState />}
@@ -584,6 +592,7 @@ function EmptyChart({ label }: { label: string }) {
 }
 
 function WeeklyChart({ rows }: { rows: DashboardData["weekly"] }) {
+  const { currency } = useCurrency();
   const allZero = rows.every((r) => r.medical === 0 && r.other === 0);
   if (allZero) return <EmptyChart label="No revenue in the last 7 days." />;
   return (
@@ -591,7 +600,7 @@ function WeeklyChart({ rows }: { rows: DashboardData["weekly"] }) {
       <BarChart data={rows} barGap={0} barCategoryGap="20%" margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4ecfc" />
         <XAxis dataKey="day" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={{ stroke: "#e4ecfc" }} tickLine={false} />
-        <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `₦${(v / 1000).toFixed(0)}k`} width={52} />
+        <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${currencySymbol(currency)}${(v / 1000).toFixed(0)}k`} width={52} />
         <Tooltip formatter={(value) => ngn(Number(value))} cursor={{ fill: "#eff6ff" }} contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12, color: "#64748b" }} />
         <Bar dataKey="medical" name="Medical Services" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} maxBarSize={40} />
@@ -635,6 +644,7 @@ function SplitChart({ data }: { data: { name: string; value: number; color: stri
 }
 
 function TrendChart({ data }: { data: DashboardData["monthlyTrend"] }) {
+  const { currency } = useCurrency();
   const allZero = data.every((d) => d.medical === 0 && d.other === 0);
   if (allZero) return <EmptyChart label="No revenue recorded in the last 12 months." />;
   return (
@@ -642,7 +652,7 @@ function TrendChart({ data }: { data: DashboardData["monthlyTrend"] }) {
       <LineChart data={data} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4ecfc" />
         <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} axisLine={{ stroke: "#e4ecfc" }} tickLine={false} />
-        <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `₦${(v / 1000).toFixed(0)}k`} width={52} />
+        <YAxis tick={{ fontSize: 12, fill: "#64748b" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${currencySymbol(currency)}${(v / 1000).toFixed(0)}k`} width={52} />
         <Tooltip formatter={(value) => ngn(Number(value))} contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12, color: "#64748b" }} />
         <Line type="monotone" name="Medical Services" dataKey="medical" stroke="#2563eb" strokeWidth={2} dot={{ r: 3, fill: "#2563eb" }} activeDot={{ r: 5 }} />

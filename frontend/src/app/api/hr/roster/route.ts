@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, ForbiddenError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, ForbiddenError, requireTenant, applyBranchFilter } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { isHrAdmin } from "@/lib/hr-perms";
 import type { NextRequest } from "next/server";
@@ -29,7 +29,7 @@ export const GET = withStaff(async (req, ctx) => {
     fromDate = `${month}-01`;
     toDate = `${month}-31`;
   }
-  const { data, error } = await ctx.svc
+  let query = ctx.svc
     .from("staff_shifts")
     .select("id, staff_id, shift_id, ward_id, shift_date, status, notes, staff:staff(department, users(full_name, role)), shift:shifts(name, start_time, end_time, color), ward:wards(name)")
     .eq("tenant_id", tenantId)
@@ -38,6 +38,8 @@ export const GET = withStaff(async (req, ctx) => {
     .order("shift_date")
     .order("start_time", { foreignTable: "shifts", ascending: true })
     .limit(2000);
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
+  const { data, error } = await query;
   if (error) throw new ValidationError(error.message);
   return ok(data ?? []);
 });

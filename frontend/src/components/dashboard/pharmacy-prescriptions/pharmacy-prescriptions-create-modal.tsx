@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { CLINICIAN_ROLES } from "@/lib/auth";
 import { mutedXs, errorBanner, cardTitle, flexBetween } from "@/lib/ui-constants";
+import { useCurrency, currencySymbol } from "@/lib/currency";
 import { AiRec, inputCls, labelCls, ModalShell } from "./pharmacy-prescriptions-shared";
 import { CreateItem, newItem, CreateItemRow } from "./pharmacy-prescriptions-create-item";
 
@@ -11,6 +12,7 @@ import { CreateItem, newItem, CreateItemRow } from "./pharmacy-prescriptions-cre
 // the pharmacist can allocate stock batches when dispensing.
 // ---------------------------------------------------------------------------
 export function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { currency } = useCurrency();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [patients, setPatients] = useState<{ id: string; label: string }[]>([]);
@@ -221,7 +223,7 @@ export function CreateRxModal({ onClose, onCreated }: { onClose: () => void; onC
                               ) : (
                                 <span className="font-semibold text-emerald-600">{r.stockQty} in stock</span>
                               )}
-                              {Number(r.unitPrice ?? 0) > 0 && ` · ₦${Number(r.unitPrice).toLocaleString()}`}
+                              {Number(r.unitPrice ?? 0) > 0 && ` · ${currencySymbol(currency)}${Number(r.unitPrice).toLocaleString()}`}
                             </p>
                           </div>
                           <button

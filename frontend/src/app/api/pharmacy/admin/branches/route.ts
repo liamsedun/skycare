@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 export const dynamic = "force-dynamic";
 
 function adminOnly(role: string): void {
-  if (role !== "hospital_admin" && role !== "super_admin") {
+  if (role !== "hospital_admin") {
     throw new ForbiddenError("Only hospital admins can manage branches");
   }
 }

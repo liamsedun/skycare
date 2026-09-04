@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, Banknote, CalendarDays, ChevronLeft, ChevronRight, Landmark, Loader2, Plus, Trash2, Wallet } from "lucide-react";
+import BranchFilter from "@/components/dashboard/branch-filter";
 import DateRangeBar from "@/components/filters/date-range-bar";
 import ImportExportMenu from "@/components/ui/import-export-menu";
 import type { ImportResult } from "@/components/ui/csv-import-modal";
+import { useBranch } from "@/lib/branch-context";
 import { inDateRange } from "@/lib/daterange";
 import { dateStamp, downloadCsv, printTable } from "@/lib/export";
 import { btnBase, cardTitle, errorBanner, fgMedium, fgSemibold, flexGap2, flexWrapGap2, mutedFg, mutedXs, mutedXsMt1, rowStart } from "@/lib/ui-constants";
@@ -12,6 +14,7 @@ import { EntryModal, OpeningModal, StatementModal, TransferModal } from "./banki
 import { inputCls, MANUAL_SOURCES, naira, SOURCE_LABELS, type AccountCard, type LedgerItem, type StmtData } from "./banking/banking-shared";
 
 export default function BankingView() {
+  const { selectedBranchId } = useBranch();
   const [accounts, setAccounts] = useState<AccountCard[]>([]);
   const [recent, setRecent] = useState<LedgerItem[]>([]);
   const [monthTotals, setMonthTotals] = useState({ in: 0, out: 0 });
@@ -46,7 +49,7 @@ export default function BankingView() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/banking", { cache: "no-store" });
+      const res = await fetch(`/api/banking${selectedBranchId ? `?branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load banking");
       setAccounts(body.data?.accounts ?? []);
@@ -57,7 +60,7 @@ export default function BankingView() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedBranchId]);
 
   const loadLedger = useCallback(async () => {
     setLedgerLoading(true);
@@ -66,7 +69,7 @@ export default function BankingView() {
       if (accountFilter !== "all") params.set("account", accountFilter);
       if (directionFilter !== "all") params.set("direction", directionFilter);
       if (sourceFilter !== "all") params.set("source", sourceFilter);
-      const res = await fetch(`/api/banking/ledger?${params}`, { cache: "no-store" });
+      const res = await fetch(`/api/banking/ledger?${params}${selectedBranchId ? `&branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load ledger");
       setLedger(body.data ?? []);
@@ -76,7 +79,7 @@ export default function BankingView() {
     } finally {
       setLedgerLoading(false);
     }
-  }, [page, accountFilter, directionFilter, sourceFilter]);
+  }, [page, accountFilter, directionFilter, sourceFilter, selectedBranchId]);
 
   useEffect(() => {
     load();
@@ -203,7 +206,7 @@ export default function BankingView() {
       const lastDay = new Date(y, m, 0).getDate();
       const from = `${stmtMonth}-01`;
       const to = `${stmtMonth}-${String(lastDay).padStart(2, "0")}`;
-      const res = await fetch(`/api/banking/statement?account=${encodeURIComponent(stmtAccount.id)}&from=${from}&to=${to}`, { cache: "no-store" });
+      const res = await fetch(`/api/banking/statement?account=${encodeURIComponent(stmtAccount.id)}&from=${from}&to=${to}${selectedBranchId ? `&branch=${selectedBranchId}` : ""}`, { cache: "no-store" });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "Failed to load statement");
       setStmt(body.data);
@@ -212,7 +215,7 @@ export default function BankingView() {
     } finally {
       setStmtLoading(false);
     }
-  }, [stmtAccount, stmtMonth]);
+  }, [stmtAccount, stmtMonth, selectedBranchId]);
 
   useEffect(() => {
     if (stmtAccount) loadStatement();
@@ -271,7 +274,7 @@ export default function BankingView() {
     const orgBody = orgRes.ok ? await orgRes.json() : null;
     const org = orgBody?.data ?? {};
     const orgAddress = [org.address, [org.city, org.state].filter(Boolean).join(", "), org.country].filter(Boolean).join(", ");
-    const contact = [org.phone && `Tel: ${org.phone}`, org.email && `Email: ${org.email}`, org.website].filter(Boolean).join(" • ");
+    const contact = [org.phone && `Tel: <a href="tel:${org.phone}">${org.phone}</a>`, org.email && `Email: <a href="mailto:${org.email}">${org.email}</a>`, org.website].filter(Boolean).join(" • ");
     const rowHtml = stmt.rows
       .map(
         (r) => `<tr><td>${r.recorded_at.slice(0, 10)}</td><td>${SOURCE_LABELS[r.source] ?? r.source}${r.source_ref ? ` — ${r.source_ref}` : ""}</td><td>${r.direction === "in" ? "+" : "−"}${naira(r.amount)}</td><td class="amt">${naira(r.running_balance)}</td></tr>`
@@ -399,6 +402,7 @@ export default function BankingView() {
           </p>
         </div>
         <div className={flexWrapGap2}>
+          <BranchFilter value={selectedBranchId} onChange={() => {}} hideWhenSingle />
           <ImportExportMenu
             entityLabel="Banking Ledger"
             exportCsv={exportCsv}

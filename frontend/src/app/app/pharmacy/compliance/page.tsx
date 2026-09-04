@@ -14,7 +14,7 @@ export default async function CompliancePage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/compliance");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-compliance", ["hospital_admin", "pharmacist", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-compliance", ["hospital_admin", "pharmacist"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

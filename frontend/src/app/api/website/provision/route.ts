@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 // that predate Phase 4 (they are flagged provisioned=true so the first-run
 // wizard is not forced on them, but the button still runs this).
 export const POST = withAuth(async (req: NextRequest, ctx) => {
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") {
+  if (ctx.role !== "hospital_admin") {
     throw new ForbiddenError("Admin access required");
   }
   const tenantId = requireTenant(ctx);

@@ -14,7 +14,7 @@ export default async function BillingPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/billing");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-billing", ["hospital_admin", "pharmacist", "super_admin", "cashier"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-billing", ["hospital_admin", "pharmacist", "cashier"]);
   const role = getClaims(user).role as StaffRole | undefined;
 
   return (

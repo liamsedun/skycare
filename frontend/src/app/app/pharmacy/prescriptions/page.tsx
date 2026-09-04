@@ -14,7 +14,7 @@ export default async function PrescriptionsPage() {
 
   if (!user) redirect("/login?redirect=/app/pharmacy/prescriptions");
 
-  const accessLevel = await requireModulePage(supabase, user, "pharmacy-prescriptions", ["hospital_admin", "doctor", "nurse", "pharmacist", "super_admin"]);
+  const accessLevel = await requireModulePage(supabase, user, "pharmacy-prescriptions", ["hospital_admin", "doctor", "nurse", "pharmacist"]);
   const role = getClaims(user).role as StaffRole | undefined;
   const viewOnly = accessLevel === "view_only";
 
@@ -22,7 +22,7 @@ export default async function PrescriptionsPage() {
     <div className="space-y-6">
       <PharmacyView
         accessLevel={accessLevel}
-        canDispense={!viewOnly && (role === "pharmacist" || role === "hospital_admin" || role === "super_admin")}
+        canDispense={!viewOnly && (role === "pharmacist" || role === "hospital_admin")}
       />
     </div>
   );

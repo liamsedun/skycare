@@ -1,4 +1,4 @@
-import { withStaff, ok, okPaginated, ValidationError, ForbiddenError, requireTenant, getPagination } from "@/lib/api-utils";
+import { withStaff, ok, okPaginated, ValidationError, ForbiddenError, requireTenant, getPagination, applyBranchFilter } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { isHrAdmin, hrHasPermission } from "@/lib/hr-perms";
 import { calculateHrPayroll, HrPayrollCalculation } from "@/lib/hr-payroll-calc";
@@ -35,6 +35,7 @@ export const GET = withStaff(async (req, ctx) => {
     .select(RECORD_SELECT, { count: "exact" })
     .eq("tenant_id", tenantId)
     .eq("pay_period", period);
+  query = applyBranchFilter(query, req.nextUrl.searchParams, ctx);
   if (myStaffId) query = query.eq("staff_id", myStaffId);
   if (staffId) query = query.eq("staff_id", staffId);
   const { data, error, count } = await query.order("net_salary", { ascending: false }).range(from, to);

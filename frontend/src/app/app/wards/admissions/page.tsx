@@ -6,7 +6,7 @@ import AdmissionsView from "@/components/dashboard/admissions-view";
 
 export const dynamic = "force-dynamic";
 
-const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "receptionist", "super_admin"];
+const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "receptionist"];
 
 export default async function AdmissionsPage() {
   const supabase = await createClient();

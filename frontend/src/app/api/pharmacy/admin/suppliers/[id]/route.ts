@@ -58,7 +58,7 @@ export const PATCH = withAuth(
     if (error) throw new ValidationError(error.message);
     return ok(data);
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 // DELETE /api/pharmacy/admin/suppliers/[id] — archive (-active=false) or ?hard=1 delete
@@ -82,7 +82,7 @@ export const DELETE = withAuth(
     if (error) throw new ValidationError(error.message);
     return ok({ archived: true });
   },
-  { roles: ["hospital_admin", "super_admin"] }
+  { roles: ["hospital_admin"] }
 );
 
 export const runtime = "nodejs";

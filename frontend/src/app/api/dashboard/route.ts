@@ -1,4 +1,4 @@
-import { withStaff, ok, ValidationError, requireTenant } from "@/lib/api-utils";
+import { withStaff, ok, ValidationError, requireTenant, resolveParam } from "@/lib/api-utils";
 import { computeFinancialOverview } from "@/lib/financial-overview";
 import type { NextRequest } from "next/server";
 
@@ -34,6 +34,41 @@ function monthRange(raw: string | null): { from: string; to: string } {
 export const GET = withStaff(async (req, ctx) => {
   const tenantId = requireTenant(ctx);
   const { from, to } = monthRange(req.nextUrl.searchParams.get("month"));
+
+  // Branch filter: resolve once, apply to all sub-queries
+  const rawBranch = resolveParam(req.nextUrl.searchParams.get("branch"));
+  const branchId = rawBranch && rawBranch !== "all" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawBranch)
+    ? rawBranch
+    : ctx.branchId; // fall back to JWT claim
+
+  // Build query helpers that conditionally apply branch filter
+  const patientsBase = () => branchId
+    ? ctx.svc.from("patients").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("patients").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId);
+  const apptsBase = () => branchId
+    ? ctx.svc.from("appointments").select("id, doctor_id, scheduled_date, start_time, status, type, reason, patients(first_name, last_name, patient_number)").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("appointments").select("id, doctor_id, scheduled_date, start_time, status, type, reason, patients(first_name, last_name, patient_number)").eq("tenant_id", tenantId);
+  const labBase = () => branchId
+    ? ctx.svc.from("lab_orders").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("lab_orders").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId);
+  const paymentsBase = () => branchId
+    ? ctx.svc.from("payments").select("amount, paid_at").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("payments").select("amount, paid_at").eq("tenant_id", tenantId);
+  const incomeBase = () => branchId
+    ? ctx.svc.from("other_income").select("amount, income_date").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("other_income").select("amount, income_date").eq("tenant_id", tenantId);
+  const expBase = () => branchId
+    ? ctx.svc.from("expenses").select("amount, expense_date").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("expenses").select("amount, expense_date").eq("tenant_id", tenantId);
+  const staffBase = () => branchId
+    ? ctx.svc.from("staff").select("user_id, department").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("staff").select("user_id, department").eq("tenant_id", tenantId);
+  const recentPatientsBase = () => branchId
+    ? ctx.svc.from("patients").select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, status, created_at").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("patients").select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, status, created_at").eq("tenant_id", tenantId);
+  const invBase = () => branchId
+    ? ctx.svc.from("invoices").select("id, total_amount, paid_amount").eq("tenant_id", tenantId).eq("branch_id", branchId)
+    : ctx.svc.from("invoices").select("id, total_amount, paid_amount").eq("tenant_id", tenantId);
 
   const year = Number(from.slice(0, 4));
   const selMonth = Number(from.slice(5, 7));
@@ -72,109 +107,56 @@ export const GET = withStaff(async (req, ctx) => {
     allApptsRes,
     invMonthRes,
   ] = await Promise.all([
-    ctx.svc.from("patients").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
-    ctx.svc
-      .from("appointments")
-      .select(
-        "id, scheduled_date, start_time, status, type, reason, patients(first_name, last_name, patient_number)"
-      )
-      .eq("tenant_id", tenantId)
+    patientsBase(),
+    apptsBase()
       .eq("scheduled_date", today)
       .order("start_time", { ascending: true })
       .limit(10),
-    ctx.svc
-      .from("lab_orders")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
+    labBase()
       .in("status", PENDING_LAB_STATUSES),
-    ctx.svc
-      .from("payments")
-      .select("amount, paid_at")
-      .eq("tenant_id", tenantId)
+    paymentsBase()
       .eq("status", "completed")
       .gte("paid_at", `${from}T00:00:00`)
       .lte("paid_at", `${to}T23:59:59.999`),
-    ctx.svc
-      .from("other_income")
-      .select("amount, income_date")
-      .eq("tenant_id", tenantId)
+    incomeBase()
       .gte("income_date", from)
       .lte("income_date", to),
-    ctx.svc
-      .from("expenses")
-      .select("amount, expense_date")
-      .eq("tenant_id", tenantId)
+    expBase()
       .gte("expense_date", from)
       .lte("expense_date", to),
-    ctx.svc
-      .from("payments")
-      .select("amount, paid_at")
-      .eq("tenant_id", tenantId)
+    paymentsBase()
       .eq("status", "completed")
       .gte("paid_at", `${currentFrom}T00:00:00`)
       .lte("paid_at", `${currentTo}T23:59:59.999`),
-    ctx.svc
-      .from("other_income")
-      .select("amount, income_date")
-      .eq("tenant_id", tenantId)
+    incomeBase()
       .gte("income_date", currentFrom)
       .lte("income_date", currentTo),
-    ctx.svc
-      .from("payments")
-      .select("amount, paid_at")
-      .eq("tenant_id", tenantId)
+    paymentsBase()
       .eq("status", "completed")
       .gte("paid_at", `${windowStart}T00:00:00`)
       .lte("paid_at", `${to}T23:59:59.999`),
-    ctx.svc
-      .from("other_income")
-      .select("amount, income_date")
-      .eq("tenant_id", tenantId)
+    incomeBase()
       .gte("income_date", windowStart)
       .lte("income_date", to),
-    ctx.svc
-      .from("payments")
-      .select("amount, paid_at")
-      .eq("tenant_id", tenantId)
+    paymentsBase()
       .eq("status", "completed")
       .gte("paid_at", `${weekStart}T00:00:00`),
-    ctx.svc
-      .from("other_income")
-      .select("amount, income_date")
-      .eq("tenant_id", tenantId)
+    incomeBase()
       .gte("income_date", weekStart),
-    ctx.svc.from("staff").select("user_id, department").eq("tenant_id", tenantId),
-    ctx.svc
-      .from("appointments")
-      .select("doctor_id")
-      .eq("tenant_id", tenantId)
+    staffBase(),
+    apptsBase()
       .gte("scheduled_date", windowStart),
-    ctx.svc
-      .from("patients")
-      .select("id, patient_number, first_name, last_name, gender, date_of_birth, phone, email, city, state, status, created_at")
-      .eq("tenant_id", tenantId)
+    recentPatientsBase()
       .order("created_at", { ascending: false })
       .limit(5),
-    ctx.svc
-      .from("patients")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
+    patientsBase()
       .gte("created_at", `${from}T00:00:00`)
       .lte("created_at", `${to}T23:59:59.999`),
-    ctx.svc
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
+    apptsBase()
       .gte("scheduled_date", from)
       .lte("scheduled_date", to),
-    ctx.svc
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId),
-    ctx.svc
-      .from("invoices")
-      .select("id, total_amount, paid_amount")
-      .eq("tenant_id", tenantId)
+    apptsBase(),
+    invBase()
       .in("status", ["pending", "partially_paid"])
       .gte("issue_date", from)
       .lte("issue_date", to),
@@ -310,7 +292,7 @@ export const GET = withStaff(async (req, ctx) => {
   }));
 
   // Consolidated hospital-wide P&L for the selected month (all modules).
-  const financials = await computeFinancialOverview(ctx.svc, tenantId, { from, to });
+  const financials = await computeFinancialOverview(ctx.svc, tenantId, { from, to }, branchId);
 
   return ok({
     kpis: {

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 // POST /api/admin/users/[id]/reset-password — set a new password (direct credentials)
 export const POST = withAuth(async (req, ctx) => {
   requireTenant(ctx);
-  if (ctx.role !== "hospital_admin" && ctx.role !== "super_admin") throw new ForbiddenError();
+  if (ctx.role !== "hospital_admin") throw new ForbiddenError();
   const id = req.nextUrl.pathname.split("/")[4]!; // /api/admin/users/[id]/reset-password
   const body = (await req.json()) as { password?: string };
   if (!body.password || body.password.length < 8) {
@@ -19,7 +19,7 @@ export const POST = withAuth(async (req, ctx) => {
     .select("id, tenant_id, email, role")
     .eq("id", id)
     .maybeSingle();
-  if (!user || (ctx.role !== "super_admin" && user.tenant_id !== ctx.tenantId)) {
+  if (!user || user.tenant_id !== ctx.tenantId) {
     throw new NotFoundError("User not found");
   }
   if (user.role === "super_admin") throw new ForbiddenError("Platform admins cannot be modified");

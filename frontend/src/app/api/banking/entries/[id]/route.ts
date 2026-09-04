@@ -1,10 +1,11 @@
 import { withAuth, ok, ValidationError, NotFoundError, ForbiddenError, requireTenant } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
+import { tenantCurrency } from "@/lib/server-currency";
 import type { NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-const MANUAL_ROLES = ["hospital_admin", "super_admin", "cashier", "accountant"] as const;
+const MANUAL_ROLES = ["hospital_admin", "cashier", "accountant"] as const;
 
 // DELETE /api/banking/entries/[id] — remove a MANUAL ledger entry only:
 // adjustments, opening balances, and transfers (transfers delete BOTH sides
@@ -47,16 +48,17 @@ export const DELETE = withAuth(async (req, ctx) => {
     .eq("tenant_id", tenantId);
   if (error) throw new ValidationError(error.message);
 
+  const { symbol } = await tenantCurrency(ctx.svc, tenantId);
   await logAudit(req, ctx, {
     action: "delete",
     entityType: "hospital_bank_ledger",
     entityId: id,
     description:
       entry.source === "transfer"
-        ? `Deleted transfer of ₦${Number(entry.amount).toLocaleString()}`
+        ? `Deleted transfer of ${symbol}${Number(entry.amount).toLocaleString()}`
         : entry.source === "opening"
-          ? `Deleted opening balance of ₦${Number(entry.amount).toLocaleString()}`
-          : `Deleted manual ${entry.direction === "in" ? "receipt" : "payment"} of ₦${Number(entry.amount).toLocaleString()}`,
+          ? `Deleted opening balance of ${symbol}${Number(entry.amount).toLocaleString()}`
+          : `Deleted manual ${entry.direction === "in" ? "receipt" : "payment"} of ${symbol}${Number(entry.amount).toLocaleString()}`,
   });
 
   return ok({ ok: true, deleted: idList.length });

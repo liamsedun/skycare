@@ -1,6 +1,7 @@
 import { withStaff, ok, ValidationError, NotFoundError, requireTenant, requireModuleLevel } from "@/lib/api-utils";
 import { logAudit } from "@/lib/audit";
 import { notifyInvoiceIssued } from "@/lib/notify";
+import { tenantCurrency } from "@/lib/server-currency";
 import { getTenantSettings, generateInvoiceNumber } from "@/lib/tenant-settings";
 import type { NextRequest } from "next/server";
 
@@ -117,7 +118,7 @@ export const POST = withStaff(async (req, ctx) => {
     .eq("tenant_id", tenantId);
   if (linkError) throw new ValidationError(linkError.message);
 
-  await notifyInvoiceIssued(ctx.svc, tenantId, labRequest.patient_id, invoice.id, invoiceNumber, subtotal);
+  await notifyInvoiceIssued(ctx.svc, tenantId, labRequest.patient_id, invoice.id, invoiceNumber, subtotal, (await tenantCurrency(ctx.svc, tenantId)).symbol);
 
   await logAudit(req, ctx, {
     action: "create",

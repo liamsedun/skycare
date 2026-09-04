@@ -6,7 +6,7 @@ import WardRoundsView from "@/components/dashboard/ward-rounds-view";
 
 export const dynamic = "force-dynamic";
 
-const WARD_ROLES = ["hospital_admin", "doctor", "nurse", "super_admin"];
+const WARD_ROLES = ["hospital_admin", "doctor", "nurse"];
 
 export default async function WardRoundsPage() {
   const supabase = await createClient();
