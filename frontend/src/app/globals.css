@@ -1320,3 +1320,24 @@ html:not([data-theme="dark"]) .platform-mobile-nav .mobile-nav-icon[data-key="su
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.4);
 }
+
+/* Hide Netlify badge on free tier */
+[id^="netlify-badge"],
+.netlify-badge,
+a[href*="netlify.com"] img,
+div[style*="netlify"] {
+  display: none !important;
+}
+
+netlify-badge {
+  display: none !important;
+}
+
+#netlify-badge {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: fixed !important;
+  bottom: -9999px !important;
+}
