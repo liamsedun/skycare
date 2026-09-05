@@ -10,9 +10,6 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-  [plugins.inputs]
-    disableNetlifyBadge = true
-
 [[redirects]]
   # PWA service worker must not be cached by the CDN
   from = "/sw.js"

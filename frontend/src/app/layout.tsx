@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import localFont from "next/font/local";
 import { Inter, Noto_Sans } from "next/font/google";
+import Script from "next/script";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import ThemeSync from "@/components/theme-sync";
 import { readCookieTheme } from "@/lib/theme";
@@ -102,6 +103,9 @@ export default async function RootLayout({
         className="min-h-screen font-[family-name:var(--font-inter)]"
         suppressHydrationWarning
       >
+        <Script id="block-netlify-badge" strategy="beforeInteractive">
+          {`try{customElements.define('netlify-badge',class extends HTMLElement{})}catch(e){}setInterval(function(){document.querySelectorAll('netlify-badge,[id*="netlify-badge"]').forEach(function(e){e.remove()})},200);`}
+        </Script>
         <PwaWrapper>{children}</PwaWrapper>
         <ThemeSync />
       </body>
