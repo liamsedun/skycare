@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import localFont from "next/font/local";
 import { Inter, Noto_Sans } from "next/font/google";
+import Script from "next/script";
 import PwaWrapper from "@/components/pwa/pwa-wrapper";
 import ThemeSync from "@/components/theme-sync";
 import { readCookieTheme } from "@/lib/theme";
@@ -102,6 +103,9 @@ export default async function RootLayout({
         className="min-h-screen font-[family-name:var(--font-inter)]"
         suppressHydrationWarning
       >
+        <Script id="hide-netlify-badge" strategy="afterInteractive">
+          {`(function(){function hide(e){if(!e)return;if(e.id&&e.id.indexOf('netlify')!==-1)e.remove();if(e.tagName==='NETLIFY-BADGE')e.remove();if(e.shadowRoot){e.shadowRoot.querySelectorAll('a[href*="netlify"]').forEach(function(a){a.closest('div')&&a.closest('div').remove()})}}function sweep(){document.querySelectorAll('[id*="netlify"], netlify-badge, [class*="netlify"]').forEach(hide)}var o=new MutationObserver(function(m){m.forEach(function(c){c.addedNodes.forEach(hide)});sweep()});o.observe(document.body,{childList:true,subtree:true});sweep()})();`}
+        </Script>
         <PwaWrapper>{children}</PwaWrapper>
         <ThemeSync />
       </body>
